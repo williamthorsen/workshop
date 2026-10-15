@@ -202,7 +202,7 @@ A failed check prints its id bracketed ahead of its fraction, and a pragma uses 
    src/a.ts:4, src/b.ts:9
 ```
 
-A kit published by an installed package namespaces its checks under that package's name with the scope stripped, so `@williamthorsen/toolbelt.errors` yields `toolbelt.errors/<id>`. The fully-qualified `@williamthorsen/toolbelt.errors/<id>` is accepted too; the bare id is not, because the namespace keeps two kits' same-named checks apart. A kit fetched from a repository, through `--from` or the config's `sources`, namespaces its checks under the repository's owner and name, so `github:acme/.github@v2` yields `acme/.github/<id>`, and only that form is accepted: Every organization's `.github` repository shares its name, so the owner stays in. A kit loaded any other way -- from the local kits directory, a `--from` directory, or a URL -- has no namespace, and its bare id is accepted. An id naming no check in the run suppresses nothing, as does a pragma on a check that declares no id at all.
+A kit published by an installed package namespaces its checks under that package's name with the scope stripped, so `@williamthorsen/toolbelt.errors` yields `toolbelt.errors/<id>`. The fully-qualified `@williamthorsen/toolbelt.errors/<id>` is accepted too; the bare id is not, because the namespace keeps two kits' same-named checks apart. A kit fetched from a repository, through `--from` or the config's `sources`, namespaces its checks under the repository's owner and name, so `github:acme/.github@v2` yields `acme/.github/<id>`, and only that form is accepted: Every organization's `.github` repository shares its name, so the owner stays in. A kit loaded any other way -- from the local kits directory, a `--from` directory, or a URL -- has no namespace, and its bare id is accepted. An id naming no check in the run suppresses nothing, as does a pragma on a check that declares no id at all; the [`pragma-unused`](#advisory-warnings) warning names such an id and the form that a loaded check accepts.
 
 The id list ends at the first token that is not an id: a `--` reason, the delimiter closing a block comment, a second pragma token, or the line's end. Everything before that is read as ids, so a reason written without `--` names checks rather than explaining the decision: `// rdy-ignore because the API is frozen` suppresses for a check called `because`, and therefore for none. Write a reason after `--`. Under `--json`, each check entry includes its `id` in both detail projections.
 
@@ -271,7 +271,15 @@ The evidence is what the checks read. A pragma is reported only when some check 
 
 Recognition for the report is stricter than for suppression. A token is a site when it is in a comment with nothing but whitespace and `*` between it and the `//` or `/*` that opened one, in a JavaScript-family file. A token in a string, in a regular expression, following prose or code inside a comment, or second on its line is not a site. Suppression is unchanged and still matches the raw text of every file type, so the report can only ever withhold a warning, never cause a suppressed finding to be reported.
 
-Two limits follow from that. Because recognition reads JavaScript-family syntax, a pragma in a source of any other kind is never reported. And a pragma written for a check that skipped, was blocked, or was not loaded is reported when any check examined its file, that skipped check's own `skip` included when it swept before skipping: The run has no evidence that the check would have suppressed anything.
+Two limits follow from that. Because recognition reads JavaScript-family syntax, a pragma in a source of any other kind is never reported. And a pragma written for a check that skipped, was blocked, or was not loaded is reported when any check examined its file, that skipped check's own `skip` included when it swept before skipping: The run has no evidence that the check would have suppressed anything. A pragma naming a check that was not loaded is also reported with that id named as matching nothing, because the run cannot tell an id from a kit that it did not run apart from a misspelt one.
+
+When an unused pragma names ids that no check loaded by the run accepts, the warning names those ids. Every check of every loaded kit counts, whether it ran, skipped, or was blocked, and whether or not the run selected its checklist. For an id that a loaded check declares unqualified, the remedy gives the form printed beside that check's findings:
+
+```
+Warning: `rdy-ignore` pragma at src/a.ts:4 suppressed no finding in this run; it names `no-instanceof-error`, which matches no check in it. Write `no-instanceof-error` as `toolbelt.errors/no-instanceof-error`.
+```
+
+For an id that no loaded check declares, the remedy gives the general form instead, the id printed beside a check's findings, such as `<package>/<id>`. A pragma whose every id names a loaded check, or that names none, keeps the warning that says only that it suppressed nothing.
 
 The last reads the same sources and reports committed bundler output that the project has not marked.
 

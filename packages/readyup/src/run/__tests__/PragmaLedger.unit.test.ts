@@ -11,6 +11,18 @@ describe(createPragmaLedger, () => {
 
     expect(ledger.scannedPaths()).toStrictEqual([]);
     expect(ledger.hasSuppressed('src/a.ts', 3)).toBe(false);
+    expect(ledger.checkIds()).toStrictEqual([]);
+  });
+
+  it('returns the recorded check ids in the order they were recorded', () => {
+    const ledger = createPragmaLedger();
+    const first = { accepted: ['a'], bare: 'a', printed: 'a' };
+    const second = { accepted: ['kit/b'], bare: 'b', printed: 'kit/b' };
+
+    ledger.recordCheckIds(first);
+    ledger.recordCheckIds(second);
+
+    expect(ledger.checkIds()).toStrictEqual([first, second]);
   });
 
   it('resolves every recorded path against the working directory', () => {

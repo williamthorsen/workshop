@@ -4,8 +4,11 @@ import { describe, expect, it as baseIt } from 'vitest';
 
 import { warnOnUnusedPragmas } from '../pragma-report.ts';
 import { createPragmaLedger, type PragmaLedger } from '../PragmaLedger.ts';
+import { resolveCheckIds } from '../resolveCheckIds.ts';
 
 const REMEDY = 'Remove the pragma, or run the kit whose check it was written for.';
+
+const ID_FORM_REMEDY = `Name a check by the id printed beside its findings, such as \`<package>/<id>\`; or remove the pragma, or run the kit whose check it was written for.`;
 
 // eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
@@ -109,7 +112,89 @@ describe(warnOnUnusedPragmas, () => {
   });
 });
 
+describe('given an unused pragma naming checks', () => {
+  it('names a bare id and the printed form of the check that declares it', ({ temp }) => {
+    temp.write('src/a.ts', ['x; // rdy-ignore no-instanceof-error', ''].join('\n'));
+    const ledger = scanning(['src/a.ts']);
+    loadChecks(ledger, 'toolbelt.errors', 'no-instanceof-error');
+
+    const { warnings, stderr } = warn(ledger);
+
+    expect(warnings).toStrictEqual([
+      {
+        code: 'pragma-unused',
+        message:
+          '`rdy-ignore` pragma at src/a.ts:1 suppressed no finding in this run; it names `no-instanceof-error`, which matches no check in it.',
+        remedy: 'Write `no-instanceof-error` as `toolbelt.errors/no-instanceof-error`.',
+      },
+    ]);
+    expect(stderr).toBe(`Warning: ${warnings[0]?.message} ${warnings[0]?.remedy}\n`);
+  });
+
+  it('gives the general id form for an id that no check in the run declares', ({ temp }) => {
+    temp.write('src/a.ts', ['x; // rdy-ignore no-such-check', ''].join('\n'));
+    const ledger = scanning(['src/a.ts']);
+    loadChecks(ledger, 'toolbelt.errors', 'no-instanceof-error');
+
+    expect(warn(ledger).warnings[0]?.remedy).toBe(ID_FORM_REMEDY);
+  });
+
+  it('names every unmatched id, suggesting a form where one is known', ({ temp }) => {
+    temp.write('src/a.ts', ['x; // rdy-ignore no-instanceof-error, no-such-check', ''].join('\n'));
+    const ledger = scanning(['src/a.ts']);
+    loadChecks(ledger, 'toolbelt.errors', 'no-instanceof-error');
+
+    const [warning] = warn(ledger).warnings;
+
+    expect(warning?.message).toBe(
+      '`rdy-ignore` pragma at src/a.ts:1 suppressed no finding in this run; it names `no-instanceof-error`, `no-such-check`, which match no check in it.',
+    );
+    expect(warning?.remedy).toBe(
+      `Write \`no-instanceof-error\` as \`toolbelt.errors/no-instanceof-error\`. ${ID_FORM_REMEDY}`,
+    );
+  });
+
+  it('offers each printed form when two kits declare the same id', ({ temp }) => {
+    temp.write('src/a.ts', ['x; // rdy-ignore shared', ''].join('\n'));
+    const ledger = scanning(['src/a.ts']);
+    loadChecks(ledger, 'kit-a', 'shared');
+    loadChecks(ledger, 'kit-b', 'shared');
+
+    expect(warn(ledger).warnings[0]?.remedy).toBe('Write `shared` as `kit-a/shared` or `kit-b/shared`.');
+  });
+
+  it('names only the unmatched id of a pragma that also names a check of the run', ({ temp }) => {
+    temp.write('src/a.ts', ['x; // rdy-ignore toolbelt.errors/no-instanceof-error, no-such-check', ''].join('\n'));
+    const ledger = scanning(['src/a.ts']);
+    loadChecks(ledger, 'toolbelt.errors', 'no-instanceof-error');
+
+    expect(warn(ledger).warnings[0]?.message).toBe(
+      '`rdy-ignore` pragma at src/a.ts:1 suppressed no finding in this run; it names `no-such-check`, which matches no check in it.',
+    );
+  });
+
+  it('keeps the generic warning when every id names a check of the run', ({ temp }) => {
+    temp.write('src/a.ts', ['x; // rdy-ignore toolbelt.errors/no-instanceof-error', ''].join('\n'));
+    const ledger = scanning(['src/a.ts']);
+    loadChecks(ledger, 'toolbelt.errors', 'no-instanceof-error');
+
+    expect(warn(ledger).warnings).toStrictEqual([
+      {
+        code: 'pragma-unused',
+        message: '`rdy-ignore` pragma at src/a.ts:1 suppressed no finding in this run.',
+        remedy: REMEDY,
+      },
+    ]);
+  });
+});
+
 // region | Helpers
+
+/** Records a check of a kit published by the named package as loaded. */
+function loadChecks(ledger: PragmaLedger, packageName: string, id: string): void {
+  const ids = resolveCheckIds(id, { kind: 'package', packageName, source: `npm:${packageName}`, version: '1.0.0' });
+  if (ids !== undefined) ledger.recordCheckIds(ids);
+}
 
 /** Opens a ledger recording the given paths as examined and nothing as suppressed. */
 function scanning(paths: readonly string[]): PragmaLedger {

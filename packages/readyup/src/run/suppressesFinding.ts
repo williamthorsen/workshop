@@ -1,13 +1,4 @@
-import { createIgnorePragmaMatcher } from './pragma-token.ts';
-
-/** Matches one check id at the head of a pragma's tail, with the whitespace leading up to it. */
-const LEADING_CHECK_ID = /^[ \t]*[A-Za-z0-9@][\w@./-]*/;
-
-/** Matches the comma separating one check id from the next. */
-const LEADING_COMMA = /^[ \t]*,/;
-
-/** The tokens that open a pragma, which an id list therefore never names. */
-const PRAGMA_TOKENS = new Set(['rdy-ignore', 'rdy-ignore-next-line']);
+import { createIgnorePragmaMatcher, readCheckIds } from './pragma-token.ts';
 
 /**
  * Reports whether a source suppresses a finding on a line for a check named by `checkIds`: An `rdy-ignore` is on
@@ -41,34 +32,6 @@ function hasPragma(line: string | undefined, scope: 'line' | 'next-line', checkI
     if (named.length === 0 || named.some((id) => checkIds.includes(id))) return true;
   }
   return false;
-}
-
-/**
- * Returns the check ids named by a pragma, read from the text following its token.
- *
- * The list is comma-separated and ends at the first candidate that is not an id: a `--` opening a reason, the
- * delimiter closing a block comment, either pragma token, or the line's end. Excluding the pragma tokens by name
- * keeps a line with both of them two unqualified pragmas rather than one naming a check called
- * `rdy-ignore-next-line`.
- */
-function readCheckIds(tail: string): readonly string[] {
-  const ids: string[] = [];
-  let rest = tail;
-
-  for (;;) {
-    const id = LEADING_CHECK_ID.exec(rest);
-    if (id === null) return ids;
-
-    const name = id[0].trimStart();
-    if (PRAGMA_TOKENS.has(name)) return ids;
-
-    ids.push(name);
-    rest = rest.slice(id[0].length);
-
-    const comma = LEADING_COMMA.exec(rest);
-    if (comma === null) return ids;
-    rest = rest.slice(comma[0].length);
-  }
 }
 
 // endregion | Helpers

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { RdyReport } from '../../kits/types.ts';
 import type { SummaryRow } from '../../layout/layoutEngine.ts';
+import type { warnOnUnusedPragmas } from '../pragma-report.ts';
 import type { RunRdyOptions } from '../runRdy.ts';
 
 const mockLoadRdyKit = vi.hoisted(() => vi.fn());
@@ -12,7 +13,7 @@ const mockResolveGitHubToken = vi.hoisted(() => vi.fn());
 const mockLoadRemoteKit = vi.hoisted(() => vi.fn());
 const mockReadManifestTracking = vi.hoisted(() => vi.fn());
 const mockWarnOnKitStaleness = vi.hoisted(() => vi.fn());
-const mockWarnOnUnusedPragmas = vi.hoisted(() => vi.fn());
+const mockWarnOnUnusedPragmas = vi.hoisted(() => vi.fn<typeof warnOnUnusedPragmas>());
 const mockWarnOnUnmarkedGeneratedSources = vi.hoisted(() => vi.fn());
 
 vi.mock(import('../../kits/loadRdyKit.ts'), () => ({
@@ -283,5 +284,21 @@ describe(runHumanMode, () => {
 
     expect(stdout).not.toContain('Kit did not load');
     expect(mockFormatCombinedSummary).not.toHaveBeenCalled();
+  });
+
+  it('records the ids of a checklist that the run leaves unselected', async () => {
+    const kit = makeKit({
+      checklists: [
+        { name: 'deploy', checks: [{ name: 'a', id: 'selected', check: () => true }] },
+        { name: 'infra', checks: [{ name: 'b', id: 'unselected', check: () => true }] },
+      ],
+    });
+    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+    await runHuman(singleKitEntry(['deploy']));
+
+    const [ledger] = mockWarnOnUnusedPragmas.mock.lastCall ?? [];
+    expect(ledger?.checkIds().map((ids) => ids.bare)).toStrictEqual(['selected', 'unselected']);
   });
 });

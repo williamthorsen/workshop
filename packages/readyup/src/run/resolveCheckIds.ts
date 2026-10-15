@@ -1,9 +1,12 @@
 import type { KitProvenance } from '../kits/KitProvenance.ts';
 
-/** The strings that a pragma may write to name one check, and the one printed beside its findings. */
+/** The strings that a pragma may write to name one check, the one printed beside its findings, and the declared id. */
 export interface CheckIds {
   printed: string;
   accepted: readonly string[];
+
+  /** The id as the check declares it, before any namespace is applied. */
+  bare: string;
 }
 
 /**
@@ -22,13 +25,13 @@ export function resolveCheckIds(id: string | undefined, provenance: KitProvenanc
   if (id === undefined) return undefined;
   if (provenance?.kind === 'repository') {
     const printed = `${provenance.owner}/${provenance.repo}/${id}`;
-    return { accepted: [printed], printed };
+    return { accepted: [printed], bare: id, printed };
   }
-  if (provenance?.kind !== 'package') return { accepted: [id], printed: id };
+  if (provenance?.kind !== 'package') return { accepted: [id], bare: id, printed: id };
 
   const printed = `${stripScope(provenance.packageName)}/${id}`;
   const qualified = `${provenance.packageName}/${id}`;
-  return { accepted: printed === qualified ? [printed] : [printed, qualified], printed };
+  return { accepted: printed === qualified ? [printed] : [printed, qualified], bare: id, printed };
 }
 
 // region | Helpers

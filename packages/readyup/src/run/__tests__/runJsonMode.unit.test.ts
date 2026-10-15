@@ -4,8 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { KitProvenance } from '../../kits/KitProvenance.ts';
 import type { RdyReport, Severity } from '../../kits/types.ts';
 import { RemoteFetchError } from '../../remote/RemoteFetchError.ts';
+import type { RaisedWarning } from '../../schemas/common.ts';
 import type { JsonDetail, JsonKitOrigin } from '../../schemas/reportSchema.ts';
 import type { UnrunSource } from '../KitSelection.ts';
+import type { warnOnUnusedPragmas } from '../pragma-report.ts';
 import type { ResolvedKitEntry } from '../ResolvedKitEntry.ts';
 import type { RunRdyOptions } from '../runRdy.ts';
 
@@ -18,7 +20,7 @@ const mockResolveGitHubToken = vi.hoisted(() => vi.fn());
 const mockLoadRemoteKit = vi.hoisted(() => vi.fn());
 const mockReadManifestTracking = vi.hoisted(() => vi.fn());
 const mockWarnOnKitStaleness = vi.hoisted(() => vi.fn());
-const mockWarnOnUnusedPragmas = vi.hoisted(() => vi.fn());
+const mockWarnOnUnusedPragmas = vi.hoisted(() => vi.fn<typeof warnOnUnusedPragmas>());
 const mockWarnOnUnmarkedGeneratedSources = vi.hoisted(() => vi.fn());
 
 /** A warning as the unmarked-generated report returns it. */
@@ -442,7 +444,7 @@ describe(runJsonMode, () => {
   });
 
   describe('unused-pragma advisories', () => {
-    const PRAGMA_UNUSED = {
+    const PRAGMA_UNUSED: RaisedWarning = {
       code: 'pragma-unused',
       message: '`rdy-ignore` pragma at src/a.ts:3 suppressed no finding in this run.',
       remedy: 'Remove the pragma, or run the kit whose check it was written for.',
@@ -509,6 +511,22 @@ describe(runJsonMode, () => {
         expect.anything(),
       );
     });
+  });
+
+  it('records the ids of a checklist that the run leaves unselected', async () => {
+    const kit = makeKit({
+      checklists: [
+        { name: 'deploy', checks: [{ name: 'a', id: 'selected', check: () => true }] },
+        { name: 'infra', checks: [{ name: 'b', id: 'unselected', check: () => true }] },
+      ],
+    });
+    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+    await runJson(singleKitEntry(['deploy']));
+
+    const [ledger] = mockWarnOnUnusedPragmas.mock.lastCall ?? [];
+    expect(ledger?.checkIds().map((ids) => ids.bare)).toStrictEqual(['selected', 'unselected']);
   });
 });
 
