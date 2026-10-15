@@ -28,7 +28,7 @@ const RENDERING_COMMANDS = [
   { name: 'list', args: ['list', '--manifest', 'manifest.json'], expected: /^ {6}passing$/mu },
   { name: 'verify', args: ['verify', '--manifest', 'manifest.json'], expected: /^PASS {2}passing$/mu },
   { name: 'compile', args: ['compile', '--skip-manifest', 'src/passing.ts'], expected: /^(?:PASS|SKIP) {2}src/mu },
-  { name: 'init', args: ['init', '--dry-run'], expected: /^PASS {2}\.config\/readyup\.config\.ts/mu },
+  { name: 'init', args: ['init', '--dry-run'], expected: /^WRITE \.config\/readyup\.config\.ts/mu },
 ] as const;
 
 // eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.

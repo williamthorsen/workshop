@@ -139,6 +139,15 @@ describe(`${initCommand.name} next steps`, () => {
     expect(printedSteps(silent.info)).toContain('rdy run');
   });
 
+  // The scaffolded config already declares the compile settings at their defaults, so it leaves nothing to do.
+  it('names no step for the scaffolded config', () => {
+    using silent = silenceConsole(['info']);
+
+    initCommand({ dryRun: false, force: false });
+
+    expect(printedSteps(silent.info)).not.toContain('readyup.config.ts');
+  });
+
   it('omits the install step when readyup is already installed', () => {
     using silent = silenceConsole(['info']);
 
@@ -146,8 +155,8 @@ describe(`${initCommand.name} next steps`, () => {
 
     const steps = printedSteps(silent.info);
     expect(steps).not.toContain('Install readyup');
-    expect(steps).toContain('1. Customize .config/readyup.config.ts');
-    expect(steps).toContain('5. Commit the generated files.');
+    expect(steps).toContain('1. Replace the starter checks in .readyup/kits/default.ts');
+    expect(steps).toContain('4. Commit the generated files.');
   });
 
   it('leads with the install step when readyup is not installed', () => {
@@ -159,8 +168,8 @@ describe(`${initCommand.name} next steps`, () => {
 
     const steps = printedSteps(silent.info);
     expect(steps).toContain('1. Install readyup as a dev dependency: pnpm add --save-dev readyup\n');
-    expect(steps).toContain('2. Customize .config/readyup.config.ts');
-    expect(steps).toContain('6. Commit the generated files.');
+    expect(steps).toContain('2. Replace the starter checks in .readyup/kits/default.ts');
+    expect(steps).toContain('5. Commit the generated files.');
   });
 
   it('leads with an install step naming why esbuild is needed when only esbuild is not installed', () => {
@@ -174,7 +183,7 @@ describe(`${initCommand.name} next steps`, () => {
     expect(steps).toContain(
       '1. Install esbuild as a dev dependency (rdy compile needs esbuild): pnpm add --save-dev esbuild\n',
     );
-    expect(steps).toContain('4. Compile the kits: rdy compile');
+    expect(steps).toContain('3. Compile the kits: rdy compile');
   });
 
   it('installs readyup and esbuild in one step when neither is installed', () => {
@@ -188,8 +197,8 @@ describe(`${initCommand.name} next steps`, () => {
     expect(steps).toContain(
       '1. Install readyup and esbuild as dev dependencies (rdy compile needs esbuild): pnpm add --save-dev readyup esbuild\n',
     );
-    expect(steps).toContain('2. Customize .config/readyup.config.ts');
-    expect(steps).toContain('6. Commit the generated files.');
+    expect(steps).toContain('2. Replace the starter checks in .readyup/kits/default.ts');
+    expect(steps).toContain('5. Commit the generated files.');
   });
 
   it('prints no next steps in dry-run mode', () => {
@@ -197,7 +206,7 @@ describe(`${initCommand.name} next steps`, () => {
 
     initCommand({ dryRun: true, force: false });
 
-    expect(printedSteps(silent.info)).not.toContain('Customize');
+    expect(printedSteps(silent.info)).not.toContain('Replace the starter checks');
   });
 });
 

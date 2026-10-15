@@ -12,6 +12,7 @@ export default defineRdyConfig({
 
 /** Default rdy kit file content. */
 export const rdyKitTemplate = `import { defineRdyKit } from 'readyup';
+import { fileExists } from 'readyup/check-utils';
 
 /**
  * Default rdy kit.
@@ -32,7 +33,13 @@ export default defineRdyKit({
       name: 'deploy',
       checks: [
         {
+          name: 'package.json exists',
+          check: () => fileExists('package.json'),
+          fix: 'Run rdy from the root of the project',
+        },
+        {
           name: 'NODE_ENV is set',
+          severity: 'warn',
           check: () => {
             const value = process.env['NODE_ENV'];
             if (!value) return { ok: false, detail: 'NODE_ENV has no value in the environment' };

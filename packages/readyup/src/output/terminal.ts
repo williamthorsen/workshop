@@ -45,11 +45,11 @@ function describeWriteResult(result: WriteResult, dryRun: boolean): WriteLine {
 
   switch (outcome) {
     case 'created':
-      return { token: 'passed', claim: filePath, detail: dryRun ? 'would create' : 'created' };
+      return { token: 'written', claim: filePath, detail: dryRun ? 'would create' : 'created' };
     case 'overwritten':
-      return { token: 'passed', claim: filePath, detail: dryRun ? 'would overwrite' : 'overwrote' };
+      return { token: 'written', claim: filePath, detail: dryRun ? 'would overwrite' : 'overwrote' };
     case 'up-to-date':
-      return { token: 'passed', claim: filePath, detail: 'up to date' };
+      return { token: 'skippedOptional', claim: filePath, detail: 'up to date' };
     case 'skipped':
       return error === undefined
         ? { token: 'skippedOptional', claim: filePath, detail: 'already exists' }

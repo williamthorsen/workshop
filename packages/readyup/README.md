@@ -39,6 +39,7 @@ export default defineRdyConfig({
 
 ```ts
 import { defineRdyKit } from 'readyup';
+import { fileExists } from 'readyup/check-utils';
 
 export default defineRdyKit({
   checklists: [
@@ -46,7 +47,13 @@ export default defineRdyKit({
       name: 'deploy',
       checks: [
         {
+          name: 'package.json exists',
+          check: () => fileExists('package.json'),
+          fix: 'Run rdy from the root of the project',
+        },
+        {
           name: 'NODE_ENV is set',
+          severity: 'warn',
           check: () => {
             const value = process.env['NODE_ENV'];
             if (!value) return { ok: false, detail: 'NODE_ENV has no value in the environment' };
@@ -70,14 +77,15 @@ rdy run
 With `NODE_ENV` unset:
 
 ```
-❌ NODE_ENV is set
+✅ package.json exists
+🔶 NODE_ENV is set
    NODE_ENV has no value in the environment
 ── Fixes
-❌ NODE_ENV is set
+🔶 NODE_ENV is set
    💊 Set NODE_ENV before deploying
-❌ Total: 1 error (0ms)
+🔶 Total: 1 warning, 1 passed (0ms)
 
-❌ Run failed (fail-on: error)
+✅ Run passed (fail-on: error)
 ```
 
 `rdy run --jit` skips compilation and runs the TypeScript source directly, which is the faster loop while writing checks. Compiled kits remain the vetted artifact: `rdy verify` hashes them, and a consumer running `rdy run --from` gets them.

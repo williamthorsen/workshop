@@ -5,9 +5,9 @@ import { richFormatter } from '../../layout/formatter.ts';
 import type { WriteResult } from '../../portable/writeFileWithCheck.ts';
 import { printStep, reportWriteResult } from '../terminal.ts';
 
-const PASSED = richFormatter.tokens.passed.text;
 const SKIPPED = richFormatter.tokens.skippedOptional.text;
 const WARNED = richFormatter.tokens.failedWarn.text;
+const WRITTEN = richFormatter.tokens.written.text;
 const FAILED = richFormatter.tokens.failedError.text;
 
 const PATH = '.config/readyup.config.ts';
@@ -36,9 +36,9 @@ describe(printStep, () => {
 
 describe(reportWriteResult, () => {
   describe.each([
-    ['created', { outcome: 'created' as const }, `${PASSED} ${PATH} \u{00B7} created`],
-    ['overwrote', { outcome: 'overwritten' as const }, `${PASSED} ${PATH} \u{00B7} overwrote`],
-    ['up to date', { outcome: 'up-to-date' as const }, `${PASSED} ${PATH} \u{00B7} up to date`],
+    ['created', { outcome: 'created' as const }, `${WRITTEN} ${PATH} \u{00B7} created`],
+    ['overwrote', { outcome: 'overwritten' as const }, `${WRITTEN} ${PATH} \u{00B7} overwrote`],
+    ['up to date', { outcome: 'up-to-date' as const }, `${SKIPPED} ${PATH} \u{00B7} up to date`],
     ['already exists', { outcome: 'skipped' as const }, `${SKIPPED} ${PATH} \u{00B7} already exists`],
   ])('%s', (_case, overrides, expected) => {
     it('renders the ratified token with the outcome as inline detail', () => {
@@ -67,7 +67,7 @@ describe(reportWriteResult, () => {
 
       reportWriteResult(makeResult(overrides), true);
 
-      expect(silent.info).toHaveBeenCalledWith(`${PASSED} ${PATH} \u{00B7} ${expected}`);
+      expect(silent.info).toHaveBeenCalledWith(`${WRITTEN} ${PATH} \u{00B7} ${expected}`);
     });
   });
 

@@ -12,8 +12,7 @@ const PREREQUISITE_PACKAGES = ['readyup', 'esbuild'];
 
 /** Steps that follow scaffolding regardless of whether readyup is already installed. */
 const STANDARD_NEXT_STEPS = [
-  'Customize .config/readyup.config.ts with the compile settings for this project.',
-  'Add checklists to .readyup/kits/.',
+  "Replace the starter checks in .readyup/kits/default.ts with the project's own.",
   'Compile the kits: rdy compile',
   'Run the checks: rdy run (or rdy run --jit to run straight from the TypeScript source).',
   'Commit the generated files.',
