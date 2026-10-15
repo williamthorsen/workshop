@@ -17,7 +17,8 @@ const PACKAGE_ROOT = path.resolve(import.meta.dirname, '../../..');
 const it = baseIt.extend(
   'temp',
   makeFixture(() => {
-    const tree = createTempTree({}, { prefix: 'rdy-init-scaffold-' });
+    // A fresh project has a manifest before `rdy init` runs, because installing readyup writes one.
+    const tree = createTempTree({ 'package.json': '{}\n' }, { prefix: 'rdy-init-scaffold-' });
     // The scaffolded kit imports `readyup` by name, and jiti resolves that by walking up from the kit
     // file. The walk finds the link, which stands in for the install that a real project would have.
     tree.symlink('node_modules/readyup', PACKAGE_ROOT);
@@ -40,7 +41,7 @@ it.aroundEach(async (runTest, { temp }) => {
  * `rdy run --jit` takes proves that a scaffolded project works before its author has written anything.
  */
 describe('scaffolded kit', () => {
-  it('passes with NODE_ENV set, reporting the value that it found', async () => {
+  it('passes every check with NODE_ENV set', async () => {
     using _silent = silenceConsole(['error', 'info']);
 
     vi.stubEnv('NODE_ENV', 'production');
@@ -48,10 +49,13 @@ describe('scaffolded kit', () => {
 
     const results = await runScaffoldedKit();
 
-    expect(results).toMatchObject([{ name: 'NODE_ENV is set', status: 'passed', detail: 'NODE_ENV is production' }]);
+    expect(results).toMatchObject([
+      { name: 'package.json exists', status: 'passed' },
+      { name: 'NODE_ENV is set', status: 'passed', detail: 'NODE_ENV is production' },
+    ]);
   });
 
-  it('fails with NODE_ENV unset, reporting that the environment has no value', async () => {
+  it('warns with NODE_ENV unset, offering the fix', async () => {
     using _silent = silenceConsole(['error', 'info']);
 
     vi.stubEnv('NODE_ENV', undefined);
@@ -60,9 +64,11 @@ describe('scaffolded kit', () => {
     const results = await runScaffoldedKit();
 
     expect(results).toMatchObject([
+      { name: 'package.json exists', status: 'passed' },
       {
         name: 'NODE_ENV is set',
         status: 'failed',
+        severity: 'warn',
         detail: 'NODE_ENV has no value in the environment',
         fix: 'Set NODE_ENV before deploying',
       },
