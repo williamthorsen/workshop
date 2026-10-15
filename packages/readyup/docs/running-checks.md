@@ -409,7 +409,7 @@ A plain `rdy list` and `rdy list --sources` read the settings from the file name
 
 ### Listing check names
 
-`--checks` adds each checklist's check names beneath it, in the order that the checklist runs them: preconditions first, then each check followed by the checks that depend on it, and a staged checklist's groups in order. It applies to every listing that shows checklists, and under `--json` it adds `checklistChecks` to each row:
+`--checks` adds each checklist's check names beneath it, in declaration order: preconditions first, then each check followed by the checks that depend on it, and a staged checklist's groups in order. It applies to every listing that shows checklists, and under `--json` it adds `checklistChecks` to each row:
 
 ```
 ── Compiled
