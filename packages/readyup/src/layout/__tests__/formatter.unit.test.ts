@@ -9,7 +9,15 @@ import { createLayoutEngine } from '../layoutEngine.ts';
 const PRINTABLE_ASCII = /^[\u{20}-\u{7E}\n]*$/u;
 
 /** Tokens that name what a thing is rather than reporting an outcome. */
-const ROLE_TOKENS = ['checklist', 'kit', 'kitSource', 'sourceDirectory', 'sourcePackage', 'sourceRemote'] as const;
+const ROLE_TOKENS = [
+  'check',
+  'checklist',
+  'kit',
+  'kitSource',
+  'sourceDirectory',
+  'sourcePackage',
+  'sourceRemote',
+] as const;
 
 /**
  * Emoji that differ from the others of their family only by colour, so two status tokens drawn from one family

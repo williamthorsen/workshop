@@ -9,6 +9,7 @@ import { defineGlyphSet, type Glyph } from '@williamthorsen/toolbelt.terminal/ca
  */
 export const TOKEN_NAMES = [
   'blockedPrecondition',
+  'check',
   'checklist',
   'failedError',
   'failedRecommend',
@@ -51,6 +52,7 @@ export interface Formatter {
  */
 const GLYPHS = defineGlyphSet<TokenName>({
   blockedPrecondition: { plain: 'BLOCK', rich: '\u{1F6AB}' },
+  check: { plain: '', rich: '\u{1F9EA}' },
   checklist: { plain: '', rich: '\u{1F4CB}' },
   failedError: { plain: 'FAIL', rich: '\u{274C}' },
   failedRecommend: { plain: 'RECO', rich: '\u{1F4AC}' },
