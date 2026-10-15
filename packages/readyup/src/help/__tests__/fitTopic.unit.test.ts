@@ -63,6 +63,12 @@ describe(fitTopic, () => {
     expect(fitTopic(table, 13)).toBe(table);
   });
 
+  it('prints a table wider than 80 columns as written when it fits a wider terminal', () => {
+    const table = [`| a | ${'b'.repeat(90)} |`, '| - | - |', '| c | d |'].join('\n');
+
+    expect(fitTopic(table, 120)).toBe(table);
+  });
+
   it('measures emoji as two columns when deciding whether a table fits', () => {
     // Each emoji row is 10 code units long and 11 columns wide.
     const table = ['| ✅ | ok |', '| - | - |', '| ❌ | no |'].join('\n');
@@ -97,6 +103,20 @@ describe(fitTopic, () => {
       '- `x`',
       '  Severity: `warn`',
       '  Raised when: A file is old',
+    ]);
+  });
+
+  it('unescapes the pipes in the cells of a table rendered as a list', () => {
+    const table = [
+      '| Field | Type \\| kind | Meaning |',
+      '| - | - | - |',
+      '| `a \\| b` | `A \\| B` | Either one |',
+    ].join('\n');
+
+    expect(fitTopic(table, 30).split('\n')).toStrictEqual([
+      '- `a | b`',
+      '  Type | kind: `A | B`',
+      '  Meaning: Either one',
     ]);
   });
 

@@ -84,17 +84,22 @@ function fitTable(rows: string[], width: number, proseWidth: number): string[] {
   if (rows.every((row) => measureWidth(row) <= width)) return rows;
 
   const [headerRow = '', , ...bodyRows] = rows;
-  const headers = splitCells(headerRow).map((cell) => cell.trim());
+  const headers = splitCells(headerRow).map(readCell);
   const labelled = headers.length > 2;
 
   return bodyRows.flatMap((row) => {
-    const [lead = '', ...rest] = splitCells(row).map((cell) => cell.trim());
+    const [lead = '', ...rest] = splitCells(row).map(readCell);
     const cells = rest
       .map((cell, at) => (labelled ? `${headers[at + 1] ?? ''}: ${cell}` : cell))
       .map((cell) => wrapProse(cell, { width: proseWidth, indent: LIST_INDENT }))
       .filter((cell) => cell !== '');
     return [`- ${wrapProse(lead, { width: proseWidth, indent: LIST_INDENT, hanging: true })}`, ...cells];
   });
+}
+
+/** Returns a cell's text as a list prints it: trimmed, with the `\|` escapes that only table syntax needs undone. */
+function readCell(cell: string): string {
+  return cell.trim().replaceAll(String.raw`\|`, '|');
 }
 
 /** Wraps `text` as `wrapToWidth` does, keeping each code span whole on one line. */
