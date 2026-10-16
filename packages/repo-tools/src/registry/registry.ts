@@ -10,8 +10,10 @@ export interface RegistryEntry {
   node: YAMLMap;
   path: string | undefined;
   repo: string | undefined;
+  runner: string | undefined;
   stack: string[];
   tags: string[];
+  visibility: string | undefined;
 }
 
 /** A parsed registry: its document, kept for writing back, and its entries in file order. */
@@ -21,22 +23,35 @@ export interface Registry {
 }
 
 /** The fields of an entry that `appendEntry` writes. */
-export interface NewEntry {
+export interface NewEntry extends Partial<GitHubFields> {
   name: string;
   path: string;
   repo: string;
   stack: readonly string[];
 }
 
-/** Narrows the entries to those whose `tags` contains `tag` and whose `stack` contains `stack`, each when given. */
-export interface EntrySelection {
-  stack?: string | undefined;
-  tag?: string | undefined;
+/** The fields of an entry that are derived from GitHub. */
+export interface GitHubFields {
+  runner: string | undefined;
+  visibility: string | undefined;
 }
 
-/** Adds an entry under `repos`, writing `stack` only when it is non-empty. */
+/**
+ * Narrows the entries to those whose `tags` contains `tag`, whose `stack` contains `stack`, and whose `runner` and
+ * `visibility` equal the given values, each when given.
+ */
+export interface EntrySelection {
+  runner?: string | undefined;
+  stack?: string | undefined;
+  tag?: string | undefined;
+  visibility?: string | undefined;
+}
+
+/** Adds an entry under `repos`, writing `visibility`, `runner`, and `stack` only when each has a value. */
 export function appendEntry(registry: Registry, entry: NewEntry): void {
   const fields: Record<string, unknown> = { name: entry.name, path: entry.path, repo: entry.repo };
+  if (entry.visibility !== undefined) fields['visibility'] = entry.visibility;
+  if (entry.runner !== undefined) fields['runner'] = entry.runner;
   if (entry.stack.length > 0) fields['stack'] = [...entry.stack];
   const node = registry.document.createNode(fields);
   if (isMap(node)) {
@@ -110,13 +125,26 @@ export function selectEntries(entries: readonly RegistryEntry[], selection: Entr
   return entries.filter(
     (entry) =>
       (selection.tag === undefined || entry.tags.includes(selection.tag)) &&
-      (selection.stack === undefined || entry.stack.includes(selection.stack)),
+      (selection.stack === undefined || entry.stack.includes(selection.stack)) &&
+      (selection.visibility === undefined || entry.visibility === selection.visibility) &&
+      (selection.runner === undefined || entry.runner === selection.runner),
   );
 }
 
 /** Returns the registry's text as `saveRegistry` writes it. */
 export function serializeRegistry(registry: Registry): string {
   return registry.document.toString({ flowCollectionPadding: false });
+}
+
+/**
+ * Sets an entry's `visibility` and `runner`, removing a key whose value is `undefined`. A missing key is placed after
+ * `repo`, with `runner` after `visibility`, and an existing key keeps its position.
+ */
+export function writeGitHubFields(entry: RegistryEntry, fields: GitHubFields): void {
+  writeScalar(entry.node, 'visibility', fields.visibility, ['repo']);
+  writeScalar(entry.node, 'runner', fields.runner, ['visibility', 'repo']);
+  entry.visibility = fields.visibility;
+  entry.runner = fields.runner;
 }
 
 /**
@@ -149,8 +177,10 @@ function readEntry(node: YAMLMap): RegistryEntry | string {
     node,
     path: readString('path'),
     repo: readString('repo'),
+    runner: readString('runner'),
     stack: readStringList('stack'),
     tags: readStringList('tags'),
+    visibility: readString('visibility'),
   };
   return problems[0] ?? entry;
 
@@ -174,6 +204,28 @@ function readEntry(node: YAMLMap): RegistryEntry | string {
     }
     return items.filter((item) => typeof item === 'string');
   }
+}
+
+/**
+ * Sets a scalar key of a map, or deletes it when `value` is `undefined`. A missing key is inserted after the first of
+ * `anchors` that the map contains, else appended.
+ */
+function writeScalar(node: YAMLMap, key: string, value: string | undefined, anchors: readonly string[]): void {
+  if (value === undefined) {
+    node.delete(key);
+    return;
+  }
+  if (node.has(key)) {
+    if (node.get(key) !== value) node.set(key, value);
+    return;
+  }
+  node.set(key, value);
+  const added = node.items.pop();
+  if (added === undefined) return;
+  const anchor = anchors.find((name) => node.has(name));
+  // A parsed key is a `Scalar`; a key added by `set` is the bare string.
+  const anchorIndex = node.items.findIndex((pair) => (isScalar(pair.key) ? pair.key.value : pair.key) === anchor);
+  node.items.splice(anchorIndex === -1 ? node.items.length : anchorIndex + 1, 0, added);
 }
 
 // endregion | Helpers
