@@ -87,7 +87,7 @@ esac
 
 /** Renders the shell commands that print a call's output and exit with its status. */
 function renderCall(call: FakeCall): string {
-  return `printf '%s\\n' '${call.stdout ?? ''}'; printf '%s\\n' '${call.stderr ?? ''}' >&2; exit ${call.status ?? 0}`;
+  return String.raw`printf '%s\n' '${call.stdout ?? ''}'; printf '%s\n' '${call.stderr ?? ''}' >&2; exit ${call.status ?? 0}`;
 }
 
 // endregion | Helpers

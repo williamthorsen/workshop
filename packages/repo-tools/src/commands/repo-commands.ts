@@ -9,9 +9,9 @@ import { expandTilde, formatDisplayPath, readHome } from '../portable/paths.ts';
 import {
   appendEntry,
   assertWritable,
+  type NewEntry,
   parseRegistry,
   readRegistry,
-  type NewEntry,
   type RegistryEntry,
   saveRegistry,
   selectEntries,

@@ -67,14 +67,14 @@ export function parseVisibility(raw: string): 'public' | 'private' | undefined {
 
 /** Returns the first line of `gh`'s stderr, or a generic reason when it printed nothing. */
 function describeGhFailure(stderr: string): string {
-  return stderr.trim().split('\n')[0] || 'gh failed without a message';
+  return stderr.trim().split('\n', 1)[0] || 'gh failed without a message';
 }
 
 /** Runs `gh` and returns its status and output, or the reason that it could not be started. */
 function runGh(
   env: Readonly<Record<string, string | undefined>>,
   args: readonly string[],
-): { status: number | null; stderr: string; stdout: string } | string {
+): string | { status: number | null; stderr: string; stdout: string } {
   const result = spawnSync('gh', args, { encoding: 'utf8', env, stdio: ['ignore', 'pipe', 'pipe'] });
   if (result.error !== undefined) return `cannot run gh: ${result.error.message}`;
   return { status: result.status, stderr: result.stderr, stdout: result.stdout };
