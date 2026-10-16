@@ -71,6 +71,28 @@ describe(detectStack, () => {
 });
 
 describe('STACK_DETECTORS', () => {
+  it.each([
+    ['docker', 'Dockerfile'],
+    ['docker', 'compose.yaml'],
+    ['docker', 'docker-compose.yml'],
+    ['go', 'go.mod'],
+    ['playwright', 'playwright.config.ts'],
+    ['shellspec', '.shellspec'],
+  ])('detects %s from a tracked %s at the root and in a subdirectory', (name, trackedPath) => {
+    expect(detectStack([trackedPath], readFrom({})).stack).toStrictEqual([name]);
+    expect(detectStack([`services/api/${trackedPath}`], readFrom({})).stack).toStrictEqual([name]);
+  });
+
+  it.each([
+    ['neon', '@neondatabase/serverless'],
+    ['playwright', '@playwright/test'],
+    ['postgres', 'pg'],
+    ['postgres', 'postgres'],
+  ])('detects %s from a dependency on %s', (name, dependency) => {
+    const files = { 'package.json': manifest({ [dependency]: '1' }) };
+    expect(detectStack(['package.json'], readFrom(files)).stack).toStrictEqual([name]);
+  });
+
   it('declares its names in sorted order', () => {
     const names = Object.keys(STACK_DETECTORS);
     expect(names).toStrictEqual(names.toSorted());
