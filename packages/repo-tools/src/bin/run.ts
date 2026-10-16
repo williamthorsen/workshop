@@ -3,6 +3,7 @@ import process from 'node:process';
 import { runCli, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
 
 import { GIT_ADAPTERS, PROG, REPO_COMMANDS, type RepoContext } from '../commands/repo-commands.ts';
+import { createGhReader } from '../github/github-repo.ts';
 
 /** The context and writers with which `run` invokes the command tree. */
 export interface RunOptions {
@@ -22,10 +23,10 @@ export async function run(argv: readonly string[], options: RunOptions = buildPr
 
 // region | Helpers
 
-/** Builds the options that bind the CLI to the current process and to git. */
+/** Builds the options that bind the CLI to the current process, to git, and to gh. */
 function buildProcessOptions(): RunOptions {
   return {
-    context: { adapters: GIT_ADAPTERS, cwd: process.cwd(), env: process.env },
+    context: { adapters: GIT_ADAPTERS, cwd: process.cwd(), env: process.env, github: createGhReader(process.env) },
     stderr: process.stderr,
     stdout: process.stdout,
   };
