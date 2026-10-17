@@ -55,11 +55,13 @@ export function findGraphDanglingReferences(view: ArtifactGraphView): Array<Viol
     for (const [seedIndex, seed] of seeds.entries()) {
       requireKnown(tierIds, seed.tierId, `${at}.seededBy[${seedIndex}].tierId`, 'tiers');
     }
-    if (artifact.resolution !== undefined) {
-      requireKnown(sourceIds, artifact.resolution.winner.sourceId, `${at}.resolution.winner.sourceId`, 'sources');
-      for (const [loserIndex, loser] of artifact.resolution.shadowed.entries()) {
-        requireKnown(sourceIds, loser.sourceId, `${at}.resolution.shadowed[${loserIndex}].sourceId`, 'sources');
-      }
+    if (artifact.resolution === undefined) {
+      continue;
+    }
+
+    requireKnown(sourceIds, artifact.resolution.winner.sourceId, `${at}.resolution.winner.sourceId`, 'sources');
+    for (const [loserIndex, loser] of artifact.resolution.shadowed.entries()) {
+      requireKnown(sourceIds, loser.sourceId, `${at}.resolution.shadowed[${loserIndex}].sourceId`, 'sources');
     }
   }
 

@@ -6,7 +6,7 @@ import { resolveCheckIds } from '../resolveCheckIds.ts';
 describe(resolveCheckIds, () => {
   describe('given a kit published by a package', () => {
     it('namespaces a scoped package under its name with the scope stripped', () => {
-      const ids = resolveCheckIds('no-instanceof-error', packageProvenance('@williamthorsen/toolbelt.errors'));
+      const ids = resolveCheckIds('no-instanceof-error', buildPackageProvenance('@williamthorsen/toolbelt.errors'));
 
       expect(ids).toStrictEqual({
         accepted: ['toolbelt.errors/no-instanceof-error', '@williamthorsen/toolbelt.errors/no-instanceof-error'],
@@ -16,7 +16,7 @@ describe(resolveCheckIds, () => {
     });
 
     it('accepts one form for an unscoped package, whose two forms coincide', () => {
-      const ids = resolveCheckIds('no-instanceof-error', packageProvenance('readyup'));
+      const ids = resolveCheckIds('no-instanceof-error', buildPackageProvenance('readyup'));
 
       expect(ids).toStrictEqual({
         accepted: ['readyup/no-instanceof-error'],
@@ -26,7 +26,7 @@ describe(resolveCheckIds, () => {
     });
 
     it('does not accept the bare id', () => {
-      const ids = resolveCheckIds('no-instanceof-error', packageProvenance('@williamthorsen/toolbelt.errors'));
+      const ids = resolveCheckIds('no-instanceof-error', buildPackageProvenance('@williamthorsen/toolbelt.errors'));
 
       expect(ids?.accepted).not.toContain('no-instanceof-error');
     });
@@ -34,7 +34,7 @@ describe(resolveCheckIds, () => {
 
   describe('given a kit fetched from a repository', () => {
     it('namespaces it under owner and repository, accepting only that form', () => {
-      const ids = resolveCheckIds('no-instanceof-error', repositoryProvenance('acme', '.github'));
+      const ids = resolveCheckIds('no-instanceof-error', buildGitHubProvenance('acme', '.github'));
 
       expect(ids).toStrictEqual({
         accepted: ['acme/.github/no-instanceof-error'],
@@ -44,7 +44,7 @@ describe(resolveCheckIds, () => {
     });
 
     it('leaves the ref out of the namespace', () => {
-      const ids = resolveCheckIds('no-instanceof-error', { ...repositoryProvenance('acme', 'standards'), ref: 'v2' });
+      const ids = resolveCheckIds('no-instanceof-error', { ...buildGitHubProvenance('acme', 'standards'), ref: 'v2' });
 
       expect(ids?.printed).toBe('acme/standards/no-instanceof-error');
     });
@@ -83,20 +83,20 @@ describe(resolveCheckIds, () => {
   });
 
   it('resolves to undefined for a check declaring no id', () => {
-    expect(resolveCheckIds(undefined, packageProvenance('@williamthorsen/toolbelt.errors'))).toBeUndefined();
+    expect(resolveCheckIds(undefined, buildPackageProvenance('@williamthorsen/toolbelt.errors'))).toBeUndefined();
   });
 });
 
 // region | Helpers
 
-/** Returns the provenance of a kit published by the named package. */
-function packageProvenance(packageName: string): KitProvenance {
-  return { kind: 'package', packageName, version: '1.0.0', source: `npm:${packageName}` };
+/** Returns the provenance of a kit fetched from the named GitHub repository at `main`. */
+function buildGitHubProvenance(owner: string, repo: string): RepositoryProvenance {
+  return { kind: 'repository', host: 'github', owner, repo, ref: 'main', source: `github:${owner}/${repo}` };
 }
 
-/** Returns the provenance of a kit fetched from the named GitHub repository at `main`. */
-function repositoryProvenance(owner: string, repo: string): RepositoryProvenance {
-  return { kind: 'repository', host: 'github', owner, repo, ref: 'main', source: `github:${owner}/${repo}` };
+/** Returns the provenance of a kit published by the named package. */
+function buildPackageProvenance(packageName: string): KitProvenance {
+  return { kind: 'package', packageName, version: '1.0.0', source: `npm:${packageName}` };
 }
 
 // endregion | Helpers

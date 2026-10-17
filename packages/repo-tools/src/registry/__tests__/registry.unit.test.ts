@@ -1,3 +1,4 @@
+import assert from 'node:assert';
 import fs from 'node:fs';
 
 import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
@@ -260,7 +261,7 @@ function names(entries: readonly { name: string | undefined }[]): (string | unde
 /** Parses registry text, failing the test when it is refused. */
 function parse(text: string): Registry {
   const registry = parseRegistry(text);
-  if (typeof registry === 'string') throw new Error(registry);
+  if (typeof registry === 'string') assert.fail(registry);
   return registry;
 }
 

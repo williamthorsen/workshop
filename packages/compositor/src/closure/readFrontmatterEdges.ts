@@ -123,10 +123,12 @@ function dedupeEdges(edges: ReadonlyArray<DependencyEdge>): Array<DependencyEdge
   const deduped: Array<DependencyEdge> = [];
   for (const edge of edges) {
     const key = JSON.stringify([edge.to, edge.via, edge.partialId]);
-    if (!seen.has(key)) {
-      seen.add(key);
-      deduped.push(edge);
+    if (seen.has(key)) {
+      continue;
     }
+
+    seen.add(key);
+    deduped.push(edge);
   }
   return deduped;
 }

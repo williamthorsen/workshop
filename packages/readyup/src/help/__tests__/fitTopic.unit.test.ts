@@ -108,7 +108,7 @@ describe(fitTopic, () => {
 
   it('unescapes the pipes in the cells of a table rendered as a list', () => {
     const table = [
-      '| Field | Type \\| kind | Meaning |',
+      String.raw`| Field | Type \| kind | Meaning |`,
       '| - | - | - |',
       '| `a \\| b` | `A \\| B` | Either one |',
     ].join('\n');

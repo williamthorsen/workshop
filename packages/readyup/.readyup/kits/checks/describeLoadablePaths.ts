@@ -15,7 +15,7 @@ export function describeLoadablePaths(): CheckOutcome {
   const misplaced = readManifestEntries().flatMap((entry) => {
     if (entry.path === undefined) return [];
     const recorded = resolveRecordedPath(entry.path);
-    return recorded === buildLoadPath(entry.name) ? [] : [`${entry.name} at ${recorded}`];
+    return recorded === buildLoadPath(entry.name) ? [] : `${entry.name} at ${recorded}`;
   });
 
   if (misplaced.length === 0) return { ok: true };

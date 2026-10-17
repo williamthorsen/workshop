@@ -206,7 +206,7 @@ function describeRecordedHashes(entry: ManifestEntry): CheckOutcome {
 /** Names each bundle in the kit directory that no manifest entry records, with the recorded count as the evidence. */
 function describeUnrecordedBundles(entries: ManifestEntry[]): CheckOutcome {
   const recordedPaths = new Set(
-    entries.flatMap((entry) => (entry.path === undefined ? [] : [resolveRecordedPath(entry.path)])),
+    entries.flatMap((entry) => (entry.path === undefined ? [] : resolveRecordedPath(entry.path))),
   );
   const bundlePaths = listCompiledBundlePaths();
   const unrecorded = bundlePaths.filter((bundlePath) => !recordedPaths.has(bundlePath));
