@@ -55,7 +55,7 @@ const GLYPHS = defineGlyphSet<TokenName>({
   check: { plain: '', rich: '\u{1F9EA}' },
   checklist: { plain: '', rich: '\u{1F4CB}' },
   failedError: { plain: 'FAIL', rich: '\u{274C}' },
-  failedRecommend: { plain: 'RECO', rich: '\u{1F4AC}' },
+  failedRecommend: { plain: 'RECO', rich: '\u{1F4A1}' },
   failedWarn: { plain: 'WARN', rich: '\u{1F536}' },
   fix: { plain: 'FIX', rich: '\u{1F48A}' },
   kit: { plain: '', rich: '\u{1F4D3}' },
@@ -85,7 +85,7 @@ export const plainFormatter: Formatter = {
 /** A formatter whose tokens are emoji. */
 export const richFormatter: Formatter = {
   detailSeparator: '\u{00B7}',
-  hintPrefix: '\u{1F4A1} Hint:',
+  hintPrefix: '\u{1F449} Hint:',
   rules: {
     kit: '\u{2501}',
     section: '\u{2500}',
