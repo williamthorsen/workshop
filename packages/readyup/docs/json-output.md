@@ -60,7 +60,7 @@ An error body may also include `hint`, one action that would clear the failure:
 }
 ```
 
-`hint` is optional and absent when nothing useful can be suggested. It never duplicates text already in `message`, so a consumer can present the two separately. Human output renders it on a line of its own, prefixed `Hint:`, which the rich style leads with a light-bulb emoji.
+`hint` is optional and absent when nothing useful can be suggested. It never duplicates text already in `message`, so a consumer can present the two separately. Human output renders it on a line of its own, prefixed `Hint:`, which the rich style leads with a pointing-hand emoji.
 
 The `compile` payload contains a top-level `hint` of the same kind when a compile of one project finds neither kit sources nor a manifest: It names `rdy init`, or the configured source directory when `rdy init` would not scaffold into it. A consumer reads it as it reads the envelope's `hint`. The field is absent from every other compile, `--recursive` included.
 
