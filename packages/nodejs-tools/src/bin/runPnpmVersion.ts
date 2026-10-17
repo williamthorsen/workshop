@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 
-import type { PnpmVersionResult } from './run.ts';
+import type { PnpmVersionResult } from './thor-node-result.ts';
 
 /**
  * Runs `pnpm --version` in a directory and returns the last non-empty line that it wrote to stdout, or why it

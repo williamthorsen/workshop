@@ -2,8 +2,9 @@ import type { PackageManagerPin, StrandedAsdfShim } from '@williamthorsen/toolbe
 import { describe, expect, it } from 'vitest';
 
 import type { PnpmProvider } from '../resolvePnpmProvider.ts';
-import { type PnpmVersionResult, run, type ThorNodeEffects } from '../run.ts';
+import { run } from '../run.ts';
 import { runWithBuffers } from '../test-utils/runWithBuffers.ts';
+import type { PnpmVersionResult, ThorNodeEffects } from '../thor-node-result.ts';
 
 const DATA_DIR = '/Users/me/.asdf';
 const EXEC_PATH = `${DATA_DIR}/installs/nodejs/24.20.0/bin/node`;
