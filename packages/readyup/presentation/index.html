@@ -1,0 +1,1949 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ReadyUp deck</title>
+    <link rel="icon" href="data:," />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+    />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@6.0.2/dist/reveal.css" />
+    <style>
+      :root {
+        /* One palette: drafting paper under white cards; status colours match the marks that rdy prints; the accent is
+           reserved for what a kit author touches */
+        --bg: #eef1f5;
+        --paper: #ffffff;
+        --ink: #141c26;
+        --ink-2: #4b5664;
+        --line: #c3cbd5;
+        --grid: #d9dfe7;
+        --accent: #1a56b0;
+        --accent-soft: #e4ecf8;
+        --pass: #1b7a3e;
+        --pass-soft: #dff3e5;
+        --error: #bb272f;
+        --error-soft: #fbe3e4;
+        --warn: #9b5a00;
+        --warn-soft: #fdeed2;
+        --skip: #586472;
+        --skip-soft: #e6eaef;
+        --blocked-soft: #f6ecec;
+        --on-ink-muted: #aab6c4;
+        --sans: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+        --mono: 'IBM Plex Mono', 'SF Mono', Menlo, Consolas, monospace;
+        color-scheme: light;
+      }
+
+      html,
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--sans);
+      }
+      * {
+        box-sizing: border-box;
+      }
+
+      /* Deck frame */
+      .reveal {
+        font-family: var(--sans);
+        font-size: 24px;
+        color: var(--ink);
+      }
+      .reveal-viewport {
+        background: radial-gradient(var(--grid) 1.2px, transparent 1.4px) 0 0 / 24px 24px var(--bg);
+      }
+      .reveal .slides {
+        text-align: left;
+      }
+      .reveal .slides > section {
+        padding: 0;
+        height: 100%;
+      }
+      .reveal aside.notes {
+        display: none;
+      }
+      .slide {
+        height: 100%;
+        padding: 26px 44px 58px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+
+      /* Chrome: reveal's arrows and the position indicator */
+      .reveal .controls {
+        color: var(--ink-2);
+      }
+      .reveal .controls .enabled:hover {
+        color: var(--ink);
+        opacity: 1;
+      }
+      .reveal .controls button:focus-visible {
+        outline: 3px solid var(--ink);
+        outline-offset: 6px;
+        border-radius: 4px;
+        opacity: 1;
+      }
+      .pos {
+        position: absolute;
+        left: 24px;
+        bottom: 18px;
+        z-index: 12;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        pointer-events: none;
+      }
+      .pos ol {
+        display: flex;
+        gap: 6px;
+        align-items: flex-end;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        height: 10px;
+      }
+      .pos li {
+        width: 26px;
+        height: 6px;
+        border-radius: 3px;
+        background: var(--line);
+      }
+      .pos-steps li {
+        width: 14px;
+      }
+      .pos li.on {
+        background: var(--ink-2);
+      }
+      .pos li.now {
+        background: var(--ink);
+        height: 10px;
+      }
+      .pos-steps:empty {
+        display: none;
+      }
+      .pos-label {
+        font: 500 14px var(--mono);
+        color: var(--ink-2);
+      }
+
+      /* Type */
+      .reveal h1,
+      .reveal h2,
+      .reveal h3 {
+        margin: 0;
+        font-weight: 600;
+        letter-spacing: -0.015em;
+        line-height: 1.05;
+        text-wrap: balance;
+      }
+      .reveal h1 {
+        font-size: 124px;
+      }
+      .reveal h2 {
+        font-size: 38px;
+      }
+      .reveal h3 {
+        font-size: 24px;
+      }
+      .reveal p {
+        margin: 0;
+      }
+      .reveal code,
+      .reveal pre,
+      .reveal kbd {
+        font-family: var(--mono);
+      }
+      .reveal a {
+        color: var(--ink);
+        text-decoration: underline;
+        text-decoration-color: var(--line);
+        text-underline-offset: 0.16em;
+        text-decoration-thickness: 2px;
+        cursor: pointer;
+      }
+      .reveal a:hover {
+        text-decoration-color: var(--ink);
+      }
+      .reveal a:focus-visible {
+        outline: 3px solid var(--ink);
+        outline-offset: 4px;
+        border-radius: 3px;
+      }
+      .slide-head {
+        display: flex;
+        align-items: baseline;
+        gap: 18px;
+      }
+      .slide-head .who {
+        font-size: 22px;
+        color: var(--ink-2);
+      }
+      .slide-head .chip {
+        margin-left: auto;
+        font-size: 18px;
+        font-weight: 500;
+        color: var(--ink-2);
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 3px 10px;
+      }
+      .stage {
+        position: relative;
+        flex: 1;
+        min-height: 0;
+      }
+      .caption {
+        font-size: 26px;
+        font-weight: 500;
+        line-height: 60px;
+        height: 60px;
+        white-space: nowrap;
+      }
+      .caption code,
+      .hnode code,
+      .cmd-list code {
+        font-size: 0.9em;
+        font-weight: 500;
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        padding: 1px 7px;
+      }
+      .ink-box {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--ink);
+        color: var(--paper);
+        border-radius: 10px;
+        font: 600 24px var(--mono);
+        padding: 10px 20px;
+      }
+
+      /* Slide 1 */
+      .s-title .slide {
+        display: grid;
+        grid-template-columns: 1fr 540px;
+        align-items: center;
+        gap: 48px;
+      }
+      .s-title .lede {
+        margin: 22px 0 0;
+        font-size: 32px;
+        line-height: 1.3;
+        max-width: 20ch;
+      }
+      .s-title .cmd {
+        margin: 28px 0 0;
+        font-size: 22px;
+        color: var(--ink-2);
+      }
+      .s-title .cmd code {
+        color: var(--ink);
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 3px 10px;
+      }
+      .motif {
+        display: block;
+        width: 540px;
+        max-width: 100%;
+        height: auto;
+        overflow: visible;
+      }
+
+      /* Slides 2 and 8: the same timeline, before and after */
+      .timeline {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        gap: 0;
+      }
+      .timeline .hnode {
+        flex: 0 0 256px;
+        min-height: 230px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 20px 22px;
+        background: var(--paper);
+        border: 2px solid var(--line);
+        border-radius: 10px;
+        font-size: 24px;
+        line-height: 1.3;
+      }
+      .timeline .hnode.drift {
+        border-style: dashed;
+      }
+      .timeline .hnode.late {
+        background: var(--error-soft);
+        border-color: var(--error);
+      }
+      .timeline .hnode.early {
+        background: var(--pass-soft);
+        border-color: var(--pass);
+      }
+      .timeline .hnode.ink {
+        background: var(--ink);
+        border-color: var(--ink);
+        color: var(--paper);
+      }
+      .timeline .hnode .mark {
+        font-size: 30px;
+        line-height: 1;
+      }
+      .timeline .hnode .sub {
+        font-size: 19px;
+        color: var(--ink-2);
+        margin-top: auto;
+      }
+      .timeline .hnode.ink .sub {
+        color: var(--on-ink-muted);
+      }
+      .timeline .hnode .sub code {
+        background: transparent;
+        border: 0;
+        padding: 0;
+        font-size: 17px;
+      }
+      .timeline .hnode .path {
+        font: 500 17px var(--mono);
+        color: var(--accent);
+      }
+      .timeline .hnode .bars {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 6px;
+      }
+      .timeline .hnode .bars i {
+        display: block;
+        height: 8px;
+        border-radius: 4px;
+        background: var(--grid);
+      }
+      .timeline .hnode .bars i:nth-child(2) {
+        width: 70%;
+      }
+      .timeline .hnode .bars i:nth-child(3) {
+        width: 85%;
+      }
+      .timeline .hnode.ink .bars i {
+        background: var(--ink-2);
+      }
+      .timeline .arrow {
+        flex: 1 1 0;
+        height: 3px;
+        background: var(--line);
+        position: relative;
+      }
+      .timeline .arrow.dashed {
+        background: repeating-linear-gradient(90deg, var(--line) 0 8px, transparent 8px 15px);
+      }
+      .timeline .arrow::after {
+        content: '';
+        position: absolute;
+        right: -2px;
+        top: -7px;
+        border-left: 12px solid var(--line);
+        border-top: 8.5px solid transparent;
+        border-bottom: 8.5px solid transparent;
+      }
+      .timeline .arrow.red {
+        background: var(--error);
+      }
+      .timeline .arrow.red::after {
+        border-left-color: var(--error);
+      }
+      .timeline .arrow.green {
+        background: var(--pass);
+      }
+      .timeline .arrow.green::after {
+        border-left-color: var(--pass);
+      }
+
+      /* Slide 3 */
+      .idea {
+        display: block;
+        width: 1192px;
+        height: 484px;
+        overflow: visible;
+      }
+      .idea text {
+        fill: var(--ink);
+        font-family: var(--sans);
+      }
+      .idea .edge {
+        fill: none;
+        stroke: var(--line);
+        stroke-width: 2.5;
+      }
+      .idea .box {
+        fill: var(--paper);
+        stroke: var(--line);
+        stroke-width: 2;
+      }
+      .idea .label {
+        font-size: 20px;
+        font-weight: 500;
+        dominant-baseline: central;
+      }
+      .idea .kind {
+        font-size: 15px;
+        fill: var(--ink-2);
+        dominant-baseline: central;
+      }
+      .idea .file {
+        font: 500 18px var(--mono);
+        fill: var(--accent);
+        dominant-baseline: central;
+      }
+      .idea .file-box {
+        fill: var(--accent-soft);
+        stroke: var(--accent);
+      }
+      .idea .root-box {
+        fill: var(--ink);
+        stroke: var(--ink);
+      }
+      .idea .root-k {
+        font-size: 14px;
+        letter-spacing: 0.08em;
+        fill: var(--on-ink-muted);
+        dominant-baseline: central;
+      }
+      .idea .root-v {
+        font: 500 18px var(--mono);
+        fill: var(--paper);
+        dominant-baseline: central;
+      }
+      .idea .cmd {
+        font: 500 20px var(--mono);
+        fill: var(--ink-2);
+        text-anchor: middle;
+      }
+      .idea .out-box {
+        fill: var(--paper);
+        stroke: var(--line);
+        stroke-width: 1.5;
+      }
+      .idea .out-mark {
+        font-size: 22px;
+        text-anchor: middle;
+        dominant-baseline: central;
+      }
+      .idea .out-text {
+        font: 500 19px var(--mono);
+        dominant-baseline: central;
+      }
+      .idea .out-sub {
+        font-size: 17px;
+        fill: var(--ink-2);
+        dominant-baseline: central;
+      }
+      .idea .exit-box {
+        fill: var(--ink);
+      }
+      .idea .exit-text {
+        font: 600 22px var(--mono);
+        fill: var(--paper);
+        text-anchor: middle;
+        dominant-baseline: central;
+      }
+      .idea .fix-box {
+        fill: var(--accent-soft);
+        stroke: var(--accent);
+      }
+      .ah-ink {
+        fill: var(--ink);
+      }
+      .ah-error {
+        fill: var(--error);
+      }
+
+      /* Slide 4 */
+      .code-sheet {
+        position: relative;
+        margin: 0;
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        box-shadow: 0 1px 0 var(--line);
+        overflow: hidden;
+      }
+      .code-sheet pre {
+        margin: 0;
+        padding: 16px 20px;
+        font: 19px/27px var(--mono);
+        white-space: pre;
+        color: var(--ink);
+        overflow: hidden;
+      }
+      .code-sheet .st,
+      .code-sheet .cut {
+        color: var(--ink-2);
+      }
+      .code-sheet .f {
+        background: var(--accent-soft);
+        border-radius: 4px;
+        padding: 2px 4px;
+        margin: 0 -4px;
+        -webkit-box-decoration-break: clone;
+        box-decoration-break: clone;
+      }
+      .code-sheet .f b {
+        font-weight: 600;
+        color: var(--accent);
+      }
+      .note {
+        position: absolute;
+        right: 20px;
+        top: calc(var(--top) + var(--row) * var(--lh));
+        height: var(--lh);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding-left: 12px;
+        border-left: 3px solid var(--accent);
+        font-size: 18px;
+        color: var(--ink-2);
+        white-space: nowrap;
+      }
+      .note b {
+        font: 500 18px var(--mono);
+        color: var(--accent);
+      }
+      .code-sheet .note {
+        --top: 16px;
+        --lh: 27px;
+      }
+
+      /* Slides 5 and 6: terminal */
+      .term {
+        margin: 0;
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        box-shadow: 0 10px 28px rgb(20 28 38 / 0.16);
+      }
+      .term-tab {
+        font: 500 15px var(--mono);
+        color: var(--ink-2);
+        padding: 8px 16px;
+        border-bottom: 1px solid var(--line);
+      }
+      .term pre {
+        margin: 0;
+        padding: 12px 16px;
+        font: 17px/25px var(--mono);
+        white-space: pre;
+        overflow: hidden;
+      }
+      .term .dim {
+        color: var(--ink-2);
+      }
+      .term .n-error,
+      .term .n-blocked {
+        color: var(--error);
+        font-weight: 600;
+      }
+      .term .n-warn {
+        color: var(--warn);
+        font-weight: 600;
+      }
+      .term .n-pass {
+        color: var(--pass);
+        font-weight: 600;
+      }
+      .term .n-skip {
+        color: var(--skip);
+        font-weight: 600;
+      }
+      .s-output .term {
+        position: relative;
+        width: 1192px;
+        box-shadow: 0 1px 0 var(--line);
+      }
+      .s-output .term pre {
+        padding: 14px 20px;
+        font: 22px/36px var(--mono);
+      }
+      .s-output .term-tab {
+        font-size: 17px;
+      }
+      .s-output .note {
+        --top: calc(36px + 14px);
+        --lh: 36px;
+        border-left-color: var(--ink-2);
+        font-size: 19px;
+      }
+      .s-output .note b {
+        font: 500 19px var(--mono);
+        color: var(--ink);
+      }
+
+      /* Slide 6 */
+      .stage-run {
+        width: 1180px;
+        height: 500px;
+        margin: 0 auto;
+        flex: none;
+      }
+      .run {
+        display: block;
+        width: 1180px;
+        height: 500px;
+        overflow: visible;
+      }
+      .run text {
+        fill: var(--ink);
+        font-family: var(--sans);
+      }
+      .edge {
+        fill: none;
+        stroke: var(--line);
+        stroke-width: 2.5;
+      }
+      .edge.e-pass.on {
+        stroke: var(--pass);
+      }
+      .edge.e-blocked.on {
+        stroke: var(--error);
+        stroke-dasharray: 7 6;
+      }
+      .edge.now {
+        stroke-width: 4;
+      }
+      .node .box {
+        fill: var(--paper);
+        stroke: var(--line);
+        stroke-width: 2;
+      }
+      .node .ring {
+        fill: none;
+        stroke: var(--line);
+        stroke-width: 2;
+        stroke-dasharray: 3 3;
+      }
+      .node .mark {
+        opacity: 0;
+        font-size: 22px;
+        text-anchor: middle;
+        dominant-baseline: central;
+      }
+      .node .label {
+        font-size: 20px;
+        font-weight: 500;
+        dominant-baseline: central;
+      }
+      .node.on .ring {
+        opacity: 0;
+      }
+      .node.on .mark {
+        opacity: 1;
+      }
+      .node.on.st-pass .box {
+        fill: var(--pass-soft);
+        stroke: var(--pass);
+      }
+      .node.on.st-error .box {
+        fill: var(--error-soft);
+        stroke: var(--error);
+      }
+      .node.on.st-warn .box {
+        fill: var(--warn-soft);
+        stroke: var(--warn);
+      }
+      .node.on.st-skip .box {
+        fill: var(--skip-soft);
+        stroke: var(--skip);
+      }
+      .node.on.st-blocked .box {
+        fill: var(--blocked-soft);
+        stroke: var(--error);
+        stroke-dasharray: 7 6;
+      }
+      .node.on.st-blocked .label {
+        fill: var(--ink-2);
+      }
+      .node.now .box {
+        stroke-width: 4;
+        filter: drop-shadow(0 4px 10px rgb(20 28 38 / 0.25));
+      }
+      .root .box {
+        fill: var(--ink);
+      }
+      .root text {
+        fill: var(--paper);
+        dominant-baseline: central;
+      }
+      .root .k {
+        font-size: 14px;
+        letter-spacing: 0.08em;
+        fill: var(--on-ink-muted);
+      }
+      .root .v {
+        font: 500 18px var(--mono);
+      }
+      .flow {
+        fill: none;
+        stroke-width: 3;
+        stroke-linecap: round;
+        opacity: 0;
+        stroke-dasharray: 1;
+        stroke-dashoffset: 1;
+      }
+      .flow.on {
+        opacity: 0.55;
+        stroke-dashoffset: 0;
+      }
+      .flow.now {
+        opacity: 1;
+        stroke-width: 4;
+      }
+      .c-pass {
+        stroke: var(--pass);
+      }
+      .c-error {
+        stroke: var(--error);
+      }
+      .c-warn {
+        stroke: var(--warn);
+      }
+      .c-skip {
+        stroke: var(--skip);
+      }
+      .c-blocked {
+        stroke: var(--error);
+      }
+      .flow.c-blocked {
+        stroke-dasharray: 0.03 0.025;
+        stroke-dashoffset: 0;
+      }
+      .tally .frame {
+        fill: none;
+        stroke: var(--line);
+        stroke-width: 1.5;
+        stroke-dasharray: 5 4;
+      }
+      .tally .head {
+        font-size: 15px;
+        letter-spacing: 0.08em;
+        fill: var(--ink-2);
+      }
+      .tally .headmark {
+        font-size: 16px;
+        opacity: 0;
+      }
+      .tally.on .frame {
+        stroke: var(--error);
+        stroke-width: 2.5;
+        stroke-dasharray: none;
+      }
+      .tally.on .head {
+        fill: var(--ink);
+        font-weight: 600;
+      }
+      .tally.on .headmark {
+        opacity: 1;
+      }
+      .tally.now .frame {
+        stroke-width: 4;
+      }
+      .trow .rbox {
+        fill: var(--paper);
+        stroke: var(--line);
+        stroke-width: 1.5;
+      }
+      .trow .tmark {
+        font-size: 20px;
+        text-anchor: middle;
+        dominant-baseline: central;
+        opacity: 0.55;
+      }
+      .trow .tlabel {
+        font-size: 18px;
+        dominant-baseline: central;
+      }
+      .trow .zero,
+      .trow .count {
+        font: 600 22px var(--mono);
+        text-anchor: end;
+        dominant-baseline: central;
+      }
+      .trow .zero {
+        fill: var(--ink-2);
+        font-weight: 400;
+      }
+      .trow .count {
+        opacity: 0;
+      }
+      .trow.on .tmark {
+        opacity: 1;
+      }
+      .trow.on .zero {
+        opacity: 0;
+      }
+      .trow.on .count {
+        opacity: 1;
+      }
+      .trow.on.st-pass .rbox {
+        fill: var(--pass-soft);
+        stroke: var(--pass);
+      }
+      .trow.on.st-pass .count {
+        fill: var(--pass);
+      }
+      .trow.on.st-error .rbox {
+        fill: var(--error-soft);
+        stroke: var(--error);
+      }
+      .trow.on.st-error .count {
+        fill: var(--error);
+      }
+      .trow.on.st-warn .rbox {
+        fill: var(--warn-soft);
+        stroke: var(--warn);
+      }
+      .trow.on.st-warn .count {
+        fill: var(--warn);
+      }
+      .trow.on.st-skip .rbox {
+        fill: var(--skip-soft);
+        stroke: var(--skip);
+      }
+      .trow.on.st-skip .count {
+        fill: var(--skip);
+      }
+      .trow.on.st-blocked .rbox {
+        fill: var(--blocked-soft);
+        stroke: var(--error);
+        stroke-dasharray: 7 6;
+      }
+      .trow.on.st-blocked .count {
+        fill: var(--error);
+      }
+      .trow.now .rbox {
+        stroke-width: 3;
+      }
+      .verdict .gate,
+      .verdict .vbox,
+      .verdict .xbox {
+        fill: var(--paper);
+        stroke: var(--line);
+        stroke-width: 1.5;
+        stroke-dasharray: 5 4;
+      }
+      .verdict .gate-label {
+        font: 500 15px var(--mono);
+        fill: var(--paper);
+        opacity: 0;
+        dominant-baseline: central;
+      }
+      .verdict .vtext {
+        font: 500 20px var(--mono);
+        opacity: 0;
+        dominant-baseline: central;
+      }
+      .verdict .xtext {
+        font: 600 20px var(--mono);
+        fill: var(--paper);
+        opacity: 0;
+        text-anchor: middle;
+        dominant-baseline: central;
+      }
+      .verdict .p-error,
+      .verdict .p-warn,
+      .verdict .p-link {
+        fill: none;
+        stroke-width: 3;
+        stroke-linejoin: round;
+        stroke-dasharray: 1;
+        stroke-dashoffset: 1;
+        opacity: 0;
+      }
+      .verdict .p-error {
+        stroke: var(--error);
+      }
+      .verdict .p-warn {
+        stroke: var(--warn);
+      }
+      .verdict .p-link {
+        stroke: var(--ink);
+      }
+      .verdict .stop {
+        stroke: var(--warn);
+        stroke-width: 4;
+        stroke-linecap: round;
+        opacity: 0;
+      }
+      .verdict.on .gate {
+        fill: var(--ink);
+        stroke: var(--ink);
+        stroke-dasharray: none;
+      }
+      .verdict.on .gate-label {
+        opacity: 1;
+      }
+      .verdict.on .vbox {
+        fill: var(--error-soft);
+        stroke: var(--error);
+        stroke-width: 2.5;
+        stroke-dasharray: none;
+      }
+      .verdict.on .xbox {
+        fill: var(--ink);
+        stroke: var(--ink);
+        stroke-dasharray: none;
+      }
+      .verdict.on .vtext,
+      .verdict.on .xtext,
+      .verdict.on .stop {
+        opacity: 1;
+      }
+      .verdict.on .p-error,
+      .verdict.on .p-warn,
+      .verdict.on .p-link {
+        opacity: 1;
+        stroke-dashoffset: 0;
+      }
+      .s-run[data-step='8'] .rollup,
+      .s-run[data-step='8'] .flow {
+        opacity: 0;
+      }
+      .s-run .term {
+        position: absolute;
+        left: 430px;
+        top: 0;
+        width: 750px;
+        height: 500px;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(14px);
+      }
+      .s-run .term.on {
+        opacity: 1;
+        visibility: visible;
+        transform: none;
+      }
+      .captions {
+        position: relative;
+        height: 60px;
+      }
+      .captions .caption {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        visibility: hidden;
+      }
+      .captions .caption.now {
+        opacity: 1;
+        visibility: visible;
+      }
+      .reveal .fragment.step {
+        position: absolute;
+        width: 0;
+        height: 0;
+      }
+
+      /* Slide 7 */
+      .panels {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        grid-template-columns: 440px 1fr;
+        gap: 32px;
+      }
+      .panel {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding: 20px 24px 22px;
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        box-shadow: 0 1px 0 var(--line);
+      }
+      .panel h3 {
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--line);
+      }
+      .gate-flow {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        flex: 1;
+      }
+      .gate-flow .from {
+        align-self: center;
+      }
+      .gate-flow .drop {
+        align-self: center;
+        width: 3px;
+        height: 22px;
+        background: var(--line);
+      }
+      .exits {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .exits li {
+        display: grid;
+        grid-template-columns: 96px 1fr;
+        align-items: center;
+        gap: 16px;
+        padding: 12px 16px;
+        border: 2px solid var(--line);
+        border-radius: 10px;
+        font-size: 20px;
+        line-height: 1.3;
+      }
+      .exits code {
+        font: 600 20px var(--mono);
+      }
+      .exits .verb {
+        display: block;
+        font-size: 17px;
+        color: var(--ink-2);
+      }
+      .exits .ok {
+        background: var(--pass-soft);
+        border-color: var(--pass);
+      }
+      .exits .ok code {
+        color: var(--pass);
+      }
+      .exits .bad {
+        background: var(--error-soft);
+        border-color: var(--error);
+      }
+      .exits .bad code {
+        color: var(--error);
+      }
+      .exits .usage {
+        background: var(--skip-soft);
+        border-color: var(--skip);
+      }
+      .exits .usage code {
+        color: var(--skip);
+      }
+      .trust {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        flex: 1;
+      }
+      .trust .row {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 14px;
+        align-items: start;
+      }
+      .trust .role {
+        font-size: 18px;
+        color: var(--ink-2);
+        padding-top: 8px;
+      }
+      .trust .chain {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .trust .step {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+        line-height: 1.3;
+      }
+      .trust .step > code {
+        font: 500 19px var(--mono);
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        padding: 3px 8px;
+        white-space: nowrap;
+      }
+      .trust .step .text {
+        color: var(--ink-2);
+        font-size: 18px;
+        padding-left: 8px;
+      }
+      .trust .row.split {
+        border-top: 1px solid var(--line);
+        padding-top: 14px;
+      }
+
+      /* Slide 9 */
+      .cmd-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: 1192px;
+      }
+      .cmd-list li {
+        display: grid;
+        grid-template-columns: 540px 1fr;
+        align-items: center;
+        gap: 28px;
+        padding: 22px 24px;
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        font-size: 22px;
+        line-height: 1.3;
+      }
+      .cmd-list li > code:first-child {
+        font: 500 26px var(--mono);
+        background: transparent;
+        border: 0;
+        padding: 0;
+      }
+      .cmd-list li > code:first-child::before {
+        content: '$ ';
+        color: var(--ink-2);
+      }
+      .cmd-list .what {
+        color: var(--ink-2);
+        font-size: 21px;
+      }
+      .cmd-list .what code {
+        font-size: 19px;
+      }
+      .cmd-list .what .path {
+        color: var(--accent);
+        background: var(--accent-soft);
+        border-color: var(--accent);
+      }
+      .links {
+        display: flex;
+        align-items: baseline;
+        gap: 40px;
+        font-size: 22px;
+        height: 60px;
+        line-height: 60px;
+        white-space: nowrap;
+      }
+      .links code {
+        font-size: 20px;
+        font-weight: 500;
+      }
+
+      @media (prefers-reduced-motion: no-preference) {
+        .node .box,
+        .node .mark,
+        .node .ring,
+        .edge,
+        .trow .rbox,
+        .trow .count,
+        .trow .zero,
+        .tally .frame,
+        .tally .headmark,
+        .verdict .gate,
+        .verdict .vbox,
+        .verdict .xbox,
+        .verdict .gate-label,
+        .verdict .vtext,
+        .verdict .xtext,
+        .verdict .stop,
+        .pos li,
+        .rollup {
+          transition: all 0.35s ease;
+        }
+        .flow,
+        .verdict .p-error,
+        .verdict .p-warn,
+        .verdict .p-link {
+          transition:
+            stroke-dashoffset 0.7s ease,
+            opacity 0.3s ease,
+            stroke-width 0.3s ease;
+        }
+        .s-run .term,
+        .captions .caption {
+          transition:
+            opacity 0.35s ease,
+            transform 0.35s ease,
+            visibility 0s linear 0.35s;
+        }
+        .s-run .term.on,
+        .captions .caption.now {
+          transition:
+            opacity 0.35s ease,
+            transform 0.35s ease,
+            visibility 0s;
+        }
+        .reveal .controls button,
+        .reveal a {
+          transition:
+            color 0.15s ease,
+            text-decoration-color 0.15s ease;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .reveal .slides section,
+        .reveal .slides section .fragment,
+        .reveal .slides section * {
+          transition: none !important;
+        }
+      }
+      @media print {
+        .pos {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="reveal" id="deck">
+      <div class="slides">
+        <!-- 1 · Title -->
+        <section class="s-title">
+          <div class="slide">
+            <div>
+              <h1>ReadyUp</h1>
+              <p class="lede">Pre-deployment checks, written in TypeScript and run from the command line.</p>
+              <p class="cmd"><code>rdy run</code></p>
+            </div>
+            <svg
+              class="motif"
+              viewBox="0 0 540 400"
+              role="img"
+              aria-label="A tree of checks with pass, fail, and blocked marks, which rdy run turns into exit code 1"
+            >
+              <defs>
+                <marker id="m-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+                  <path d="M0 0L10 5L0 10z" class="ah-ink" />
+                </marker>
+              </defs>
+              <path class="edge" d="M12 52H30M12 52V362H30" />
+              <path class="edge e-pass on" d="M50 74V132H80" />
+              <path class="edge e-blocked on" d="M100 154V212H130M100 212V284H130" />
+              <g class="node st-pass on" transform="translate(30,30)">
+                <rect class="box" width="72" height="44" rx="10" />
+                <text class="mark" x="36" y="22">✅</text>
+              </g>
+              <g class="node st-error on" transform="translate(80,110)">
+                <rect class="box" width="72" height="44" rx="10" />
+                <text class="mark" x="36" y="22">❌</text>
+              </g>
+              <g class="node st-blocked on" transform="translate(130,190)">
+                <rect class="box" width="72" height="44" rx="10" />
+                <text class="mark" x="36" y="22">🚫</text>
+              </g>
+              <g class="node st-blocked on" transform="translate(130,262)">
+                <rect class="box" width="72" height="44" rx="10" />
+                <text class="mark" x="36" y="22">🚫</text>
+              </g>
+              <g class="node st-warn on" transform="translate(30,340)">
+                <rect class="box" width="72" height="44" rx="10" />
+                <text class="mark" x="36" y="22">🔶</text>
+              </g>
+              <path d="M232 200H370" fill="none" stroke="var(--ink)" stroke-width="3" marker-end="url(#m-ink)" />
+              <text x="301" y="186" text-anchor="middle" style="font: 500 17px var(--mono); fill: var(--ink-2)">
+                rdy run
+              </text>
+              <rect x="380" y="160" width="150" height="80" rx="12" fill="var(--ink)" />
+              <text
+                x="455"
+                y="200"
+                text-anchor="middle"
+                dominant-baseline="central"
+                style="font: 600 28px var(--mono); fill: var(--paper)"
+              >
+                exit 1
+              </text>
+            </svg>
+          </div>
+          <aside class="notes">
+            ReadyUp is a command-line tool. A project writes its pre-deployment checks in TypeScript, groups them into a
+            kit, and runs them with rdy run before a deploy, on a laptop or in CI. The next five minutes: why it exists,
+            what a check looks like, what a run does when a check fails, and how to start.
+          </aside>
+        </section>
+
+        <!-- 2 · The problem -->
+        <section class="s-problem">
+          <div class="slide">
+            <header class="slide-head">
+              <h2>Where deploy checks live today</h2>
+              <p class="who">for engineering leads</p>
+            </header>
+            <div class="stage">
+              <div class="timeline">
+                <div class="hnode">
+                  <p>A checklist in a wiki</p>
+                  <div class="bars" aria-hidden="true"><i></i><i></i><i></i></div>
+                  <p class="sub">and in whoever deployed last</p>
+                </div>
+                <div class="arrow dashed"></div>
+                <div class="hnode drift">
+                  <p>The code changes</p>
+                  <p class="sub">The list does not</p>
+                </div>
+                <div class="arrow dashed"></div>
+                <div class="hnode ink">
+                  <p>Deploy</p>
+                  <p class="sub">Whoever remembers, runs the list by hand</p>
+                </div>
+                <div class="arrow red"></div>
+                <div class="hnode late">
+                  <p class="mark">❌</p>
+                  <p>The failure shows up late</p>
+                  <p class="sub">after the deploy, without a fix</p>
+                </div>
+              </div>
+            </div>
+            <p class="caption">A checklist that lives outside the code drifts from it and fails late</p>
+          </div>
+          <aside class="notes">
+            Most teams already have deploy checks. They live in a wiki page, in a channel thread, and in whoever
+            deployed last time. The code moves and the list does not. Nobody runs the list the same way twice, and the
+            thing it was meant to catch shows up after the deploy, when it is expensive to fix. That is the gap.
+          </aside>
+        </section>
+
+        <!-- 3 · The idea -->
+        <section class="s-idea">
+          <div class="slide">
+            <header class="slide-head"><h2>One file of checks, one command</h2></header>
+            <div class="stage">
+              <svg
+                class="idea"
+                viewBox="0 0 1192 484"
+                role="img"
+                aria-label="A kit file containing the deploy checklist and its two checks, which rdy run turns into one line per check, a fix hint for each failure, and an exit code"
+              >
+                <defs>
+                  <marker
+                    id="m-ink3"
+                    viewBox="0 0 10 10"
+                    refX="9"
+                    refY="5"
+                    markerWidth="7"
+                    markerHeight="7"
+                    orient="auto"
+                  >
+                    <path d="M0 0L10 5L0 10z" class="ah-ink" />
+                  </marker>
+                </defs>
+                <g transform="translate(0,20)">
+                  <!-- Kit tree -->
+                  <path class="edge" d="M24 112V176H48" />
+                  <path class="edge" d="M72 212V280H96M72 280V352H96" />
+                  <g transform="translate(0,60)">
+                    <rect class="box file-box" width="440" height="52" rx="10" />
+                    <text class="kind" x="18" y="26">kit</text>
+                    <text class="file" x="60" y="26">.readyup/kits/default.ts</text>
+                  </g>
+                  <g transform="translate(48,158)">
+                    <rect class="box root-box" width="200" height="36" rx="18" />
+                    <text class="root-k" x="18" y="18">checklist</text>
+                    <text class="root-v" x="110" y="18">deploy</text>
+                  </g>
+                  <g transform="translate(96,256)">
+                    <rect class="box" width="344" height="48" rx="10" />
+                    <text class="kind" x="18" y="24">check</text>
+                    <text class="label" x="80" y="24">package.json exists</text>
+                  </g>
+                  <g transform="translate(96,328)">
+                    <rect class="box" width="344" height="48" rx="10" />
+                    <text class="kind" x="18" y="24">check</text>
+                    <text class="label" x="80" y="24">NODE_ENV is set</text>
+                  </g>
+                  <!-- rdy run -->
+                  <path d="M480 250H640" fill="none" stroke="var(--ink)" stroke-width="3" marker-end="url(#m-ink3)" />
+                  <text class="cmd" x="560" y="236">rdy run</text>
+                  <!-- Output -->
+                  <g transform="translate(672,80)">
+                    <rect class="out-box" width="520" height="56" rx="10" />
+                    <text class="out-mark" x="30" y="28">✅</text>
+                    <text class="out-text" x="60" y="28">passed</text>
+                    <text class="out-sub" x="190" y="28">one line per check</text>
+                  </g>
+                  <g transform="translate(672,152)">
+                    <rect class="out-box" width="520" height="56" rx="10" />
+                    <text class="out-mark" x="30" y="28">❌</text>
+                    <text class="out-text" x="60" y="28">failed</text>
+                    <text class="out-sub" x="190" y="28">with the reason beneath it</text>
+                  </g>
+                  <g transform="translate(672,224)">
+                    <rect class="out-box fix-box" width="520" height="56" rx="10" />
+                    <text class="out-mark" x="30" y="28">💊</text>
+                    <text class="out-text" x="60" y="28" style="fill: var(--accent)">fix</text>
+                    <text class="out-sub" x="190" y="28">what to do about it, from the kit</text>
+                  </g>
+                  <g transform="translate(672,330)">
+                    <rect class="exit-box" width="150" height="56" rx="10" />
+                    <text class="exit-text" x="75" y="28">exit 0</text>
+                    <rect class="exit-box" x="170" width="150" height="56" rx="10" />
+                    <text class="exit-text" x="245" y="28">exit 1</text>
+                    <text class="out-sub" x="344" y="28">the verdict, for a pipeline</text>
+                  </g>
+                </g>
+              </svg>
+            </div>
+            <p class="caption">A kit is a file of checklists; <code>rdy run</code> runs them and prints what to fix</p>
+          </div>
+          <aside class="notes">
+            The idea is small. A kit is a file. It exports checklists, and a checklist contains checks. One command, rdy
+            run, runs them and prints one line per check: a pass, or a failure with the reason and a fix hint that the
+            kit author wrote. The exit code says whether the run passed, so the same command works in a terminal and in
+            a pipeline.
+          </aside>
+        </section>
+
+        <!-- 4 · Writing a check -->
+        <section class="s-code">
+          <div class="slide">
+            <header class="slide-head">
+              <h2>Writing a check</h2>
+              <p class="who">for kit authors</p>
+              <code class="chip">rdy init</code>
+            </header>
+            <figure class="code-sheet">
+              <pre><code><span class="cut">⋯</span>
+<span class="st">      checks: [</span>
+<span class="st">        {</span>
+          <span class="f"><b>name</b>: 'package.json exists'</span><span class="st">,</span>
+          <span class="f"><b>check</b>: () =&gt; fileExists('package.json')</span><span class="st">,</span>
+          <span class="f"><b>fix</b>: 'Run rdy from the root of the project'</span><span class="st">,</span>
+<span class="st">        },</span>
+<span class="st">        {</span>
+          <span class="f"><b>name</b>: 'NODE_ENV is set'</span><span class="st">,</span>
+          <span class="f"><b>severity</b>: 'warn'</span><span class="st">,</span>
+          <span class="f"><b>check</b>: () =&gt; {</span>
+            <span class="f">const value = process.env['NODE_ENV'];</span>
+            <span class="f">if (!value) return { ok: false, detail: 'NODE_ENV has no value in the environment' };</span>
+            <span class="f">return { ok: true, detail: `NODE_ENV is ${value}` };</span>
+          <span class="f">}</span><span class="st">,</span>
+          <span class="f"><b>fix</b>: 'Set NODE_ENV before deploying'</span><span class="st">,</span>
+<span class="st">        },</span>
+<span class="st">      ],</span>
+<span class="cut">⋯</span></code></pre>
+              <span class="note" style="--row: 3"><b>name</b> what must be true</span>
+              <span class="note" style="--row: 4"><b>check</b> passes, or fails with a detail</span>
+              <span class="note" style="--row: 5"><b>fix</b> printed as 💊 after a failure</span>
+              <span class="note" style="--row: 9"><b>severity</b> what a failure costs</span>
+            </figure>
+          </div>
+          <aside class="notes">
+            This is the kit that rdy init writes. A check is a few fields. The name states what must be true. The check
+            function returns true, or false with a detail. Severity says what a failure costs: error fails the run, warn
+            is reported and does not. Fix is the hint that prints when the check fails. Everything else is structure:
+            the checklist, and one helper import.
+          </aside>
+        </section>
+
+        <!-- 5 · Running it -->
+        <section class="s-output">
+          <div class="slide">
+            <header class="slide-head">
+              <h2>Running it</h2>
+              <code class="chip">NODE_ENV unset</code>
+            </header>
+            <div class="stage">
+              <figure class="term">
+                <figcaption class="term-tab">rdy compile &amp;&amp; rdy run</figcaption>
+                <pre><code>✅ package.json exists
+🔶 NODE_ENV is set
+   NODE_ENV has no value in the environment
+<span class="dim">── Fixes</span>
+🔶 NODE_ENV is set
+   💊 Set NODE_ENV before deploying
+🔶 Total: <span class="n-warn">1 warning</span>, <span class="n-pass">1 passed</span> (1ms)
+
+✅ Run passed (fail-on: error)
+<span class="dim">exit 0</span></code></pre>
+                <span class="note" style="--row: 0">one line per check</span>
+                <span class="note" style="--row: 1">a failed line states its claim</span>
+                <span class="note" style="--row: 2">the reason, beneath it</span>
+                <span class="note" style="--row: 5">the <b>fix</b> from the kit, recapped</span>
+                <span class="note" style="--row: 6">the count line leads with the worst severity</span>
+                <span class="note" style="--row: 8">the verdict names the threshold</span>
+                <span class="note" style="--row: 9">a <b>warn</b> failure is below <b>fail-on: error</b></span>
+              </figure>
+            </div>
+            <p class="caption">
+              The warning is reported; only a failure at or above <code>fail-on</code> fails the run
+            </p>
+          </div>
+          <aside class="notes">
+            Compile the kit and run it with NODE_ENV unset, and this is what prints. One line per check. The failed line
+            states its claim, and the reason sits beneath it. The fixes are recapped at the end, then the count line,
+            which leads with the worst severity. The verdict names the threshold: the run passed, because a warning is
+            below fail-on error, so the exit code is zero.
+          </aside>
+        </section>
+
+        <!-- 6 · A run, step by step -->
+        <section class="s-run" data-step="0">
+          <div class="slide">
+            <header class="slide-head"><h2>A run, step by step</h2></header>
+            <div class="stage stage-run">
+              <svg
+                class="run"
+                viewBox="0 0 1180 520"
+                role="img"
+                aria-label="The demo kit's tree of six checks, resolving step by step, with the results flowing into the total, the verdict, and the exit code"
+              >
+                <defs>
+                  <marker
+                    id="m-err"
+                    viewBox="0 0 10 10"
+                    refX="9"
+                    refY="5"
+                    markerWidth="6"
+                    markerHeight="6"
+                    orient="auto"
+                  >
+                    <path d="M0 0L10 5L0 10z" class="ah-error" />
+                  </marker>
+                  <marker
+                    id="m-ink2"
+                    viewBox="0 0 10 10"
+                    refX="9"
+                    refY="5"
+                    markerWidth="6"
+                    markerHeight="6"
+                    orient="auto"
+                  >
+                    <path d="M0 0L10 5L0 10z" class="ah-ink" />
+                  </marker>
+                </defs>
+
+                <!-- Edges of the tree -->
+                <path class="edge" d="M20 52V100H40" />
+                <path class="edge" d="M20 100V364H40" />
+                <path class="edge" d="M20 364V430H40" />
+                <path class="edge e-pass" data-at="1" d="M60 124V166H84" />
+                <path class="edge e-blocked" data-at="3" d="M104 190V232H128" />
+                <path class="edge e-blocked" data-at="3" d="M104 232V298H128" />
+
+                <!-- Results flowing into the total -->
+                <path class="flow c-pass" data-at="1" pathLength="1" d="M320 100C440 100 520 176 640 176" />
+                <path class="flow c-error" data-at="2" pathLength="1" d="M364 166C484 166 520 84 640 84" />
+                <path class="flow c-blocked" data-at="3" pathLength="1" d="M408 232C528 232 520 222 640 222" />
+                <path class="flow c-blocked" data-at="3" pathLength="1" d="M408 298C528 298 520 222 640 222" />
+                <path class="flow c-warn" data-at="4" pathLength="1" d="M320 364C440 364 520 130 640 130" />
+                <path class="flow c-skip" data-at="5" pathLength="1" d="M320 430C440 430 520 268 640 268" />
+
+                <!-- Nodes -->
+                <g class="node root" transform="translate(0,16)">
+                  <rect class="box" width="190" height="36" rx="18" />
+                  <text class="k" x="16" y="18">checklist</text>
+                  <text class="v" x="101" y="18">deploy</text>
+                </g>
+                <g class="node st-pass" data-at="1" transform="translate(40,76)">
+                  <rect class="box" width="280" height="48" rx="10" />
+                  <circle class="ring" cx="26" cy="24" r="13" />
+                  <text class="mark" x="26" y="24">✅</text>
+                  <text class="label" x="52" y="24">package.json exists</text>
+                </g>
+                <g class="node st-error" data-at="2" transform="translate(84,142)">
+                  <rect class="box" width="280" height="48" rx="10" />
+                  <circle class="ring" cx="26" cy="24" r="13" />
+                  <text class="mark" x="26" y="24">❌</text>
+                  <text class="label" x="52" y="24">build output present</text>
+                </g>
+                <g class="node st-blocked" data-at="3" transform="translate(128,208)">
+                  <rect class="box" width="280" height="48" rx="10" />
+                  <circle class="ring" cx="26" cy="24" r="13" />
+                  <text class="mark" x="26" y="24">🚫</text>
+                  <text class="label" x="52" y="24">bundle under 500 kB</text>
+                </g>
+                <g class="node st-blocked" data-at="3" transform="translate(128,274)">
+                  <rect class="box" width="280" height="48" rx="10" />
+                  <circle class="ring" cx="26" cy="24" r="13" />
+                  <text class="mark" x="26" y="24">🚫</text>
+                  <text class="label" x="52" y="24">source maps excluded</text>
+                </g>
+                <g class="node st-warn" data-at="4" transform="translate(40,340)">
+                  <rect class="box" width="280" height="48" rx="10" />
+                  <circle class="ring" cx="26" cy="24" r="13" />
+                  <text class="mark" x="26" y="24">🔶</text>
+                  <text class="label" x="52" y="24">NODE_ENV is set</text>
+                </g>
+                <g class="node st-skip" data-at="5" transform="translate(40,406)">
+                  <rect class="box" width="280" height="48" rx="10" />
+                  <circle class="ring" cx="26" cy="24" r="13" />
+                  <text class="mark" x="26" y="24">⚪</text>
+                  <text class="label" x="52" y="24">base image is pinned</text>
+                </g>
+
+                <g class="rollup">
+                  <!-- Total -->
+                  <g class="tally" data-at="6">
+                    <rect class="frame" x="628" y="20" width="284" height="276" rx="12" />
+                    <text class="headmark" x="644" y="46">❌</text>
+                    <text class="head" x="668" y="46">Total</text>
+                  </g>
+                  <g class="trow st-error" data-at="2">
+                    <rect class="rbox" x="640" y="65" width="260" height="38" rx="8" />
+                    <text class="tmark" x="660" y="84">❌</text>
+                    <text class="tlabel" x="684" y="84">error</text>
+                    <text class="zero" x="888" y="84">0</text>
+                    <text class="count" x="888" y="84">1</text>
+                  </g>
+                  <g class="trow st-warn" data-at="4">
+                    <rect class="rbox" x="640" y="111" width="260" height="38" rx="8" />
+                    <text class="tmark" x="660" y="130">🔶</text>
+                    <text class="tlabel" x="684" y="130">warning</text>
+                    <text class="zero" x="888" y="130">0</text>
+                    <text class="count" x="888" y="130">1</text>
+                  </g>
+                  <g class="trow st-pass" data-at="1">
+                    <rect class="rbox" x="640" y="157" width="260" height="38" rx="8" />
+                    <text class="tmark" x="660" y="176">✅</text>
+                    <text class="tlabel" x="684" y="176">passed</text>
+                    <text class="zero" x="888" y="176">0</text>
+                    <text class="count" x="888" y="176">1</text>
+                  </g>
+                  <g class="trow st-blocked" data-at="3">
+                    <rect class="rbox" x="640" y="203" width="260" height="38" rx="8" />
+                    <text class="tmark" x="660" y="222">🚫</text>
+                    <text class="tlabel" x="684" y="222">blocked</text>
+                    <text class="zero" x="888" y="222">0</text>
+                    <text class="count" x="888" y="222">2</text>
+                  </g>
+                  <g class="trow st-skip" data-at="5">
+                    <rect class="rbox" x="640" y="249" width="260" height="38" rx="8" />
+                    <text class="tmark" x="660" y="268">⚪</text>
+                    <text class="tlabel" x="684" y="268">skipped</text>
+                    <text class="zero" x="888" y="268">0</text>
+                    <text class="count" x="888" y="268">1</text>
+                  </g>
+
+                  <!-- Verdict and exit code -->
+                  <g class="verdict" data-at="7">
+                    <path class="p-warn" pathLength="1" d="M912 130H940V316" />
+                    <line class="stop" x1="930" y1="316" x2="950" y2="316" />
+                    <path class="p-error" pathLength="1" d="M912 84H990V366" marker-end="url(#m-err)" />
+                    <rect class="gate" x="628" y="324" width="350" height="24" rx="4" />
+                    <rect class="gate" x="1002" y="324" width="178" height="24" rx="4" />
+                    <text class="gate-label" x="644" y="336">fail-on: error</text>
+                    <rect class="vbox" x="628" y="372" width="400" height="50" rx="10" />
+                    <text class="vtext" x="644" y="397">❌ Run failed (fail-on: error)</text>
+                    <path class="p-link" pathLength="1" d="M1028 397H1046" marker-end="url(#m-ink2)" />
+                    <rect class="xbox" x="1052" y="372" width="128" height="50" rx="10" />
+                    <text class="xtext" x="1116" y="397">exit 1</text>
+                  </g>
+                </g>
+              </svg>
+
+              <figure class="term" data-at="8">
+                <figcaption class="term-tab">rdy run</figcaption>
+                <pre><code>✅ package.json exists
+   ❌ build output present
+      dist/index.js not found
+      🚫 bundle under 500 kB
+      🚫 source maps excluded
+🔶 NODE_ENV is set
+   NODE_ENV has no value in the environment
+⚪ base image is pinned · no Dockerfile in this project
+<span class="dim">── Fixes</span>
+❌ build output present
+   💊 Run the build before deploying
+🔶 NODE_ENV is set
+   💊 Set NODE_ENV before deploying
+❌ Total: <span class="n-error">1 error</span>, <span class="n-warn">1 warning</span>, <span class="n-pass">1 passed</span>, <span class="n-blocked">2 blocked</span>, <span class="n-skip">1 skipped</span> (0ms)
+
+❌ Run failed (fail-on: error)
+<span class="dim">exit 1</span></code></pre>
+              </figure>
+            </div>
+
+            <div class="captions">
+              <p class="caption on now" data-at="0">The deploy checklist: six checks, three of them nested</p>
+              <p class="caption" data-at="1"><code>package.json exists</code> passes, so the check under it runs</p>
+              <p class="caption" data-at="2">
+                <code>build output present</code> fails at <code>error</code>: dist/index.js not found
+              </p>
+              <p class="caption" data-at="3">
+                Under the failed check, two checks do not run and are reported as blocked
+              </p>
+              <p class="caption" data-at="4"><code>NODE_ENV is set</code> fails at <code>warn</code></p>
+              <p class="caption" data-at="5">
+                <code>base image is pinned</code> is skipped: no Dockerfile in this project
+              </p>
+              <p class="caption" data-at="6">Each result counts once in the total</p>
+              <p class="caption" data-at="7">
+                <code>fail-on: error</code> lets the error fail the run; the warning alone would not
+              </p>
+              <p class="caption" data-at="8">The same run, as <code>rdy</code> prints it</p>
+            </div>
+
+            <span class="fragment step" data-fragment-index="1"></span>
+            <span class="fragment step" data-fragment-index="2"></span>
+            <span class="fragment step" data-fragment-index="3"></span>
+            <span class="fragment step" data-fragment-index="4"></span>
+            <span class="fragment step" data-fragment-index="5"></span>
+            <span class="fragment step" data-fragment-index="6"></span>
+            <span class="fragment step" data-fragment-index="7"></span>
+            <span class="fragment step" data-fragment-index="8"></span>
+          </div>
+          <aside class="notes">
+            Here is a kit with nesting. package.json exists passes, so the check under it runs. build output present
+            fails, and its severity is error. Its two children never run: they are reported as blocked, because their
+            parent failed. NODE_ENV is set fails too, but at warn. base image is pinned does not apply here, so it is
+            skipped. Each result counts once in the total: one error, one warning, one passed, two blocked, one skipped.
+            Then the verdict. This run fails on error. The error fails it; the warning alone would have left it passing,
+            with exit code zero. Exit code one is what CI acts on. And this is what rdy printed for the same run: the
+            same tree, the fixes, the total, the verdict.
+          </aside>
+        </section>
+
+        <!-- 7 · Gating CI and trusting shared kits -->
+        <section class="s-ci">
+          <div class="slide">
+            <header class="slide-head">
+              <h2>Gating a pipeline, trusting a shared kit</h2>
+              <p class="who">for CI owners</p>
+            </header>
+            <div class="stage">
+              <div class="panels">
+                <div class="panel" role="group" aria-labelledby="h-gate">
+                  <h3 id="h-gate">The exit code is the gate</h3>
+                  <div class="gate-flow">
+                    <span class="ink-box from">rdy run</span>
+                    <span class="drop" aria-hidden="true"></span>
+                    <ul class="exits">
+                      <li class="ok"><code>exit 0</code><span>Ran and found no problems</span></li>
+                      <li class="bad">
+                        <code>exit 1</code><span>Ran and found problems <span class="verb">fix the repo</span></span>
+                      </li>
+                      <li class="usage">
+                        <code>exit 2</code
+                        ><span>Could not complete the invocation <span class="verb">fix the invocation</span></span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="panel" role="group" aria-labelledby="h-trust">
+                  <h3 id="h-trust">A kit that another team publishes</h3>
+                  <div class="trust">
+                    <div class="row">
+                      <p class="role">publisher</p>
+                      <div class="chain">
+                        <p class="step"><code>rdy compile</code><span class="text">bundles the kit</span></p>
+                        <p class="step">
+                          <code>git commit</code
+                          ><span class="text"
+                            >the bundle and its manifest, in the repo or the package's <code>files</code></span
+                          >
+                        </p>
+                        <p class="step">
+                          <code>rdy verify --rebuild</code
+                          ><span class="text">in CI: fails on a bundle that no longer reproduces from its source</span>
+                        </p>
+                      </div>
+                    </div>
+                    <div class="row split">
+                      <p class="role">consumer</p>
+                      <div class="chain">
+                        <p class="step">
+                          <code>rdy run --from npm:@acme/eslint-config</code
+                          ><span class="text">the kit published with the installed version</span>
+                        </p>
+                        <p class="step">
+                          <code>rdy run --from github:acme/ops@v2</code
+                          ><span class="text">the kit committed at that ref</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="caption">One exit code gates the pipeline; a published kit runs at the version the project has</p>
+          </div>
+          <aside class="notes">
+            Two questions for a CI owner. Gating: the exit code is the contract. Zero, no problems. One, fix the repo.
+            Two, fix the invocation. Trust: a team publishes a kit as the compiled bundle and its manifest, committed to
+            the repo or listed in its package's files, and runs verify with rebuild in CI, which fails if the bundle no
+            longer reproduces from its source. Consumers run it from the package they already install, or from the
+            repository at a pinned ref.
+          </aside>
+        </section>
+
+        <!-- 8 · Why it pays off -->
+        <section class="s-payoff">
+          <div class="slide">
+            <header class="slide-head">
+              <h2>Where deploy checks live with ReadyUp</h2>
+              <p class="who">for engineering leads</p>
+            </header>
+            <div class="stage">
+              <div class="timeline">
+                <div class="hnode">
+                  <p>A checklist in the repo</p>
+                  <p class="path">.readyup/kits/default.ts</p>
+                  <p class="sub">next to the code that it checks</p>
+                </div>
+                <div class="arrow"></div>
+                <div class="hnode">
+                  <p>The code changes</p>
+                  <p class="sub">The kit changes with it, in the same commit and the same review</p>
+                </div>
+                <div class="arrow"></div>
+                <div class="hnode ink">
+                  <p>Deploy</p>
+                  <p class="sub"><code>rdy run</code> first, on a laptop and in CI</p>
+                </div>
+                <div class="arrow green"></div>
+                <div class="hnode early">
+                  <p class="mark">💊</p>
+                  <p>The failure shows up before the deploy</p>
+                  <p class="sub">with its fix beside it</p>
+                </div>
+              </div>
+            </div>
+            <p class="caption">The checklist is versioned with the code, and the same command runs everywhere</p>
+          </div>
+          <aside class="notes">
+            Here is the earlier timeline with ReadyUp in place. The checklist is a file in the repo, so it is versioned
+            and reviewed with the code that it checks. The same command runs on a laptop and in CI; only the rendering
+            differs. And a failure shows up before the deploy, with the fix hint beside it, instead of after.
+          </aside>
+        </section>
+
+        <!-- 9 · Get started -->
+        <section class="s-start">
+          <div class="slide">
+            <header class="slide-head">
+              <h2>Get started</h2>
+              <code class="chip">Node 24 or later</code>
+            </header>
+            <div class="stage">
+              <ol class="cmd-list">
+                <li>
+                  <code>pnpm add --save-dev readyup esbuild</code>
+                  <span class="what">esbuild compiles the kits</span>
+                </li>
+                <li>
+                  <code>rdy init</code>
+                  <span class="what"
+                    >writes <code>.config/readyup.config.ts</code> and the starter kit
+                    <code class="path">.readyup/kits/default.ts</code></span
+                  >
+                </li>
+                <li>
+                  <code>rdy compile</code>
+                  <span class="what">bundles the kit</span>
+                </li>
+                <li>
+                  <code>rdy run</code>
+                  <span class="what">runs it, locally or in CI</span>
+                </li>
+              </ol>
+            </div>
+            <p class="links">
+              <a href="https://www.npmjs.com/package/readyup">npmjs.com/package/readyup</a>
+              <span><code>rdy help</code> lists the doc topics in the terminal</span>
+            </p>
+          </div>
+          <aside class="notes">
+            To start: add readyup and esbuild as dev dependencies, on Node 24 or later. rdy init writes the config and
+            the starter kit from earlier. rdy compile bundles it, and rdy run runs it, the same way locally and in CI.
+            The docs are on npm and in the terminal: rdy help lists the topics. Questions?
+          </aside>
+        </section>
+      </div>
+
+      <div class="pos" aria-hidden="true">
+        <ol class="pos-slides"></ol>
+        <ol class="pos-steps"></ol>
+        <span class="pos-label"></span>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@6.0.2/dist/reveal.js"></script>
+    <script>
+      (function () {
+        var deckEl = document.getElementById('deck');
+        var runSlide = document.querySelector('.s-run');
+        var posSlides = document.querySelector('.pos-slides');
+        var posSteps = document.querySelector('.pos-steps');
+        var posLabel = document.querySelector('.pos-label');
+        var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        var deck = new Reveal(deckEl, {
+          width: 1280,
+          height: 720,
+          margin: 0.02,
+          center: false,
+          hash: true,
+          controls: true,
+          controlsTutorial: false,
+          progress: false,
+          slideNumber: false,
+          transition: reduce ? 'none' : 'fade',
+          transitionSpeed: 'fast',
+        });
+        deck.on('slidechanged', sync);
+        deck.on('fragmentshown', sync);
+        deck.on('fragmenthidden', sync);
+        deck.on('pdf-ready', syncPrintedPages);
+        deck.initialize().then(sync);
+
+        // Sets a run slide's state to the step that its visible fragments reach, from 0 to 8
+        function setStep(slide) {
+          var step = slide.querySelectorAll('.fragment.visible').length;
+          var stepped = slide.querySelectorAll('[data-at]');
+          slide.setAttribute('data-step', step);
+          for (var i = 0; i < stepped.length; i++) {
+            var at = Number(stepped[i].getAttribute('data-at'));
+            stepped[i].classList.toggle('on', at <= step);
+            stepped[i].classList.toggle('now', at === step);
+          }
+        }
+
+        // Sets each printed copy of the run slide to the step that its page shows
+        function syncPrintedPages() {
+          document.querySelectorAll('.s-run').forEach(setStep);
+        }
+
+        // Renders a row of pills, one per item, marking the ones reached and the current one
+        function renderPills(list, total, current) {
+          var html = '';
+          for (var i = 0; i < total; i++) {
+            html += '<li class="' + (i < current ? 'on' : i === current ? 'on now' : '') + '"></li>';
+          }
+          list.innerHTML = html;
+        }
+
+        // Derives the run step from the fragments shown, and the position indicator from the deck's indices
+        function sync() {
+          setStep(runSlide);
+          var indices = deck.getIndices();
+          var total = deck.getTotalSlides();
+          var slide = deck.getCurrentSlide();
+          var fragments = slide.querySelectorAll('.fragment').length;
+          var shown = slide.querySelectorAll('.fragment.visible').length;
+          renderPills(posSlides, total, indices.h);
+          renderPills(posSteps, fragments ? fragments + 1 : 0, shown);
+          posLabel.textContent =
+            indices.h + 1 + ' / ' + total + (fragments ? ' · step ' + shown + ' / ' + fragments : '');
+        }
+      })();
+    </script>
+  </body>
+</html>
