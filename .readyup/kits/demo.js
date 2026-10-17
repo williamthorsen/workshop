@@ -1,6 +1,6 @@
 /** @noformat -- @generated. Do not edit. Compiled by rdy. */
 /* eslint-disable */
-export const __readyupVersion = "0.41.1";
+export const __readyupVersion = "0.42.0";
 
 
 // .readyup/kits/demo.ts

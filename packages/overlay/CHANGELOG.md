@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.4.5 — 2026-10-17
+
+### 📦 Dependencies
+
+- Adds `vitest`, `@vitest/coverage-v8`, `typescript`, and `@williamthorsen/nmr` to the workspace catalog at the versions that the root `package.json` pinned, switches the root to `catalog:` for them, and declares `vitest` as a `catalog:` dev dependency in every package, plus `typescript` and `@williamthorsen/nmr` in `readyup`. (#602)
+
 ## 0.4.4 — 2026-10-07
 
 ### 📚 Documentation

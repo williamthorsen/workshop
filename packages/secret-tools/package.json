@@ -1,6 +1,6 @@
 {
   "name": "@williamthorsen/secret-tools",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": false,
   "description": "Manage secrets in the OS credential store",
   "keywords": [

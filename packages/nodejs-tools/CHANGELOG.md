@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.1 — 2026-10-17
+
+### ♻️ Refactoring
+
+- Rewrites the code reported by the new `unicorn` rules, for example by replacing nested loop branches with `continue` and by removing parameters that no caller varies. (#607)
+- Splits `compileCommand`, `listCommand`, and `verifyCommand` in `readyup`, `bin/run.ts` in `nodejs-tools`, and `repo-commands` in `repo-tools` into modules by responsibility, and moves the types and helpers that those modules share into leaf modules such as `thor-node-result.ts` and `verb-run.ts`, so that each file falls under the `max-lines` ceiling. (#609)
+
+### 📦 Dependencies
+
+- Adds `vitest`, `@vitest/coverage-v8`, `typescript`, and `@williamthorsen/nmr` to the workspace catalog at the versions that the root `package.json` pinned, switches the root to `catalog:` for them, and declares `vitest` as a `catalog:` dev dependency in every package, plus `typescript` and `@williamthorsen/nmr` in `readyup`. (#602)
+
 ## 0.2.0 — 2026-10-15
 
 ### 🎉 Features

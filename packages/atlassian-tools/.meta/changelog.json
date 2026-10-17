@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.1.1",
+    "date": "2026-10-17",
+    "sections": [
+      {
+        "title": "📦 Dependencies",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Adds `vitest`, `@vitest/coverage-v8`, `typescript`, and `@williamthorsen/nmr` to the workspace catalog at the versions that the root `package.json` pinned, switches the root to `catalog:` for them, and declares `vitest` as a `catalog:` dev dependency in every package, plus `typescript` and `@williamthorsen/nmr` in `readyup`. (#602)",
+            "hash": "e6ce21ae6f7a68fa8800d356744fcfed1adea8f9",
+            "entry": 4
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.1.0",
     "date": "2026-10-11",
     "sections": [

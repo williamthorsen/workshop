@@ -1,5 +1,33 @@
 [
   {
+    "version": "0.5.3",
+    "date": "2026-10-17",
+    "sections": [
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Rewrites the code reported by the new `unicorn` rules, for example by replacing nested loop branches with `continue` and by removing parameters that no caller varies. (#607)",
+            "hash": "bde9b0f5f4779fb825de74702cc66752fced9ac2",
+            "entry": 2
+          }
+        ]
+      },
+      {
+        "title": "📦 Dependencies",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Adds `vitest`, `@vitest/coverage-v8`, `typescript`, and `@williamthorsen/nmr` to the workspace catalog at the versions that the root `package.json` pinned, switches the root to `catalog:` for them, and declares `vitest` as a `catalog:` dev dependency in every package, plus `typescript` and `@williamthorsen/nmr` in `readyup`. (#602)",
+            "hash": "e6ce21ae6f7a68fa8800d356744fcfed1adea8f9",
+            "entry": 4
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.5.1",
     "date": "2026-09-08",
     "sections": [

@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.42.0 — 2026-10-17
+
+### 🎉 Features
+
+- Changes the rich output of `rdy` to mark a failed recommendation with 💡 instead of 💬 and to lead a hint with `👉 Hint:` instead of `💡 Hint:`, so that the light bulb now means only a recommendation. (#605)
+- Lets a check's `checks` field take a function, exported as the `RdyCheckBuilder` type, which readyup calls after the check passes to build its dependent checks, so that those checks can depend on the repo under check, such as one check per workspace. (#610)
+- Adds the `checks-vary-by-directory` warning to `rdy compile`, which imports each kit a second time from an empty temporary directory and raises the warning when the kit records different checks there or fails to load there. (#610)
+
+### ♻️ Refactoring
+
+- Rewrites the code reported by the new `unicorn` rules, for example by replacing nested loop branches with `continue` and by removing parameters that no caller varies. (#607)
+- Splits `compileCommand`, `listCommand`, and `verifyCommand` in `readyup`, `bin/run.ts` in `nodejs-tools`, and `repo-commands` in `repo-tools` into modules by responsibility, and moves the types and helpers that those modules share into leaf modules such as `thor-node-result.ts` and `verb-run.ts`, so that each file falls under the `max-lines` ceiling. (#609)
+
+### 🧪 Tests
+
+- Changes the `stallUntilAborted` test stub to narrow the abort reason with `assertIsError` and reject with it unchanged, as a real `fetch` does, rather than replace a non-`Error` reason with a generic `Error`. (#603)
+- Replaces direct reads of a console spy's `mock.calls` in `initCommand.unit.test.ts` and `terminal.unit.test.ts` with `listConsoleLines`, which returns the lines written to the spy. (#603)
+- Renames the noun-named test helpers in `readyup` so that each name leads with a verb, such as `packageProvenance` to `buildPackageProvenance`. (#607)
+- Splits the oversized `readyup` unit test files into aspect files named `<subject>.<aspect>.unit.test.ts` and moves their shared runners and fixtures into `test-utils` directories, keeping the same test cases. (#609)
+
+### 📦 Dependencies
+
+- Adds `vitest`, `@vitest/coverage-v8`, `typescript`, and `@williamthorsen/nmr` to the workspace catalog at the versions that the root `package.json` pinned, switches the root to `catalog:` for them, and declares `vitest` as a `catalog:` dev dependency in every package, plus `typescript` and `@williamthorsen/nmr` in `readyup`. (#602)
+
+### 📚 Documentation
+
+- Adds `packages/readyup/presentation/index.html`, a nine-slide reveal.js deck with speaker notes that explains what ReadyUp does, from writing a check to gating a pipeline, and includes an animated slide that steps through a run. (#597)
+
 ## 0.41.1 — 2026-10-17
 
 ### 📦 Dependencies

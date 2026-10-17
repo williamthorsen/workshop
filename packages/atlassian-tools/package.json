@@ -1,6 +1,6 @@
 {
   "name": "@williamthorsen/atlassian-tools",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": false,
   "description": "Work with Jira Cloud from the command line",
   "keywords": [

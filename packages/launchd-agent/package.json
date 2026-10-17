@@ -1,6 +1,6 @@
 {
   "name": "@williamthorsen/launchd-agent",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": false,
   "description": "Install, replace, restart, inspect, and remove per-user launchd agents on macOS",
   "keywords": [
