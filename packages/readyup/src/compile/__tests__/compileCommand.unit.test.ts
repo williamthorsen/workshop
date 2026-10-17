@@ -117,7 +117,7 @@ function compileResultInliningJson(entry: string, outputPath: string): CompileRe
 }
 
 /** Returns the `inputs` that an entry has when its compile read only the entry point, stated against the manifest. */
-function recordedEntry(relativePath: string) {
+function buildRecordedEntry(relativePath: string) {
   return [{ hash: SOURCE_HASH, kind: 'module', path: relativePath }];
 }
 
@@ -1082,7 +1082,7 @@ describe(compileCommand, () => {
       kits: [
         {
           esbuildVersion: ESBUILD_VERSION,
-          inputs: recordedEntry('kits/alpha.ts'),
+          inputs: buildRecordedEntry('kits/alpha.ts'),
           name: 'alpha',
           description: 'Alpha checks',
           path: expect.stringContaining('alpha.js'),
@@ -1093,7 +1093,7 @@ describe(compileCommand, () => {
         },
         {
           esbuildVersion: ESBUILD_VERSION,
-          inputs: recordedEntry('kits/beta.ts'),
+          inputs: buildRecordedEntry('kits/beta.ts'),
           name: 'beta',
           path: expect.stringContaining('beta.js'),
           readyupVersion: VERSION,
@@ -1168,7 +1168,7 @@ describe(compileCommand, () => {
         { name: 'default', description: 'Default checks' },
         {
           esbuildVersion: ESBUILD_VERSION,
-          inputs: recordedEntry('../deploy.ts'),
+          inputs: buildRecordedEntry('../deploy.ts'),
           name: 'deploy',
           description: 'Deploy checks',
           path: expect.stringContaining('deploy.js'),
@@ -1196,7 +1196,7 @@ describe(compileCommand, () => {
       kits: [
         {
           esbuildVersion: ESBUILD_VERSION,
-          inputs: recordedEntry('../deploy.ts'),
+          inputs: buildRecordedEntry('../deploy.ts'),
           name: 'deploy',
           path: expect.stringContaining('deploy.js'),
           readyupVersion: VERSION,
@@ -1229,7 +1229,7 @@ describe(compileCommand, () => {
       kits: [
         {
           esbuildVersion: ESBUILD_VERSION,
-          inputs: recordedEntry('../deploy.ts'),
+          inputs: buildRecordedEntry('../deploy.ts'),
           name: 'deploy',
           description: 'Updated',
           path: expect.stringContaining('deploy.js'),

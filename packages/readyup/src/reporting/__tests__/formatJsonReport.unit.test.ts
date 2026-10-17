@@ -67,7 +67,7 @@ function makeReport(overrides?: Partial<RdyReport> & { results?: RdyResult[] }):
 }
 
 /** Wraps a single checklist report as a single-kit input. */
-function singleKit(checklistName: string, report: RdyReport) {
+function buildSingleKitInput(checklistName: string, report: RdyReport) {
   return [{ name: 'deploy', entries: [{ name: checklistName, report }] }];
 }
 
@@ -76,7 +76,7 @@ const NO_COUNTS = { passed: 0, errors: 0, warnings: 0, recommendations: 0, block
 
 describe(formatJsonReport, () => {
   it('produces valid JSON', () => {
-    const output = formatReport(singleKit('deploy', makeReport()));
+    const output = formatReport(buildSingleKitInput('deploy', makeReport()));
 
     expect(() => {
       JSON.parse(output);
@@ -94,7 +94,7 @@ describe(formatJsonReport, () => {
       durationMs: 15,
     });
 
-    const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', report)));
+    const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', report)));
 
     expect(() => ReportSchema.parse(parsed)).not.toThrow();
   });
@@ -103,7 +103,7 @@ describe(formatJsonReport, () => {
     const report = makeReport({ results: [makePassedResult({ name: 'a' })], passed: true, durationMs: 10 });
     const counts = { ...NO_COUNTS, passed: 1 };
 
-    const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', report)));
+    const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', report)));
 
     expect(parsed).toStrictEqual({
       schemaVersion: 2,
@@ -135,7 +135,7 @@ describe(formatJsonReport, () => {
   });
 
   it('omits the checks property from a checklist that reported nothing', () => {
-    const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', makeReport())));
+    const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', makeReport())));
 
     expect(parsed).toStrictEqual({
       schemaVersion: 2,
@@ -160,21 +160,25 @@ describe(formatJsonReport, () => {
 
   describe('provenance and echoed settings', () => {
     it('stamps the schema version and the runner version', () => {
-      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', makeReport())));
+      const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', makeReport())));
 
       expect(parsed).toMatchObject({ schemaVersion: 2, readyupVersion: VERSION });
     });
 
     it('echoes the requested thresholds and detail projection', () => {
       const parsed: unknown = JSON.parse(
-        formatReport(singleKit('deploy', makeReport()), { failOn: 'warn', reportOn: 'error', detail: 'summary' }),
+        formatReport(buildSingleKitInput('deploy', makeReport()), {
+          failOn: 'warn',
+          reportOn: 'error',
+          detail: 'summary',
+        }),
       );
 
       expect(parsed).toMatchObject({ failOn: 'warn', reportOn: 'error', detail: 'summary' });
     });
 
     it('names no run-level threshold when the invocation requested none', () => {
-      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', makeReport())));
+      const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', makeReport())));
 
       expect(parsed).not.toHaveProperty('failOn');
       expect(parsed).not.toHaveProperty('reportOn');
@@ -185,13 +189,13 @@ describe(formatJsonReport, () => {
     it('reports collected warnings alongside the results', () => {
       const warnings = [{ code: 'source-stale' as const, message: 'kit is stale', remedy: 'Run `rdy compile`.' }];
 
-      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', makeReport()), { warnings }));
+      const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', makeReport()), { warnings }));
 
       expect(parsed).toMatchObject({ warnings });
     });
 
     it('omits the warnings array entirely when the run produced none', () => {
-      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', makeReport())));
+      const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', makeReport())));
 
       // The `warnings` count survives under `counts`; only the top-level advisory array goes away.
       expect(parsed).not.toHaveProperty('warnings');
@@ -215,7 +219,7 @@ describe(formatJsonReport, () => {
     });
 
     it('omits the compiling readyup for a kit with no stamp', () => {
-      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', makeReport())));
+      const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', makeReport())));
 
       expect(parsed).not.toHaveProperty('kits.0.compiledWith');
     });
@@ -261,7 +265,7 @@ describe(formatJsonReport, () => {
     it('passes when every kit ran and no result failed', () => {
       const report = makeReport({ results: [makePassedResult({ name: 'a' })], passed: true });
 
-      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', report)));
+      const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', report)));
 
       expect(parsed).toMatchObject({ passed: true });
     });
@@ -269,7 +273,7 @@ describe(formatJsonReport, () => {
     it('fails when a checklist reports a failure at or above the threshold', () => {
       const report = makeReport({ results: [makeFailedResult({ name: 'a' })], passed: false });
 
-      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', report)));
+      const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', report)));
 
       expect(parsed).toMatchObject({ passed: false, kits: [{ passed: false, checklists: [{ passed: false }] }] });
     });
@@ -308,7 +312,7 @@ describe(formatJsonReport, () => {
         durationMs: 15,
       });
 
-      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', report)));
+      const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', report)));
 
       expect(parsed).toMatchObject({
         counts: { passed: 1, errors: 1, warnings: 0, recommendations: 0, blocked: 1, optional: 0 },
@@ -374,7 +378,7 @@ describe(formatJsonReport, () => {
         passed: false,
       });
 
-      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', report)));
+      const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', report)));
 
       expect(parsed).toMatchObject({
         counts: { errors: 1, warnings: 1, recommendations: 1 },
@@ -390,7 +394,7 @@ describe(formatJsonReport, () => {
         ],
       });
 
-      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', report)));
+      const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', report)));
 
       expect(parsed).toMatchObject({ counts: { blocked: 1, optional: 1 } });
     });
@@ -407,7 +411,7 @@ describe(formatJsonReport, () => {
         durationMs: 30,
       });
 
-      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', report)));
+      const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', report)));
 
       expect(parsed).toMatchObject({
         counts: { passed: 2, errors: 1, blocked: 1 },
@@ -421,7 +425,7 @@ describe(formatJsonReport, () => {
     it('omits worstSeverity at every level when nothing failed', () => {
       const report = makeReport({ results: [makePassedResult({ name: 'a' })], passed: true, durationMs: 10 });
 
-      const output = formatReport(singleKit('deploy', report));
+      const output = formatReport(buildSingleKitInput('deploy', report));
 
       expect(output).not.toContain('worstSeverity');
     });
@@ -434,7 +438,7 @@ describe(formatJsonReport, () => {
         passed: false,
       });
 
-      const output = formatReport(singleKit('deploy', report));
+      const output = formatReport(buildSingleKitInput('deploy', report));
 
       expect(output).toContain('run install');
     });
@@ -446,7 +450,7 @@ describe(formatJsonReport, () => {
         durationMs: 12.4,
       });
 
-      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', report)));
+      const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', report)));
 
       expect(parsed).toMatchObject({
         durationMs: 12,
@@ -467,7 +471,7 @@ describe(formatJsonReport, () => {
         durationMs: 15,
       });
 
-      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', report)));
+      const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', report)));
 
       expect(parsed).toMatchObject({
         kits: [
@@ -489,7 +493,7 @@ describe(formatJsonReport, () => {
     it('withholds skipReason from a check that ran', () => {
       const report = makeReport({ results: [makePassedResult({ name: 'a' })], passed: true });
 
-      const output = formatReport(singleKit('deploy', report));
+      const output = formatReport(buildSingleKitInput('deploy', report));
 
       expect(output).not.toContain('skipReason');
     });
@@ -501,7 +505,7 @@ describe(formatJsonReport, () => {
         durationMs: 5,
       });
 
-      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', report)));
+      const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', report)));
 
       expect(parsed).toMatchObject({
         kits: [{ checklists: [{ checks: [{ error: 'connection refused' }] }] }],
@@ -522,7 +526,7 @@ describe(formatJsonReport, () => {
         durationMs: 10,
       });
 
-      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', report)));
+      const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', report)));
 
       expect(parsed).toMatchObject({
         kits: [
@@ -550,7 +554,7 @@ describe(formatJsonReport, () => {
         durationMs: 10,
       });
 
-      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', report)));
+      const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', report)));
 
       expect(parsed).toMatchObject({
         kits: [{ checklists: [{ checks: [{ progress: { type: 'percent', percent: 75 } }] }] }],
@@ -564,13 +568,15 @@ describe(formatJsonReport, () => {
         durationMs: 10,
       });
 
-      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', report)));
+      const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', report)));
 
       expect(parsed).toMatchObject({ kits: [{ checklists: [{ checks: [{ examinedCount: 12 }] }] }] });
     });
 
     it('omits the examined count for a check that did not return findings', () => {
-      const output = formatReport(singleKit('deploy', makeReport({ results: [makePassedResult({ name: 'a' })] })));
+      const output = formatReport(
+        buildSingleKitInput('deploy', makeReport({ results: [makePassedResult({ name: 'a' })] })),
+      );
 
       expect(output).not.toContain('"examinedCount"');
     });
@@ -612,7 +618,7 @@ describe(formatJsonReport, () => {
         durationMs: 20,
       });
 
-      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', report)));
+      const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', report)));
 
       expect(parsed).toMatchObject({
         kits: [{ checklists: [{ checks: [{ name: 'parent', checks: [{ name: 'child' }] }] }] }],
@@ -632,7 +638,7 @@ describe(formatJsonReport, () => {
         durationMs: 50,
       });
 
-      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', report)));
+      const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', report)));
 
       expect(parsed).toMatchObject({
         kits: [
@@ -661,7 +667,7 @@ describe(formatJsonReport, () => {
         durationMs: 30,
       });
 
-      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', report)));
+      const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', report)));
 
       expect(parsed).toMatchObject({
         kits: [{ checklists: [{ checks: [{ name: 'L0', checks: [{ name: 'L1', checks: [{ name: 'L2' }] }] }] }] }],
@@ -677,7 +683,7 @@ describe(formatJsonReport, () => {
         passed: true,
       });
 
-      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', report)));
+      const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', report)));
 
       expect(parsed).toMatchObject({
         kits: [{ checklists: [{ checks: [{ name: 'na-parent', checks: [{ name: 'na-child' }] }] }] }],
@@ -696,7 +702,7 @@ describe(formatJsonReport, () => {
         durationMs: 20,
       });
 
-      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', report), { reportOn: 'error' }));
+      const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', report), { reportOn: 'error' }));
 
       expect(parsed).toMatchObject({ kits: [{ checklists: [{ checks: [{ name: 'error-check' }] }] }] });
     });
@@ -711,7 +717,7 @@ describe(formatJsonReport, () => {
         durationMs: 15,
       });
 
-      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', report), { reportOn: 'error' }));
+      const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', report), { reportOn: 'error' }));
 
       expect(parsed).toMatchObject({
         counts: { passed: 1, errors: 0, warnings: 0, recommendations: 1, blocked: 0, optional: 0 },
@@ -729,7 +735,7 @@ describe(formatJsonReport, () => {
         durationMs: 15,
       });
 
-      const output = formatReport(singleKit('deploy', report), { reportOn: 'error' });
+      const output = formatReport(buildSingleKitInput('deploy', report), { reportOn: 'error' });
       const parsed: unknown = JSON.parse(output);
 
       expect(parsed).toMatchObject({
@@ -760,9 +766,9 @@ describe(formatJsonReport, () => {
           durationMs: 20,
         });
 
-      const declared = formatReport(singleKit('deploy', buildReport(true)));
+      const declared = formatReport(buildSingleKitInput('deploy', buildReport(true)));
 
-      expect(declared).toBe(formatReport(singleKit('deploy', buildReport(false))));
+      expect(declared).toBe(formatReport(buildSingleKitInput('deploy', buildReport(false))));
       expect(declared).toContain('quiet-pass');
     });
   });
@@ -780,7 +786,7 @@ describe(formatJsonReport, () => {
     });
 
     it('keeps every result in the tree under `full`', () => {
-      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', report), { detail: 'full' }));
+      const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', report), { detail: 'full' }));
 
       expect(parsed).toMatchObject({
         kits: [
@@ -802,7 +808,7 @@ describe(formatJsonReport, () => {
     it('reduces the tree to failed checks and their fixes under `summary`', () => {
       const counts = { passed: 1, errors: 2, warnings: 0, recommendations: 0, blocked: 1, optional: 0 };
 
-      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', report), { detail: 'summary' }));
+      const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', report), { detail: 'summary' }));
 
       expect(parsed).toStrictEqual({
         schemaVersion: 2,
@@ -849,14 +855,14 @@ describe(formatJsonReport, () => {
     it('omits the checks property when no check failed', () => {
       const clean = makeReport({ results: [makePassedResult({ name: 'a' })], passed: true });
 
-      const output = formatReport(singleKit('deploy', clean), { detail: 'summary' });
+      const output = formatReport(buildSingleKitInput('deploy', clean), { detail: 'summary' });
 
       expect(output).not.toContain('checks');
     });
 
     it('produces a payload that the schema accepts in both projections', () => {
       for (const detail of ['full', 'summary'] as const) {
-        const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', report), { detail }));
+        const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', report), { detail }));
         expect(() => ReportSchema.parse(parsed)).not.toThrow();
       }
     });
@@ -868,7 +874,7 @@ describe(formatJsonReport, () => {
         results: [makePassedResult({ name: 'a', id: 'toolbelt.errors/no-instanceof-error' })],
       });
 
-      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', withId)));
+      const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', withId)));
 
       expect(parsed).toMatchObject({
         kits: [{ checklists: [{ checks: [{ name: 'a', id: 'toolbelt.errors/no-instanceof-error' }] }] }],
@@ -876,7 +882,9 @@ describe(formatJsonReport, () => {
     });
 
     it('omits the key for a check that declares none', () => {
-      const output = formatReport(singleKit('deploy', makeReport({ results: [makePassedResult({ name: 'a' })] })));
+      const output = formatReport(
+        buildSingleKitInput('deploy', makeReport({ results: [makePassedResult({ name: 'a' })] })),
+      );
 
       expect(output).not.toContain('"id"');
     });
@@ -887,7 +895,7 @@ describe(formatJsonReport, () => {
         passed: false,
       });
 
-      const parsed: unknown = JSON.parse(formatReport(singleKit('deploy', failing), { detail: 'summary' }));
+      const parsed: unknown = JSON.parse(formatReport(buildSingleKitInput('deploy', failing), { detail: 'summary' }));
 
       expect(parsed).toMatchObject({
         kits: [{ checklists: [{ checks: [{ name: 'a', id: 'toolbelt.errors/no-instanceof-error' }] }] }],
