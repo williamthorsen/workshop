@@ -553,6 +553,23 @@
       .term .dim {
         color: var(--ink-2);
       }
+      .term .n-error,
+      .term .n-blocked {
+        color: var(--error);
+        font-weight: 600;
+      }
+      .term .n-warn {
+        color: var(--warn);
+        font-weight: 600;
+      }
+      .term .n-pass {
+        color: var(--pass);
+        font-weight: 600;
+      }
+      .term .n-skip {
+        color: var(--skip);
+        font-weight: 600;
+      }
       .s-output .term {
         position: relative;
         width: 1192px;
@@ -1452,7 +1469,7 @@
 <span class="dim">── Fixes</span>
 🔶 NODE_ENV is set
    💊 Set NODE_ENV before deploying
-🔶 Total: 1 warning, 1 passed (1ms)
+🔶 Total: <span class="n-warn">1 warning</span>, <span class="n-pass">1 passed</span> (1ms)
 
 ✅ Run passed (fail-on: error)
 <span class="dim">exit 0</span></code></pre>
@@ -1647,7 +1664,7 @@
    💊 Run the build before deploying
 🔶 NODE_ENV is set
    💊 Set NODE_ENV before deploying
-❌ Total: 1 error, 1 warning, 1 passed, 2 blocked, 1 skipped (0ms)
+❌ Total: <span class="n-error">1 error</span>, <span class="n-warn">1 warning</span>, <span class="n-pass">1 passed</span>, <span class="n-blocked">2 blocked</span>, <span class="n-skip">1 skipped</span> (0ms)
 
 ❌ Run failed (fail-on: error)
 <span class="dim">exit 1</span></code></pre>
