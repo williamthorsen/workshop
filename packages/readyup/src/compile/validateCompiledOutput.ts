@@ -3,7 +3,13 @@ import { chainError } from '@williamthorsen/toolbelt.errors/candidate';
 import { assertIsRdyKit } from '../kits/assertIsRdyKit.ts';
 import { importKitModule } from '../kits/importKitModule.ts';
 import { resolveKitExports } from '../kits/resolveKitExports.ts';
-import { isFlatChecklist, type RdyCheck, type RdyChecklist, type RdyStagedChecklist } from '../kits/types.ts';
+import {
+  isFlatChecklist,
+  listStaticChildren,
+  type RdyCheck,
+  type RdyChecklist,
+  type RdyStagedChecklist,
+} from '../kits/types.ts';
 import { validateKit } from '../kits/validateKit.ts';
 import type { RdyManifestChecklistChecks } from '../manifest/manifestSchema.ts';
 import { toDisplayPath } from '../portable/toDisplayPath.ts';
@@ -57,9 +63,9 @@ function listCheckNames(checklist: RdyChecklist | RdyStagedChecklist): string[] 
   return [...(checklist.preconditions ?? []), ...checks].flatMap(flattenCheckNames);
 }
 
-/** Returns a check's name followed by the names of its dependents, depth-first. */
+/** Returns a check's name followed by the names of its declared dependents, depth-first, leaving a builder uncalled. */
 function flattenCheckNames(check: RdyCheck): string[] {
-  return [check.name, ...(check.checks ?? []).flatMap(flattenCheckNames)];
+  return [check.name, ...listStaticChildren(check).flatMap(flattenCheckNames)];
 }
 
 // endregion | Helpers

@@ -1,7 +1,7 @@
 import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
-import { assertIsRdyKit } from '../assertIsRdyKit.ts';
+import { assertIsBuiltCheckList, assertIsRdyKit } from '../assertIsRdyKit.ts';
 
 /** Runs the assertion and returns the message that it threw, failing the test when it accepted the value. */
 async function messageFrom(raw: unknown, source?: string): Promise<string> {
@@ -167,6 +167,14 @@ describe(assertIsRdyKit, () => {
 
       await expect(messageFrom(raw)).resolves.toContain(
         'checklists[0].checks[0].checks[0].check: expected a function, got string',
+      );
+    });
+
+    it('names the type supplied when nested checks are neither an array nor a function', async () => {
+      const raw = { checklists: [{ name: 'test', checks: [{ name: 'parent', check: () => true, checks: 'nope' }] }] };
+
+      await expect(messageFrom(raw)).resolves.toContain(
+        'checklists[0].checks[0].checks: expected an array of checks or a function, got string',
       );
     });
 
@@ -390,6 +398,19 @@ describe(assertIsRdyKit, () => {
       ).not.toThrow();
     });
 
+    it('accepts nested checks built by a function, without calling it', () => {
+      let calls = 0;
+      const builder = () => {
+        calls += 1;
+        return [];
+      };
+
+      expect(() =>
+        assertIsRdyKit({ checklists: [{ name: 'test', checks: [{ name: 'a', check: () => true, checks: builder }] }] }),
+      ).not.toThrow();
+      expect(calls).toBe(0);
+    });
+
     it('accepts a check with every optional field', () => {
       expect(() =>
         assertIsRdyKit({
@@ -519,5 +540,33 @@ describe(assertIsRdyKit, () => {
     it('accepts a kit that declares no floor', () => {
       expect(() => assertIsRdyKit({ checklists: [{ name: 'test', checks: [] }] })).not.toThrow();
     });
+  });
+});
+
+describe(assertIsBuiltCheckList, () => {
+  it('accepts an array of valid checks', () => {
+    expect(() => assertIsBuiltCheckList([{ name: 'a', check: () => true }])).not.toThrow();
+  });
+
+  it('accepts an empty array', () => {
+    expect(() => assertIsBuiltCheckList([])).not.toThrow();
+  });
+
+  it('names the type supplied when the value is not an array', async () => {
+    const message = (await captureError(() => assertIsBuiltCheckList(undefined))).message;
+
+    expect(message).toContain('Invalid checks built by the check:');
+    expect(message).toContain('checks: expected an array of checks, got undefined');
+  });
+
+  it('locates an invalid built check by a path rooted at checks', async () => {
+    const raw = [
+      { name: 'a', check: () => true },
+      { name: 'b', check: 'nope', checks: [{ name: '' }] },
+    ];
+    const message = (await captureError(() => assertIsBuiltCheckList(raw))).message;
+
+    expect(message).toContain('checks[1].check: expected a function, got string');
+    expect(message).toContain('checks[1].checks[0].name: expected a non-empty string');
   });
 });

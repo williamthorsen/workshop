@@ -5,6 +5,7 @@ import type { KitProvenance } from '../kits/KitProvenance.ts';
 import {
   type FailedResult,
   isFlatChecklist,
+  listStaticChildren,
   type PassedResult,
   type Progress,
   type RdyCheck,
@@ -196,7 +197,7 @@ function buildAuthoringErrorResult(context: CheckContext, durationMs: number, er
  */
 async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promise<RdyResult[]> {
   const context = buildCheckContext(check, run, depth);
-  const children = check.checks ?? [];
+  const children = listStaticChildren(check);
 
   // Opened before `skip`, because a check may read its sources there and reuse them in `check`.
   const recorder = createExaminedRecorder(run.pragmaLedger);
@@ -306,10 +307,7 @@ async function runSiblingChecks(checks: readonly RdyCheck[], run: RunContext, de
 function skipAllDescendants(checks: readonly RdyCheck[], run: RunContext, depth: number): RdyResult[] {
   const results: RdyResult[] = [];
   for (const check of checks) {
-    results.push(skipCheck(check, run, depth));
-    if (check.checks !== undefined && check.checks.length > 0) {
-      results.push(...skipAllDescendants(check.checks, run, depth + 1));
-    }
+    results.push(skipCheck(check, run, depth), ...skipAllDescendants(listStaticChildren(check), run, depth + 1));
   }
   return results;
 }

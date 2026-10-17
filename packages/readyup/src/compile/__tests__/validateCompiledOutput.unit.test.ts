@@ -88,6 +88,24 @@ describe(validateCompiledOutput, () => {
     ]);
   });
 
+  it('records the parent of checks built at run time, without calling the builder', async ({ temp }) => {
+    const filePath = temp.write(
+      'built-checks.mjs',
+      [
+        'const pass = () => true;',
+        "const build = () => { throw new Error('built at compile time'); };",
+        'export default {',
+        "  checklists: [{ name: 'flat', checks: [{ name: 'parent', check: pass, checks: build }, { name: 'sibling', check: pass }] }],",
+        '};',
+        '',
+      ].join('\n'),
+    );
+
+    const metadata = await validateCompiledOutput(filePath);
+
+    expect(metadata.checklistChecks).toStrictEqual([{ checklist: 'flat', checks: ['parent', 'sibling'] }]);
+  });
+
   it('leaves the file in place and throws when the bundle fails to load', async ({ temp }) => {
     const filePath = temp.write('bad-bundle.mjs', 'throw new Error("parse error");\n');
 

@@ -13,6 +13,7 @@ export type {
   PercentProgress,
   Progress,
   RdyCheck,
+  RdyCheckBuilder,
   RdyChecklist,
   RdyConfig,
   RdyKit,

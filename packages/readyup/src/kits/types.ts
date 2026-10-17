@@ -222,8 +222,27 @@ export interface RdyCheck {
    */
   fix?: string | undefined;
 
-  /** Dependent checks that run only if this check passes. */
-  checks?: readonly RdyCheck[] | undefined;
+  /**
+   * Dependent checks that run only if this check passes.
+   *
+   * A function builds them when the checklist runs, once this check has passed, so that they may depend on the repo
+   * under check. A check that does not pass does not build them, and its run reports no rows for them. Because
+   * `rdy compile` and `rdy list --checks` do not run the function, they record and list this check alone.
+   */
+  checks?: readonly RdyCheck[] | RdyCheckBuilder | undefined;
+}
+
+/** Builds a check's dependent checks when the checklist runs. */
+export type RdyCheckBuilder = () => readonly RdyCheck[] | Promise<readonly RdyCheck[]>;
+
+/** Reports whether a check builds its dependent checks at run time. */
+export function isCheckBuilder(check: RdyCheck): check is RdyCheck & { checks: RdyCheckBuilder } {
+  return typeof check.checks === 'function';
+}
+
+/** Returns the dependent checks that a check declares, or none when it builds them at run time. */
+export function listStaticChildren(check: RdyCheck): readonly RdyCheck[] {
+  return typeof check.checks === 'function' ? [] : (check.checks ?? []);
 }
 
 // -- Results --

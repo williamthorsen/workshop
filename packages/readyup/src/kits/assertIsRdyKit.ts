@@ -2,7 +2,7 @@ import { z, type ZodError } from 'zod';
 
 import { describeType, previewValue } from '../portable/describe-value.ts';
 import { isRecord } from '../portable/isRecord.ts';
-import type { RdyKit } from './types.ts';
+import type { RdyCheck, RdyKit } from './types.ts';
 
 /** Schema for valid severity levels. */
 const SeveritySchema = z.enum(['error', 'warn', 'recommend'], {
@@ -54,13 +54,15 @@ const NameSchema = z.string('expected a non-empty string').min(1, 'expected a no
  *
  * `looseObject` reads every own enumerable key in order to pass unknown ones through, so removing
  * `fix` from the shape would stop it being type-checked without stopping it being invoked. The
- * preprocess leaves an accessor-valued one unread.
+ * preprocess leaves an accessor-valued one unread, and hides a builder-valued `checks`, whose checks are
+ * validated when the runner builds them. A union of the two forms of `checks` would report a bad nested
+ * check as an invalid union at `checks`, losing the path to the check.
  *
  * The annotation breaks an inference cycle: TypeScript cannot infer a type that recurses through
  * `z.preprocess`. Widening it changes nothing, because no caller reads the parsed output.
  */
 const CheckSchema: z.ZodType = z.preprocess(
-  hideAccessorFix,
+  hideDeferredFields,
   z.looseObject({
     name: NameSchema,
     id: NameSchema.optional(),
@@ -70,7 +72,11 @@ const CheckSchema: z.ZodType = z.preprocess(
     skip: FunctionSchema.optional(),
     fix: z.string().optional(),
     get checks() {
-      return z.array(CheckSchema).optional();
+      return z
+        .array(CheckSchema, {
+          error: (issue) => `expected an array of checks or a function, got ${describeType(issue.input)}`,
+        })
+        .optional();
     },
   }),
 );
@@ -105,6 +111,13 @@ const ChecklistSchema = ChecklistShapeSchema.refine(
   "Checklist must have either 'checks' or 'groups'",
 ).refine((val) => !('checks' in val && 'groups' in val), "Checklist cannot have both 'checks' and 'groups'");
 
+/** Schema for the checks returned by a builder, wrapped so that each issue path starts at `checks`. */
+const BuiltCheckListSchema = z.object({
+  checks: z.array(CheckSchema, {
+    error: (issue) => `expected an array of checks, got ${describeType(issue.input)}`,
+  }),
+});
+
 /** Structural schema for an RdyKit. */
 const RdyKitSchema = z.looseObject({
   checklists: z.array(ChecklistSchema),
@@ -116,6 +129,17 @@ const RdyKitSchema = z.looseObject({
   reportOn: SeveritySchema.optional(),
   suites: z.record(z.string(), z.array(z.string())).optional(),
 });
+
+/**
+ * Validates the checks returned by a check's builder, as `assertIsRdyKit` validates a declared check.
+ *
+ * Throws an Error whose message names one issue per line, each located by a path rooted at `checks`.
+ */
+export function assertIsBuiltCheckList(raw: unknown): asserts raw is readonly RdyCheck[] {
+  const result = BuiltCheckListSchema.safeParse({ checks: raw });
+  if (result.success) return;
+  throw new Error(formatValidationError(result.error, 'Invalid checks built by the check:'));
+}
 
 /**
  * Validates that a raw value conforms to the RdyKit shape, checks included.
@@ -131,12 +155,12 @@ const RdyKitSchema = z.looseObject({
 export function assertIsRdyKit(raw: unknown, source?: string): asserts raw is RdyKit {
   const result = RdyKitSchema.safeParse(raw);
   if (result.success) return;
-  throw new Error(formatValidationError(result.error, source));
+  const heading = source === undefined ? 'Invalid kit:' : `Invalid kit at ${source}:`;
+  throw new Error(formatValidationError(result.error, heading));
 }
 
-/** Returns a heading plus one sentence per issue from a failed kit parse. */
-function formatValidationError(error: ZodError, source: string | undefined): string {
-  const heading = source === undefined ? 'Invalid kit:' : `Invalid kit at ${source}:`;
+/** Returns a heading plus one sentence per issue from a failed parse. */
+function formatValidationError(error: ZodError, heading: string): string {
   const lines = error.issues.map((issue) => `  ${formatIssuePath(issue.path)}: ${issue.message}`);
   return [heading, ...lines].join('\n');
 }
@@ -159,21 +183,25 @@ function formatIssuePath(path: ReadonlyArray<PropertyKey>): string {
 }
 
 /**
- * Returns the check as the schema should see it, with an accessor-valued `fix` hidden from the parse.
+ * Returns the check as the schema should see it, with each deferred field hidden from the parse: an accessor-valued
+ * `fix`, and a function-valued `checks`.
  *
- * Because a getter is deferred to the failure that renders it, validation must not read one. Hiding
- * it behind a copy that has no `fix` at all defers it; a data property passes through untouched.
- * Because the copy contains descriptors rather than values, building it invokes no other accessor on
- * the check.
+ * Because a getter is deferred to the failure that renders it, validation must not read one. Hiding it behind a copy
+ * that has no `fix` at all defers it; a data property passes through untouched. Because the copy contains descriptors
+ * rather than values, building it invokes no other accessor on the check.
  */
-function hideAccessorFix(value: unknown): unknown {
+function hideDeferredFields(value: unknown): unknown {
   if (!isRecord(value)) return value;
 
-  const descriptor = Object.getOwnPropertyDescriptor(value, 'fix');
-  if (descriptor === undefined || 'value' in descriptor) return value;
+  const fixDescriptor = Object.getOwnPropertyDescriptor(value, 'fix');
+  const hidesFix = fixDescriptor !== undefined && !('value' in fixDescriptor);
+  const checksDescriptor = Object.getOwnPropertyDescriptor(value, 'checks');
+  const hidesBuilder = typeof checksDescriptor?.value === 'function';
+  if (!hidesFix && !hidesBuilder) return value;
 
   const descriptors = Object.getOwnPropertyDescriptors(value);
-  delete descriptors['fix'];
+  if (hidesFix) delete descriptors['fix'];
+  if (hidesBuilder) delete descriptors['checks'];
   // `Reflect.getPrototypeOf` rather than `Object.getPrototypeOf`, which is declared to return `any`.
   return Object.create(Reflect.getPrototypeOf(value), descriptors);
 }
