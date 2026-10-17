@@ -5,8 +5,9 @@ import { describe, expect, it } from 'vitest';
 
 import type { GitHubFacts, GitHubReader } from '../../github/github-repo.ts';
 import { STACK_DETECTORS } from '../../stacks/stack-detectors.ts';
-import { type CloneAdapters, REPO_COMMANDS } from '../repo-commands.ts';
+import { REPO_COMMANDS } from '../repo-commands.ts';
 import { type CapturedRun, runCaptured } from '../test-utils/run-captured.ts';
+import type { CloneAdapters } from '../verb-run.ts';
 
 const HOME = '/home/spec';
 

@@ -2,7 +2,8 @@ import type { Writer } from '@williamthorsen/toolbelt.cli/candidate';
 
 import { run } from '../../bin/run.ts';
 import type { GitHubReader } from '../../github/github-repo.ts';
-import { type CloneAdapters, GIT_ADAPTERS } from '../repo-commands.ts';
+import { GIT_ADAPTERS } from '../repo-commands.ts';
+import type { CloneAdapters } from '../verb-run.ts';
 
 /** The outcome of a captured run: its exit status, and its stdout and stderr without their final newline. */
 export interface CapturedRun {
