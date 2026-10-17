@@ -183,7 +183,7 @@ function collectReasons(result: FailedResult, includeFix: boolean): string[] {
 function collectFixes(results: RdyResult[]): AttributedFix[] {
   return results.flatMap((result) =>
     result.status === 'failed' && result.fix !== null
-      ? [{ fix: result.fix, name: result.name, severity: result.severity }]
+      ? { fix: result.fix, name: result.name, severity: result.severity }
       : [],
   );
 }

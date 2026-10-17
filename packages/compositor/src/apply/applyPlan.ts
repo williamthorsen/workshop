@@ -65,11 +65,13 @@ export async function applyPlan(plan: Plan, options: ApplyPlanOptions): Promise<
     const applied = await applyFile({ blobs: plan.blobs, dryRun, file, force, root });
     files.push(applied);
 
-    if (applied.action === 'removed' || applied.action === 'written') {
-      const paths = touched.get(file.targetId) ?? { removed: new Set<string>(), written: new Set<string>() };
-      paths[applied.action === 'removed' ? 'removed' : 'written'].add(file.path);
-      touched.set(file.targetId, paths);
+    if (applied.action !== 'removed' && applied.action !== 'written') {
+      continue;
     }
+
+    const paths = touched.get(file.targetId) ?? { removed: new Set<string>(), written: new Set<string>() };
+    paths[applied.action].add(file.path);
+    touched.set(file.targetId, paths);
   }
 
   return { fingerprint: plan.fingerprint, dryRun, files, prunedDirs: await pruneEmptied(plan, roots, touched, dryRun) };
