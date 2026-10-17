@@ -4,6 +4,7 @@ import { withSweepRecorder } from '../check-utils/project/sweepRecorder.ts';
 import type { KitProvenance } from '../kits/KitProvenance.ts';
 import {
   type FailedResult,
+  isCheckBuilder,
   isFlatChecklist,
   listStaticChildren,
   type PassedResult,
@@ -20,6 +21,7 @@ import {
 import { describeValue } from '../portable/describe-value.ts';
 import { toError } from '../portable/toError.ts';
 import { meetsThreshold } from '../severity/meetsThreshold.ts';
+import { buildChildren } from './buildChildren.ts';
 import { describeUninterpretableReturn, isCheckOutcome, isFindingOutcome, resolveCheckReturn } from './check-return.ts';
 import { createExaminedRecorder } from './createExaminedRecorder.ts';
 import type { PragmaLedger } from './PragmaLedger.ts';
@@ -255,6 +257,12 @@ async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promis
       // verdict, the severity that it declared for its subject says nothing about this outcome.
       const error = new Error(describeUninterpretableReturn(raw));
       result = buildAuthoringErrorResult(context, durationMs, error);
+    }
+
+    if (result.status === 'passed' && isCheckBuilder(check)) {
+      const built = await buildChildren(check, run.pragmaLedger, run.provenance);
+      if (built instanceof Error) return [buildAuthoringErrorResult(context, durationMs, built)];
+      return [result, ...(await runSiblingChecks(built, run, depth + 1))];
     }
 
     const childResults = await collectChildResults(result, children, run, depth + 1);

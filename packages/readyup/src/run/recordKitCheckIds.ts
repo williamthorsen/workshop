@@ -3,6 +3,14 @@ import { isFlatChecklist, listStaticChildren, type RdyCheck, type RdyKit } from 
 import type { PragmaLedger } from './PragmaLedger.ts';
 import { resolveCheckIds } from './resolveCheckIds.ts';
 
+/** Records the ids of a check and of its declared dependents, depth-first, leaving a builder uncalled. */
+export function recordCheckIds(check: RdyCheck, ledger: PragmaLedger, provenance: KitProvenance | undefined): void {
+  const ids = resolveCheckIds(check.id, provenance);
+  if (ids !== undefined) ledger.recordCheckIds(ids);
+
+  for (const child of listStaticChildren(check)) recordCheckIds(child, ledger, provenance);
+}
+
 /**
  * Records the ids of every check of a loaded kit: each checklist's preconditions, then its checks or every staged
  * group, each check followed by its dependents.
@@ -16,15 +24,3 @@ export function recordKitCheckIds(kit: RdyKit, ledger: PragmaLedger, provenance:
     for (const check of [...(checklist.preconditions ?? []), ...checks]) recordCheckIds(check, ledger, provenance);
   }
 }
-
-// region | Helpers
-
-/** Records the ids of a check and of its declared dependents, depth-first, leaving a builder uncalled. */
-function recordCheckIds(check: RdyCheck, ledger: PragmaLedger, provenance: KitProvenance | undefined): void {
-  const ids = resolveCheckIds(check.id, provenance);
-  if (ids !== undefined) ledger.recordCheckIds(ids);
-
-  for (const child of listStaticChildren(check)) recordCheckIds(child, ledger, provenance);
-}
-
-// endregion | Helpers
