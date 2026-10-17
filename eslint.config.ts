@@ -95,13 +95,6 @@ const config = defineConfig([
     },
   }),
   {
-    // Config files legitimately mutate and compose configuration objects at module top level.
-    files: [...patterns.codeExtensions.map((extensions) => `**/*.config.${extensions}`), '**/config/**'],
-    rules: {
-      'unicorn/no-top-level-side-effects': 'off',
-    },
-  },
-  {
     files: ['**/scripts/**/*'],
     rules: {
       'no-console': 'off',
