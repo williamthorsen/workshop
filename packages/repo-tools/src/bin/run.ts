@@ -2,7 +2,8 @@ import process from 'node:process';
 
 import { runCli, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
 
-import { GIT_ADAPTERS, PROG, REPO_COMMANDS, type RepoContext } from '../commands/repo-commands.ts';
+import { GIT_ADAPTERS, REPO_COMMANDS } from '../commands/repo-commands.ts';
+import { PROG, type RepoContext } from '../commands/verb-run.ts';
 import { createGhReader } from '../github/github-repo.ts';
 
 /** The context and writers with which `run` invokes the command tree. */

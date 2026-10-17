@@ -1,47 +1,14 @@
 import fs from 'node:fs';
-import path from 'node:path';
 
-import { createCli, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
+import { createCli } from '@williamthorsen/toolbelt.cli/candidate';
 
 import { listTrackedFiles, readCloneRoot, readCurrentBranch, readOriginUrl } from '../git/git-clone.ts';
-import type { GitHubReader } from '../github/github-repo.ts';
-import { expandTilde, formatDisplayPath, readHome } from '../portable/paths.ts';
-import {
-  appendEntry,
-  assertWritable,
-  type NewEntry,
-  parseRegistry,
-  readRegistry,
-  type RegistryEntry,
-  saveRegistry,
-  selectEntries,
-  serializeRegistry,
-  writeGitHubFields,
-  writeStack,
-} from '../registry/registry.ts';
-import { detectStack } from '../stacks/stack-detection.ts';
+import { expandTilde } from '../portable/paths.ts';
+import { readRegistry, selectEntries } from '../registry/registry.ts';
 import { STACK_DETECTORS } from '../stacks/stack-detectors.ts';
-
-/**
- * The git and filesystem operations that the commands perform on a clone, injected so that unit tests supply their
- * own.
- */
-export interface CloneAdapters {
-  isDirectory: (dir: string) => boolean;
-  listTrackedFiles: (cloneDir: string) => string[] | undefined;
-  readCurrentBranch: (dir: string) => string | undefined;
-  readFile: (file: string) => string;
-  readOriginUrl: (cloneDir: string) => string | undefined;
-  readCloneRoot: (dir: string) => string | undefined;
-}
-
-/** The environment in which the commands run. */
-export interface RepoContext {
-  adapters: CloneAdapters;
-  cwd: string;
-  env: Readonly<Record<string, string | undefined>>;
-  github: GitHubReader;
-}
+import { runAdd } from './runAdd.ts';
+import { runScan } from './runScan.ts';
+import { buildVerbRun, type CloneAdapters, PROG, type RepoContext, reportFailure, type VerbRun } from './verb-run.ts';
 
 export const GIT_ADAPTERS: CloneAdapters = {
   isDirectory: (dir) => fs.statSync(dir, { throwIfNoEntry: false })?.isDirectory() ?? false,
@@ -51,9 +18,6 @@ export const GIT_ADAPTERS: CloneAdapters = {
   readOriginUrl,
   readCloneRoot,
 };
-
-/** The name under which the CLI reports usage and messages. */
-export const PROG = 'thor-repo';
 
 const { defineCommand, defineGroup } = createCli<RepoContext>();
 
@@ -173,104 +137,6 @@ interface ListOptions {
   visibility: string | undefined;
 }
 
-/** The state shared by a command's run. */
-interface VerbRun {
-  adapters: CloneAdapters;
-  cwd: string;
-  file: string;
-  github: GitHubReader;
-  home: string;
-  stderr: (line: string) => void;
-  stdout: (line: string) => void;
-}
-
-/** Builds the state of a command's run, resolving the registry file to its default when `--file` is absent. */
-function buildVerbRun(context: RepoContext, file: string | undefined, stdout: Writer, stderr: Writer): VerbRun {
-  const home = readHome(context.env);
-  return {
-    adapters: context.adapters,
-    cwd: context.cwd,
-    file: file ?? `${home}/.config/repos.yaml`,
-    github: context.github,
-    home,
-    stderr: (line) => stderr.write(`${line}\n`),
-    stdout: (line) => stdout.write(`${line}\n`),
-  };
-}
-
-/** Returns the name under which an entry is reported: its name, else its path. */
-function formatEntryName(entry: RegistryEntry): string {
-  return entry.name ?? entry.path ?? '(unnamed)';
-}
-
-/** Returns the `owner/name` path of a remote URL in SSH, `ssh://`, or HTTPS form, or `undefined`. */
-function parseRemotePath(url: string): string | undefined {
-  const match = /[:/]([^/:]+)\/([^/]+?)(?:\.git)?\/?$/.exec(url);
-  if (match?.[1] === undefined || match[2] === undefined) return undefined;
-  return `${match[1]}/${match[2]}`;
-}
-
-/** Reports a failure under the program's name and returns the failure status. */
-function reportFailure(run: VerbRun, message: string): number {
-  run.stderr(`${PROG}: ${message}`);
-  return 1;
-}
-
-/** Runs `add`: prints the entry that registers a clone, and appends it under `--write`. */
-function runAdd(run: VerbRun, target: string, isWrite: boolean): number {
-  const registry = readRegistry(run.file);
-  if (typeof registry === 'string') return reportFailure(run, registry);
-  const cloneDir = run.adapters.readCloneRoot(path.resolve(run.cwd, expandTilde(target, run.home)));
-  if (cloneDir === undefined) return reportFailure(run, `${target} is not in a git clone`);
-  const origin = run.adapters.readOriginUrl(cloneDir);
-  if (origin === undefined) return reportFailure(run, `${cloneDir} has no origin remote`);
-  const repo = parseRemotePath(origin);
-  if (repo === undefined) return reportFailure(run, `cannot read an owner and a name from the origin URL ${origin}`);
-
-  const entryPath = formatDisplayPath(cloneDir, run.home);
-  const existing = registry.entries.find(
-    (entry) => entry.repo === repo || (entry.path !== undefined && expandTilde(entry.path, run.home) === cloneDir),
-  );
-  if (existing !== undefined)
-    return reportFailure(run, `${cloneDir} is already registered as ${formatEntryName(existing)}`);
-
-  const detection = scanClone(run, cloneDir);
-  if (detection === undefined) return reportFailure(run, `cannot list the tracked files of ${cloneDir}`);
-  const entry: NewEntry = { name: repo.slice(repo.indexOf('/') + 1), path: entryPath, repo, stack: detection };
-  const facts = run.github(repo);
-  if (typeof facts === 'string') {
-    run.stderr(`${PROG}: ${repo}: cannot read GitHub: ${facts}; the entry omits visibility and runner`);
-  } else {
-    entry.visibility = facts.visibility;
-    if (facts.runnerProblem === undefined) {
-      entry.runner = facts.runner;
-    } else {
-      run.stderr(`${PROG}: ${repo}: CI_RUNS_ON ${facts.runnerProblem}; the entry omits runner`);
-    }
-  }
-
-  const preview = parseRegistry('repos:\n');
-  if (typeof preview !== 'string') {
-    appendEntry(preview, entry);
-    for (const line of serializeRegistry(preview)
-      .replace(/^repos:\n/, '')
-      .trimEnd()
-      .split('\n'))
-      run.stdout(line);
-  }
-  if (!isWrite) {
-    run.stderr(`${PROG}: nothing written; pass --write to append the entry to ${run.file}`);
-    return 0;
-  }
-
-  const refusal = assertWritable(run.file, run.adapters.readCurrentBranch);
-  if (refusal !== undefined) return reportFailure(run, refusal);
-  appendEntry(registry, entry);
-  saveRegistry(registry, run.file);
-  run.stderr(`${PROG}: appended ${entry.name} to ${run.file}`);
-  return 0;
-}
-
 /** Runs `list`: prints the selected entries as absolute paths, or as JSON with each path as written. */
 function runList(run: VerbRun, options: ListOptions): number {
   const registry = readRegistry(run.file);
@@ -294,95 +160,6 @@ function runList(run: VerbRun, options: ListOptions): number {
   }
   for (const entry of selected) run.stdout(expandTilde(entry.path ?? '', run.home));
   return 0;
-}
-
-/**
- * Runs `scan`: reports each entry whose stack, visibility, or runner differs from its clone and GitHub, and rewrites
- * them under `--write`.
- */
-function runScan(run: VerbRun, isWrite: boolean): number {
-  const registry = readRegistry(run.file);
-  if (typeof registry === 'string') return reportFailure(run, registry);
-  if (registry.entries.some((entry) => entry.path === undefined)) {
-    return reportFailure(run, `registry entry has no path: ${run.file}`);
-  }
-  if (isWrite) {
-    const refusal = assertWritable(run.file, run.adapters.readCurrentBranch);
-    if (refusal !== undefined) return reportFailure(run, refusal);
-  }
-
-  let isChanged = false;
-  const cloneless: string[] = [];
-  for (const entry of registry.entries) {
-    const label = formatEntryName(entry);
-    const changes: string[] = [];
-    const detected = scanClone(run, expandTilde(entry.path ?? '', run.home), label);
-    if (detected === undefined) {
-      cloneless.push(label);
-    } else {
-      changes.push(
-        ...detected.filter((name) => !entry.stack.includes(name)).map((name) => `+${name}`),
-        ...entry.stack
-          .toSorted()
-          .filter((name) => !detected.includes(name))
-          .map((name) => `-${name}`),
-      );
-      writeStack(registry, entry, detected);
-    }
-    changes.push(...scanGitHub(run, entry, label));
-    if (entry.visibility === 'public' && entry.runner !== undefined) {
-      run.stderr(
-        `${PROG}: ${label}: public repo routes CI to runner ${entry.runner}; a self-hosted runner must not run a fork's pull request`,
-      );
-    }
-    if (changes.length === 0) continue;
-    run.stdout(`${label}: ${changes.join(' ')}`);
-    isChanged = true;
-  }
-  if (cloneless.length > 0) {
-    run.stderr(`${PROG}: no clone on this machine, so the stack is kept, for: ${cloneless.join(', ')}`);
-  }
-
-  if (isWrite && isChanged) saveRegistry(registry, run.file);
-  return 0;
-}
-
-/**
- * Returns the stack names that a clone's tracked files signal, reporting each unreadable manifest on stderr, or
- * `undefined` when the clone's tracked files cannot be listed.
- */
-function scanClone(run: VerbRun, cloneDir: string, label: string = cloneDir): string[] | undefined {
-  const trackedPaths = run.adapters.listTrackedFiles(cloneDir);
-  if (trackedPaths === undefined) return undefined;
-  const detection = detectStack(trackedPaths, (trackedPath) => run.adapters.readFile(path.join(cloneDir, trackedPath)));
-  for (const problem of detection.problems) run.stderr(`${PROG}: ${label}: ${problem}`);
-  return detection.stack;
-}
-
-/**
- * Reads an entry's visibility and runner from GitHub, writes the values that differ into the entry, and returns the
- * changes as `scan` reports them. A value that cannot be read is reported on stderr and kept.
- */
-function scanGitHub(run: VerbRun, entry: RegistryEntry, label: string): string[] {
-  if (entry.repo === undefined) {
-    run.stderr(`${PROG}: ${label}: no repo; its visibility and runner are kept`);
-    return [];
-  }
-  const facts = run.github(entry.repo);
-  if (typeof facts === 'string') {
-    run.stderr(`${PROG}: ${label}: cannot read GitHub: ${facts}; its visibility and runner are kept`);
-    return [];
-  }
-  let runner = facts.runner;
-  if (facts.runnerProblem !== undefined) {
-    run.stderr(`${PROG}: ${label}: CI_RUNS_ON ${facts.runnerProblem}; its runner is kept`);
-    runner = entry.runner;
-  }
-  const changes: string[] = [];
-  if (facts.visibility !== entry.visibility) changes.push(`visibility=${facts.visibility}`);
-  if (runner !== entry.runner) changes.push(runner === undefined ? '-runner' : `runner=${runner}`);
-  if (changes.length > 0) writeGitHubFields(entry, { runner, visibility: facts.visibility });
-  return changes;
 }
 
 // endregion | Helpers

@@ -3,9 +3,9 @@ import fs from 'node:fs';
 import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
-import type { ThorNodeEffects } from '../run.ts';
 import { parseActiveDays, runPruneModules } from '../runPruneModules.ts';
 import { runWithBuffers } from '../test-utils/runWithBuffers.ts';
+import type { ThorNodeEffects } from '../thor-node-result.ts';
 
 const DAY_MS = 24 * 60 * 60 * 1_000;
 const NOW = Date.parse('2026-10-06T00:00:00Z');
