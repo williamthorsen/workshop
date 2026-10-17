@@ -46,7 +46,8 @@
     "@williamthorsen/toolbelt.secrets": "catalog:"
   },
   "devDependencies": {
-    "@williamthorsen/toolbelt.testing": "catalog:"
+    "@williamthorsen/toolbelt.testing": "catalog:",
+    "vitest": "catalog:"
   },
   "engines": {
     "node": ">=24"

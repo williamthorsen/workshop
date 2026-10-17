@@ -39,6 +39,9 @@
   "dependencies": {
     "@williamthorsen/toolbelt.errors": "catalog:"
   },
+  "devDependencies": {
+    "vitest": "catalog:"
+  },
   "engines": {
     "node": ">=24"
   },
