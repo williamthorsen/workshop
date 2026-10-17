@@ -38,7 +38,8 @@
   "devDependencies": {
     "@williamthorsen/toolbelt.filesystem": "catalog:",
     "@williamthorsen/toolbelt.testing": "catalog:",
-    "@williamthorsen/toolbelt.vitest": "catalog:"
+    "@williamthorsen/toolbelt.vitest": "catalog:",
+    "vitest": "catalog:"
   },
   "engines": {
     "node": ">=24"

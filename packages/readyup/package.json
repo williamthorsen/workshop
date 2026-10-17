@@ -74,11 +74,14 @@
   },
   "devDependencies": {
     "@types/picomatch": "4.0.3",
+    "@williamthorsen/nmr": "catalog:",
     "@williamthorsen/toolbelt.filesystem": "catalog:",
     "@williamthorsen/toolbelt.testing": "catalog:",
     "@williamthorsen/toolbelt.vitest": "catalog:",
     "ajv": "8.20.0",
-    "esbuild": "catalog:"
+    "esbuild": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   },
   "peerDependencies": {
     "esbuild": ">=0.28.1"
