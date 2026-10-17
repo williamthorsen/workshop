@@ -537,7 +537,6 @@ interface JsonRunOptions {
   detail?: JsonDetail;
   diagnose?: boolean;
   failOn?: Severity;
-  isJit?: boolean;
   reportOn?: Severity;
   unrunSources?: UnrunSource[];
 }
@@ -548,12 +547,12 @@ interface JsonRunOptions {
  */
 async function runJson(
   kitEntries: ResolvedKitEntry[],
-  { detail = 'full', diagnose = false, failOn, isJit = false, reportOn, unrunSources = [] }: JsonRunOptions = {},
+  { detail = 'full', diagnose = false, failOn, reportOn, unrunSources = [] }: JsonRunOptions = {},
 ) {
   using io = captureStdio();
 
   const remote = createUncachedRemoteContext();
-  const exitCode = await runJsonMode(kitEntries, { detail, diagnose, failOn, remote, reportOn, unrunSources }, isJit);
+  const exitCode = await runJsonMode(kitEntries, { detail, diagnose, failOn, remote, reportOn, unrunSources }, false);
 
   return { exitCode, stdout: io.stdout, stderr: io.stderr };
 }

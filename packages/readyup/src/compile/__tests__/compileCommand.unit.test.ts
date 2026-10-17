@@ -117,8 +117,8 @@ function compileResultInliningJson(entry: string, outputPath: string): CompileRe
 }
 
 /** Returns the `inputs` that an entry has when its compile read only the entry point, stated against the manifest. */
-function recordedEntry(relativePath: string, hash: string = SOURCE_HASH) {
-  return [{ hash, kind: 'module', path: relativePath }];
+function recordedEntry(relativePath: string) {
+  return [{ hash: SOURCE_HASH, kind: 'module', path: relativePath }];
 }
 
 /** Returns metadata as validating a compiled kit yields it, defaulting to a kit with no checklists to record. */

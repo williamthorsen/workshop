@@ -10,15 +10,12 @@ import { loadRemoteKit } from '../loadRemoteKit.ts';
 /** Fetch options that bypass the cache and send no headers. */
 const uncachedOptions = { cache: undefined, resolveHeaders: () => undefined };
 
-/** Returns a minimal mock Response with the given body and status. */
-function mockResponse(
-  body: string,
-  init?: { status?: number; statusText?: string },
-): Pick<Response, 'ok' | 'status' | 'statusText' | 'text' | 'headers'> {
+/** Returns a minimal successful mock Response with the given body. */
+function mockResponse(body: string): Pick<Response, 'ok' | 'status' | 'statusText' | 'text' | 'headers'> {
   return {
-    ok: (init?.status ?? 200) >= 200 && (init?.status ?? 200) < 300,
-    status: init?.status ?? 200,
-    statusText: init?.statusText ?? 'OK',
+    ok: true,
+    status: 200,
+    statusText: 'OK',
     text: () => Promise.resolve(body),
     headers: new Headers(),
   };

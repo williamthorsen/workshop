@@ -67,8 +67,8 @@ function makeReport(overrides?: Partial<RdyReport> & { results?: RdyResult[] }):
 }
 
 /** Wraps a single checklist report as a single-kit input. */
-function singleKit(checklistName: string, report: RdyReport, kitName = 'deploy') {
-  return [{ name: kitName, entries: [{ name: checklistName, report }] }];
+function singleKit(checklistName: string, report: RdyReport) {
+  return [{ name: 'deploy', entries: [{ name: checklistName, report }] }];
 }
 
 /** The tally produced by a run with nothing to report, spelled out for whole-payload assertions. */

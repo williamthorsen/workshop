@@ -17,8 +17,8 @@ export function readProtectList(options: ReadProtectListOptions): ProtectList {
   try {
     text = fs.readFileSync(filePath, 'utf8');
   } catch (error) {
-    if (isErrorCode(error, 'ENOENT') && !explicit) return { entries: [], found: false };
-    if (isErrorCode(error, 'ENOENT')) throw new UsageError(`Protect-list not found: ${filePath}`, { cause: error });
+    if (isNotFoundError(error) && !explicit) return { entries: [], found: false };
+    if (isNotFoundError(error)) throw new UsageError(`Protect-list not found: ${filePath}`, { cause: error });
 
     throw new UsageError(`Cannot read protect-list ${filePath}: ${describeError(error)}`, { cause: error });
   }
@@ -79,9 +79,9 @@ function expandHome(pattern: string, homeDir: string): string {
   return pattern;
 }
 
-/** Reports whether a thrown value is a system error with the given code. */
-function isErrorCode(error: unknown, code: string): boolean {
-  return error instanceof Error && 'code' in error && error.code === code;
+/** Reports whether a thrown value is a system error for a missing file. */
+function isNotFoundError(error: unknown): boolean {
+  return error instanceof Error && 'code' in error && error.code === 'ENOENT';
 }
 
 /** Removes trailing slashes, keeping a lone root slash. */
