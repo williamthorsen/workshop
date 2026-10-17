@@ -112,7 +112,7 @@ export function readRegistry(file: string): Registry | string {
   return typeof registry === 'string' ? `cannot read the registry ${file}: ${registry}` : registry;
 }
 
-/** Writes the registry beside its file and renames it into place, keeping the flow lists unpadded. */
+/** Writes the registry beside its file and renames it into place, in the form that `serializeRegistry` returns. */
 export function saveRegistry(registry: Registry, file: string): void {
   const resolved = fs.realpathSync(file);
   const temporary = `${resolved}.${crypto.randomBytes(3).toString('hex')}`;
@@ -131,9 +131,9 @@ export function selectEntries(entries: readonly RegistryEntry[], selection: Entr
   );
 }
 
-/** Returns the registry's text as `saveRegistry` writes it. */
+/** Returns the registry's text, with each flow list unpadded and each value kept on one line, whatever its length. */
 export function serializeRegistry(registry: Registry): string {
-  return registry.document.toString({ flowCollectionPadding: false });
+  return registry.document.toString({ flowCollectionPadding: false, lineWidth: 0 });
 }
 
 /**

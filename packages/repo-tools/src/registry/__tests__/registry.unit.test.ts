@@ -37,6 +37,21 @@ repos:
     stack: [supabase]
 `;
 
+// Each line that contains `LONG_STACK` runs past yaml's default line width of 80.
+const LONG_STACK = ['docker', 'nextjs', 'nmr', 'playwright', 'postgres', 'react', 'supabase', 'tailwindcss'];
+
+const LONG_FIXTURE = `repos:
+  - name: alpha
+    path: ~/repos/alpha
+    repo: owner/alpha
+    note: a plain scalar with spaces that runs past the default line width of the yaml writer
+    stack: [${LONG_STACK.join(', ')}]
+  - name: beta
+    path: ~/repos/beta
+    repo: owner/beta
+    stack: [nmr]
+`;
+
 const GITHUB_FIXTURE = `repos:
   - name: alpha
     path: ~/repos/alpha
@@ -156,6 +171,21 @@ describe(writeStack, () => {
     writeStack(registry, entry(registry, 'gamma'), []);
     expect(serializeRegistry(registry)).toBe(FIXTURE.replace('    stack: [supabase]\n', ''));
   });
+
+  it('writes a long stack on one line', () => {
+    const registry = parse(FIXTURE);
+    writeStack(registry, entry(registry, 'beta'), LONG_STACK);
+    expect(serializeRegistry(registry)).toBe(
+      FIXTURE.replace('stack: [nextjs, react]', () => `stack: [${LONG_STACK.join(', ')}]`),
+    );
+  });
+
+  it('leaves an unchanged entry with a long list and a long scalar byte for byte', () => {
+    expect(serializeRegistry(parse(LONG_FIXTURE))).toBe(LONG_FIXTURE);
+    const registry = parse(LONG_FIXTURE);
+    writeStack(registry, entry(registry, 'beta'), ['vue']);
+    expect(serializeRegistry(registry)).toBe(LONG_FIXTURE.replace('stack: [nmr]', 'stack: [vue]'));
+  });
 });
 
 describe(writeGitHubFields, () => {
@@ -201,6 +231,14 @@ describe(appendEntry, () => {
     appendEntry(registry, { name: 'delta', path: '~/repos/delta', repo: 'owner/delta', stack: ['vue'] });
     expect(serializeRegistry(registry)).toBe(
       `${FIXTURE}  - name: delta\n    path: ~/repos/delta\n    repo: owner/delta\n    stack: [vue]\n`,
+    );
+  });
+
+  it('appends a long stack on one line', () => {
+    const registry = parse('repos:\n');
+    appendEntry(registry, { name: 'delta', path: '~/repos/delta', repo: 'owner/delta', stack: LONG_STACK });
+    expect(serializeRegistry(registry)).toBe(
+      `repos:\n  - name: delta\n    path: ~/repos/delta\n    repo: owner/delta\n    stack: [${LONG_STACK.join(', ')}]\n`,
     );
   });
 
