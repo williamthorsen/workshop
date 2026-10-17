@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.0 — 2026-10-17
+
+### 🎉 Features
+
+- Adds the registry fields `visibility` and `runner` to `thor-repo`. `thor-repo scan` and `thor-repo add` derive them from GitHub through `gh`, and `runner` is the label selected by the repo's `CI_RUNS_ON` Actions variable. (#596)
+- Adds a warning from `thor-repo scan` about a public repo whose `runner` is set, because a self-hosted runner must not run a fork's pull request. (#596)
+- Adds the `--visibility <public|private>` and `--runner <label>` filters to `thor-repo list`. (#596)
+- Adds `--clone <present|absent|all>` to `thor-repo list` and makes `present` the default, so that `list` omits the entries whose clone is absent from this machine. (#596)
+- Adds the stack names `docker`, `go`, `neon`, `playwright`, `postgres`, and `shellspec`, which `thor-repo scan` detects from a repo's tracked files and `thor-repo list --stack` accepts. (#596)
+
 ## 0.1.0 — 2026-10-11
 
 ### 🎉 Features

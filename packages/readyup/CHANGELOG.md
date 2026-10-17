@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.41.1 — 2026-10-17
+
+### 📦 Dependencies
+
+- Upgrades `@typescript-eslint/utils`, `@williamthorsen/strict-lint`, `@williamthorsen/tsconfig`, `lefthook`, `prettier`, readyup's `es-module-lexer`, and the catalog's `zod` to their latest releases. (#595)
+
 ## 0.41.0 — 2026-10-15
 
 ### 🎉 Features

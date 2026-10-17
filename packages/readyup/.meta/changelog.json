@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.41.1",
+    "date": "2026-10-17",
+    "sections": [
+      {
+        "title": "📦 Dependencies",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Upgrades `@typescript-eslint/utils`, `@williamthorsen/strict-lint`, `@williamthorsen/tsconfig`, `lefthook`, `prettier`, readyup's `es-module-lexer`, and the catalog's `zod` to their latest releases. (#595)",
+            "hash": "92e8bdb44adf133fdfd5ed3e92708f18f9edd494",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.41.0",
     "date": "2026-10-15",
     "sections": [
