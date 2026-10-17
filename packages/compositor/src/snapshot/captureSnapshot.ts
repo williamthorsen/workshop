@@ -162,7 +162,7 @@ function collectShipping(catalog: Catalog): Array<ShippingArtifact> {
     if (kind === undefined || !kind.emitsFiles || kind.layout.form !== 'directory') {
       return [];
     }
-    return [{ entry, layout: kind.layout }];
+    return { entry, layout: kind.layout };
   });
 }
 

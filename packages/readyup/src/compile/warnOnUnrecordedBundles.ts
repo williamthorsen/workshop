@@ -29,7 +29,7 @@ export interface WarnOnUnrecordedBundlesArgs {
 export function warnOnUnrecordedBundles(args: WarnOnUnrecordedBundlesArgs): RaisedWarning[] {
   const { entries, manifestDir, outDir, sweptKitNames } = args;
   const recordedPaths = new Set(
-    entries.flatMap((entry) => (entry.path === undefined ? [] : [path.resolve(manifestDir, entry.path)])),
+    entries.flatMap((entry) => (entry.path === undefined ? [] : path.resolve(manifestDir, entry.path))),
   );
   const displayDir = path.relative(process.cwd(), outDir) || '.';
 

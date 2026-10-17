@@ -339,7 +339,7 @@ describe(validateComposition, () => {
 
     const { diagnostics } = validateComposition(config, snapshot);
     const collidingAt = diagnostics.flatMap((entry) =>
-      entry.domain === 'deployment' ? [entry.diagnostic.at.targetId] : [],
+      entry.domain === 'deployment' ? entry.diagnostic.at.targetId : [],
     );
 
     expect(diagnostics.map(({ domain }) => domain)).toStrictEqual(['deployment', 'deployment']);
