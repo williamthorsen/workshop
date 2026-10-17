@@ -10,18 +10,36 @@ import { getLayout } from '../layout/engine.ts';
 import type { JsonCompileKitEntry, JsonCompileRemovedEntry } from '../schemas/compileOutputSchema.ts';
 import type { DriftStatus } from '../verify/checkDrift.ts';
 
-/** Clause explaining why a bundle is an orphan, shared by its human line and its JSON reason. */
-export const NO_SOURCE_CLAUSE = 'no source compiles to it';
-
 /** Separator between a compiled kit's source and its output. ASCII, so its width is two cells everywhere. */
 const TRANSFORM_ARROW = '->';
 
-/** What reporting a sweep's orphans contributes to the project's outcome. */
-export interface OrphanReport {
-  failedCount: number;
-  kits: JsonCompileKitEntry[];
-  removed: JsonCompileRemovedEntry[];
-  skippedCount: number;
+/** Returns the next step for a project without kit sources: `rdy init` when it can scaffold into `srcDir`. */
+export function buildNoSourcesHint(projectDir: string, srcDir: string): string {
+  if (srcDir === path.resolve(projectDir, DEFAULT_CONFIG.compile.srcDir)) return 'Run `rdy init` to scaffold a kit.';
+  return `Add a kit source to ${path.relative(projectDir, srcDir)}.`;
+}
+
+/** Returns a source's path as a failure names it: against the sweep root in a recursive compile, else against `srcDir`. */
+export function describeSource(fileName: string, srcDir: string, sweepRoot: string | undefined): string {
+  return sweepRoot === undefined ? fileName : path.relative(sweepRoot, path.join(srcDir, fileName));
+}
+
+/**
+ * Returns why a source of a sweep failed to compile, naming `compile.exclude` when the source is not a kit, because a
+ * module that the kits share is swept with them unless the config excludes it.
+ */
+export function describeSweepFailure(error: unknown): string {
+  const message = describeError(error);
+  if (!(error instanceof MissingChecklistsError)) return message;
+  return `${message}. A module that the kits share is not a kit: Keep it out of the sweep with \`compile.exclude\`.`;
+}
+
+/** Kinds of kit among those that a sweep left alone because their bundles drifted. */
+export interface DriftedKitKinds {
+  /** A kit that no source compiles to any longer. */
+  hasOrphan: boolean;
+  /** A kit compiled from a source that the sweep found. */
+  hasSourced: boolean;
 }
 
 /** Arguments for the line reporting a sweep that found no sources. */
@@ -34,28 +52,30 @@ export interface EmptySweepLineArgs {
   srcDirExists: boolean;
 }
 
-/** Counts of the kits that a sweep left out of line with their sources. */
-export interface SweepTally {
-  /** Kits whose source failed to compile. */
-  compileFailedCount: number;
-  /** Every kit that the sweep reported on, orphans included. */
-  kitCount: number;
-  orphanReport: OrphanReport;
-  /** Kits with a source whose bundle had drifted. */
-  sourcedSkippedCount: number;
-}
+/** Returns a warning line for a kit, with the hash mismatch from `status` and any further `clause` in a block beneath. */
+export function formatDriftLine(
+  name: string,
+  status: Extract<DriftStatus, { kind: 'drift' }>,
+  clause?: string,
+): string {
+  const target = path.basename(status.resolvedPath);
+  const claim = getLayout().formatCheckLine({ token: 'failedWarn', name });
+  const mismatch = `drift in ${target}: expected ${status.expected}, got ${status.actual}`;
+  const reason = clause === undefined ? mismatch : `${mismatch}; ${clause}`;
 
-/** Kinds of kit among those that a sweep left alone because their bundles drifted. */
-export interface DriftedKitKinds {
-  /** A kit that no source compiles to any longer. */
-  hasOrphan: boolean;
-  /** A kit compiled from a source that the sweep found. */
-  hasSourced: boolean;
+  return [claim, ...getLayout().formatReasonBlock([reason])].join('\n') + '\n';
 }
 
 /** Returns a drift skip described for the JSON payload, which has no formatted line to read. */
 export function formatDriftReason(status: Extract<DriftStatus, { kind: 'drift' }>): string {
   return `Compiled output has drifted from the manifest (expected ${status.expected}, got ${status.actual})`;
+}
+
+/** Returns what to do about a sweep's drifted kits. An orphan has no source into which to move its edits. */
+export function formatDriftRemedy({ hasOrphan, hasSourced }: DriftedKitKinds): string {
+  if (!hasOrphan) return 'Re-run with --force to overwrite, or move edits into the source.';
+  if (!hasSourced) return 'Re-run with --force to remove, or restore the source.';
+  return 'Re-run with --force to overwrite or remove, or move edits into the source.';
 }
 
 /** Returns the line reporting a sweep that found no sources, and why it found none. */
@@ -70,10 +90,38 @@ export function formatEmptySweepLine({
   return `${reason}${manifestOutcome}\n`;
 }
 
-/** Returns the next step for a project without kit sources: `rdy init` when it can scaffold into `srcDir`. */
-export function buildNoSourcesHint(projectDir: string, srcDir: string): string {
-  if (srcDir === path.resolve(projectDir, DEFAULT_CONFIG.compile.srcDir)) return 'Run `rdy init` to scaffold a kit.';
-  return `Add a kit source to ${path.relative(projectDir, srcDir)}.`;
+/**
+ * Returns the clause naming what a sweep that found no kits did with the manifest.
+ *
+ * Empty under `--skip-manifest`, because the run never consulted the manifest and has nothing to report about it. A written
+ * manifest lists no kits unless an orphan kept its entry.
+ */
+export function formatManifestOutcome(skipManifest: boolean, writesManifest: boolean, entryCount: number): string {
+  if (skipManifest) return '';
+  if (!writesManifest) return '; manifest not written';
+  return `; manifest now lists ${entryCount === 0 ? 'no kits' : pluralizeWithCount(entryCount, 'kit')}`;
+}
+
+/** Returns a line reporting a bundle removed because no source compiles to it. */
+export function formatRemovalLine(bundleName: string): string {
+  return (
+    getLayout().formatCheckLine({ token: 'passed', name: bundleName, detail: `removed, ${NO_SOURCE_CLAUSE}` }) + '\n'
+  );
+}
+
+/** Returns a line naming the output that a rebuilt kit produced, or reporting an unchanged one as skipped. */
+export function formatResultLine(srcName: string, outName: string, changed: boolean): string {
+  if (!changed) {
+    return getLayout().formatCheckLine({ token: 'skippedOptional', name: srcName, detail: 'no changes' }) + '\n';
+  }
+
+  const claim = getLayout().formatCheckLine({ token: 'passed', name: srcName });
+  return `${claim} ${TRANSFORM_ARROW} ${getLayout().inlineGlyph('kit')}${outName}\n`;
+}
+
+/** Returns a section heading as a single writable string, newline-terminated. */
+export function formatSectionHeading(label: string): string {
+  return `${getLayout().formatHeading(label, 'section')}\n`;
 }
 
 /** Returns the label heading a sweep, naming its directories against `anchor`. */
@@ -106,74 +154,15 @@ export function formatSweepTally(tally: SweepTally): string {
   return lines.join('');
 }
 
-/** Returns a source's path as a failure names it: against the sweep root in a recursive compile, else against `srcDir`. */
-export function describeSource(fileName: string, srcDir: string, sweepRoot: string | undefined): string {
-  return sweepRoot === undefined ? fileName : path.relative(sweepRoot, path.join(srcDir, fileName));
-}
+/** Clause explaining why a bundle is an orphan, shared by its human line and its JSON reason. */
+export const NO_SOURCE_CLAUSE = 'no source compiles to it';
 
-/**
- * Returns why a source of a sweep failed to compile, naming `compile.exclude` when the source is not a kit, because a
- * module that the kits share is swept with them unless the config excludes it.
- */
-export function describeSweepFailure(error: unknown): string {
-  const message = describeError(error);
-  if (!(error instanceof MissingChecklistsError)) return message;
-  return `${message}. A module that the kits share is not a kit: Keep it out of the sweep with \`compile.exclude\`.`;
-}
-
-/** Returns a line naming the output that a rebuilt kit produced, or reporting an unchanged one as skipped. */
-export function formatResultLine(srcName: string, outName: string, changed: boolean): string {
-  if (!changed) {
-    return getLayout().formatCheckLine({ token: 'skippedOptional', name: srcName, detail: 'no changes' }) + '\n';
-  }
-
-  const claim = getLayout().formatCheckLine({ token: 'passed', name: srcName });
-  return `${claim} ${TRANSFORM_ARROW} ${getLayout().inlineGlyph('kit')}${outName}\n`;
-}
-
-/** Returns a warning line for a kit, with the hash mismatch from `status` and any further `clause` in a block beneath. */
-export function formatDriftLine(
-  name: string,
-  status: Extract<DriftStatus, { kind: 'drift' }>,
-  clause?: string,
-): string {
-  const target = path.basename(status.resolvedPath);
-  const claim = getLayout().formatCheckLine({ token: 'failedWarn', name });
-  const mismatch = `drift in ${target}: expected ${status.expected}, got ${status.actual}`;
-  const reason = clause === undefined ? mismatch : `${mismatch}; ${clause}`;
-
-  return [claim, ...getLayout().formatReasonBlock([reason])].join('\n') + '\n';
-}
-
-/** Returns what to do about a sweep's drifted kits. An orphan has no source into which to move its edits. */
-export function formatDriftRemedy({ hasOrphan, hasSourced }: DriftedKitKinds): string {
-  if (!hasOrphan) return 'Re-run with --force to overwrite, or move edits into the source.';
-  if (!hasSourced) return 'Re-run with --force to remove, or restore the source.';
-  return 'Re-run with --force to overwrite or remove, or move edits into the source.';
-}
-
-/** Returns a line reporting a bundle removed because no source compiles to it. */
-export function formatRemovalLine(bundleName: string): string {
-  return (
-    getLayout().formatCheckLine({ token: 'passed', name: bundleName, detail: `removed, ${NO_SOURCE_CLAUSE}` }) + '\n'
-  );
-}
-
-/** Returns a section heading as a single writable string, newline-terminated. */
-export function formatSectionHeading(label: string): string {
-  return `${getLayout().formatHeading(label, 'section')}\n`;
-}
-
-/**
- * Returns the clause naming what a sweep that found no kits did with the manifest.
- *
- * Empty under `--skip-manifest`, because the run never consulted the manifest and has nothing to report about it. A written
- * manifest lists no kits unless an orphan kept its entry.
- */
-export function formatManifestOutcome(skipManifest: boolean, writesManifest: boolean, entryCount: number): string {
-  if (skipManifest) return '';
-  if (!writesManifest) return '; manifest not written';
-  return `; manifest now lists ${entryCount === 0 ? 'no kits' : pluralizeWithCount(entryCount, 'kit')}`;
+/** What reporting a sweep's orphans contributes to the project's outcome. */
+export interface OrphanReport {
+  failedCount: number;
+  kits: JsonCompileKitEntry[];
+  removed: JsonCompileRemovedEntry[];
+  skippedCount: number;
 }
 
 /**
@@ -196,4 +185,15 @@ export function resolveWorkspaceAnchor(srcDir: string, fallbackDir: string): str
   }
 
   return fallbackDir;
+}
+
+/** Counts of the kits that a sweep left out of line with their sources. */
+export interface SweepTally {
+  /** Kits whose source failed to compile. */
+  compileFailedCount: number;
+  /** Every kit that the sweep reported on, orphans included. */
+  kitCount: number;
+  orphanReport: OrphanReport;
+  /** Kits with a source whose bundle had drifted. */
+  sourcedSkippedCount: number;
 }
