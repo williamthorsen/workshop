@@ -1,5 +1,5 @@
 import { createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
-import { makeFixture, silenceConsole } from '@williamthorsen/toolbelt.vitest/candidate';
+import { listConsoleLines, makeFixture, silenceConsole } from '@williamthorsen/toolbelt.vitest/candidate';
 import { describe, expect, it as baseIt } from 'vitest';
 
 import { initCommand } from '../initCommand.ts';
@@ -119,7 +119,7 @@ describe(initCommand, () => {
     const exitCode = initCommand({ dryRun: true, force: false });
 
     expect(exitCode).toBe(0);
-    const infoMessages = silent.info.mock.calls.map((c) => String(c[0]));
+    const infoMessages = listConsoleLines(silent.info);
     expect(infoMessages.some((m) => m.includes('Next steps'))).toBe(false);
   });
 
@@ -129,7 +129,7 @@ describe(initCommand, () => {
     const exitCode = initCommand({ dryRun: false, force: false });
 
     expect(exitCode).toBe(0);
-    const infoMessages = silent.info.mock.calls.map((c) => String(c[0]));
+    const infoMessages = listConsoleLines(silent.info);
     expect(infoMessages.some((m) => m.includes('Next steps'))).toBe(true);
   });
 });

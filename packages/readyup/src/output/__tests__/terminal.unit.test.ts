@@ -1,4 +1,4 @@
-import { silenceConsole } from '@williamthorsen/toolbelt.vitest/candidate';
+import { listConsoleLines, silenceConsole } from '@williamthorsen/toolbelt.vitest/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { richFormatter } from '../../layout/formatter.ts';
@@ -133,7 +133,7 @@ describe(reportWriteResult, () => {
       reportWriteResult(result, false);
     }
 
-    const written = [...silent.info.mock.calls, ...silent.error.mock.calls].flat().join('\n');
+    const written = [...listConsoleLines(silent.info), ...listConsoleLines(silent.error)].join('\n');
     expect(written).not.toContain(retired);
   });
 });
