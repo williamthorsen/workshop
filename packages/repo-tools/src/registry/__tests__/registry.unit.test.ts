@@ -11,6 +11,7 @@ import {
   saveRegistry,
   selectEntries,
   serializeRegistry,
+  writeGitHubFields,
   writeStack,
 } from '../registry.ts';
 
@@ -35,6 +36,20 @@ repos:
     stack: [supabase]
 `;
 
+const GITHUB_FIXTURE = `repos:
+  - name: alpha
+    path: ~/repos/alpha
+    repo: owner/alpha
+    visibility: public
+    tags: [live]
+  - name: beta
+    path: ~/repos/beta
+    repo: owner/beta
+    visibility: private
+    runner: imac2
+    stack: [nmr]
+`;
+
 describe(parseRegistry, () => {
   it('reads each entry with its tags and stack', () => {
     const registry = parse(FIXTURE);
@@ -49,6 +64,14 @@ describe(parseRegistry, () => {
 
   it('reads an entry without a path, leaving the refusal to the caller that selects it', () => {
     expect(parse('repos:\n  - name: pathless\n').entries[0]?.path).toBeUndefined();
+  });
+
+  it('reads visibility and runner when present', () => {
+    const registry = parse(GITHUB_FIXTURE);
+    expect(registry.entries.map(({ runner, visibility }) => ({ runner, visibility }))).toStrictEqual([
+      { runner: undefined, visibility: 'public' },
+      { runner: 'imac2', visibility: 'private' },
+    ]);
   });
 
   it('reads a registry without entries', () => {
@@ -67,6 +90,7 @@ describe(parseRegistry, () => {
       "entry 1: 'stack' is not a list of strings",
     ],
     ['a path that is not a string', 'repos:\n  - path: [a]\n', "entry 1: 'path' is not a string"],
+    ['a runner that is not a string', 'repos:\n  - path: ~/a\n    runner: [a]\n', "entry 1: 'runner' is not a string"],
     ['an entry that is not a mapping', 'repos:\n  - ~/a\n', 'entry 1 is not a mapping'],
     ['a repos key that is not a list', 'repos: {}\n', "'repos' is not a list"],
   ])('refuses %s', (_, text, message) => {
@@ -89,6 +113,14 @@ describe(selectEntries, () => {
     expect(names(selectEntries(entries, { stack: 'react' }))).toStrictEqual(['beta']);
     expect(names(selectEntries(entries, { stack: 'supabase', tag: 'live' }))).toStrictEqual(['gamma']);
     expect(names(selectEntries(entries, { stack: 'react', tag: 'live' }))).toStrictEqual([]);
+  });
+
+  it('matches visibility and runner exactly, and ANDs them with the others', () => {
+    const { entries } = parse(GITHUB_FIXTURE);
+    expect(names(selectEntries(entries, { visibility: 'public' }))).toStrictEqual(['alpha']);
+    expect(names(selectEntries(entries, { runner: 'imac2' }))).toStrictEqual(['beta']);
+    expect(names(selectEntries(entries, { runner: 'imac2', visibility: 'public' }))).toStrictEqual([]);
+    expect(names(selectEntries(entries, { stack: 'nmr', visibility: 'private' }))).toStrictEqual(['beta']);
   });
 });
 
@@ -125,12 +157,64 @@ describe(writeStack, () => {
   });
 });
 
+describe(writeGitHubFields, () => {
+  it('leaves an entry with equal values byte for byte', () => {
+    const registry = parse(GITHUB_FIXTURE);
+    writeGitHubFields(entry(registry, 'beta'), { runner: 'imac2', visibility: 'private' });
+    expect(serializeRegistry(registry)).toBe(GITHUB_FIXTURE);
+  });
+
+  it('places missing keys after repo, runner after visibility', () => {
+    const registry = parse(FIXTURE);
+    writeGitHubFields(entry(registry, 'beta'), { runner: 'imac2', visibility: 'public' });
+    expect(serializeRegistry(registry)).toBe(
+      FIXTURE.replace('    repo: owner/beta\n', '    repo: owner/beta\n    visibility: public\n    runner: imac2\n'),
+    );
+  });
+
+  it('places a missing runner after an existing visibility', () => {
+    const registry = parse(GITHUB_FIXTURE);
+    writeGitHubFields(entry(registry, 'alpha'), { runner: 'imac2', visibility: 'public' });
+    expect(serializeRegistry(registry)).toBe(
+      GITHUB_FIXTURE.replace('    visibility: public\n', '    visibility: public\n    runner: imac2\n'),
+    );
+  });
+
+  it('replaces a value in place and removes an unset runner', () => {
+    const registry = parse(GITHUB_FIXTURE);
+    const beta = entry(registry, 'beta');
+    writeGitHubFields(beta, { runner: undefined, visibility: 'public' });
+    expect(serializeRegistry(registry)).toBe(
+      GITHUB_FIXTURE.replace('    visibility: private\n    runner: imac2\n', '    visibility: public\n'),
+    );
+    expect({ runner: beta.runner, visibility: beta.visibility }).toStrictEqual({
+      runner: undefined,
+      visibility: 'public',
+    });
+  });
+});
+
 describe(appendEntry, () => {
   it('appends an entry with a flow-style stack', () => {
     const registry = parse(FIXTURE);
     appendEntry(registry, { name: 'delta', path: '~/repos/delta', repo: 'owner/delta', stack: ['vue'] });
     expect(serializeRegistry(registry)).toBe(
       `${FIXTURE}  - name: delta\n    path: ~/repos/delta\n    repo: owner/delta\n    stack: [vue]\n`,
+    );
+  });
+
+  it('writes visibility and runner between repo and stack', () => {
+    const registry = parse('repos:\n');
+    appendEntry(registry, {
+      name: 'delta',
+      path: '~/repos/delta',
+      repo: 'owner/delta',
+      runner: 'imac2',
+      stack: ['vue'],
+      visibility: 'private',
+    });
+    expect(serializeRegistry(registry)).toBe(
+      'repos:\n  - name: delta\n    path: ~/repos/delta\n    repo: owner/delta\n    visibility: private\n    runner: imac2\n    stack: [vue]\n',
     );
   });
 

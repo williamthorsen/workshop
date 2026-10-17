@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
+import type { GitHubFacts, GitHubReader } from '../../github/github-repo.ts';
 import { STACK_DETECTORS } from '../../stacks/stack-detectors.ts';
 import { type CloneAdapters, REPO_COMMANDS } from '../repo-commands.ts';
 import { type CapturedRun, runCaptured } from '../test-utils/run-captured.ts';
@@ -14,15 +15,19 @@ repos:
   - name: alpha
     path: ~/repos/alpha
     repo: owner/alpha
+    visibility: private
+    runner: imac2
     tags: [live]
     stack: [nmr]
   - name: beta
     path: ~/repos/beta
     repo: owner/beta
+    visibility: private
     tags: [live, vault]
   - name: gamma
     path: ~/repos/gamma
     repo: owner/gamma
+    visibility: public
     stack: [nextjs, react]
 `;
 
@@ -31,6 +36,13 @@ const CURRENT_CLONES = {
   alpha: clone({ 'package.json': { '@williamthorsen/nmr': '1' } }),
   beta: clone({ 'README.md': '' }),
   gamma: clone({ 'apps/web/package.json': { next: '15', react: '19' } }),
+};
+
+/** GitHub facts that equal what `REGISTRY` records, keyed by repo. */
+const CURRENT_GITHUB: Record<string, GitHubFacts> = {
+  'owner/alpha': facts('private', 'imac2'),
+  'owner/beta': facts('private'),
+  'owner/gamma': facts('public'),
 };
 
 describe('REPO_COMMANDS', () => {
@@ -74,10 +86,41 @@ describe('REPO_COMMANDS', () => {
       const { result } = await run(['list', '--tag', 'live', '--json']);
       expect(JSON.parse(result.stdout)).toStrictEqual({
         repos: [
-          { name: 'alpha', path: '~/repos/alpha', repo: 'owner/alpha', stack: ['nmr'], tags: ['live'] },
-          { name: 'beta', path: '~/repos/beta', repo: 'owner/beta', tags: ['live', 'vault'] },
+          {
+            name: 'alpha',
+            path: '~/repos/alpha',
+            repo: 'owner/alpha',
+            runner: 'imac2',
+            stack: ['nmr'],
+            tags: ['live'],
+            visibility: 'private',
+          },
+          { name: 'beta', path: '~/repos/beta', repo: 'owner/beta', tags: ['live', 'vault'], visibility: 'private' },
         ],
       });
+    });
+
+    it('narrows by visibility and by runner', async () => {
+      expect((await run(['list', '--visibility', 'public'])).result.stdout).toBe(`${HOME}/repos/gamma`);
+      expect((await run(['list', '--runner', 'imac2'])).result.stdout).toBe(`${HOME}/repos/alpha`);
+      expect((await run(['list', '--visibility', 'public', '--runner', 'imac2'])).result.stdout).toBe('');
+    });
+
+    it('rejects a visibility outside public and private', async () => {
+      const { result } = await run(['list', '--visibility', 'internal']);
+      expect(result.stderr).toContain('internal');
+      expect(result.status).toBe(2);
+    });
+
+    it('lists only the entries whose clone is present by default, and the others under --clone', async () => {
+      const clones = { alpha: CURRENT_CLONES.alpha, gamma: CURRENT_CLONES.gamma };
+      expect((await run(['list'], { clones })).result.stdout).toBe(`${HOME}/repos/alpha\n${HOME}/repos/gamma`);
+      expect((await run(['list', '--clone', 'absent'], { clones })).result.stdout).toBe(`${HOME}/repos/beta`);
+      expect((await run(['list', '--clone', 'all'], { clones })).result.stdout).toBe(
+        `${HOME}/repos/alpha\n${HOME}/repos/beta\n${HOME}/repos/gamma`,
+      );
+      const { result } = await run(['list', '--clone', 'absent', '--json'], { clones });
+      expect(JSON.parse(result.stdout)).toMatchObject({ repos: [{ name: 'beta' }] });
     });
 
     it('rejects a stack name that the detector table does not define', async () => {
@@ -91,7 +134,9 @@ describe('REPO_COMMANDS', () => {
       const { result } = await run(['list'], { registry });
       expect(result.status).toBe(1);
       expect(result.stderr).toContain('thor-repo: registry entry has no path');
-      expect((await run(['list', '--tag', 'live'], { registry })).result.stdout).toBe(`${HOME}/repos/tagged`);
+      expect((await run(['list', '--tag', 'live', '--clone', 'all'], { registry })).result.stdout).toBe(
+        `${HOME}/repos/tagged`,
+      );
     });
 
     it('names a registry that it cannot find, defaulting to the one under HOME', async () => {
@@ -135,12 +180,77 @@ describe('REPO_COMMANDS', () => {
       );
     });
 
-    it('reports an absent clone on stderr and keeps its stack', async () => {
-      const clones = { beta: CURRENT_CLONES.beta, gamma: clone({}) };
+    it('names every entry whose clone is absent on one stderr line, keeping their stacks', async () => {
+      const clones = { gamma: clone({}) };
       const { registryText, result } = await run(['scan', '--write'], { clones });
-      expect(result.stderr).toBe(`thor-repo: alpha: no clone at ${HOME}/repos/alpha; its stack is kept`);
+      expect(result.stderr).toBe('thor-repo: no clone on this machine, so the stack is kept, for: alpha, beta');
       expect(result.stdout).toBe('gamma: -nextjs -react');
       expect(registryText).toContain('stack: [nmr]');
+    });
+
+    it('reports and rewrites visibility and runner values that differ from GitHub', async () => {
+      const github = { ...CURRENT_GITHUB, 'owner/alpha': facts('private'), 'owner/beta': facts('public', 'm1') };
+      const clones = { ...CURRENT_CLONES, beta: clone({ 'vercel.json': '' }) };
+      const { registryText, result } = await run(['scan', '--write'], { clones, github });
+      expect(result.stdout).toBe('alpha: -runner\nbeta: +vercel visibility=public runner=m1');
+      expect(registryText).toBe(
+        REGISTRY.replace('    runner: imac2\n', '').replace(
+          '    visibility: private\n    tags: [live, vault]\n',
+          '    visibility: public\n    runner: m1\n    tags: [live, vault]\n    stack: [vercel]\n',
+        ),
+      );
+    });
+
+    it('reads GitHub for an entry whose clone is absent', async () => {
+      const github = { ...CURRENT_GITHUB, 'owner/beta': facts('public') };
+      const { result } = await run(['scan'], {
+        clones: { alpha: CURRENT_CLONES.alpha, gamma: CURRENT_CLONES.gamma },
+        github,
+      });
+      expect(result.stdout).toBe('beta: visibility=public');
+    });
+
+    it('keeps the recorded values of an entry whose GitHub read fails, and scans on', async () => {
+      const github = { 'owner/beta': facts('public'), 'owner/gamma': facts('public') };
+      const { registryText, result } = await run(['scan', '--write'], { github });
+      expect(result.stderr).toBe(
+        'thor-repo: alpha: cannot read GitHub: no such repo; its visibility and runner are kept',
+      );
+      expect(result.stdout).toBe('beta: visibility=public');
+      expect(registryText).toContain('    visibility: private\n    runner: imac2\n');
+      expect(result.status).toBe(0);
+    });
+
+    it('keeps the recorded runner when CI_RUNS_ON is unsupported, and still updates visibility', async () => {
+      const github = {
+        ...CURRENT_GITHUB,
+        'owner/alpha': {
+          runner: undefined,
+          runnerProblem: 'selects more than one label: []',
+          visibility: 'public' as const,
+        },
+      };
+      const { result } = await run(['scan'], { github });
+      expect(result.stderr).toContain(
+        'thor-repo: alpha: CI_RUNS_ON selects more than one label: []; its runner is kept',
+      );
+      expect(result.stdout).toBe('alpha: visibility=public');
+    });
+
+    it('warns about a public repo whose runner is set', async () => {
+      const github = { ...CURRENT_GITHUB, 'owner/gamma': facts('public', 'imac2') };
+      const { result } = await run(['scan'], { github });
+      expect(result.stdout).toBe('gamma: runner=imac2');
+      expect(result.stderr).toBe(
+        "thor-repo: gamma: public repo routes CI to runner imac2; a self-hosted runner must not run a fork's pull request",
+      );
+    });
+
+    it('reports an entry without a repo and keeps its visibility and runner', async () => {
+      const registry = 'repos:\n  - name: local\n    path: ~/repos/alpha\n    stack: [nmr]\n';
+      const { result } = await run(['scan'], { registry });
+      expect(result.stderr).toBe('thor-repo: local: no repo; its visibility and runner are kept');
+      expect(result.stdout).toBe('');
     });
 
     it('reports an unreadable manifest and scans on', async () => {
@@ -173,17 +283,42 @@ describe('REPO_COMMANDS', () => {
         origins: { delta: 'git@github.com:owner/delta.git' },
       });
       expect(result.stdout).toBe('  - name: delta\n    path: ~/repos/delta\n    repo: owner/delta\n    stack: [vue]');
+      expect(result.stderr).toContain(
+        'thor-repo: owner/delta: cannot read GitHub: no such repo; the entry omits visibility and runner',
+      );
       expect(result.stderr).toContain('thor-repo: nothing written; pass --write');
       expect(registryText).toBe(REGISTRY);
       expect(result.status).toBe(0);
     });
 
-    it('appends the entry under --write, reading an HTTPS origin', async () => {
+    it('appends the entry under --write with its GitHub fields, reading an HTTPS origin', async () => {
       const clones = { delta: clone({}) };
       const origins = { delta: 'https://github.com/owner/delta' };
-      const { registryText, result } = await run(['add', `${HOME}/repos/delta`, '--write'], { clones, origins });
+      const github = { 'owner/delta': facts('private', 'imac2') };
+      const { registryText, result } = await run(['add', `${HOME}/repos/delta`, '--write'], {
+        clones,
+        github,
+        origins,
+      });
       expect(result.status).toBe(0);
-      expect(registryText).toBe(`${REGISTRY}  - name: delta\n    path: ~/repos/delta\n    repo: owner/delta\n`);
+      expect(registryText).toBe(
+        `${REGISTRY}  - name: delta\n    path: ~/repos/delta\n    repo: owner/delta\n    visibility: private\n    runner: imac2\n`,
+      );
+    });
+
+    it('omits runner when CI_RUNS_ON is unsupported', async () => {
+      const github = {
+        'owner/delta': { runner: undefined, runnerProblem: 'is empty', visibility: 'public' as const },
+      };
+      const { result } = await run(['add', '~/repos/delta'], {
+        clones: { delta: clone({}) },
+        github,
+        origins: { delta: 'git@github.com:owner/delta.git' },
+      });
+      expect(result.stdout).toBe(
+        '  - name: delta\n    path: ~/repos/delta\n    repo: owner/delta\n    visibility: public',
+      );
+      expect(result.stderr).toContain('thor-repo: owner/delta: CI_RUNS_ON is empty; the entry omits runner');
     });
 
     it.each([
@@ -208,6 +343,7 @@ describe('REPO_COMMANDS', () => {
       [['frob']],
       [['list', '--bogus']],
       [['list', '--tag']],
+      [['list', '--clone', 'gone']],
       [['list', '--file', '']],
       [['list', 'extra']],
       [['scan', '--json']],
@@ -243,6 +379,16 @@ function clone(files: Record<string, string | Record<string, string>>): FakeClon
   return { files: contents, tracked: Object.keys(contents) };
 }
 
+/** Returns the facts of a repo without a `CI_RUNS_ON` problem. */
+function facts(visibility: GitHubFacts['visibility'], runner?: string): GitHubFacts {
+  return { runner, runnerProblem: undefined, visibility };
+}
+
+/** Returns a reader over the given facts, failing for a repo that they lack. */
+function fakeGitHub(byRepo: Record<string, GitHubFacts>): GitHubReader {
+  return (repo) => byRepo[repo] ?? 'no such repo';
+}
+
 /** Returns adapters over clones at `~/repos/<name>`, with the given origins and the registry's branch. */
 function fakeAdapters(
   clones: Record<string, FakeClone>,
@@ -251,6 +397,7 @@ function fakeAdapters(
 ): CloneAdapters {
   const cloneName = (dir: string): string | undefined => /^\/home\/spec\/repos\/([^/]+)/.exec(dir)?.[1];
   return {
+    isDirectory: (dir) => clones[cloneName(dir) ?? ''] !== undefined,
     listTrackedFiles: (dir) => clones[cloneName(dir) ?? '']?.tracked,
     readCurrentBranch: () => branch,
     readFile: (file) => {
@@ -276,6 +423,7 @@ async function run(
   setup: {
     branch?: string;
     clones?: Record<string, FakeClone>;
+    github?: Record<string, GitHubFacts>;
     origins?: Record<string, string>;
     registry?: string;
   } = {},
@@ -286,6 +434,7 @@ async function run(
   const result = await runCaptured([...args.slice(0, 1), '--file', file, ...args.slice(1)], {
     adapters,
     env: { HOME },
+    github: fakeGitHub(setup.github ?? CURRENT_GITHUB),
   });
   return { registryText: fs.readFileSync(file, 'utf8'), result };
 }
