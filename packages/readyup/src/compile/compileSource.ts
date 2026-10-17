@@ -16,6 +16,7 @@ import {
 } from './compile-report.ts';
 import { compileConfig } from './compileConfig.ts';
 import { deriveJsPath } from './deriveJsPath.ts';
+import { warnOnDirectoryDependentChecks } from './warnOnDirectoryDependentChecks.ts';
 import { warnOnInlinedJson } from './warnOnInlinedJson.ts';
 
 /** What a project sweep shares with each of its sources. */
@@ -77,7 +78,10 @@ export async function compileSource(fileName: string, context: SourceSweepContex
         targetHash: result.targetHash,
       }),
       kit: { name: kitName, ...projectField, status: 'compiled' },
-      warnings: warnOnInlinedJson(kitName, result.inlinedJson),
+      warnings: [
+        ...warnOnInlinedJson(kitName, result.inlinedJson),
+        ...warnOnDirectoryDependentChecks(kitName, result.metadata.directoryDependence),
+      ],
     };
   } catch (error: unknown) {
     // A kit that fails to compile is a problem with the kit, not with the invocation, so the sweep

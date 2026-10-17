@@ -52,6 +52,7 @@ export const CountsSchema = z
 /** The advisory vocabulary raised by this version. `RaisedWarning` binds producers to it. */
 export const WarningCodeSchema = z.enum([
   'bundle-unrecorded',
+  'checks-vary-by-directory',
   'diagnosis-inconclusive',
   'generated-unmarked',
   'input-stale',

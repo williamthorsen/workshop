@@ -14,6 +14,7 @@ import type {
   OutcomeFinding,
   Progress,
   RdyCheck,
+  RdyCheckBuilder,
   RdyChecklist,
   RdyConfig,
   RdyKit,
@@ -69,7 +70,7 @@ describe('public authoring types under exactOptionalPropertyTypes', () => {
     expectTypeOf<RdyCheck['severity']>().toEqualTypeOf<Severity | undefined>();
     expectTypeOf<RdyCheck['skip']>().toEqualTypeOf<(() => SkipResult | Promise<SkipResult>) | undefined>();
     expectTypeOf<RdyCheck['fix']>().toEqualTypeOf<string | undefined>();
-    expectTypeOf<RdyCheck['checks']>().toEqualTypeOf<readonly RdyCheck[] | undefined>();
+    expectTypeOf<RdyCheck['checks']>().toEqualTypeOf<readonly RdyCheck[] | RdyCheckBuilder | undefined>();
   });
 
   it('RdyChecklist allows explicit undefined on optional fields', () => {

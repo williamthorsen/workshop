@@ -96,6 +96,8 @@ Under `--json`, each kit and each removed bundle also reports `project`, the dir
 | `sourceHash`          | Hash of that source, read back out of its own `inputs` record                                                 |
 | `targetHash`          | Hash of the compiled bundle                                                                                   |
 
+`checklistChecks` records the checks that a kit declares when it loads, so a kit must declare the same checks wherever it is imported, and its manifest then describes the kit rather than the directory that compiled it. A check whose dependents depend on the repo under check builds them at run time, as [checks built at run time](authoring-kits.md#checks-built-at-run-time) describes, and `checklistChecks` names that check but none of its built dependents. A kit that declares different checks from another directory raises [`checks-vary-by-directory`](#compile-warnings).
+
 Every hash that the manifest records is a prefix of a SHA-256 hex digest, between 8 and 64 characters. Readers compare the digest at the recorded value's own length rather than at a length of their own, so a manifest written by a readyup recording a longer prefix verifies clean instead of reading as wholly stale. Without the floor, a record too short to distinguish anything would pass every check that reads it.
 
 `inputs` is the compile's input closure: every module that the bundle inlined, the entry included, and every JSON file projected by [`pickJson`](authoring-kits.md#inlining-json-at-compile-time). A module records the hash of its contents. An inlined JSON file records the hash of the projection that was substituted, with the path specifier that produced it, so an edit to a field that the kit did not pick is not staleness.
@@ -110,12 +112,15 @@ An entry compiled before readyup recorded the closure has no `inputs`; one compi
 
 `rdy compile` raises advisories about the kits that it compiles and the bundles that it finds. Warnings go to stderr in both modes and appear under a top-level `warnings` in JSON, each as `{ code, message, remedy? }`, absent when none was raised. No warning affects `passed` or the exit code.
 
-| Code                | Raised when                                                                                                 |
-| ------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `bundle-unrecorded` | A bundle directly under the output directory is neither compiled from a source nor recorded in the manifest |
-| `json-inlined`      | A kit's bundle includes a JSON file from outside `node_modules` whole                                       |
+| Code                       | Raised when                                                                                                 |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `bundle-unrecorded`        | A bundle directly under the output directory is neither compiled from a source nor recorded in the manifest |
+| `checks-vary-by-directory` | A kit records different checks when imported from another directory, or fails to load there                 |
+| `json-inlined`             | A kit's bundle includes a JSON file from outside `node_modules` whole                                       |
 
 A JSON file that a kit imports, with or without an import attribute, or loads through `require()`, is bundled whole and recorded whole in `inputs`: The kit includes every field, and any edit to the file leaves the kit stale. The warning names the kit, the file, and each module that imports it, and suggests [`pickJson`](authoring-kits.md#inlining-json-at-compile-time), which inlines and records only the fields that it names. A kit that failed to compile raises none, and one reported as `no changes` still raises it, because its bundle still includes the file.
+
+`rdy compile` imports each kit a second time from an empty temporary directory and compares the check names that the two imports record. A kit that names different checks there, or that fails to load there, builds its checks from the environment when it loads, so its manifest would list the compiling directory's workspaces, files, or settings rather than describe the kit. The warning names the kit and each checklist whose checks differ, or the error that the second import threw, and suggests building such checks at run time. The kit still compiles, with the checks recorded by the import from the compiling directory.
 
 Nothing shows that `rdy compile` wrote a bundle that the manifest does not record, so the sweep reports it rather than deleting it. Such a bundle typically belongs to a kit deleted before `rdy compile` pruned bundles, was compiled under `--skip-manifest`, or was copied in by hand, and `rdy run` still loads it by name. The warning names the bundle and its directory. A bundle named for a kit whose source the sweep found is not reported, even when that kit failed to compile. Neither a single-file compile nor `--skip-manifest` raises the warning.
 

@@ -43,6 +43,28 @@ describe(recordKitCheckIds, () => {
     expect(bareIds(recording(kit))).toStrictEqual(['gate', 'first', 'second']);
   });
 
+  it('records the parent of checks built at run time, without calling the builder', () => {
+    const kit: RdyKit = {
+      checklists: [
+        {
+          name: 'build',
+          checks: [
+            {
+              name: 'parent',
+              id: 'parent',
+              check: () => true,
+              checks: () => {
+                throw new Error('built while recording');
+              },
+            },
+          ],
+        },
+      ],
+    };
+
+    expect(bareIds(recording(kit))).toStrictEqual(['parent']);
+  });
+
   it('records the ids in the namespace of the kit', () => {
     const ledger = createPragmaLedger();
     const kit: RdyKit = { checklists: [{ name: 'build', checks: [{ name: 'a', id: 'a', check: () => true }] }] };

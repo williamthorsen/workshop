@@ -4,7 +4,9 @@ import { withSweepRecorder } from '../check-utils/project/sweepRecorder.ts';
 import type { KitProvenance } from '../kits/KitProvenance.ts';
 import {
   type FailedResult,
+  isCheckBuilder,
   isFlatChecklist,
+  listStaticChildren,
   type PassedResult,
   type Progress,
   type RdyCheck,
@@ -19,6 +21,7 @@ import {
 import { describeValue } from '../portable/describe-value.ts';
 import { toError } from '../portable/toError.ts';
 import { meetsThreshold } from '../severity/meetsThreshold.ts';
+import { buildChildren } from './buildChildren.ts';
 import { describeUninterpretableReturn, isCheckOutcome, isFindingOutcome, resolveCheckReturn } from './check-return.ts';
 import { createExaminedRecorder } from './createExaminedRecorder.ts';
 import type { PragmaLedger } from './PragmaLedger.ts';
@@ -196,7 +199,7 @@ function buildAuthoringErrorResult(context: CheckContext, durationMs: number, er
  */
 async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promise<RdyResult[]> {
   const context = buildCheckContext(check, run, depth);
-  const children = check.checks ?? [];
+  const children = listStaticChildren(check);
 
   // Opened before `skip`, because a check may read its sources there and reuse them in `check`.
   const recorder = createExaminedRecorder(run.pragmaLedger);
@@ -256,6 +259,12 @@ async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promis
       result = buildAuthoringErrorResult(context, durationMs, error);
     }
 
+    if (result.status === 'passed' && isCheckBuilder(check)) {
+      const built = await buildChildren(check, run.pragmaLedger, run.provenance);
+      if (built instanceof Error) return [buildAuthoringErrorResult(context, durationMs, built)];
+      return [result, ...(await runSiblingChecks(built, run, depth + 1))];
+    }
+
     const childResults = await collectChildResults(result, children, run, depth + 1);
     return [result, ...childResults];
   } catch (error_: unknown) {
@@ -306,10 +315,7 @@ async function runSiblingChecks(checks: readonly RdyCheck[], run: RunContext, de
 function skipAllDescendants(checks: readonly RdyCheck[], run: RunContext, depth: number): RdyResult[] {
   const results: RdyResult[] = [];
   for (const check of checks) {
-    results.push(skipCheck(check, run, depth));
-    if (check.checks !== undefined && check.checks.length > 0) {
-      results.push(...skipAllDescendants(check.checks, run, depth + 1));
-    }
+    results.push(skipCheck(check, run, depth), ...skipAllDescendants(listStaticChildren(check), run, depth + 1));
   }
   return results;
 }

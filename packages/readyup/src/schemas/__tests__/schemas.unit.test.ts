@@ -253,6 +253,7 @@ describe('JSON payload schemas', () => {
     it('binds a producer to the vocabulary declared by this version while the wire stays open', () => {
       expectTypeOf<RaisedWarning['code']>().toEqualTypeOf<
         | 'bundle-unrecorded'
+        | 'checks-vary-by-directory'
         | 'diagnosis-inconclusive'
         | 'generated-unmarked'
         | 'input-stale'
@@ -267,6 +268,7 @@ describe('JSON payload schemas', () => {
       >();
       expectTypeOf<JsonWarning['code']>().not.toEqualTypeOf<
         | 'bundle-unrecorded'
+        | 'checks-vary-by-directory'
         | 'diagnosis-inconclusive'
         | 'generated-unmarked'
         | 'input-stale'

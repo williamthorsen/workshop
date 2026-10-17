@@ -8,6 +8,11 @@ import type { CheckReturnValue, RdyCheck, SkipResult } from '../../kits/types.ts
  */
 /* eslint-disable @typescript-eslint/consistent-type-assertions */
 
+/** Wraps a value as a builder of dependent checks that returns it. */
+export function buildingReturning(value: unknown): RdyCheck['checks'] {
+  return () => value as readonly RdyCheck[];
+}
+
 /** Wraps a value as a check function that returns it. */
 export function returning(value: unknown): RdyCheck['check'] {
   return () => value as CheckReturnValue;
