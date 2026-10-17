@@ -14,12 +14,9 @@
   "license": "ISC",
   "author": "William Thorsen <william@thorsen.dev> (https://github.com/williamthorsen)",
   "type": "module",
-  "workspaces": [
-    "packages/*"
-  ],
   "scripts": {
     "postinstall": "codeassembly sync --warn-only",
-    "prepare": "lefthook install"
+    "prepare": "lefthook check-install || lefthook install"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "0.18.5",
