@@ -435,7 +435,7 @@ describe(routeCommand, () => {
 
     const { stderr } = await routeCli(['--style', 'rich', 'run', '--bad']);
 
-    expect(stderr).toContain('💡 Hint: Set GITHUB_TOKEN.\n');
+    expect(stderr).toContain('👉 Hint: Set GITHUB_TOKEN.\n');
   });
 
   it('forwards an install hint from a config file whose imports could not be resolved', async () => {

@@ -30,7 +30,7 @@ A check result has one of three statuses -- `passed`, `failed`, or `skipped`. Th
 | ✅   | `PASS`  | `passed`  | --                                           |
 | ❌   | `FAIL`  | `failed`  | severity `error`                             |
 | 🔶   | `WARN`  | `failed`  | severity `warn`                              |
-| 💬   | `RECO`  | `failed`  | severity `recommend`                         |
+| 💡   | `RECO`  | `failed`  | severity `recommend`                         |
 | ⚪   | `SKIP`  | `skipped` | `skip` returned a reason; counts as optional |
 | 🚫   | `BLOCK` | `skipped` | a precondition failed; counts as blocked     |
 | 💊   | `FIX`   | --        | a remediation hint, not a result             |

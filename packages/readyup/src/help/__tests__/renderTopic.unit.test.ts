@@ -85,7 +85,7 @@ describe(renderTopic, () => {
   });
 
   it('removes an emoji outside the vocabulary under the plain style', () => {
-    expect(renderTopic('🎉 Done 💡 Hint: rerun', { style: 'plain', topicByStem, width: Infinity })).toBe(
+    expect(renderTopic('🎉 Done 👉 Hint: rerun', { style: 'plain', topicByStem, width: Infinity })).toBe(
       'Done Hint: rerun',
     );
   });

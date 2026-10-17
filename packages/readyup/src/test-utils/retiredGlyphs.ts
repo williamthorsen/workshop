@@ -1,5 +1,6 @@
 /** Glyphs that no token may use and no doc may show, each stripped of any variation selector. */
 export const RETIRED_GLYPHS: readonly string[] = [
+  '\u{1F4AC}',
   '\u{1F534}',
   '\u{1F7E0}',
   '\u{1F7E1}',

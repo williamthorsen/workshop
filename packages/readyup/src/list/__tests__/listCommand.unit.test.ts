@@ -325,7 +325,7 @@ describe(listCommand, () => {
 
       expect(stderrChunks).toStrictEqual([
         "Warning: Cannot resolve 'some-lib' while evaluating config.ts. Listing with default settings.\n",
-        '\u{1F4A1} Hint: Install it with: pnpm add --save-dev some-lib\n',
+        '\u{1F449} Hint: Install it with: pnpm add --save-dev some-lib\n',
       ]);
     });
 

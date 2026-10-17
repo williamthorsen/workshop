@@ -66,8 +66,14 @@ describe('richFormatter', () => {
 
   // Anchoring on the property rather than the glyph verifies the two-cell width assumed by the label.
   it('leads a hint with an emoji that renders wide unaided', () => {
-    expect(richFormatter.hintPrefix).toBe('💡 Hint:');
+    expect(richFormatter.hintPrefix).toBe('👉 Hint:');
     expect(richFormatter.hintPrefix).toMatch(/^\p{Emoji_Presentation} /u);
+  });
+
+  it('leads a hint with a glyph that no token uses', () => {
+    const [hintGlyph] = richFormatter.hintPrefix;
+
+    expect(richEntries.map((entry) => entry.text)).not.toContain(hintGlyph);
   });
 
   describe.each(richEntries)('$name', ({ text }) => {
