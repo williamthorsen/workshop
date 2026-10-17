@@ -71,7 +71,7 @@ A checklist has either `checks` or `groups`, never both.
 | `quiet`    | `boolean`                                         | `false`                     | Renders only when the check does not pass                                                |
 | `skip`     | `() => false \| string`                           | --                          | Reason string to skip; `false` to run                                                    |
 | `fix`      | `string`                                          | --                          | Remediation, shown on a failure that reports no `Error:` and whose outcome supplies none |
-| `checks`   | `RdyCheck[]`                                      | --                          | Nested checks, run only if this one passes                                               |
+| `checks`   | `RdyCheck[]` or a function returning them         | --                          | Nested checks, run only if this one passes; a function builds them when the check passes |
 
 A check that starts async work must await it or return it. A failure that nothing awaits cannot be attributed to the check that caused it, so if it occurs while the run is still in progress, it ends the whole run with exit code `2` and an `internal` error.
 
@@ -95,6 +95,42 @@ A check naming located sites returns a `FindingOutcome` instead, and the runner 
 `reported` marks the sites named by this check; the rest count toward the fraction and have no other effect. The runner drops the sites that a [pragma suppresses](running-checks.md#suppressing-a-finding), renders the reported survivors as the `detail`, derives `ok` from whether any survived, and counts every survivor into the fraction. A failure's remediation is the check's `fix`. `buildFindingReport` builds one of these for the common case; see [project sources](check-utils.md#project-sources).
 
 `scanned` is the escape hatch, not the usual path. A sweep read through [`readTrackedSources`](check-utils.md#project-sources) is recorded automatically, in `skip` and in `check` alike, so a check reading the project that way declares nothing and its files are still evidence for the [pragma that suppressed nothing](running-checks.md#advisory-warnings). Declare `scanned` when the check reads files another way -- shelling out to a tool, walking `listTrackedFiles` and reading them itself, or using `fs` directly -- because nothing else can detect what those read. The same record supplies the count of files examined that a `0 of 0` fraction prints, so an undeclared read also leaves that count short.
+
+### Checks built at run time
+
+A kit loads once, wherever `rdy compile` or `rdy run` imports it, so the checks that it declares when it loads must not depend on the repo under check. A check whose dependents do depend on it, such as one row per workspace, assigns `checks` a function that returns them, and readyup calls that function when the checklist runs:
+
+```ts
+import { existsSync } from 'node:fs';
+
+import { defineRdyKit } from 'readyup';
+import { discoverWorkspaces } from 'readyup/check-utils';
+
+export default defineRdyKit({
+  checklists: [
+    {
+      name: 'publish',
+      checks: [
+        {
+          name: 'Repo root has a package.json',
+          check: () => existsSync('package.json'),
+          checks: () =>
+            discoverWorkspaces({ filter: (workspace) => workspace.isPackage }).map((workspace) => ({
+              name: `${workspace.name ?? workspace.dir} declares a license`,
+              check: () => typeof workspace.packageJson['license'] === 'string',
+            })),
+        },
+      ],
+    },
+  ],
+});
+```
+
+The function may be async. It runs only after its check passes, which makes the check the place to assert the condition on which the function relies. A check that fails or skips does not build its dependents, and its run reports no rows for them. The built checks run and report as declared ones do, nested under their parent: A skip or a failure among them governs their own dependents, and a built check may itself build its dependents.
+
+The built checks are validated as declared ones are. A function that throws, or that returns anything but an array of valid checks, makes its parent an authoring error, reported with the error and at `error` severity, and the run reports no rows for the dependents.
+
+`rdy compile` does not call the function, so the manifest's `checklistChecks`, and `rdy list --checks`, name the parent and none of its built dependents. A pragma can name the `id` of a built check, which the run records when it builds the check.
 
 ## Naming checks
 

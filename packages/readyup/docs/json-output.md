@@ -66,7 +66,7 @@ The `compile` payload contains a top-level `hint` of the same kind when a compil
 
 ## The list payload
 
-Each row of `rdy list --json` is one kit, with the checklists that its manifest records. Under `--checks`, a row also includes `checklistChecks`: one entry per checklist, at the same position as in `checklists`, each naming the checklist and its checks in declaration order. A row that has `checklists` but not `checklistChecks` is a kit whose manifest does not record its check names, and a checklist that declares no checks has an empty `checks` array.
+Each row of `rdy list --json` is one kit, with the checklists that its manifest records. Under `--checks`, a row also includes `checklistChecks`: one entry per checklist, at the same position as in `checklists`, each naming the checklist and its checks in declaration order, without the dependents of a check that builds them at run time. A row that has `checklists` but not `checklistChecks` is a kit whose manifest does not record its check names, and a checklist that declares no checks has an empty `checks` array.
 
 ## The run report
 
