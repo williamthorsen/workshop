@@ -1,5 +1,6 @@
 import assert from 'node:assert';
 import { existsSync } from 'node:fs';
+import process from 'node:process';
 
 import { captureError, createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
@@ -104,6 +105,79 @@ describe(validateCompiledOutput, () => {
     const metadata = await validateCompiledOutput(filePath);
 
     expect(metadata.checklistChecks).toStrictEqual([{ checklist: 'flat', checks: ['parent', 'sibling'] }]);
+  });
+
+  it('reports a kit whose recorded checks depend on the directory from which it is imported', async ({ temp }) => {
+    const filePath = temp.write(
+      'cwd-checks.mjs',
+      [
+        "import process from 'node:process';",
+        'const pass = () => true;',
+        'export default {',
+        "  checklists: [{ name: 'here', checks: [{ name: process.cwd(), check: pass }] }, { name: 'fixed', checks: [] }],",
+        '};',
+        '',
+      ].join('\n'),
+    );
+
+    const metadata = await validateCompiledOutput(filePath);
+
+    expect(metadata.directoryDependence).toStrictEqual({ checklists: ['here'] });
+    expect(metadata.checklistChecks[0]?.checks).toStrictEqual([process.cwd()]);
+  });
+
+  it('reports no directory dependence for a kit that builds its checks at run time', async ({ temp }) => {
+    const filePath = temp.write(
+      'runtime-checks.mjs',
+      [
+        "import process from 'node:process';",
+        'const pass = () => true;',
+        'export default {',
+        "  checklists: [{ name: 'here', checks: [{ name: 'parent', check: pass, checks: () => [{ name: process.cwd(), check: pass }] }] }],",
+        '};',
+        '',
+      ].join('\n'),
+    );
+
+    const metadata = await validateCompiledOutput(filePath);
+
+    expect(metadata).not.toHaveProperty('directoryDependence');
+  });
+
+  it('reports a kit that fails to load from another directory, and still returns its metadata', async ({ temp }) => {
+    const filePath = temp.write(
+      'cwd-bound.mjs',
+      [
+        "import process from 'node:process';",
+        `if (process.cwd() !== ${JSON.stringify(process.cwd())}) throw new Error('outside the compile directory');`,
+        "export default { checklists: [{ name: 'here', checks: [] }] };",
+        '',
+      ].join('\n'),
+    );
+
+    const metadata = await validateCompiledOutput(filePath);
+
+    expect(metadata.checklists).toStrictEqual(['here']);
+    expect(metadata.directoryDependence).toStrictEqual({ error: 'outside the compile directory' });
+  });
+
+  it('restores the working directory whether the import from another directory succeeds or fails', async ({ temp }) => {
+    const before = process.cwd();
+    const stable = temp.write('stable.mjs', "export default { checklists: [{ name: 'a', checks: [] }] };\n");
+    const bound = temp.write(
+      'bound.mjs',
+      [
+        "import process from 'node:process';",
+        `if (process.cwd() !== ${JSON.stringify(before)}) throw new Error('outside');`,
+        "export default { checklists: [{ name: 'a', checks: [] }] };",
+        '',
+      ].join('\n'),
+    );
+
+    await validateCompiledOutput(stable);
+    expect(process.cwd()).toBe(before);
+    await validateCompiledOutput(bound);
+    expect(process.cwd()).toBe(before);
   });
 
   it('leaves the file in place and throws when the bundle fails to load', async ({ temp }) => {

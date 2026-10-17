@@ -31,6 +31,7 @@ import { compileConfig } from './compileConfig.ts';
 import { compileProject } from './compileProject.ts';
 import { compileRecursive } from './compileRecursive.ts';
 import { deriveJsPath } from './deriveJsPath.ts';
+import { warnOnDirectoryDependentChecks } from './warnOnDirectoryDependentChecks.ts';
 import { warnOnInlinedJson } from './warnOnInlinedJson.ts';
 
 const compileOptions = {
@@ -200,7 +201,10 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
 
   const relOutput = path.relative(process.cwd(), result.outputPath);
   writeHuman(formatResultLine(relInput, relOutput, result.changed), json);
-  const warnings = warnOnInlinedJson(kitName, result.inlinedJson);
+  const warnings = [
+    ...warnOnInlinedJson(kitName, result.inlinedJson),
+    ...warnOnDirectoryDependentChecks(kitName, result.metadata.directoryDependence),
+  ];
 
   if (!skipManifest) {
     try {

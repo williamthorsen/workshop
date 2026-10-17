@@ -82,6 +82,7 @@ describe('generated JSON Schemas', () => {
           type: 'string',
           enum: [
             'bundle-unrecorded',
+            'checks-vary-by-directory',
             'diagnosis-inconclusive',
             'generated-unmarked',
             'input-stale',

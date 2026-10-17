@@ -17,6 +17,10 @@ describe(buildKitImportUrl, () => {
     expect(url.pathname).toBe('/kits/default.js');
     expect(url.searchParams.has(KIT_IMPORT_PARAM)).toBe(true);
   });
+
+  it('returns a different URL for each call on one path', () => {
+    expect(buildKitImportUrl('/kits/default.js')).not.toBe(buildKitImportUrl('/kits/default.js'));
+  });
 });
 
 describe(importKitModule, () => {
