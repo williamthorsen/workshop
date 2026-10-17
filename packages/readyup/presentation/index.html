@@ -485,7 +485,7 @@
       .code-sheet pre {
         margin: 0;
         padding: 16px 20px;
-        font: 20px/28px var(--mono);
+        font: 19px/27px var(--mono);
         white-space: pre;
         color: var(--ink);
         overflow: hidden;
@@ -526,7 +526,7 @@
       }
       .code-sheet .note {
         --top: 16px;
-        --lh: 28px;
+        --lh: 27px;
       }
 
       /* Slides 5 and 6: terminal */
@@ -1430,11 +1430,11 @@
 <span class="st">        {</span>
           <span class="f"><b>name</b>: 'NODE_ENV is set'</span><span class="st">,</span>
           <span class="f"><b>severity</b>: 'warn'</span><span class="st">,</span>
-          <span class="f"><b>check</b>: () =&gt; {
-            const value = process.env['NODE_ENV'];
-            if (!value) return { ok: false, detail: 'NODE_ENV has no value in the environment' };
-            return { ok: true, detail: `NODE_ENV is ${value}` };
-          }</span><span class="st">,</span>
+          <span class="f"><b>check</b>: () =&gt; {</span>
+            <span class="f">const value = process.env['NODE_ENV'];</span>
+            <span class="f">if (!value) return { ok: false, detail: 'NODE_ENV has no value in the environment' };</span>
+            <span class="f">return { ok: true, detail: `NODE_ENV is ${value}` };</span>
+          <span class="f">}</span><span class="st">,</span>
           <span class="f"><b>fix</b>: 'Set NODE_ENV before deploying'</span><span class="st">,</span>
 <span class="st">        },</span>
 <span class="st">      ],</span>
@@ -1744,7 +1744,12 @@
                       <p class="role">publisher</p>
                       <div class="chain">
                         <p class="step"><code>rdy compile</code><span class="text">bundles the kit</span></p>
-                        <p class="step"><code>git commit</code><span class="text">the bundle and its manifest</span></p>
+                        <p class="step">
+                          <code>git commit</code
+                          ><span class="text"
+                            >the bundle and its manifest, in the repo or the package's <code>files</code></span
+                          >
+                        </p>
                         <p class="step">
                           <code>rdy verify --rebuild</code
                           ><span class="text">in CI: fails on a bundle that no longer reproduces from its source</span>
@@ -1772,9 +1777,10 @@
           </div>
           <aside class="notes">
             Two questions for a CI owner. Gating: the exit code is the contract. Zero, no problems. One, fix the repo.
-            Two, fix the invocation. Trust: a team publishes a kit by committing the compiled bundle and its manifest,
-            and runs verify with rebuild in CI, which fails if the bundle no longer reproduces from its source.
-            Consumers run it from the package they already install, or from the repository at a pinned ref.
+            Two, fix the invocation. Trust: a team publishes a kit as the compiled bundle and its manifest, committed to
+            the repo or listed in its package's files, and runs verify with rebuild in CI, which fails if the bundle no
+            longer reproduces from its source. Consumers run it from the package they already install, or from the
+            repository at a pinned ref.
           </aside>
         </section>
 
