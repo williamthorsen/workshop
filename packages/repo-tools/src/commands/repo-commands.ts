@@ -348,6 +348,18 @@ function runScan(run: VerbRun, isWrite: boolean): number {
 }
 
 /**
+ * Returns the stack names that a clone's tracked files signal, reporting each unreadable manifest on stderr, or
+ * `undefined` when the clone's tracked files cannot be listed.
+ */
+function scanClone(run: VerbRun, cloneDir: string, label: string = cloneDir): string[] | undefined {
+  const trackedPaths = run.adapters.listTrackedFiles(cloneDir);
+  if (trackedPaths === undefined) return undefined;
+  const detection = detectStack(trackedPaths, (trackedPath) => run.adapters.readFile(path.join(cloneDir, trackedPath)));
+  for (const problem of detection.problems) run.stderr(`${PROG}: ${label}: ${problem}`);
+  return detection.stack;
+}
+
+/**
  * Reads an entry's visibility and runner from GitHub, writes the values that differ into the entry, and returns the
  * changes as `scan` reports them. A value that cannot be read is reported on stderr and kept.
  */
@@ -371,18 +383,6 @@ function scanGitHub(run: VerbRun, entry: RegistryEntry, label: string): string[]
   if (runner !== entry.runner) changes.push(runner === undefined ? '-runner' : `runner=${runner}`);
   if (changes.length > 0) writeGitHubFields(entry, { runner, visibility: facts.visibility });
   return changes;
-}
-
-/**
- * Returns the stack names that a clone's tracked files signal, reporting each unreadable manifest on stderr, or
- * `undefined` when the clone's tracked files cannot be listed.
- */
-function scanClone(run: VerbRun, cloneDir: string, label: string = cloneDir): string[] | undefined {
-  const trackedPaths = run.adapters.listTrackedFiles(cloneDir);
-  if (trackedPaths === undefined) return undefined;
-  const detection = detectStack(trackedPaths, (trackedPath) => run.adapters.readFile(path.join(cloneDir, trackedPath)));
-  for (const problem of detection.problems) run.stderr(`${PROG}: ${label}: ${problem}`);
-  return detection.stack;
 }
 
 // endregion | Helpers
