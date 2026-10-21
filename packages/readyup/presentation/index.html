@@ -2482,7 +2482,7 @@
               { id: 'helper', label: 'Sources import describeError', on: true },
               { id: 'inline', label: 'Sources describe thrown values with it', on: true },
               { id: 'narrow', label: 'Sources narrow thrown values with isError', on: false },
-              { id: 'coerce', label: 'Sources coerce thrown values with it', on: true },
+              { id: 'coerce', label: 'Sources do not coerce thrown values by hand', on: true },
             ],
             checklists: [
               {
@@ -2549,7 +2549,7 @@
             checklists: [
               {
                 name: 'tools',
-                ms: 8713,
+                ms: 4926,
                 checks: [
                   {
                     name: 'brew is installed',
@@ -2559,7 +2559,7 @@
                         name: 'Homebrew packages match the Brewfile',
                         severity: 'warn',
                         when: 'brewfile',
-                        ms: 8585,
+                        ms: 4885,
                         failDetail:
                           'Formula delta needs to be installed or updated.\nFormula zoxide needs to be installed or updated.',
                         fix: 'brew bundle install --global',
@@ -2576,7 +2576,6 @@
                     name: 'live worktree is checked out on branch live',
                     severity: 'error',
                     when: 'live',
-                    ms: 211,
                     detail: '~/repos/configs/macos.live is a worktree of ~/repos/configs/macos',
                     failDetail: '~/repos/configs/macos.live does not exist',
                     fix: 'Run configs-bootstrap, which creates the live branch and worktree when absent; first move aside anything else at ~/repos/configs/macos.live',
