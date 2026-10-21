@@ -1,0 +1,12 @@
+━━ 📦 @williamthorsen/toolbelt.errors@0.8.3 / 📓 default
+✅ No source defines its own description helper [72 of 73]
+✅ No source describes a thrown value inline [72 of 73]
+💡 No source narrows a thrown value by hand [toolbelt.errors/no-instanceof-error] [72 of 73]
+   packages/readyup/src/run/runRdy.ts:264
+✅ No source coerces a thrown value to an Error by hand [72 of 73]
+── Fixes
+💡 No source narrows a thrown value by hand
+   🔧 Use isError from @williamthorsen/toolbelt.errors, or assertIsError from @williamthorsen/toolbelt.errors/candidate when the narrowing throws. Both recognize an Error crossing a realm boundary, which a bare instanceof test reports as false.
+💡 Total: 1 recommendation, 3 passed (1515ms)
+
+✅ Run passed (fail-on: error)

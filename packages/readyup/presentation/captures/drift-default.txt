@@ -1,0 +1,25 @@
+━━ 📦 @williamthorsen/release-kit@14.2.2 / 📓 default
+✅ @williamthorsen/release-kit in devDependencies (136ms)
+   ✅ @williamthorsen/release-kit >= 14.2.2
+✅ release.yaml workflow exists (137ms)
+   ✅ release.yaml matches template
+✅ publish.yaml workflow exists
+   ✅ publish.yaml matches template
+✅ create-github-release.yaml matches template
+✅ .config/release-kit.config.ts exports a config
+   ✅ releaseNotes config is consistent with changelogJson
+   ✅ .config/release-kit.config.ts uses defineConfig
+   ✅ releaseNotes.shouldInjectIntoReadme is true
+      ✅ README contains release-notes section markers
+   ✅ repoLabels block declared in .config/release-kit.config.ts
+   ✅ .github/labels.yaml exists
+      ✅ labels.yaml has current common preset
+✅ published packages ship CHANGELOG.md
+⚪ published packages ship the changelog archives · changelogMarkdown.keepVersions is not set
+✅ changelog.json generation is enabled
+   ✅ published packages ship the changelog JSON
+✅ sync-labels.yaml workflow exists
+   ✅ sync-labels.yaml matches template
+✅ Total: 27 passed, 1 skipped (170ms)
+
+✅ Run passed (fail-on: error)

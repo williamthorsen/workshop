@@ -1,0 +1,43 @@
+━━ 📋 tools
+✅ git is installed
+✅ brew is installed
+   ✅ Homebrew packages match the Brewfile (4885ms)
+✅ bash is installed
+   ✅ bash on PATH is version 4 or later · /opt/homebrew/bin/bash is version 5
+✅ jq is installed
+✅ pnpm is installed
+✅ node is installed · ~/.asdf/installs/nodejs/24.21.0/bin/node
+✅ ~/.oh-my-zsh/oh-my-zsh.sh is installed
+✅ asdf is installed
+✅ delta is installed
+✅ direnv is installed
+✅ gh is installed
+✅ git-lfs is installed
+✅ shellspec is installed
+✅ wt is installed
+✅ zoxide is installed
+✅ Total: 17 passed (4926ms)
+
+━━ 📋 install
+✅ live worktree is checked out on branch live · ~/repos/configs/macos.live is a worktree of ~/repos/configs/macos
+   ✅ Machine profile resolves to a profile root · Profile laptop resolves to ~/repos/configs/macos.live/profiles/laptop
+      ✅ Every varied path has a current mirror point · The profile root varies no base file
+   ✅ ensure-user-configuration.sh --verify passes (931ms)
+   ✅ ensure-agent-configurations.sh --verify passes (731ms)
+🔶 ~/.gitconfig sets nothing outside its include chain
+   commit.gpgsign=true
+   gpg.format=ssh
+✅ Signing key exists and user.signingKey names it · user.signingKey names ~/.ssh/git-signing.pub
+── Fixes
+🔶 ~/.gitconfig sets nothing outside its include chain
+   🔧 Move each setting to the fragment that README.md, section "Git identity, signing, and GitHub credentials", names, then remove it from ~/.gitconfig
+🔶 Total: 1 warning, 6 passed (1034ms)
+
+━━ Summary
+───────────────────────────────────────
+✅ tools    4926ms  17 passed
+🔶 install  1034ms  1 warning, 6 passed
+───────────────────────────────────────
+🔶 Total: 1 warning, 23 passed (5959ms)
+
+✅ Run passed (fail-on: error)

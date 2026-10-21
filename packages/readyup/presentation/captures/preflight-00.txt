@@ -1,0 +1,11 @@
+❌ Docker daemon is running (544ms)
+🔶 API is listening on port 3000
+   Nothing is listening on port 3000
+── Fixes
+❌ Docker daemon is running
+   🔧 Start Docker, then run the checks again
+🔶 API is listening on port 3000
+   🔧 Start the API with pnpm dev before the smoke test
+❌ Total: 1 error, 1 warning (546ms)
+
+❌ Run failed (fail-on: error)
