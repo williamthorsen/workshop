@@ -569,29 +569,6 @@
         color: var(--skip);
         font-weight: 600;
       }
-      .s-output .term {
-        position: relative;
-        width: 1192px;
-        box-shadow: 0 1px 0 var(--line);
-      }
-      .s-output .term pre {
-        padding: 14px 20px;
-        font: 22px/36px var(--mono);
-      }
-      .s-output .term-tab {
-        font-size: 17px;
-      }
-      .s-output .note {
-        --top: calc(36px + 14px);
-        --lh: 36px;
-        border-left-color: var(--ink-2);
-        font-size: 19px;
-      }
-      .s-output .note b {
-        font: 500 19px var(--mono);
-        color: var(--ink);
-      }
-
       /* Slide 6 */
       .stage-run {
         width: 1180px;
@@ -1266,6 +1243,260 @@
         color: var(--accent);
         font-weight: 600;
       }
+      .switch {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        font-size: 24px;
+        cursor: pointer;
+        padding: 8px 12px;
+        border-radius: 8px;
+      }
+      .switch:hover {
+        background: var(--paper);
+      }
+      .switch input {
+        width: 28px;
+        height: 28px;
+        margin: 0;
+        accent-color: var(--accent);
+        cursor: pointer;
+      }
+      .switch input:focus-visible {
+        outline: 3px solid var(--accent);
+        outline-offset: 2px;
+      }
+      /* Kit pages: a tree with an environment panel, and the run that the environment produces */
+      .kt {
+        display: grid;
+        grid-template-columns: 450px 1fr;
+        grid-template-rows: minmax(0, 1fr) auto;
+        gap: 14px 24px;
+        align-items: stretch;
+      }
+      .s-kit .term {
+        overflow: hidden;
+      }
+      .kt-left {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        min-height: 0;
+      }
+      .kt-tree {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .kt-left {
+        overflow: hidden;
+      }
+      .s-kit[data-kit='preflight'] .kt-row {
+        font-size: 17px;
+        padding: 10px 14px;
+      }
+      .s-kit[data-kit='onboard'] .kt-row {
+        font-size: 14px;
+        padding: 3px 10px;
+      }
+      .s-kit[data-kit='onboard'] .kt-tree {
+        gap: 3px;
+      }
+
+      .s-kit .slide-head h2,
+      .s-kit .slide-head .chip {
+        white-space: nowrap;
+      }
+      .s-kit .slide-head .chip {
+        font-size: 15px;
+      }
+      .kt-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 4px 10px;
+        background: var(--paper);
+        border: 2px solid var(--line);
+        border-radius: 8px;
+        font: 500 14px var(--mono);
+        color: var(--ink-2);
+        margin-left: calc(var(--depth) * 26px);
+        position: relative;
+      }
+      .kt-row[style*='--depth: 1']::before,
+      .kt-row[style*='--depth: 2']::before {
+        content: '';
+        position: absolute;
+        left: -16px;
+        top: -8px;
+        width: 10px;
+        height: 50%;
+        border-left: 2px solid var(--line);
+        border-bottom: 2px solid var(--line);
+        border-radius: 0 0 0 6px;
+      }
+      .kt-row .mark {
+        font-size: 17px;
+        width: 22px;
+        text-align: center;
+        opacity: 0;
+      }
+      .kt-row.on {
+        color: var(--ink);
+      }
+      .kt-row.on .mark {
+        opacity: 1;
+      }
+      .kt-row.on.st-pass {
+        border-color: var(--pass);
+        background: var(--pass-soft);
+      }
+      .kt-row.on.st-error {
+        border-color: var(--error);
+        background: var(--error-soft);
+      }
+      .kt-row.on.st-warn {
+        border-color: var(--warn);
+        background: var(--warn-soft);
+      }
+      .kt-row.on.st-recommend {
+        border-color: var(--skip);
+        background: var(--skip-soft);
+      }
+      .kt-row.on.st-blocked {
+        border-color: var(--error);
+        border-style: dashed;
+        background: var(--blocked-soft);
+      }
+      .kt-row.on.st-skip {
+        border-style: dashed;
+        background: var(--skip-soft);
+      }
+      .kt-row.now {
+        box-shadow: 0 0 0 3px var(--accent-soft);
+      }
+      .kt-list {
+        font: 600 12px var(--sans);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--ink-2);
+        margin: 6px 0 0;
+      }
+      .kt-exit {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-height: 44px;
+      }
+      .kt-exit-box {
+        font-size: 18px;
+        padding: 6px 14px;
+        opacity: 0;
+        transform: translateX(-6px);
+      }
+      .kt-exit-box.on {
+        opacity: 1;
+        transform: none;
+      }
+      .kt-env {
+        grid-column: 1 / -1;
+        padding: 6px 14px;
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 2px 16px;
+      }
+      .kt-env-h {
+        font: 600 13px var(--sans);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--ink-2);
+        margin-right: 6px;
+      }
+      .kt-env .switch {
+        font-size: 16px;
+        gap: 10px;
+        padding: 3px 6px;
+      }
+      .kt-env .switch input {
+        width: 18px;
+        height: 18px;
+      }
+      .s-kit .term {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+      .s-kit .term-tab {
+        display: flex;
+        gap: 18px;
+        padding: 0 16px;
+      }
+      .s-kit .term-tab .tab {
+        appearance: none;
+        background: none;
+        border: 0;
+        border-bottom: 3px solid transparent;
+        padding: 8px 0 6px;
+        font: 500 15px var(--mono);
+        color: var(--ink-2);
+        cursor: pointer;
+      }
+      .s-kit .term-tab .tab.on {
+        color: var(--ink);
+        border-bottom-color: var(--accent);
+      }
+      .s-kit .term-tab .tab:focus-visible {
+        outline: 3px solid var(--accent);
+        outline-offset: -3px;
+      }
+      .s-kit .term pre {
+        flex: 1;
+        min-height: 0;
+        font: 15px/22px var(--mono);
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        overflow-y: auto;
+        position: relative;
+      }
+      .s-kit[data-kit='preflight'] .term pre {
+        font: 19px/30px var(--mono);
+      }
+      .s-kit[data-kit='drift'] .term pre,
+      .s-kit[data-kit='adoption'] .term pre {
+        font: 14px/20px var(--mono);
+      }
+      .s-kit[data-kit='onboard'] .term pre {
+        font: 14px/18px var(--mono);
+        padding: 8px 14px;
+      }
+      .kt-env .switch {
+        white-space: nowrap;
+      }
+      .s-kit[data-view='json'] .term pre {
+        font: 14px/20px var(--mono);
+      }
+      .s-kit .ln {
+        display: none;
+      }
+      .s-kit .ln.on,
+      .s-kit[data-view='json'] .ln {
+        display: inline;
+      }
+      .s-kit .j-key {
+        color: var(--accent);
+      }
+      .s-kit .j-str {
+        color: var(--ink-2);
+      }
+      .s-kit .kt-steps {
+        position: absolute;
+        width: 0;
+        height: 0;
+      }
     </style>
   </head>
   <body>
@@ -1443,7 +1674,7 @@
                   </g>
                   <g transform="translate(672,224)">
                     <rect class="out-box fix-box" width="520" height="56" rx="10" />
-                    <text class="out-mark" x="30" y="28">💊</text>
+                    <text class="out-mark" x="30" y="28">🔧</text>
                     <text class="out-text" x="60" y="28" style="fill: var(--accent)">fix</text>
                     <text class="out-sub" x="190" y="28">what to do about it, from the kit</text>
                   </g>
@@ -1509,44 +1740,37 @@
           </aside>
         </section>
 
-        <!-- 5 · Running it -->
-        <section class="s-output">
+        <!-- 5 · Preflight -->
+        <section class="s-kit" data-kit="preflight" data-step="0">
           <div class="slide">
             <header class="slide-head">
-              <h2>Running it</h2>
-              <code class="chip">NODE_ENV unset</code>
+              <h2>Preflight</h2>
+              <p class="who">before a command: the kit from the last slide</p>
+              <code class="chip">rdy run &amp;&amp; pnpm smoke</code>
             </header>
-            <div class="stage">
+            <div class="stage kt">
+              <div class="kt-left">
+                <div class="kt-tree"></div>
+                <div class="kt-exit"><span class="ink-box kt-exit-box"></span></div>
+              </div>
               <figure class="term">
-                <figcaption class="term-tab">rdy compile &amp;&amp; rdy run</figcaption>
-                <pre><code>✅ package.json exists
-🔶 NODE_ENV is set
-   NODE_ENV has no value in the environment
-<span class="dim">── Fixes</span>
-🔶 NODE_ENV is set
-   💊 Set NODE_ENV before deploying
-🔶 Total: <span class="n-warn">1 warning</span>, <span class="n-pass">1 passed</span> (1ms)
-
-✅ Run passed (fail-on: error)
-<span class="dim">exit 0</span></code></pre>
-                <span class="note" style="--row: 0">one line per check</span>
-                <span class="note" style="--row: 1">a failed line states its claim</span>
-                <span class="note" style="--row: 2">the reason, beneath it</span>
-                <span class="note" style="--row: 5">the <b>fix</b> from the kit, recapped</span>
-                <span class="note" style="--row: 6">the count line leads with the worst severity</span>
-                <span class="note" style="--row: 8">the verdict names the threshold</span>
-                <span class="note" style="--row: 9">a <b>warn</b> failure is below <b>fail-on: error</b></span>
+                <figcaption class="term-tab">
+                  <button type="button" class="tab on" data-view="run"></button>
+                  <button type="button" class="tab" data-view="json"></button>
+                </figcaption>
+                <pre><code></code></pre>
               </figure>
+              <div class="kt-env"></div>
             </div>
-            <p class="caption">
-              The warning is reported; only a failure at or above <code>fail-on</code> fails the run
-            </p>
+            <div class="captions"></div>
+            <div class="kt-steps"></div>
           </div>
           <aside class="notes">
-            Compile the kit and run it with NODE_ENV unset, and this is what prints. One line per check. The failed line
-            states its claim, and the reason sits beneath it. The fixes are recapped at the end, then the count line,
-            which leads with the worst severity. The verdict names the threshold: the run passed, because a warning is
-            below fail-on error, so the exit code is zero.
+            Compile the kit and run it: one line per check, the count line, the verdict naming the threshold, and the
+            exit code that gates the smoke test. Step through it, then change the environment in the panel. Stop Docker:
+            the check fails at error, the fix prints, the run fails with exit one. Take the API down instead: that check
+            fails at warn, so it is reported with its fix, but the run passes. The severity decides the verdict, not the
+            check. The JSON tab is the same run for a machine.
           </aside>
         </section>
 
@@ -1717,9 +1941,9 @@
 ⚪ base image is pinned · no Dockerfile in this project
 <span class="dim">── Fixes</span>
 ❌ build output present
-   💊 Run the build before deploying
+   🔧 Run the build before deploying
 🔶 NODE_ENV is set
-   💊 Set NODE_ENV before deploying
+   🔧 Set NODE_ENV before deploying
 ❌ Total: <span class="n-error">1 error</span>, <span class="n-warn">1 warning</span>, <span class="n-pass">1 passed</span>, <span class="n-blocked">2 blocked</span>, <span class="n-skip">1 skipped</span> (0ms)
 
 ❌ Run failed (fail-on: error)
@@ -1851,7 +2075,106 @@
           </aside>
         </section>
 
-        <!-- 7 · Gating CI and trusting shared kits -->
+        <!-- 9 · Drift -->
+        <section class="s-kit" data-kit="drift" data-step="0">
+          <div class="slide">
+            <header class="slide-head">
+              <h2>Drift</h2>
+              <p class="who">against a template: the kit ships with the package</p>
+              <code class="chip">rdy run --from npm:@williamthorsen/release-kit</code>
+            </header>
+            <div class="stage kt">
+              <div class="kt-left">
+                <div class="kt-tree"></div>
+                <div class="kt-exit"><span class="ink-box kt-exit-box"></span></div>
+              </div>
+              <figure class="term">
+                <figcaption class="term-tab">
+                  <button type="button" class="tab on" data-view="run"></button>
+                  <button type="button" class="tab" data-view="json"></button>
+                </figcaption>
+                <pre><code></code></pre>
+              </figure>
+              <div class="kt-env"></div>
+            </div>
+            <div class="captions"></div>
+            <div class="kt-steps"></div>
+          </div>
+          <aside class="notes">
+            release-kit ships its workflows as templates, and it ships a kit that checks the repo still matches them.
+            Nothing to write: the kit comes with the package. Let a workflow drift from its template and the kit says
+            which one and how to regenerate it. Remove a workflow and the check under it is blocked rather than failed:
+            it never ran.
+          </aside>
+        </section>
+
+        <!-- 10 · Adoption -->
+        <section class="s-kit" data-kit="adoption" data-step="0">
+          <div class="slide">
+            <header class="slide-head">
+              <h2>Adoption</h2>
+              <p class="who">using what is installed: a real run from this repo</p>
+              <code class="chip">rdy run --from npm:@williamthorsen/toolbelt.errors</code>
+            </header>
+            <div class="stage kt">
+              <div class="kt-left">
+                <div class="kt-tree"></div>
+                <div class="kt-exit"><span class="ink-box kt-exit-box"></span></div>
+              </div>
+              <figure class="term">
+                <figcaption class="term-tab">
+                  <button type="button" class="tab on" data-view="run"></button>
+                  <button type="button" class="tab" data-view="json"></button>
+                </figcaption>
+                <pre><code></code></pre>
+              </figure>
+              <div class="kt-env"></div>
+            </div>
+            <div class="captions"></div>
+            <div class="kt-steps"></div>
+          </div>
+          <aside class="notes">
+            The errors package ships a kit that sweeps the consumer's sources for the idioms it replaces. Each check
+            reports a fraction: sites examined, of sites in scope. One site still narrows a thrown value by hand, named
+            by file and line, with the fix. It is a recommendation, so the run passes. That is adoption: the package
+            tells you where you are not using it yet.
+          </aside>
+        </section>
+
+        <!-- 11 · Onboarding -->
+        <section class="s-kit" data-kit="onboard" data-step="0">
+          <div class="slide">
+            <header class="slide-head">
+              <h2>Onboarding</h2>
+              <p class="who">a machine checks itself: two checklists, one summary</p>
+              <code class="chip">rdy run machine</code>
+            </header>
+            <div class="stage kt">
+              <div class="kt-left">
+                <div class="kt-tree"></div>
+                <div class="kt-exit"><span class="ink-box kt-exit-box"></span></div>
+              </div>
+              <figure class="term">
+                <figcaption class="term-tab">
+                  <button type="button" class="tab on" data-view="run"></button>
+                  <button type="button" class="tab" data-view="json"></button>
+                </figcaption>
+                <pre><code></code></pre>
+              </figure>
+              <div class="kt-env"></div>
+            </div>
+            <div class="captions"></div>
+            <div class="kt-steps"></div>
+          </div>
+          <aside class="notes">
+            A machine kit: is this Mac still in the state the bootstrap left it? Two checklists, tools and install, each
+            with its own total, then a summary. The live worktree check has two checks under it; take the worktree away
+            and both are blocked. A stray setting in gitconfig is a warning with a fix. The run passes until a tool is
+            missing.
+          </aside>
+        </section>
+
+        <!-- 12 · Gating CI and trusting shared kits -->
         <section class="s-ci">
           <div class="slide">
             <header class="slide-head">
@@ -1924,7 +2247,7 @@
           </aside>
         </section>
 
-        <!-- 8 · Why it pays off -->
+        <!-- 13 · Why it pays off -->
         <section class="s-payoff">
           <div class="slide">
             <header class="slide-head">
@@ -1950,7 +2273,7 @@
                 </div>
                 <div class="arrow green"></div>
                 <div class="hnode early">
-                  <p class="mark">💊</p>
+                  <p class="mark">🔧</p>
                   <p>The failure shows up before the deploy</p>
                   <p class="sub">with its fix beside it</p>
                 </div>
@@ -1965,7 +2288,7 @@
           </aside>
         </section>
 
-        <!-- 9 · Get started -->
+        <!-- 14 · Get started -->
         <section class="s-start">
           <div class="slide">
             <header class="slide-head">
@@ -2019,11 +2342,273 @@
     <script>
       (function () {
         var deckEl = document.getElementById('deck');
-        var runSlide = document.querySelector('.s-run');
         var posSlides = document.querySelector('.pos-slides');
         var posSteps = document.querySelector('.pos-steps');
         var posLabel = document.querySelector('.pos-label');
         var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        // -- Kit pages --
+        // Each page declares a kit model: its checklists, each check's severity, texts, and the condition that makes it
+        // pass, and the conditions that the environment strip toggles. The renderer below is shared by every page and
+        // reproduces `rdy run --style rich`; the files under `captures/` are the reference for its layout. `MARK` and
+        // `FIX` mirror `GLYPHS` in `packages/readyup/src/layout/formatter.ts`.
+
+        var FIX = '🔧';
+        var MARK = { pass: '✅', error: '❌', warn: '🔶', recommend: '💡', skip: '⚪', blocked: '🚫' };
+        var RANK = { recommend: 1, warn: 2, error: 3 };
+        var READYUP_VERSION = '0.42.0';
+        // Durations below this floor are omitted from a check line, as rdy omits them
+        var DURATION_FLOOR_MS = 100;
+        var TOOLBELT_README = 'https://github.com/williamthorsen/toolbelt/tree/main/packages/errors#readme';
+
+        var KITS = {
+          preflight: {
+            title: 'The preflight kit',
+            name: 'preflight',
+            compiledWith: '0.42.0',
+            conditions: [
+              { id: 'docker', label: 'Docker is running', on: true },
+              { id: 'api', label: 'API is listening on port 3000', on: true },
+            ],
+            checklists: [
+              {
+                name: 'preflight',
+                ms: 546,
+                checks: [
+                  {
+                    name: 'Docker daemon is running',
+                    severity: 'error',
+                    when: 'docker',
+                    ms: 544,
+                    fix: 'Start Docker, then run the checks again',
+                  },
+                  {
+                    name: 'API is listening on port 3000',
+                    severity: 'warn',
+                    when: 'api',
+                    ms: 45,
+                    failDetail: 'Nothing is listening on port 3000',
+                    fix: 'Start the API with pnpm dev before the smoke test',
+                  },
+                ],
+              },
+            ],
+          },
+          drift: {
+            title: "release-kit's kit, in part",
+            name: 'default',
+            origin: { source: 'npm:@williamthorsen/release-kit', version: '14.2.2' },
+            heading: '📦 @williamthorsen/release-kit@14.2.2 / 📓 default',
+            compiledWith: '0.41.0',
+            conditions: [
+              { id: 'current', label: 'release-kit is current', on: true },
+              { id: 'publish', label: 'publish.yaml matches its template', on: true },
+              { id: 'labels', label: 'labels.yaml has the current preset', on: true },
+              { id: 'sync', label: 'sync-labels.yaml exists', on: true },
+            ],
+            checklists: [
+              {
+                name: 'release-kit',
+                ms: 170,
+                checks: [
+                  {
+                    name: '@williamthorsen/release-kit in devDependencies',
+                    severity: 'error',
+                    ms: 136,
+                    fix: 'pnpm add --save-dev @williamthorsen/release-kit',
+                    checks: [
+                      {
+                        name: '@williamthorsen/release-kit >= 14.2.2',
+                        severity: 'error',
+                        when: 'current',
+                        fix: 'pnpm add --save-dev @williamthorsen/release-kit@^14.2.2',
+                      },
+                    ],
+                  },
+                  {
+                    name: 'publish.yaml workflow exists',
+                    severity: 'warn',
+                    checks: [
+                      {
+                        name: 'publish.yaml matches template',
+                        severity: 'warn',
+                        when: 'publish',
+                        fix: 'Run `release-kit update-templates` to regenerate publish.yaml from the current template',
+                      },
+                    ],
+                  },
+                  {
+                    name: '.config/release-kit.config.ts exports a config',
+                    severity: 'error',
+                    checks: [
+                      {
+                        name: '.github/labels.yaml exists',
+                        severity: 'warn',
+                        fix: 'Run `release-kit sync-labels generate` to produce the labels file',
+                        checks: [
+                          {
+                            name: 'labels.yaml has current common preset',
+                            severity: 'warn',
+                            when: 'labels',
+                            fix: 'Run `release-kit sync-labels generate` to incorporate updated common labels',
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    name: 'published packages ship the changelog archives',
+                    severity: 'warn',
+                    na: 'changelogMarkdown.keepVersions is not set',
+                  },
+                  {
+                    name: 'sync-labels.yaml workflow exists',
+                    severity: 'warn',
+                    when: 'sync',
+                    fix: 'Run `release-kit sync-labels init` to scaffold the workflow',
+                    checks: [{ name: 'sync-labels.yaml matches template', severity: 'warn' }],
+                  },
+                ],
+              },
+            ],
+          },
+          adoption: {
+            title: "toolbelt.errors's kit",
+            name: 'default',
+            origin: { source: 'npm:@williamthorsen/toolbelt.errors', version: '0.8.3' },
+            heading: '📦 @williamthorsen/toolbelt.errors@0.8.3 / 📓 default',
+            compiledWith: '0.40.0',
+            conditions: [
+              { id: 'helper', label: 'Sources import describeError', on: true },
+              { id: 'inline', label: 'Sources describe thrown values with it', on: true },
+              { id: 'narrow', label: 'Sources narrow thrown values with isError', on: false },
+              { id: 'coerce', label: 'Sources coerce thrown values with it', on: true },
+            ],
+            checklists: [
+              {
+                name: 'adoption',
+                ms: 1515,
+                checks: [
+                  {
+                    name: 'No source defines its own description helper',
+                    id: 'toolbelt.errors/no-describe-clone',
+                    progress: [72, 73],
+                    findings: true,
+                    severity: 'warn',
+                    when: 'helper',
+                    failDetail: 'describeFailure (packages/repo-tools/src/probe/probe.ts:3)',
+                    fix:
+                      'Delete the function named above and import describeError from @williamthorsen/toolbelt.errors. One import replaces the whole helper. Reference: ' +
+                      TOOLBELT_README,
+                  },
+                  {
+                    name: 'No source describes a thrown value inline',
+                    id: 'toolbelt.errors/no-inline-description',
+                    progress: [72, 73],
+                    findings: true,
+                    severity: 'warn',
+                    when: 'inline',
+                    failDetail: 'packages/repo-tools/src/probe/probe.ts:4',
+                    fix: 'Replace each expression named above with describeError, imported from @williamthorsen/toolbelt.errors. A domain-literal fallback discards what was thrown; describeError keeps it.',
+                  },
+                  {
+                    name: 'No source narrows a thrown value by hand',
+                    id: 'toolbelt.errors/no-instanceof-error',
+                    progress: [72, 73],
+                    findings: true,
+                    severity: 'recommend',
+                    when: 'narrow',
+                    failDetail: 'packages/readyup/src/run/runRdy.ts:264',
+                    fix: 'Use isError from @williamthorsen/toolbelt.errors, or assertIsError from @williamthorsen/toolbelt.errors/candidate when the narrowing throws. Both recognize an Error crossing a realm boundary, which a bare instanceof test reports as false.',
+                  },
+                  {
+                    name: 'No source coerces a thrown value to an Error by hand',
+                    id: 'toolbelt.errors/no-error-coercion',
+                    progress: [72, 73],
+                    findings: true,
+                    severity: 'recommend',
+                    when: 'coerce',
+                    failDetail: 'packages/repo-tools/src/probe/probe.ts:9',
+                    fix:
+                      '@williamthorsen/toolbelt.errors publishes no coercer, so this reports an unmet need rather than a substitution. Raise it at ' +
+                      TOOLBELT_README +
+                      ' if the sites above are worth one.',
+                  },
+                ],
+              },
+            ],
+          },
+          onboard: {
+            title: 'The machine kit, in part',
+            name: 'machine',
+            conditions: [
+              { id: 'brewfile', label: 'Brewfile is satisfied', on: true },
+              { id: 'live', label: 'live worktree exists', on: true },
+              { id: 'gitconfig', label: '~/.gitconfig is clean', on: false },
+            ],
+            checklists: [
+              {
+                name: 'tools',
+                ms: 8713,
+                checks: [
+                  {
+                    name: 'brew is installed',
+                    severity: 'error',
+                    checks: [
+                      {
+                        name: 'Homebrew packages match the Brewfile',
+                        severity: 'warn',
+                        when: 'brewfile',
+                        ms: 8585,
+                        failDetail:
+                          'Formula delta needs to be installed or updated.\nFormula zoxide needs to be installed or updated.',
+                        fix: 'brew bundle install --global',
+                      },
+                    ],
+                  },
+                ],
+              },
+              {
+                name: 'install',
+                ms: 1034,
+                checks: [
+                  {
+                    name: 'live worktree is checked out on branch live',
+                    severity: 'error',
+                    when: 'live',
+                    ms: 211,
+                    detail: '~/repos/configs/macos.live is a worktree of ~/repos/configs/macos',
+                    failDetail: '~/repos/configs/macos.live does not exist',
+                    fix: 'Run configs-bootstrap, which creates the live branch and worktree when absent; first move aside anything else at ~/repos/configs/macos.live',
+                    checks: [
+                      {
+                        name: 'Machine profile resolves to a profile root',
+                        severity: 'error',
+                        detail: 'Profile laptop resolves to ~/repos/configs/macos.live/profiles/laptop',
+                        checks: [
+                          {
+                            name: 'Every varied path has a current mirror point',
+                            severity: 'warn',
+                            detail: 'The profile root varies no base file',
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    name: '~/.gitconfig sets nothing outside its include chain',
+                    severity: 'warn',
+                    when: 'gitconfig',
+                    failDetail: 'commit.gpgsign=true\ngpg.format=ssh',
+                    fix: 'Move each setting to the fragment that README.md, section "Git identity, signing, and GitHub credentials", names, then remove it from ~/.gitconfig',
+                  },
+                ],
+              },
+            ],
+          },
+        };
+
+        document.querySelectorAll('.slides > .s-kit').forEach(mountKit);
 
         var deck = new Reveal(deckEl, {
           width: 1280,
@@ -2044,7 +2629,386 @@
         deck.on('pdf-ready', syncPrintedPages);
         deck.initialize().then(sync);
 
-        // Sets a run slide's state to the step that its visible fragments reach, from 0 to 8
+        // Mounts a kit page: builds its strip and fragments once, then redraws it whenever a toggle or a tab changes
+        function mountKit(slide) {
+          var kit = KITS[slide.getAttribute('data-kit')];
+          var env = {};
+          var panel = slide.querySelector('.kt-env');
+          var treeEl = slide.querySelector('.kt-tree');
+          var out = slide.querySelector('.term pre code');
+          var caps = slide.querySelector('.captions');
+          var stepsEl = slide.querySelector('.kt-steps');
+          var exitBox = slide.querySelector('.kt-exit-box');
+          var tabs = slide.querySelectorAll('.term-tab .tab');
+          var view = 'run';
+          tabs[0].textContent = 'rdy run';
+          tabs[1].textContent = 'rdy run --json';
+
+          panel.innerHTML = '<span class="kt-env-h">Environment</span>';
+          kit.conditions.forEach(function (c) {
+            env[c.id] = c.on;
+            var label = document.createElement('label');
+            label.className = 'switch';
+            var input = document.createElement('input');
+            input.type = 'checkbox';
+            input.checked = c.on;
+            input.addEventListener('change', function () {
+              env[c.id] = input.checked;
+              draw();
+              returnFocus(input);
+            });
+            label.appendChild(input);
+            label.appendChild(document.createTextNode(' ' + c.label));
+            panel.appendChild(label);
+          });
+
+          tabs.forEach(function (tab) {
+            tab.addEventListener('click', function () {
+              view = tab.getAttribute('data-view');
+              tabs.forEach(function (t) {
+                t.classList.toggle('on', t === tab);
+              });
+              slide.setAttribute('data-view', view);
+              draw();
+              returnFocus(tab);
+            });
+          });
+
+          // The step count follows the model's shape rather than the environment, so the fragments are built once
+          var html = '';
+          for (var i = 1; i <= renderKit(kit, env).steps; i++) {
+            html += '<span class="fragment step" data-fragment-index="' + i + '"></span>';
+          }
+          stepsEl.innerHTML = html;
+
+          function draw() {
+            var r = renderKit(kit, env);
+            if (view === 'json') {
+              out.innerHTML = '<span class="ln on">' + highlightJson(r.json) + '</span>';
+            } else {
+              out.innerHTML = r.lines
+                .map(function (l) {
+                  return '<span class="ln" data-at="' + l.at + '">' + l.html + '\n</span>';
+                })
+                .join('');
+            }
+            treeEl.innerHTML = r.tree
+              .map(function (t) {
+                if (t.list) return '<p class="kt-list" data-at="' + t.at + '">📋 ' + esc(t.list) + '</p>';
+                return (
+                  '<div class="kt-row st-' +
+                  t.status +
+                  '" data-at="' +
+                  t.at +
+                  '" style="--depth: ' +
+                  t.depth +
+                  '"><span class="mark">' +
+                  MARK[t.status] +
+                  '</span><span class="label">' +
+                  esc(t.check.name) +
+                  '</span></div>'
+                );
+              })
+              .join('');
+            caps.innerHTML = r.captions
+              .map(function (c) {
+                return '<p class="caption" data-at="' + c.at + '">' + c.html + '</p>';
+              })
+              .join('');
+            exitBox.textContent = 'exit ' + r.exit;
+            exitBox.setAttribute('data-at', r.exitAt);
+            setStep(slide);
+          }
+          draw();
+        }
+
+        // Renders one kit in an environment: terminal lines, JSON, captions, and tree rows, each with its step
+        function renderKit(kit, env) {
+          var step = { n: 0 };
+          var lines = [];
+          var captions = [];
+          var tree = [];
+          var all = [];
+          var sums = [];
+          var totalMs = 0;
+          var multi = kit.checklists.length > 1;
+
+          function line(at, html) {
+            lines.push({ at: at, html: html });
+          }
+
+          if (kit.heading) line(0, '━━ ' + esc(kit.heading));
+          kit.checklists.forEach(function (checklist, ci) {
+            var rows = evaluate(checklist, env, step);
+            var headAt = ci === 0 ? 0 : rows[0].at - 1;
+            all = all.concat(rows);
+            if (multi) {
+              if (ci > 0) line(headAt, '');
+              line(headAt, '━━ 📋 ' + esc(checklist.name));
+              tree.push({ list: checklist.name, at: headAt });
+            }
+            rows.forEach(function (r) {
+              line(r.at, formatCheckLine(r));
+              var d = r.check.failDetail;
+              if (d && RANK[r.status]) {
+                d.split('\n').forEach(function (dl) {
+                  line(r.at, indent(r.depth + 1) + esc(dl));
+                });
+              }
+              tree.push(r);
+              captions.push({ at: r.at, html: captionFor(r) });
+            });
+            var fixes = rows.filter(function (r) {
+              return RANK[r.status] && r.check.fix;
+            });
+            var c = count(rows);
+            var tAt = ++step.n;
+            if (fixes.length) {
+              line(tAt, '<span class="dim">── Fixes</span>');
+              fixes.forEach(function (r) {
+                line(tAt, MARK[r.status] + ' ' + esc(r.check.name));
+                line(tAt, indent(1) + FIX + ' ' + esc(r.check.fix));
+              });
+            }
+            line(tAt, worstMark(c) + ' ' + countBody(c, checklist.ms, true));
+            captions.push({
+              at: tAt,
+              html: fixes.length
+                ? 'Each failure prints its fix under <code>Fixes</code>, then the count line'
+                : 'The count line: each result counts once',
+            });
+            sums.push({ name: checklist.name, c: c, ms: checklist.ms });
+            totalMs += checklist.ms;
+          });
+
+          var vAt = ++step.n;
+          var total = count(all);
+          if (multi) {
+            line(vAt, '');
+            summaryTable(sums, total, totalMs).forEach(function (l) {
+              line(vAt, l);
+            });
+          }
+          var failed = total.worst !== null && RANK[total.worst] >= RANK.error;
+          line(vAt, '');
+          line(vAt, failed ? '❌ Run failed (fail-on: error)' : '✅ Run passed (fail-on: error)');
+          line(vAt, '<span class="dim">exit ' + (failed ? 1 : 0) + '</span>');
+          captions.push({ at: vAt, html: verdictCaption(total, failed) });
+
+          var nNested = all.filter(function (r) {
+            return r.depth > 0;
+          }).length;
+          captions.unshift({
+            at: 0,
+            html:
+              kit.title +
+              ': ' +
+              all.length +
+              ' checks' +
+              (nNested ? ', ' + nNested + ' of them nested' : '') +
+              (multi ? ', in ' + kit.checklists.length + ' checklists' : ''),
+          });
+
+          return {
+            lines: lines,
+            captions: captions,
+            tree: tree,
+            steps: vAt,
+            exit: failed ? 1 : 0,
+            exitAt: vAt,
+            json: buildReport(kit, sums, all, total, failed, totalMs),
+          };
+        }
+
+        // Evaluates a checklist's checks in tree order, giving each one its step and status
+        function evaluate(checklist, env, step) {
+          var rows = [];
+          function visit(check, depth, blocked) {
+            var r = { check: check, depth: depth, children: [], at: ++step.n };
+            if (blocked) r.status = 'blocked';
+            else if (check.na) r.status = 'skip';
+            else r.status = !check.when || env[check.when] ? 'pass' : check.severity;
+            rows.push(r);
+            (check.checks || []).forEach(function (child) {
+              r.children.push(visit(child, depth + 1, blocked || r.status !== 'pass'));
+            });
+            return r;
+          }
+          checklist.checks.forEach(function (c) {
+            visit(c, 0, false);
+          });
+          return rows;
+        }
+
+        // Formats a check line as `mark name · detail [id] [progress] (duration)`, dropping the parts that it lacks
+        function formatCheckLine(r) {
+          var check = r.check;
+          var parts = [indent(r.depth) + MARK[r.status] + ' ' + esc(check.name)];
+          if (r.status === 'skip') parts.push('· ' + esc(check.na));
+          else if (r.status === 'pass' && check.detail) parts.push('· ' + esc(check.detail));
+          if (check.id && RANK[r.status]) parts.push('[' + check.id + ']');
+          if (check.progress && r.status !== 'blocked')
+            parts.push('[' + check.progress[0] + ' of ' + check.progress[1] + ']');
+          if (check.ms >= DURATION_FLOOR_MS && r.status !== 'blocked' && r.status !== 'skip') {
+            parts.push('(' + check.ms + 'ms)');
+          }
+          return parts.join(' ');
+        }
+
+        // Formats the summary table: a heading, a rule, one row per checklist, a closing rule, and the total
+        function summaryTable(sums, total, totalMs) {
+          var nameWidth = Math.max.apply(
+            null,
+            sums.map(function (s) {
+              return s.name.length;
+            }),
+          );
+          var msWidth = Math.max.apply(
+            null,
+            sums.map(function (s) {
+              return String(s.ms).length + 2;
+            }),
+          );
+          var rows = sums.map(function (s) {
+            var body = padEnd(s.name, nameWidth) + '  ' + padStart(s.ms + 'ms', msWidth) + '  ';
+            return { mark: worstMark(s.c), body: body + countText(s.c), html: body + tallies(s.c) };
+          });
+          var totalText = countBody(total, totalMs, false);
+          var width = Math.max.apply(
+            null,
+            rows
+              .map(function (r) {
+                return r.body.length;
+              })
+              .concat(totalText.length),
+          );
+          // The gutter is a glyph two columns wide and one space
+          var rule = '<span class="dim">' + repeat('─', 3 + width) + '</span>';
+          return ['━━ Summary', rule]
+            .concat(
+              rows.map(function (r) {
+                return r.mark + ' ' + r.html;
+              }),
+            )
+            .concat([rule, worstMark(total) + ' ' + countBody(total, totalMs, true)]);
+        }
+
+        // Tallies rows into readyup's six counts and the worst severity among them
+        function count(rows) {
+          var c = { passed: 0, errors: 0, warnings: 0, recommendations: 0, blocked: 0, optional: 0, worst: null };
+          rows.forEach(function (r) {
+            if (r.status === 'pass') c.passed++;
+            else if (r.status === 'error') c.errors++;
+            else if (r.status === 'warn') c.warnings++;
+            else if (r.status === 'recommend') c.recommendations++;
+            else if (r.status === 'blocked') c.blocked++;
+            else if (r.status === 'skip') c.optional++;
+            if (RANK[r.status] && (c.worst === null || RANK[r.status] > RANK[c.worst])) c.worst = r.status;
+          });
+          return c;
+        }
+
+        // Writes a step's caption from the row's outcome
+        function captionFor(r) {
+          var name = '<code>' + esc(r.check.name) + '</code>';
+          var kids = r.children.length;
+          var under = kids === 1 ? 'the check under it' : 'the ' + kids + ' checks under it';
+          if (r.status === 'pass')
+            return name + ' passes' + (kids ? ', so ' + under + (kids === 1 ? ' runs' : ' run') : '');
+          if (r.status === 'skip') return name + ' is skipped: ' + esc(r.check.na);
+          if (r.status === 'blocked') return name + ' never ran: the check above it failed';
+          var d = r.check.failDetail;
+          var blocked = kids ? '; ' + under + (kids === 1 ? ' is' : ' are') + ' blocked' : '';
+          return name + ' fails at <code>' + r.status + '</code>' + (d ? ': ' + esc(d.split('\n')[0]) : '') + blocked;
+        }
+
+        // Writes the verdict step's caption
+        function verdictCaption(total, failed) {
+          if (failed) return '<code>fail-on: error</code>: the error fails the run, exit 1';
+          if (total.worst) return '<code>fail-on: error</code>: nothing failed at error, so the run passes with exit 0';
+          return 'Nothing to fix: the run passes with exit 0';
+        }
+
+        // Builds the report that `rdy run --json` prints for the same results, as indented JSON text
+        function buildReport(kit, sums, rows, total, failed, totalMs) {
+          var checklists = kit.checklists.map(function (cl, i) {
+            var tops = rows.filter(function (r) {
+              return r.depth === 0 && cl.checks.indexOf(r.check) !== -1;
+            });
+            return withVerdict({ name: cl.name }, sums[i].c, cl.ms, { checks: tops.map(checkEntry) });
+          });
+          var kitEntry = { name: kit.name };
+          if (kit.origin) kitEntry.origin = kit.origin;
+          if (kit.compiledWith) kitEntry.compiledWith = kit.compiledWith;
+          kitEntry.passed = !failed;
+          kitEntry.counts = countsEntry(total);
+          if (total.worst) kitEntry.worstSeverity = total.worst;
+          kitEntry.failOn = 'error';
+          kitEntry.reportOn = 'recommend';
+          kitEntry.durationMs = totalMs;
+          kitEntry.checklists = checklists;
+          var report = {
+            schemaVersion: 2,
+            readyupVersion: READYUP_VERSION,
+            passed: !failed,
+            counts: countsEntry(total),
+          };
+          if (total.worst) report.worstSeverity = total.worst;
+          report.detail = 'full';
+          report.durationMs = totalMs;
+          report.kits = [kitEntry];
+          return JSON.stringify(report, null, 2);
+        }
+
+        // Builds a check's report entry, omitting the fields that it lacks as the report does
+        function checkEntry(r) {
+          var check = r.check;
+          var status = r.status === 'pass' ? 'passed' : RANK[r.status] ? 'failed' : 'skipped';
+          var e = {
+            name: check.name,
+            status: status,
+            ok: status === 'passed' ? true : status === 'failed' ? false : null,
+            severity: check.severity,
+            durationMs: status === 'skipped' ? 0 : check.ms || 1,
+          };
+          if (check.id) e.id = check.id;
+          if (r.status === 'skip') e.skipReason = 'n/a';
+          if (r.status === 'blocked') e.skipReason = 'precondition';
+          if (r.status === 'skip') e.detail = check.na;
+          else if (r.status === 'pass' && check.detail) e.detail = check.detail;
+          else if (RANK[r.status] && check.failDetail) e.detail = check.failDetail;
+          if (RANK[r.status] && check.fix) e.fix = check.fix;
+          if (check.progress && r.status !== 'blocked') {
+            e.progress = { count: check.progress[1], passedCount: check.progress[0], type: 'fraction' };
+          }
+          if (check.findings) e.examinedCount = 0;
+          if (r.children.length) e.checks = r.children.map(checkEntry);
+          return e;
+        }
+
+        // Returns a checklist entry with its verdict, counts, and duration, in the report's field order
+        function withVerdict(entry, c, ms, rest) {
+          entry.passed = c.worst === null || RANK[c.worst] < RANK.error;
+          entry.counts = countsEntry(c);
+          if (c.worst) entry.worstSeverity = c.worst;
+          entry.durationMs = ms;
+          entry.checks = rest.checks;
+          return entry;
+        }
+
+        // Returns the report's six tallies
+        function countsEntry(c) {
+          return {
+            passed: c.passed,
+            errors: c.errors,
+            warnings: c.warnings,
+            recommendations: c.recommendations,
+            blocked: c.blocked,
+            optional: c.optional,
+          };
+        }
+
+        // Sets a stepped slide's step from its visible fragments, and marks each stepped element reached or current
         function setStep(slide) {
           var step = slide.querySelectorAll('.fragment.visible').length;
           var stepped = slide.querySelectorAll('[data-at]');
@@ -2054,11 +3018,12 @@
             stepped[i].classList.toggle('on', at <= step);
             stepped[i].classList.toggle('now', at === step);
           }
+          scrollToStep(slide);
         }
 
-        // Sets each printed copy of the run slide to the step that its page shows
+        // Sets each printed copy of a stepped slide to the step that its page shows
         function syncPrintedPages() {
-          document.querySelectorAll('.s-run').forEach(setStep);
+          document.querySelectorAll('.slides > .s-run, .slides > .s-kit').forEach(setStep);
         }
 
         // Renders a row of pills, one per item, marking the ones reached and the current one
@@ -2070,9 +3035,9 @@
           list.innerHTML = html;
         }
 
-        // Derives the run step from the fragments shown, and the position indicator from the deck's indices
+        // Derives each stepped slide's step from the fragments shown, and the position indicator from the deck's indices
         function sync() {
-          setStep(runSlide);
+          document.querySelectorAll('.slides > .s-run, .slides > .s-kit').forEach(setStep);
           var indices = deck.getIndices();
           var total = deck.getTotalSlides();
           var slide = deck.getCurrentSlide();
@@ -2083,6 +3048,106 @@
           posLabel.textContent =
             indices.h + 1 + ' / ' + total + (fragments ? ' · step ' + shown + ' / ' + fragments : '');
         }
+
+        // region | Helpers
+
+        // Returns the count body, `Total: tallies (duration)`, with the tallies coloured or as plain text
+        function countBody(c, ms, coloured) {
+          return 'Total: ' + (coloured ? tallies(c) : countText(c)) + ' (' + ms + 'ms)';
+        }
+
+        // Returns the non-zero tallies as plain text, in readyup's order
+        function countText(c) {
+          return tallyParts(c)
+            .map(function (p) {
+              return p.text;
+            })
+            .join(', ');
+        }
+
+        // Escapes text for insertion as HTML
+        function esc(s) {
+          return s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+        }
+
+        // Colours the keys and string values of indented JSON text
+        function highlightJson(text) {
+          return esc(text).replace(/("(?:[^"\\]|\\.)*")(:?)/g, function (m, str, colon) {
+            return '<span class="' + (colon ? 'j-key' : 'j-str') + '">' + str + '</span>' + colon;
+          });
+        }
+
+        // Returns `depth` gutters of three columns each
+        function indent(depth) {
+          return repeat(' ', 3 * depth);
+        }
+
+        // Returns the text padded on the right to `width` columns
+        function padEnd(text, width) {
+          return text + repeat(' ', width - text.length);
+        }
+
+        // Returns the text padded on the left to `width` columns
+        function padStart(text, width) {
+          return repeat(' ', width - text.length) + text;
+        }
+
+        // Returns the text repeated `n` times
+        function repeat(text, n) {
+          return new Array(Math.max(n, 0) + 1).join(text);
+        }
+
+        // Moves focus from a clicked control back to the deck, so that the arrow keys keep stepping
+        function returnFocus(control) {
+          control.blur();
+          deckEl.focus();
+        }
+
+        // Scrolls a kit page's terminal so that the last line reached is in view, as a terminal follows its output
+        function scrollToStep(slide) {
+          var pre = slide.querySelector('.term pre');
+          if (!pre || !slide.classList.contains('s-kit') || slide.getAttribute('data-view') === 'json') return;
+          var reached = pre.querySelectorAll('.ln.on');
+          var last = reached[reached.length - 1];
+          pre.scrollTop = last ? Math.max(0, last.offsetTop + last.offsetHeight - pre.clientHeight) : 0;
+        }
+
+        // Returns the non-zero tallies, each in its colour, in readyup's order
+        function tallies(c) {
+          var parts = tallyParts(c);
+          if (!parts.length) return '0 passed';
+          return parts
+            .map(function (p) {
+              return '<span class="' + p.cls + '">' + p.text + '</span>';
+            })
+            .join(', ');
+        }
+
+        // Returns the non-zero tallies in readyup's order, each as plain text and with its colour class
+        function tallyParts(c) {
+          var fields = [
+            ['errors', 'n-error', 'error', 'errors'],
+            ['warnings', 'n-warn', 'warning', 'warnings'],
+            ['recommendations', 'n-skip', 'recommendation', 'recommendations'],
+            ['passed', 'n-pass', 'passed', 'passed'],
+            ['blocked', 'n-blocked', 'blocked', 'blocked'],
+            ['optional', 'n-skip', 'skipped', 'skipped'],
+          ];
+          return fields
+            .filter(function (f) {
+              return c[f[0]] > 0;
+            })
+            .map(function (f) {
+              return { cls: f[1], text: c[f[0]] + ' ' + (c[f[0]] === 1 ? f[2] : f[3]) };
+            });
+        }
+
+        // Returns the mark of the worst severity among the counts, or the pass mark
+        function worstMark(c) {
+          return c.worst ? MARK[c.worst] : MARK.pass;
+        }
+
+        // endregion | Helpers
       })();
     </script>
   </body>
