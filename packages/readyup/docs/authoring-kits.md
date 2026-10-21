@@ -222,7 +222,7 @@ It produces:
    ⚪ Native modules are rebuilt · This workspace has no native dependencies
 ── Fixes
 ❌ No dependency has duplicated majors
-   💊 Run `pnpm dedupe`, then commit the lockfile
+   🔧 Run `pnpm dedupe`, then commit the lockfile
 ❌ Total: 1 error, 3 passed, 1 skipped (0ms)
 
 ❌ Run failed (fail-on: error)
