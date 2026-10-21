@@ -1,0 +1,8 @@
+❌ Docker daemon is running (1944ms)
+✅ API is listening on port 3000
+── Fixes
+❌ Docker daemon is running
+   🔧 Start Docker, then run the checks again
+❌ Total: 1 error, 1 passed (1951ms)
+
+❌ Run failed (fail-on: error)

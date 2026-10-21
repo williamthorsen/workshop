@@ -4,3 +4,5 @@
 # Written by compositor's sample generator, and pinned byte for byte by a drift test.
 packages/compositor/samples/
 pnpm-lock.yaml
+# Recorded output of `rdy run`, kept byte for byte so that the presentation deck is checked against it.
+packages/readyup/presentation/captures/*.json

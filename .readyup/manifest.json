@@ -66,6 +66,34 @@
       "source": "kits/demo.ts",
       "sourceHash": "a574e780",
       "targetHash": "83d9cf67"
+    },
+    {
+      "checklistChecks": [
+        {
+          "checklist": "preflight",
+          "checks": [
+            "Docker daemon is running",
+            "API is listening on port 3000"
+          ]
+        }
+      ],
+      "checklists": [
+        "preflight"
+      ],
+      "esbuildVersion": "0.28.2",
+      "inputs": [
+        {
+          "hash": "7192fe2f",
+          "kind": "module",
+          "path": "kits/preflight.ts"
+        }
+      ],
+      "name": "preflight",
+      "path": "kits/preflight.js",
+      "readyupVersion": "0.42.0",
+      "source": "kits/preflight.ts",
+      "sourceHash": "7192fe2f",
+      "targetHash": "c702a617"
     }
   ]
 }

@@ -1,0 +1,18 @@
+━━ 📦 @williamthorsen/toolbelt.errors@0.8.3 / 📓 default
+🔶 No source defines its own description helper [toolbelt.errors/no-describe-clone] [72 of 76] (117ms)
+   describeFailure (packages/repo-tools/src/probe/probe.ts:3)
+✅ No source describes a thrown value inline [72 of 76] (116ms)
+💡 No source narrows a thrown value by hand [toolbelt.errors/no-instanceof-error] [72 of 76] (116ms)
+   packages/readyup/src/run/runRdy.ts:264, packages/repo-tools/src/probe/probe.ts:14
+💡 No source coerces a thrown value to an Error by hand [toolbelt.errors/no-error-coercion] [72 of 76] (116ms)
+   packages/repo-tools/src/probe/probe.ts:9
+── Fixes
+🔶 No source defines its own description helper
+   🔧 Delete the function named above and import describeError from @williamthorsen/toolbelt.errors. One import replaces the whole helper. Reference: https://github.com/williamthorsen/toolbelt/tree/main/packages/errors#readme
+💡 No source narrows a thrown value by hand
+   🔧 Use isError from @williamthorsen/toolbelt.errors, or assertIsError from @williamthorsen/toolbelt.errors/candidate when the narrowing throws. Both recognize an Error crossing a realm boundary, which a bare instanceof test reports as false.
+💡 No source coerces a thrown value to an Error by hand
+   🔧 @williamthorsen/toolbelt.errors publishes no coercer, so this reports an unmet need rather than a substitution. Raise it at https://github.com/williamthorsen/toolbelt/tree/main/packages/errors#readme if the sites above are worth one.
+🔶 Total: 1 warning, 2 recommendations, 1 passed (2755ms)
+
+✅ Run passed (fail-on: error)

@@ -1,0 +1,5 @@
+✅ Docker daemon is running (8578ms)
+✅ API is listening on port 3000 (138ms)
+✅ Total: 2 passed (8679ms)
+
+✅ Run passed (fail-on: error)
