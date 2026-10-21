@@ -2608,7 +2608,7 @@
           },
         };
 
-        document.querySelectorAll('.slides > .s-kit').forEach(mountKit);
+        document.querySelectorAll('section.s-kit').forEach(mountKit);
 
         var deck = new Reveal(deckEl, {
           width: 1280,
@@ -3023,7 +3023,7 @@
 
         // Sets each printed copy of a stepped slide to the step that its page shows
         function syncPrintedPages() {
-          document.querySelectorAll('.slides > .s-run, .slides > .s-kit').forEach(setStep);
+          document.querySelectorAll('section.s-run, section.s-kit').forEach(setStep);
         }
 
         // Renders a row of pills, one per item, marking the ones reached and the current one
@@ -3037,7 +3037,7 @@
 
         // Derives each stepped slide's step from the fragments shown, and the position indicator from the deck's indices
         function sync() {
-          document.querySelectorAll('.slides > .s-run, .slides > .s-kit').forEach(setStep);
+          document.querySelectorAll('section.s-run, section.s-kit').forEach(setStep);
           var indices = deck.getIndices();
           var total = deck.getTotalSlides();
           var slide = deck.getCurrentSlide();
