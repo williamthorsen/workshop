@@ -254,7 +254,7 @@ export default defineRdyConfig({
 ── Verifying kits against .readyup/manifest.json
 ❌ deploy
    drift (expected 6f58905a, got eb104f57)
-   💊 Move the edits into the source, then run `rdy compile --force`.
+   🔧 Move the edits into the source, then run `rdy compile --force`.
 ✅ smoke
 
 1 of 2 kits failed verification.
@@ -270,8 +270,8 @@ The inputs verdict names every input that failed rather than the first, each on 
 ❌ deploy
    input stale: checks/shared.ts (module, expected 6f58905a, got eb104f57)
    input unprojectable: ../../package.json (Path not found in JSON: version)
-   💊 Run `rdy compile` to rebuild it.
-   💊 Restore the picked fields in ../../package.json, or repoint the kit's `pickJson` call.
+   🔧 Run `rdy compile` to rebuild it.
+   🔧 Restore the picked fields in ../../package.json, or repoint the kit's `pickJson` call.
 ```
 
 Recompiling resolves a changed input but not an unprojectable one, because the file is present and the fault is in the kit, which names fields that are no longer there.
@@ -285,7 +285,7 @@ A kit source that the manifest does not record also fails the run. `rdy verify` 
 ✅ smoke
 ❌ deploy
    source not compiled (kits/deploy.ts)
-   💊 Run `rdy compile` to compile it.
+   🔧 Run `rdy compile` to compile it.
 
 1 of 2 kits failed verification.
 ```
@@ -313,7 +313,7 @@ The three verdicts cover what the compile read and recorded as hashes. A bundle 
 
 ❌ deploy
    rebuild mismatch (rebuilt 8c31f0a2, on disk 6f58905a; esbuild 0.28.1 -> 0.29.0; zod 3.24.1 -> 4.0.0)
-   💊 Run `rdy compile` to rebuild it.
+   🔧 Run `rdy compile` to rebuild it.
 ✅ smoke
 ```
 
@@ -325,7 +325,7 @@ Because the comparison is against the bundle on disk, never the recorded hash, t
 ❌ deploy
    drift (expected 6f58905a, got eb104f57)
    rebuild ok
-   💊 The bundle reproduces, so its recorded hash is what is stale. Run `rdy compile --force` to re-record it.
+   🔧 The bundle reproduces, so its recorded hash is what is stale. Run `rdy compile --force` to re-record it.
 ```
 
 The remedy changes with it. Otherwise the remedy for a drifted bundle is to move the edits into the source, since only a hand edit explains the drift; here there is nothing to move, and `--force` rewrites the record rather than the kit. Either way the command includes `--force`, because `rdy compile` gates on drift and skips the kit rather than overwriting it.
@@ -353,7 +353,7 @@ The directory in which the command runs is not one of them. `rdy verify --rebuil
 ── Verifying kits against packages/api/.readyup/manifest.json
 ❌ deploy
    drift (expected 6f58905a, got eb104f57)
-   💊 Move the edits into the source, then run `rdy compile --force`.
+   🔧 Move the edits into the source, then run `rdy compile --force`.
 
 1 of 1 kits failed verification.
 Error in packages/ui: No manifest at packages/ui/.readyup/manifest.json. Run `rdy compile` in packages/ui to create it.

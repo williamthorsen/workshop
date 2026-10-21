@@ -82,7 +82,7 @@ With `NODE_ENV` unset:
    NODE_ENV has no value in the environment
 ── Fixes
 🔶 NODE_ENV is set
-   💊 Set NODE_ENV before deploying
+   🔧 Set NODE_ENV before deploying
 🔶 Total: 1 warning, 1 passed (0ms)
 
 ✅ Run passed (fail-on: error)

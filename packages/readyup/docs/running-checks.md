@@ -103,7 +103,7 @@ Blank lines separate blocks rather than decorate headings: None opens a command'
 ⚪ Seed data is loaded · seeding is disabled outside CI
 ── Fixes
 ❌ Migrations are applied
-   💊 Run `pnpm migrate` against the target database
+   🔧 Run `pnpm migrate` against the target database
 ❌ Total: 1 error, 1 passed, 1 skipped (151ms)
 
 ━━ Summary

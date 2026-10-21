@@ -57,7 +57,7 @@ const GLYPHS = defineGlyphSet<TokenName>({
   failedError: { plain: 'FAIL', rich: '\u{274C}' },
   failedRecommend: { plain: 'RECO', rich: '\u{1F4A1}' },
   failedWarn: { plain: 'WARN', rich: '\u{1F536}' },
-  fix: { plain: 'FIX', rich: '\u{1F48A}' },
+  fix: { plain: 'FIX', rich: '\u{1F527}' },
   kit: { plain: '', rich: '\u{1F4D3}' },
   kitSource: { plain: '', rich: '\u{1F4C4}' },
   passed: { plain: 'PASS', rich: '\u{2705}' },
