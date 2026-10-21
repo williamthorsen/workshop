@@ -495,12 +495,12 @@
         color: var(--ink-2);
       }
       .code-sheet .f {
+        display: inline-block;
+        width: calc(100% + 40px);
+        margin: 0 -20px;
+        padding: 0 20px 0 17px;
+        border-left: 3px solid var(--accent);
         background: var(--accent-soft);
-        border-radius: 4px;
-        padding: 2px 4px;
-        margin: 0 -4px;
-        -webkit-box-decoration-break: clone;
-        box-decoration-break: clone;
       }
       .code-sheet .f b {
         font-weight: 600;
@@ -514,9 +514,8 @@
         display: flex;
         align-items: center;
         gap: 10px;
-        padding-left: 12px;
-        border-left: 3px solid var(--accent);
         font-size: 18px;
+        font-style: italic;
         color: var(--ink-2);
         white-space: nowrap;
       }
@@ -1210,6 +1209,63 @@
           display: none;
         }
       }
+      /* The JSON slide */
+      .s-json .term pre {
+        font: 15px/22px var(--mono);
+      }
+      .s-json .note {
+        --top: 48px;
+        --lh: 22px;
+      }
+      .s-json .j-key {
+        color: var(--accent);
+      }
+      .s-json .j-str {
+        color: var(--ink-2);
+      }
+
+      /* The use-cases slide */
+      .uses {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 20px;
+      }
+      .use {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        padding: 18px 22px;
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+      }
+      .use h3 {
+        margin: 0;
+        font-size: 26px;
+      }
+      .use h3 small {
+        font-size: 18px;
+        font-weight: 400;
+        color: var(--ink-2);
+        margin-left: 10px;
+      }
+      .use p {
+        margin: 0;
+        font-size: 21px;
+        line-height: 1.35;
+      }
+      .use .kit {
+        margin-top: auto;
+        font: 500 17px var(--mono);
+        color: var(--ink-2);
+      }
+      .use .kit b {
+        color: var(--accent);
+        font-weight: 600;
+      }
     </style>
   </head>
   <body>
@@ -1417,39 +1473,39 @@
             <header class="slide-head">
               <h2>Writing a check</h2>
               <p class="who">for kit authors</p>
-              <code class="chip">rdy init</code>
+              <code class="chip">.readyup/kits/preflight.ts</code>
             </header>
             <figure class="code-sheet">
               <pre><code><span class="cut">⋯</span>
 <span class="st">      checks: [</span>
 <span class="st">        {</span>
-          <span class="f"><b>name</b>: 'package.json exists'</span><span class="st">,</span>
-          <span class="f"><b>check</b>: () =&gt; fileExists('package.json')</span><span class="st">,</span>
-          <span class="f"><b>fix</b>: 'Run rdy from the root of the project'</span><span class="st">,</span>
+<span class="f">          <b>name</b>: 'Docker daemon is running'<span class="st">,</span></span>
+<span class="f">          <b>check</b>: () =&gt; spawnSync('docker', ['info']).status === 0<span class="st">,</span></span>
+<span class="f">          <b>fix</b>: 'Start Docker, then run the checks again'<span class="st">,</span></span>
 <span class="st">        },</span>
 <span class="st">        {</span>
-          <span class="f"><b>name</b>: 'NODE_ENV is set'</span><span class="st">,</span>
-          <span class="f"><b>severity</b>: 'warn'</span><span class="st">,</span>
-          <span class="f"><b>check</b>: () =&gt; {</span>
-            <span class="f">const value = process.env['NODE_ENV'];</span>
-            <span class="f">if (!value) return { ok: false, detail: 'NODE_ENV has no value in the environment' };</span>
-            <span class="f">return { ok: true, detail: `NODE_ENV is ${value}` };</span>
-          <span class="f">}</span><span class="st">,</span>
-          <span class="f"><b>fix</b>: 'Set NODE_ENV before deploying'</span><span class="st">,</span>
+<span class="f">          <b>name</b>: 'API is listening on port 3000'<span class="st">,</span></span>
+<span class="f">          <b>severity</b>: 'warn'<span class="st">,</span></span>
+<span class="f">          <b>check</b>: async () =&gt; {</span>
+<span class="f">            const open = await portAccepts(3000);</span>
+<span class="f">            if (!open) return { ok: false, detail: 'Nothing is listening on port 3000' };</span>
+<span class="f">            return true;</span>
+<span class="f">          }<span class="st">,</span></span>
+<span class="f">          <b>fix</b>: 'Start the API with pnpm dev before the smoke test'<span class="st">,</span></span>
 <span class="st">        },</span>
 <span class="st">      ],</span>
 <span class="cut">⋯</span></code></pre>
-              <span class="note" style="--row: 3"><b>name</b> what must be true</span>
-              <span class="note" style="--row: 4"><b>check</b> passes, or fails with a detail</span>
-              <span class="note" style="--row: 5"><b>fix</b> printed as 💊 after a failure</span>
-              <span class="note" style="--row: 9"><b>severity</b> what a failure costs</span>
+              <span class="note" style="--row: 3">what must be true</span>
+              <span class="note" style="--row: 4">the check to run</span>
+              <span class="note" style="--row: 5">the fix if the check fails</span>
+              <span class="note" style="--row: 9">failure results in a warning, not an error</span>
             </figure>
           </div>
           <aside class="notes">
-            This is the kit that rdy init writes. A check is a few fields. The name states what must be true. The check
-            function returns true, or false with a detail. Severity says what a failure costs: error fails the run, warn
-            is reported and does not. Fix is the hint that prints when the check fails. Everything else is structure:
-            the checklist, and one helper import.
+            A preflight kit, run before a smoke test. A check is a few fields. The name states what must be true. The
+            check is the function that rdy runs; it returns true, or false with a detail. The fix is what prints when
+            the check fails. Severity decides whether a failure fails the run: error does, warn is reported and does
+            not. Everything else is structure: the checklist, and the helpers that the kit imports.
           </aside>
         </section>
 
@@ -1708,6 +1764,90 @@
             Then the verdict. This run fails on error. The error fails it; the warning alone would have left it passing,
             with exit code zero. Exit code one is what CI acts on. And this is what rdy printed for the same run: the
             same tree, the fixes, the total, the verdict.
+          </aside>
+        </section>
+
+        <!-- 7 · The same run, for a machine -->
+        <section class="s-json">
+          <div class="slide">
+            <header class="slide-head">
+              <h2>The same run, for a machine</h2>
+              <p class="who">for CI owners and agents</p>
+              <code class="chip">rdy run --json</code>
+            </header>
+            <div class="stage">
+              <figure class="term">
+                <figcaption class="term-tab">rdy run --json | head</figcaption>
+                <pre><code>{
+  <span class="j-key">"schemaVersion"</span>: 2,
+  <span class="j-key">"readyupVersion"</span>: <span class="j-str">"0.42.0"</span>,
+  <span class="j-key">"passed"</span>: false,
+  <span class="j-key">"counts"</span>: { "passed": 1, "errors": 1, "warnings": 1, "recommendations": 0, "blocked": 2, "optional": 1 },
+  <span class="j-key">"worstSeverity"</span>: <span class="j-str">"error"</span>,
+  <span class="j-key">"kits"</span>: [
+    { <span class="j-key">"name"</span>: <span class="j-str">"deploy"</span>, <span class="j-key">"passed"</span>: false, <span class="j-key">"failOn"</span>: <span class="j-str">"error"</span>,
+      <span class="j-key">"checklists"</span>: [ { <span class="j-key">"name"</span>: <span class="j-str">"deploy"</span>, <span class="j-key">"checks"</span>: [
+        { <span class="j-key">"name"</span>: <span class="j-str">"package.json exists"</span>, <span class="j-key">"status"</span>: <span class="j-str">"passed"</span>, <span class="j-key">"checks"</span>: [
+          { <span class="j-key">"name"</span>: <span class="j-str">"build output present"</span>, <span class="j-key">"status"</span>: <span class="j-str">"failed"</span>, <span class="j-key">"severity"</span>: <span class="j-str">"error"</span>,
+            <span class="j-key">"detail"</span>: <span class="j-str">"dist/index.js not found"</span>, <span class="j-key">"fix"</span>: <span class="j-str">"Run the build before deploying"</span>,
+            <span class="j-key">"checks"</span>: [ { <span class="j-key">"name"</span>: <span class="j-str">"bundle under 500 kB"</span>, <span class="j-key">"status"</span>: <span class="j-str">"skipped"</span>, <span class="j-key">"skipReason"</span>: <span class="j-str">"precondition"</span> }, <span class="cut">⋯</span> ] } ] },
+        { <span class="j-key">"name"</span>: <span class="j-str">"NODE_ENV is set"</span>, <span class="j-key">"status"</span>: <span class="j-str">"failed"</span>, <span class="j-key">"severity"</span>: <span class="j-str">"warn"</span>, <span class="cut">⋯</span> },
+        <span class="cut">⋯</span></code></pre>
+                <span class="note" style="--row: 3">the verdict, as a boolean</span>
+                <span class="note" style="--row: 4">the count line's tallies</span>
+                <span class="note" style="--row: 10">every failure carries its detail and its fix</span>
+              </figure>
+            </div>
+            <p class="caption">
+              One document on stdout; <code>--detail summary</code> keeps the failures and fixes alone
+            </p>
+          </div>
+          <aside class="notes">
+            The same run with dash dash json. One JSON document on stdout, every human line on stderr. The verdict is a
+            boolean, the counts are the same six tallies, and every failed check carries its detail and its fix. Dash
+            dash detail summary drops the passes and keeps the failures and fixes, which is the shape an agent wants
+            before it goes and fixes them. The schema ships inside the package.
+          </aside>
+        </section>
+
+        <!-- 8 · What a kit is for -->
+        <section class="s-uses">
+          <div class="slide">
+            <header class="slide-head">
+              <h2>What a kit is for</h2>
+              <p class="who">four questions, one mechanism</p>
+            </header>
+            <div class="stage">
+              <div class="uses">
+                <div class="use">
+                  <h3>Preflight<small>before a command</small></h3>
+                  <p>Is the environment ready for the deploy, the smoke test, the release?</p>
+                  <p class="kit"><b>preflight</b> · rdy run &amp;&amp; pnpm smoke</p>
+                </div>
+                <div class="use">
+                  <h3>Drift<small>against a template</small></h3>
+                  <p>Do the workflows and configs still match the templates that the installed package ships?</p>
+                  <p class="kit"><b>release-kit</b> · rdy run --from npm:@williamthorsen/release-kit</p>
+                </div>
+                <div class="use">
+                  <h3>Adoption<small>and migration</small></h3>
+                  <p>Where does the code still hand-roll what a package it already installed provides?</p>
+                  <p class="kit"><b>toolbelt.errors</b> · rdy run --sources</p>
+                </div>
+                <div class="use">
+                  <h3>Onboarding<small>a machine or a person</small></h3>
+                  <p>Is this machine still set up the way the bootstrap left it: tools, links, worktrees?</p>
+                  <p class="kit"><b>machine</b> · rdy run machine</p>
+                </div>
+              </div>
+            </div>
+            <p class="caption">A kit asks one question; the same command answers all four</p>
+          </div>
+          <aside class="notes">
+            Four kinds of kit people actually write. Preflight, before a command that needs the environment ready.
+            Drift, from a package that ships its own templates and checks that the repo still matches them. Adoption,
+            where a package reports the places that still hand-roll what it provides. Onboarding, where a machine checks
+            itself against the state the bootstrap left. Same command, same output, same exit code.
           </aside>
         </section>
 
