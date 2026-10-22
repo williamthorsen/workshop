@@ -1,4 +1,7 @@
 import { defineGlyphSet, type Glyph } from '@williamthorsen/toolbelt.terminal/candidate';
+import ansiStyles, { type CSPair } from 'ansi-styles';
+
+import type { CountKey } from '../kits/types.ts';
 
 /**
  * Every token given a glyph by a formatter.
@@ -37,9 +40,17 @@ export interface Formatter {
   /** Label leading a remediation hint. The engine supplies the space after it. */
   hintPrefix: string;
 
+  paint: Paint;
+
   rules: Record<HeadingLevel, string>;
 
   tokens: Readonly<Record<TokenName, Glyph>>;
+}
+
+/** Styling that a formatter applies to text whose geometry the engine has already decided. */
+export interface Paint {
+  rule(text: string): string;
+  tally(key: CountKey, text: string): string;
 }
 
 /**
@@ -68,6 +79,12 @@ const GLYPHS = defineGlyphSet<TokenName>({
   written: { plain: 'WRITE', rich: '\u{1F4BE}' },
 });
 
+/** Paint that leaves text as it is. */
+const UNPAINTED: Paint = {
+  rule: (text) => text,
+  tally: (_key, text) => text,
+};
+
 /**
  * A formatter whose output is printable ASCII throughout, which keeps it readable in a CI log, by `grep`
  * and a screen reader, and in a terminal with no emoji font.
@@ -75,6 +92,7 @@ const GLYPHS = defineGlyphSet<TokenName>({
 export const plainFormatter: Formatter = {
   detailSeparator: '-',
   hintPrefix: 'Hint:',
+  paint: UNPAINTED,
   rules: {
     kit: '=',
     section: '-',
@@ -86,11 +104,35 @@ export const plainFormatter: Formatter = {
 export const richFormatter: Formatter = {
   detailSeparator: '\u{00B7}',
   hintPrefix: '\u{1F449} Hint:',
+  paint: UNPAINTED,
   rules: {
     kit: '\u{2501}',
     section: '\u{2500}',
   },
   tokens: GLYPHS.rich,
+};
+
+/**
+ * Each tally's colour, from the terminal's 16-colour palette so that it follows the reader's theme.
+ *
+ * Blocked shares the error colour: A failed precondition stopped checks that were meant to run.
+ */
+const TALLY_COLORS: Readonly<Record<CountKey, CSPair>> = {
+  blocked: ansiStyles.red,
+  errors: ansiStyles.red,
+  optional: ansiStyles.blackBright,
+  passed: ansiStyles.green,
+  recommendations: ansiStyles.blackBright,
+  warnings: ansiStyles.yellow,
+};
+
+/** A rich formatter whose tallies are bold and coloured by outcome and whose rules are dimmed. */
+export const richColorFormatter: Formatter = {
+  ...richFormatter,
+  paint: {
+    rule: (text) => wrap(ansiStyles.dim, text),
+    tally: (key, text) => wrap(ansiStyles.bold, wrap(TALLY_COLORS[key], text)),
+  },
 };
 
 /**
@@ -102,3 +144,12 @@ export const richFormatter: Formatter = {
 export const PLAIN_BY_RICH_GLYPH: ReadonlyMap<string, string> = new Map(
   TOKEN_NAMES.map((name): [string, string] => [GLYPHS.rich[name].text, GLYPHS.plain[name].text]),
 );
+
+// region | Helpers
+
+/** Returns `text` between the opening and closing codes of `style`. */
+function wrap(style: CSPair, text: string): string {
+  return `${style.open}${text}${style.close}`;
+}
+
+// endregion | Helpers

@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import type { SummaryCounts } from '../../kits/types.ts';
 import { RETIRED_GLYPHS } from '../../test-utils/retiredGlyphs.ts';
-import { plainFormatter, richFormatter, TOKEN_NAMES, type TokenName } from '../formatter.ts';
+import type { CountKey } from '../../kits/types.ts';
+import { plainFormatter, richColorFormatter, richFormatter, TOKEN_NAMES, type TokenName } from '../formatter.ts';
 import { createLayoutEngine } from '../layoutEngine.ts';
 
 /** Every printable ASCII character, plus the newline that separates rendered lines. */
@@ -158,6 +159,37 @@ describe('plain alignment', () => {
         '            SKIP  branch-protection query',
       ].join('\n'),
     );
+  });
+});
+
+describe('richColorFormatter', () => {
+  it('shares the rich vocabulary', () => {
+    expect({ ...richColorFormatter, paint: undefined }).toStrictEqual({ ...richFormatter, paint: undefined });
+  });
+
+  it('dims a rule', () => {
+    expect(richColorFormatter.paint.rule('──')).toBe('\u001B[2m──\u001B[22m');
+  });
+
+  it.each<[CountKey, number]>([
+    ['blocked', 31],
+    ['errors', 31],
+    ['optional', 90],
+    ['passed', 32],
+    ['recommendations', 90],
+    ['warnings', 33],
+  ])('paints a %s tally bold in SGR colour %i', (key, color) => {
+    expect(richColorFormatter.paint.tally(key, '2 x')).toBe(`\u001B[1m\u001B[${color}m2 x\u001B[39m\u001B[22m`);
+  });
+});
+
+describe.each([
+  { name: 'plainFormatter', formatter: plainFormatter },
+  { name: 'richFormatter', formatter: richFormatter },
+])('$name paint', ({ formatter }) => {
+  it('leaves text unchanged', () => {
+    expect(formatter.paint.rule('──')).toBe('──');
+    expect(formatter.paint.tally('errors', '1 error')).toBe('1 error');
   });
 });
 

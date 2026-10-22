@@ -369,6 +369,9 @@ export interface SummaryCounts {
   worstSeverity: Severity | null;
 }
 
+/** A tallied field of `SummaryCounts`. */
+export type CountKey = keyof Omit<SummaryCounts, 'worstSeverity'>;
+
 // -- Checklists --
 
 /** A flat checklist whose checks all run concurrently. */
