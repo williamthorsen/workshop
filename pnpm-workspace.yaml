@@ -7,8 +7,8 @@ allowBuilds:
   unrs-resolver: true
 
 catalog:
-  '@vitest/coverage-v8': 4.1.11
-  '@williamthorsen/nmr': 0.48.0
+  '@vitest/coverage-v8': 4.1.12
+  '@williamthorsen/nmr': 0.50.0
   '@williamthorsen/toolbelt.atlassian': 0.7.0
   '@williamthorsen/toolbelt.cli': 0.5.0
   '@williamthorsen/toolbelt.errors': 0.8.3
@@ -23,7 +23,7 @@ catalog:
   '@williamthorsen/toolbelt.vitest': 0.10.3
   esbuild: 0.28.2
   typescript: 6.0.3
-  vitest: 4.1.11
+  vitest: 4.1.12
   yaml: 2.9.1
   zod: 4.6.7
 
