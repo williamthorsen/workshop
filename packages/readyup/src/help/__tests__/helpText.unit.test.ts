@@ -17,7 +17,7 @@ describe('COMMAND_HELP', () => {
 
       expect(flowed).toContain('auto (detected)');
       expect(flowed).toContain('plain (ASCII words)');
-      expect(flowed).toContain('rich (emoji)');
+      expect(flowed).toContain('rich (emoji and colour)');
     },
   );
 });

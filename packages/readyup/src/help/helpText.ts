@@ -343,7 +343,7 @@ export const COMMAND_HELP: Readonly<Record<string, string>> = {
 /** Renders the `--style` option line with its description wrapped from `column`. */
 function formatStyleOption(column: number): string {
   const description = wrapToWidth(
-    'Output style: auto (detected), plain (ASCII words), or rich (emoji); default: auto',
+    'Output style: auto (detected), plain (ASCII words), or rich (emoji and colour); default: auto',
     { width: HELP_WIDTH, indent: column, hanging: true },
   );
   return `${'  --style <auto|plain|rich>'.padEnd(column)}${description}`;
