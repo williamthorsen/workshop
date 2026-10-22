@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { plainFormatter, richFormatter, TOKEN_NAMES, type TokenName } from '../formatter.ts';
+import { stripEscapes } from '../../test-utils/stripEscapes.ts';
+import { plainFormatter, richColorFormatter, richFormatter, TOKEN_NAMES, type TokenName } from '../formatter.ts';
 import { createLayoutEngine, resolveWorstToken, type SummaryRow } from '../layoutEngine.ts';
 import { makeCounts, makeRow } from '../test-utils/summary-fixtures.ts';
 
@@ -327,6 +328,36 @@ describe('formatCountLine', () => {
 
   it('leads a blocked-only run with the passed token, since nothing failed', () => {
     expect(engine.formatCountLine(makeCounts({ blocked: 2 }), 100)).toBe(`${PASSED} Total: 2 blocked (100ms)`);
+  });
+});
+
+describe('in colour', () => {
+  const colorEngine = createLayoutEngine(richColorFormatter);
+
+  it('paints each non-zero tally of a count line and leaves the label, separators, and duration unpainted', () => {
+    const line = colorEngine.formatCountLine(makeCounts({ errors: 1, passed: 2, worstSeverity: 'error' }), 300);
+
+    expect(line).toBe(
+      `${FAILED_ERROR} Total: \u001B[1m\u001B[31m1 error\u001B[39m\u001B[22m, \u001B[1m\u001B[32m2 passed\u001B[39m\u001B[22m (300ms)`,
+    );
+  });
+
+  it('leaves the statement of an empty count unpainted', () => {
+    expect(colorEngine.formatCounts(makeCounts())).toBe('0 passed');
+  });
+
+  it('dims the rule of a section heading and leaves its name unpainted', () => {
+    expect(colorEngine.formatHeading('Fixes', 'section')).toBe('\u001B[2m\u{2500}\u{2500}\u001B[22m Fixes');
+  });
+
+  it('leaves a kit heading unpainted', () => {
+    expect(colorEngine.formatHeading('deploy', 'kit')).toBe(engine.formatHeading('deploy', 'kit'));
+  });
+
+  it('renders the rich text once its escapes are stripped', () => {
+    const counts = makeCounts({ warnings: 1, recommendations: 2, blocked: 1, optional: 3, worstSeverity: 'warn' });
+
+    expect(stripEscapes(colorEngine.formatCountLine(counts, 120))).toBe(engine.formatCountLine(counts, 120));
   });
 });
 
