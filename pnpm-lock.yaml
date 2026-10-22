@@ -168,8 +168,8 @@ catalogs:
       specifier: 4.1.12
       version: 4.1.12
     '@williamthorsen/nmr':
-      specifier: 0.48.0
-      version: 0.48.0
+      specifier: 0.50.0
+      version: 0.50.0
     '@williamthorsen/toolbelt.atlassian':
       specifier: 0.7.0
       version: 0.7.0
@@ -249,7 +249,7 @@ importers:
         version: 20.1.2(@typescript-eslint/utils@8.71.2(eslint@10.12.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(@vitest/eslint-plugin@1.6.27(@typescript-eslint/eslint-plugin@8.71.1(@typescript-eslint/parser@8.71.1(eslint@10.12.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.12.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.12.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)(vitest@4.1.12))(eslint@10.12.0(jiti@2.7.0)(supports-color@7.2.0))(readyup@packages+readyup)(supports-color@7.2.0)(typescript@6.0.3)
       '@williamthorsen/nmr':
         specifier: 'catalog:'
-        version: 0.48.0(typescript@6.0.3)(vite@8.3.4(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))(vitest@4.1.12)
+        version: 0.50.0(typescript@6.0.3)(vite@8.3.4(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))(vitest@4.1.12)
       '@williamthorsen/release-kit':
         specifier: 14.2.4
         version: 14.2.4
@@ -460,7 +460,7 @@ importers:
         version: 4.0.3
       '@williamthorsen/nmr':
         specifier: 'catalog:'
-        version: 0.48.0(typescript@6.0.3)(vite@8.3.4(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))(vitest@4.1.12)
+        version: 0.50.0(typescript@6.0.3)(vite@8.3.4(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))(vitest@4.1.12)
       '@williamthorsen/toolbelt.filesystem':
         specifier: 'catalog:'
         version: 0.9.3
@@ -1383,16 +1383,12 @@ packages:
     resolution: {integrity: sha512-lFrOw10zCnLlGdVQoW+8B+ZL0yzodbypoGwMMuz/XG61RyxfL07CeIF6KuN3pyIg9ogXkBzGu4yuLoZpVgPm+w==}
     engines: {node: '>=24.16.0'}
 
-  '@williamthorsen/nmr-core@0.13.4':
-    resolution: {integrity: sha512-7olcUixLATtEVc1q/jDno7vfoFrEf1vmDMbvV+Zpjec6x+ZtqgX/j5s8GVkFSXwMeYj8gW8DXL+tZdrKZ8OB3A==}
-    engines: {node: '>=24.16.0'}
-
   '@williamthorsen/nmr-core@0.13.5':
     resolution: {integrity: sha512-x7l1TE0aBPmB13NgNLLxrHzuwQwz2DopF+3RGHNYUodHhs7AGKbowPU43A49IRs6ku5g5OTeUW2fq2QNZT8oZA==}
     engines: {node: '>=24.16.0'}
 
-  '@williamthorsen/nmr@0.48.0':
-    resolution: {integrity: sha512-THCajJ+KwVB4beByZebq8umT8cX0EfDnmxHRh+jxti3MAc8ffZRZvuW6m/okCMHm5Op8JjO0JEHF10ee6jZ+Jw==}
+  '@williamthorsen/nmr@0.50.0':
+    resolution: {integrity: sha512-8QnyHIktbnlhaFKHkGbbo7pXGiae4CyhRQ19EFg7EVK/J0P3gAj7RssevhzPgkxmPLb9oiRBNhAPkEZ1jgnAIg==}
     engines: {node: '>=24.16.0', pnpm: '>=11'}
     hasBin: true
     peerDependencies:
@@ -2533,11 +2529,6 @@ packages:
 
   prettier@3.9.10:
     resolution: {integrity: sha512-skGHTH1Yb9QvaTC4hWnRTzEYtCpApF0UMBPz+t/0ZPzP8ihefo/btKd+QA7pUE0fEwA1SbS/NmhyEcstdXOIdA==}
-    engines: {node: '>=14'}
-    hasBin: true
-
-  prettier@3.9.9:
-    resolution: {integrity: sha512-Z/CJHIkdujO/OtN7nXUii0Rf3VT5SRuhjBA82Xvu2XhBUgX3nhP67T0LHceBdQLex7OOFGTox+Q5Yg8Jk2Qivg==}
     engines: {node: '>=14'}
     hasBin: true
 
@@ -3683,15 +3674,6 @@ snapshots:
       diff: 9.0.0
       yaml: 2.9.1
 
-  '@williamthorsen/nmr-core@0.13.4':
-    dependencies:
-      '@williamthorsen/toolbelt.errors': 0.8.3
-      '@williamthorsen/toolbelt.filesystem': 0.9.3
-      '@williamthorsen/toolbelt.packaging': 0.6.3
-      '@williamthorsen/toolbelt.terminal': 0.2.1
-      diff: 9.0.0
-      yaml: 2.9.1
-
   '@williamthorsen/nmr-core@0.13.5':
     dependencies:
       '@williamthorsen/toolbelt.errors': 0.8.3
@@ -3701,14 +3683,14 @@ snapshots:
       diff: 9.0.0
       yaml: 2.9.1
 
-  '@williamthorsen/nmr@0.48.0(typescript@6.0.3)(vite@8.3.4(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))(vitest@4.1.12)':
+  '@williamthorsen/nmr@0.50.0(typescript@6.0.3)(vite@8.3.4(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))(vitest@4.1.12)':
     dependencies:
-      '@williamthorsen/nmr-core': 0.13.4
+      '@williamthorsen/nmr-core': 0.13.5
       '@williamthorsen/toolbelt.errors': 0.8.3
       '@williamthorsen/toolbelt.filesystem': 0.9.3
       glob: 13.0.6
-      prettier: 3.9.9
-      prettier-plugin-sh: 0.20.2(prettier@3.9.9)
+      prettier: 3.9.10
+      prettier-plugin-sh: 0.20.2(prettier@3.9.10)
       taze: 21.3.0
       unconfig: 7.5.0
     optionalDependencies:
@@ -4851,15 +4833,13 @@ snapshots:
 
   prelude-ls@1.2.1: {}
 
-  prettier-plugin-sh@0.20.2(prettier@3.9.9):
+  prettier-plugin-sh@0.20.2(prettier@3.9.10):
     dependencies:
       '@reteps/dockerfmt': 0.5.4
-      prettier: 3.9.9
+      prettier: 3.9.10
       sh-syntax: 0.7.0
 
   prettier@3.9.10: {}
-
-  prettier@3.9.9: {}
 
   proc-log@6.1.0: {}
 
