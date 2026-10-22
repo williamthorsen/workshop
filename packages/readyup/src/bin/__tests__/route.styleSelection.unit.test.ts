@@ -216,13 +216,60 @@ describe('alongside --json', () => {
   });
 });
 
+describe('colour', () => {
+  /** Matches the start of an SGR escape sequence. */
+  const ESCAPE = '\u001B[';
+
+  const RUN = ['run', 'passing', '--style', 'rich'];
+
+  it('paints rich output when the environment allows it', async () => {
+    const { stdout } = await route(RUN, { color: true });
+
+    expect(stdout).toContain(`${ESCAPE}32m1 passed`);
+  });
+
+  it('is turned off by NO_COLOR', async () => {
+    const { stdout } = await route(RUN, { env: { NO_COLOR: '1' } });
+
+    expect(stdout).toContain('1 passed');
+    expect(stdout).not.toContain(ESCAPE);
+  });
+
+  it('is turned off by TERM=dumb', async () => {
+    const { stdout } = await route(RUN, { color: true, env: { TERM: 'dumb' } });
+
+    expect(stdout).toContain('1 passed');
+    expect(stdout).not.toContain(ESCAPE);
+  });
+
+  it.for([
+    { name: 'plain output', args: ['run', 'passing', '--style', 'plain'] },
+    { name: 'JSON output', args: ['run', 'passing', '--style', 'rich', '--json'] },
+  ])('never reaches $name', async ({ args }) => {
+    const { stdout } = await route(args, { color: true });
+
+    expect(stdout).not.toBe('');
+    expect(stdout).not.toContain(ESCAPE);
+  });
+
+  it('renders rich output identically with and without a terminal', async () => {
+    const attached = await route(RUN, { color: true, isTty: true });
+    const piped = await route(RUN, { color: true, isTty: false });
+
+    expect(piped.stdout).toBe(attached.stdout);
+  });
+});
+
 // region | Helpers
 
 /**
- * Routes a command with `console` captured, which `init` reports through rather than writing to the streams.
+ * Routes a command with `console` captured, which `init` reports through rather than writing to the streams, after
+ * stubbing each variable of `env`.
  */
-async function route(args: string[], options: { isTty?: boolean } = {}) {
-  return routeCli(args, { ...options, includeConsole: true });
+async function route(args: string[], options: { color?: boolean; env?: Record<string, string>; isTty?: boolean } = {}) {
+  const { env = {}, ...rest } = options;
+  for (const [name, value] of Object.entries(env)) vi.stubEnv(name, value);
+  return routeCli(args, { ...rest, includeConsole: true });
 }
 
 // endregion | Helpers

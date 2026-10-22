@@ -15,7 +15,8 @@ import { HELP_FLAGS, helpCommand, writeHelp } from '../help/helpCommand.ts';
 import { COMPILE_HELP, HELP, INIT_HELP, LIST_HELP, RUN_HELP, VERIFY_HELP } from '../help/helpText.ts';
 import { initCommand } from '../init/initCommand.ts';
 import type { ResolvedRdyConfig } from '../kits/types.ts';
-import { getLayout, setStyle, setWidth } from '../layout/engine.ts';
+import { getLayout, setColor, setStyle, setWidth } from '../layout/engine.ts';
+import { resolveOutputColor } from '../layout/resolveOutputColor.ts';
 import { resolveOutputWidth } from '../layout/resolveOutputWidth.ts';
 import { listCommand } from '../list/listCommand.ts';
 import { writeHuman } from '../output/writeHuman.ts';
@@ -66,6 +67,7 @@ export async function routeCommand(args: string[]): Promise<number> {
     isTty: process.stdout.isTTY,
   });
   setStyle(style);
+  setColor(resolveOutputColor({ env: process.env }));
   setWidth(resolveOutputWidth({ columns: process.stdout.columns, env: process.env, isTty: process.stdout.isTTY }));
 
   try {
