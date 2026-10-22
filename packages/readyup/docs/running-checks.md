@@ -151,7 +151,7 @@ A kit that could not load keeps its heading, under which a line states that it d
 | ------- | ---------------------------------------------------------------------------------------------------- |
 | `auto`  | `plain` under CI, on the Linux console, or when output is not a terminal; `rich` otherwise (default) |
 | `plain` | Fixed-width ASCII words                                                                              |
-| `rich`  | Emoji tokens, with tallies coloured by outcome and section and summary rules dimmed                  |
+| `rich`  | Emoji tokens, coloured tallies, and dimmed section and summary rules                                 |
 
 `CI` detects a runner that attaches a pseudo-terminal; the terminal check detects an interactive `rdy | grep FAIL`. An explicit `CI=false` is read as a denial. `TERM=linux` detects the Linux virtual console, a terminal whose font draws no emoji. Naming a style that does not exist fails the invocation.
 
