@@ -28,7 +28,7 @@ const ROOT = defineGroup({
     'branch-number': defineCommand({
       summary: 'Print a stable number derived from a branch name',
       description:
-        'Print the number of the ticket encoded by the branch name, or a hash of the name when it encodes none.',
+        'Print the number of the ticket encoded by the branch name, or a hash of the name when it encodes none. --min, --max, and --offset wrap the number into the range, so distinct branches can print the same value: Use a bounded value as a slot, such as a port, and the unbounded value as an identity.',
       epilog: 'Write a negative offset in the = form: --offset=-3.',
       flags: {
         key: KEY_FLAG,
