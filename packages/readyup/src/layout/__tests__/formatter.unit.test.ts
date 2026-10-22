@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import type { SummaryCounts } from '../../kits/types.ts';
+import type { CountKey, SummaryCounts } from '../../kits/types.ts';
 import { RETIRED_GLYPHS } from '../../test-utils/retiredGlyphs.ts';
-import type { CountKey } from '../../kits/types.ts';
 import { plainFormatter, richColorFormatter, richFormatter, TOKEN_NAMES, type TokenName } from '../formatter.ts';
 import { createLayoutEngine } from '../layoutEngine.ts';
 
@@ -168,7 +167,7 @@ describe('richColorFormatter', () => {
   });
 
   it('dims a rule', () => {
-    expect(richColorFormatter.paint.rule('──')).toBe('\u001B[2m──\u001B[22m');
+    expect(richColorFormatter.paint.rule('──')).toBe('\u{1B}[2m──\u{1B}[22m');
   });
 
   it.each<[CountKey, number]>([
@@ -179,7 +178,7 @@ describe('richColorFormatter', () => {
     ['recommendations', 90],
     ['warnings', 33],
   ])('paints a %s tally bold in SGR colour %i', (key, color) => {
-    expect(richColorFormatter.paint.tally(key, '2 x')).toBe(`\u001B[1m\u001B[${color}m2 x\u001B[39m\u001B[22m`);
+    expect(richColorFormatter.paint.tally(key, '2 x')).toBe(`\u{1B}[1m\u{1B}[${color}m2 x\u{1B}[39m\u{1B}[22m`);
   });
 });
 

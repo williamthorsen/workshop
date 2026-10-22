@@ -218,7 +218,7 @@ describe('alongside --json', () => {
 
 describe('colour', () => {
   /** Matches the start of an SGR escape sequence. */
-  const ESCAPE = '\u001B[';
+  const ESCAPE = '\u{1B}[';
 
   const RUN = ['run', 'passing', '--style', 'rich'];
 

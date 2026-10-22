@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { stripEscapes } from '../../test-utils/stripEscapes.ts';
 import { plainFormatter, richColorFormatter, richFormatter, TOKEN_NAMES, type TokenName } from '../formatter.ts';
 import { createLayoutEngine, resolveWorstToken, type SummaryRow } from '../layoutEngine.ts';
+import { stripEscapes } from '../test-utils/stripEscapes.ts';
 import { makeCounts, makeRow } from '../test-utils/summary-fixtures.ts';
 
 /** Tokens naming a check that did not run. */
@@ -338,7 +338,7 @@ describe('in colour', () => {
     const line = colorEngine.formatCountLine(makeCounts({ errors: 1, passed: 2, worstSeverity: 'error' }), 300);
 
     expect(line).toBe(
-      `${FAILED_ERROR} Total: \u001B[1m\u001B[31m1 error\u001B[39m\u001B[22m, \u001B[1m\u001B[32m2 passed\u001B[39m\u001B[22m (300ms)`,
+      `${FAILED_ERROR} Total: \u{1B}[1m\u{1B}[31m1 error\u{1B}[39m\u{1B}[22m, \u{1B}[1m\u{1B}[32m2 passed\u{1B}[39m\u{1B}[22m (300ms)`,
     );
   });
 
@@ -347,7 +347,7 @@ describe('in colour', () => {
   });
 
   it('dims the rule of a section heading and leaves its name unpainted', () => {
-    expect(colorEngine.formatHeading('Fixes', 'section')).toBe('\u001B[2m\u{2500}\u{2500}\u001B[22m Fixes');
+    expect(colorEngine.formatHeading('Fixes', 'section')).toBe('\u{1B}[2m\u{2500}\u{2500}\u{1B}[22m Fixes');
   });
 
   it('leaves a kit heading unpainted', () => {

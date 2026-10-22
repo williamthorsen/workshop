@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { stripEscapes } from '../../test-utils/stripEscapes.ts';
 import { plainFormatter, richColorFormatter, richFormatter } from '../formatter.ts';
 import { createLayoutEngine } from '../layoutEngine.ts';
+import { stripEscapes } from '../test-utils/stripEscapes.ts';
 import { makeCounts, makeRow } from '../test-utils/summary-fixtures.ts';
 
 /** Columns that the engine reserves for a rich token: its two cells and the space after them. */
@@ -299,11 +299,12 @@ describe('formatSummaryTable', () => {
         const [heading, rule, first, second, closing, total] = colorEngine.formatSummaryTable(wideInput);
 
         expect(heading).toBe(engine.formatSummaryTable(wideInput)[0]);
-        expect(rule).toMatch(/^\u001B\[2m─+\u001B\[22m$/u);
+        expect(rule).toBe(richColorFormatter.paint.rule(stripEscapes(rule ?? '')));
+        expect(stripEscapes(rule ?? '')).toMatch(/^─+$/u);
         expect(closing).toBe(rule);
-        expect(first).toContain('\u001B[32m2 passed');
-        expect(second).toContain('\u001B[90m1 recommendation');
-        expect(total).toContain('\u001B[32m9 passed');
+        expect(first).toContain('\u{1B}[32m2 passed');
+        expect(second).toContain('\u{1B}[90m1 recommendation');
+        expect(total).toContain('\u{1B}[32m9 passed');
       });
     });
   });

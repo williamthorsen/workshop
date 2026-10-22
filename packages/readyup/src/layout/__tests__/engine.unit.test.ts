@@ -4,16 +4,16 @@ import { getColor, getLayout, setColor, setStyle } from '../engine.ts';
 import { makeCounts } from '../test-utils/summary-fixtures.ts';
 
 /** Matches the start of an SGR escape sequence. */
-const ESCAPE = '\u001B[';
+const ESCAPE = '\u{1B}[';
 
 const COUNTS = makeCounts({ passed: 1 });
 
-afterEach(() => {
-  setColor(false);
-  setStyle('rich');
-});
-
 describe('colour selection', () => {
+  afterEach(() => {
+    setColor(false);
+    setStyle('rich');
+  });
+
   it('leaves rich output uncoloured until colour is selected', () => {
     expect(getColor()).toBe(false);
     expect(getLayout().formatCounts(COUNTS)).toBe('1 passed');
