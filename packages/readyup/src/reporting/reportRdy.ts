@@ -37,6 +37,15 @@ export interface ReportRdyOptions {
   reportOn?: Severity;
 }
 
+/** A report rendered for a terminal, its lines grouped by what produced them. */
+export interface ReportSections {
+  /** Each visible result with its check line and, when it failed, its reason block. */
+  results: Array<{ result: RdyResult; lines: string[] }>;
+  /** The `Fixes` heading and the recap beneath it, or empty when nothing is recapped. */
+  fixes: string[];
+  countLine: string;
+}
+
 /**
  * Returns a report rendered for a terminal: a tree of check lines, any fix recap, then the count line.
  *
@@ -47,22 +56,31 @@ export interface ReportRdyOptions {
  * from the next.
  */
 export function reportRdy(report: RdyReport, options?: ReportRdyOptions): RenderedReport {
+  const { results, fixes, countLine } = renderReportSections(report, options);
+  const lines = results.flatMap((entry) => entry.lines);
+
+  return { body: [...lines, ...fixes, countLine].join('\n'), hasVisibleResults: results.length > 0 };
+}
+
+/** Returns the sections that `reportRdy` joins into a report, each visible result's lines kept with that result. */
+export function renderReportSections(report: RdyReport, options?: ReportRdyOptions): ReportSections {
   const fixLocation = options?.fixLocation ?? 'end';
   const reportOn = options?.reportOn ?? 'recommend';
 
   const visibleResults = selectReportedResults(report.results, reportOn, options?.quiet === true);
-  const lines = visibleResults.flatMap((result) => renderResult(result, fixLocation));
+  const results = visibleResults.map((result) => ({ result, lines: renderResult(result, fixLocation) }));
 
+  const fixes: string[] = [];
   if (fixLocation === 'end') {
-    const fixes = collectFixes(visibleResults);
-    if (fixes.length > 0) {
-      lines.push(getLayout().formatHeading(FIXES_HEADING, 'section'), ...renderFixRecap(fixes));
+    const attributedFixes = collectFixes(visibleResults);
+    if (attributedFixes.length > 0) {
+      fixes.push(getLayout().formatHeading(FIXES_HEADING, 'section'), ...renderFixRecap(attributedFixes));
     }
   }
 
   const countLine = getLayout().formatCountLine(countResults(report.results), report.durationMs);
 
-  return { body: [...lines, countLine].join('\n'), hasVisibleResults: visibleResults.length > 0 };
+  return { results, fixes, countLine };
 }
 
 /** Returns counts with every field at zero and no worst severity. */

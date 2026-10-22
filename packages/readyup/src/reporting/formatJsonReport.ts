@@ -1,16 +1,16 @@
 import type { RdyReport, RdyResult, Severity, SummaryCounts } from '../kits/types.ts';
 import type { JsonCounts, JsonWarning } from '../schemas/common.ts';
-import {
-  type JsonCheckEntry,
-  type JsonChecklistEntry,
-  type JsonDetail,
-  type JsonKitEntry,
-  type JsonKitErrorEntry,
-  type JsonKitOrigin,
-  type JsonKitResultEntry,
-  type JsonReport,
-  SCHEMA_VERSION,
+import type {
+  JsonCheckEntry,
+  JsonChecklistEntry,
+  JsonDetail,
+  JsonKitEntry,
+  JsonKitErrorEntry,
+  JsonKitOrigin,
+  JsonKitResultEntry,
+  JsonReport,
 } from '../schemas/reportSchema.ts';
+import { SCHEMA_VERSION } from '../schemas/reportSchemaVersion.ts';
 import { VERSION } from '../version.ts';
 import { countResults, emptyCounts, mergeCounts, selectVisibleResults } from './reportRdy.ts';
 
