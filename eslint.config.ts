@@ -42,14 +42,15 @@ const RESTRICTED_SYNTAX = [
 const config = defineConfig([
   ...baseConfig,
   // The two lists published by the shared config, plus the entries specific to this repo, each kept byte for byte:
-  // compositor's samples are generator output pinned by a drift test, and the deck's captures are recorded `rdy run`
-  // output. `nmr lint` resolves to `eslint --fix .`, so a fix applied there would rewrite them. `.prettierignore`
-  // excludes them on the same grounds.
+  // compositor's samples and the deck's bundle are generator output pinned by a drift test, and the deck's captures are
+  // recorded `rdy run` output. `nmr lint` resolves to `eslint --fix .`, so a fix applied there would rewrite them.
+  // `.prettierignore` excludes them on the same grounds.
   globalIgnores([
     ...commonIgnores,
     ...toolIgnores,
     'packages/compositor/samples/**',
     'packages/readyup/presentation/captures/**',
+    'packages/readyup/presentation/deck.js',
   ]),
   {
     // `strict-lint` promotes rule severities and not this report, so the default `warn` would leave a directive

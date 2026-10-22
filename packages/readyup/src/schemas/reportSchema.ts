@@ -2,12 +2,7 @@ import { z } from 'zod';
 
 import { CountsSchema, ErrorBodySchema, SeveritySchema, WarningSchema } from './common.ts';
 
-/**
- * Version of the run-report payload.
- *
- * Bumped when a field is removed, renamed, or re-typed -- never when an optional field is added.
- */
-export const SCHEMA_VERSION = 2;
+export { SCHEMA_VERSION } from './reportSchemaVersion.ts';
 
 /** How much of the detail tree a report includes. */
 export const DetailSchema = z.enum(['summary', 'full']).meta({ id: 'Detail' });

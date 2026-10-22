@@ -27,7 +27,7 @@
     "samples"
   ],
   "scripts": {
-    "prepare": "node config/generateSamples.ts && nmr-compile"
+    "prepare": "nmr-compile"
   },
   "dependencies": {
     "@williamthorsen/toolbelt.errors": "catalog:",
