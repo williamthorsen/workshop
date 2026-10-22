@@ -263,8 +263,8 @@ importers:
         specifier: 'catalog:'
         version: 0.10.3(vitest@4.1.12)
       '@williamthorsen/tsconfig':
-        specifier: 0.11.0
-        version: 0.11.0(readyup@packages+readyup)
+        specifier: 0.12.0
+        version: 0.12.0(readyup@packages+readyup)
       codeassembly:
         specifier: 0.17.0
         version: 0.17.0(esbuild@0.28.2)
@@ -1489,8 +1489,8 @@ packages:
     peerDependencies:
       vitest: ^4.0.0
 
-  '@williamthorsen/tsconfig@0.11.0':
-    resolution: {integrity: sha512-vIRELICfJMqkAZgxnouuY0GdeQhzQH510y5LgHv63zxIKGM0Lx9YIndDtrSWOn+ssDnAKWgbhi/YHAx4V5gNxQ==}
+  '@williamthorsen/tsconfig@0.12.0':
+    resolution: {integrity: sha512-hp7NOu49B6K4g5mttweGf8mIuGHxYdkw6sv/ljbatX4pHZDcRlwVCW12GKactTnbNX9rBR+YKjMYVmPAAyykhw==}
     engines: {node: '>=24'}
     peerDependencies:
       readyup: '>=0.33.0'
@@ -3774,7 +3774,7 @@ snapshots:
     dependencies:
       vitest: 4.1.12(@types/node@24.19.2)(@vitest/coverage-v8@4.1.12)(vite@8.3.4(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
 
-  '@williamthorsen/tsconfig@0.11.0(readyup@packages+readyup)':
+  '@williamthorsen/tsconfig@0.12.0(readyup@packages+readyup)':
     optionalDependencies:
       readyup: link:packages/readyup
 
