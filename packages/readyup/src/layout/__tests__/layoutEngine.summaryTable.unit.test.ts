@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { plainFormatter, richFormatter } from '../formatter.ts';
+import { plainFormatter, richColorFormatter, richFormatter } from '../formatter.ts';
 import { createLayoutEngine } from '../layoutEngine.ts';
+import { stripEscapes } from '../test-utils/stripEscapes.ts';
 import { makeCounts, makeRow } from '../test-utils/summary-fixtures.ts';
 
 /** Columns that the engine reserves for a rich token: its two cells and the space after them. */
@@ -278,6 +279,33 @@ describe('formatSummaryTable', () => {
 
       expect(lines[1]).toHaveLength(80);
       expect(lines[2]).toContain('x'.repeat(100));
+    });
+
+    describe('in colour', () => {
+      const colorEngine = createLayoutEngine(richColorFormatter);
+
+      it.each([
+        { case: 'one line per row', width: Infinity },
+        { case: 'two lines per row', width: 80 },
+      ])('lays out $case as the uncoloured table does', ({ width }) => {
+        const colored = colorEngine.formatSummaryTable({ ...wideInput, width });
+
+        expect(colored.map((line) => stripEscapes(line))).toStrictEqual(
+          engine.formatSummaryTable({ ...wideInput, width }),
+        );
+      });
+
+      it('dims both rules and paints the tallies of every row and the total', () => {
+        const [heading, rule, first, second, closing, total] = colorEngine.formatSummaryTable(wideInput);
+
+        expect(heading).toBe(engine.formatSummaryTable(wideInput)[0]);
+        expect(rule).toBe(richColorFormatter.paint.rule(stripEscapes(rule ?? '')));
+        expect(stripEscapes(rule ?? '')).toMatch(/^─+$/u);
+        expect(closing).toBe(rule);
+        expect(first).toContain('\u{1B}[32m2 passed');
+        expect(second).toContain('\u{1B}[90m1 recommendation');
+        expect(total).toContain('\u{1B}[32m9 passed');
+      });
     });
   });
 });

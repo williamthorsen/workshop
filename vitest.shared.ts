@@ -15,8 +15,11 @@ import type { VitestConfigOptions } from '@williamthorsen/nmr/vitest';
 //
 // Restoring a stubbed environment variable is the runner's job rather than a suite's. `unstubEnvs` clears every
 // stub before each test, so a suite that stubs one has no hook to undo it.
+//
+// `NO_COLOR` keeps rich output uncoloured wherever the suite runs, in-process and in every spawned `rdy`, so that
+// a test asserting rendered text does not depend on the terminal from which the suite was started.
 export const sharedOptions: VitestConfigOptions = {
-  project: { unstubEnvs: true },
+  project: { env: { NO_COLOR: '1' }, unstubEnvs: true },
   root: {
     resolve: {
       alias: [

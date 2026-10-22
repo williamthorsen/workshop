@@ -1,7 +1,7 @@
 import { pluralizeWithCount } from '@williamthorsen/toolbelt.strings';
-import { measureGlyphColumn } from '@williamthorsen/toolbelt.terminal/candidate';
+import { measureGlyphColumn, measureWidth } from '@williamthorsen/toolbelt.terminal/candidate';
 
-import type { Severity, SummaryCounts } from '../kits/types.ts';
+import type { CountKey, Severity, SummaryCounts } from '../kits/types.ts';
 import type { Formatter, HeadingLevel, TokenName } from './formatter.ts';
 
 /** Milliseconds below which a line omits its duration, leaving only timings worth reading. */
@@ -46,7 +46,7 @@ const SKIPPED_TOKENS: ReadonlySet<TokenName> = new Set<TokenName>(['blockedPreco
 
 /** One tallied field of a count line, with the labels that its count selects between. */
 interface CountField {
-  key: keyof Omit<SummaryCounts, 'worstSeverity'>;
+  key: CountKey;
   plural: string;
   singular: string;
 }
@@ -160,6 +160,17 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
     return token(resolveWorstToken(counts.worstSeverity)) + buildCountBody(counts, durationMs);
   }
 
+  /**
+   * Returns the non-zero counts joined in field order, each painted by its field, or `0 passed` when every count is
+   * zero.
+   */
+  function formatCounts(counts: SummaryCounts): string {
+    const fields = COUNT_FIELDS.filter((field) => counts[field.key] > 0).map((field) =>
+      formatter.paint.tally(field.key, pluralizeWithCount(counts[field.key], field.singular, field.plural)),
+    );
+    return fields.length > 0 ? fields.join(COUNT_SEPARATOR) : EMPTY_COUNTS;
+  }
+
   /** Returns fix text behind the token marking it, as one line. */
   function formatFix(fix: string): string {
     return `${token('fix')}${fix}`;
@@ -167,7 +178,7 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
 
   /**
    * Returns `name` behind a two-character rule whose weight comes from `level`, with `detail` behind
-   * the formatter's separator when there is one.
+   * the formatter's separator when there is one. A section's rule is painted as a rule; a kit's is not.
    *
    * A heading has no blank line of its own. Separation is a property of the sequence in which a heading
    * appears, which only the code emitting that sequence can see: If each heading decided for itself, two
@@ -175,7 +186,8 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
    */
   function formatHeading(name: string, level: HeadingLevel, detail?: string): string {
     const suffix = detail === undefined ? '' : ` ${formatter.detailSeparator} ${detail}`;
-    return `${formatter.rules[level].repeat(HEADING_SIGIL_WIDTH)} ${name}${suffix}`;
+    const sigil = formatter.rules[level].repeat(HEADING_SIGIL_WIDTH);
+    return `${level === 'section' ? formatter.paint.rule(sigil) : sigil} ${name}${suffix}`;
   }
 
   /** Returns a remediation hint behind the formatter's prefix, as one line of its own. */
@@ -235,7 +247,7 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
       lead: token(cell.token),
       body: [cell.name.padEnd(nameWidth), cell.outcome].join(TABLE_CELL_GAP),
     }));
-    const lines = oneLine.every((line) => gutter + line.body.length <= width)
+    const lines = oneLine.every((line) => gutter + measureWidth(line.body) <= width)
       ? oneLine
       : cells.flatMap((cell) => [
           { lead: token(cell.token), body: cell.name },
@@ -247,8 +259,8 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
       : resolveWorstToken(totals.worstSeverity);
     const totalBody = buildCountBody(totals, totalDurationMs);
 
-    const bodyWidth = Math.max(...lines.map((line) => line.body.length), totalBody.length);
-    const rule = formatter.rules.section.repeat(Math.min(gutter + bodyWidth, width));
+    const bodyWidth = Math.max(...lines.map((line) => measureWidth(line.body)), measureWidth(totalBody));
+    const rule = formatter.paint.rule(formatter.rules.section.repeat(Math.min(gutter + bodyWidth, width)));
 
     return [
       formatHeading(SUMMARY_HEADING, 'kit'),
@@ -315,14 +327,6 @@ export function resolveWorstToken(worstSeverity: Severity | null): TokenName {
   if (worstSeverity === 'warn') return 'failedWarn';
   if (worstSeverity === 'recommend') return 'failedRecommend';
   return 'passed';
-}
-
-/** Returns the non-zero counts joined in field order, or `0 passed` when every count is zero. */
-function formatCounts(counts: SummaryCounts): string {
-  const fields = COUNT_FIELDS.filter((field) => counts[field.key] > 0).map((field) =>
-    pluralizeWithCount(counts[field.key], field.singular, field.plural),
-  );
-  return fields.length > 0 ? fields.join(COUNT_SEPARATOR) : EMPTY_COUNTS;
 }
 
 /** Returns the formatted duration, or `undefined` for a skipped token or a duration under the floor. */

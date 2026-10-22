@@ -151,7 +151,7 @@ A kit that could not load keeps its heading, under which a line states that it d
 | ------- | ---------------------------------------------------------------------------------------------------- |
 | `auto`  | `plain` under CI, on the Linux console, or when output is not a terminal; `rich` otherwise (default) |
 | `plain` | Fixed-width ASCII words                                                                              |
-| `rich`  | Emoji tokens                                                                                         |
+| `rich`  | Emoji tokens, coloured tallies, and dimmed section and summary rules                                 |
 
 `CI` detects a runner that attaches a pseudo-terminal; the terminal check detects an interactive `rdy | grep FAIL`. An explicit `CI=false` is read as a denial. `TERM=linux` detects the Linux virtual console, a terminal whose font draws no emoji. Naming a style that does not exist fails the invocation.
 
@@ -170,7 +170,7 @@ FAIL  Total: 1 error, 1 passed, 1 skipped (151ms)
 == @acme/release-kit@2.1.0 / npm-auto-publish / repo
 ```
 
-Once a style is named explicitly, output is the same for a terminal and a pipe. `--style` is independent of `--json`: The JSON document never changes.
+Rich output is coloured unless `NO_COLOR` is set to a non-empty value or `TERM` is `dumb`; plain output is never coloured. Once a style is named explicitly, output is the same for a terminal and a pipe. `--style` is independent of `--json`: The JSON document never changes.
 
 ## Suppressing a finding
 

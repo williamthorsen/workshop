@@ -66,6 +66,7 @@
     "@williamthorsen/toolbelt.packaging": "catalog:",
     "@williamthorsen/toolbelt.strings": "catalog:",
     "@williamthorsen/toolbelt.terminal": "0.2.1",
+    "ansi-styles": "6.2.3",
     "es-module-lexer": "3.0.4",
     "jiti": "2.7.0",
     "jsonc-parser": "3.3.1",
