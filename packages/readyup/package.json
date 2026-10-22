@@ -58,7 +58,8 @@
     "schemas"
   ],
   "scripts": {
-    "prepare": "node config/generateSchemas.ts && nmr-compile && node src/bin/rdy.ts compile",
+    "build:deck": "node config/buildDeck.ts",
+    "prepare": "node config/generateSchemas.ts && nmr-compile && node src/bin/rdy.ts compile && node config/buildDeck.ts",
     "verify:kits": "node src/bin/rdy.ts run publishing"
   },
   "dependencies": {
