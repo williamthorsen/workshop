@@ -1,5 +1,81 @@
 [
   {
+    "version": "0.43.0",
+    "date": "2026-10-22",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Replaces the 💊 pill that marks a fix hint in rich `rdy` output with the 🔧 wrench, which is grey rather than red like the ❌ failure glyph. (#616)",
+            "hash": "392fcad769b3f4895ab2c12bae6c5a3fc16e1e6e",
+            "entry": 1
+          },
+          {
+            "description": "Colours the `rich` output style of `rdy`, showing each tally in bold in its outcome's colour from the terminal's 16-colour palette and dimming section and summary-table rules, unless `NO_COLOR` is set to a non-empty value or `TERM` is `dumb`. (#620)",
+            "hash": "104c5a8684713dec0586bf2e94c90789805aa7c4",
+            "entry": 1
+          }
+        ]
+      },
+      {
+        "title": "🏗️ Internal features",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Replaces the formatter hand-written in readyup's presentation deck with `presentation/deck.js`, a committed bundle that `build:deck` builds from `presentation/src/` and that renders each kit page's terminal output, JSON view, and tree, and the \"A run, step by step\" sample, through readyup's own formatters, with a tool test that fails when the committed bundle is stale. (#622)",
+            "hash": "b1ef6204719ab92898c680b7a8f2eb344d26ff25",
+            "entry": 1
+          },
+          {
+            "description": "Adds `renderReportSections`, which returns the lines that `reportRdy` joins grouped by the result that produced them, and moves `SCHEMA_VERSION` into `reportSchemaVersion.ts` so that a bundle containing `formatJsonReport` does not include zod. (#622)",
+            "hash": "b1ef6204719ab92898c680b7a8f2eb344d26ff25",
+            "entry": 2
+          }
+        ]
+      },
+      {
+        "title": "🧪 Tests",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Adds `captures.app.unit.test.ts`, which renders each deck page in the state of each capture under `presentation/captures/` and compares the result with the captured `rdy run` output, line for line for the preflight and adoption pages and as an ordered subsequence for the partial drift and onboard models. (#622)",
+            "hash": "b1ef6204719ab92898c680b7a8f2eb344d26ff25",
+            "entry": 3
+          }
+        ]
+      },
+      {
+        "title": "📦 Dependencies",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Upgrades readyup's runtime dependency `ansi-styles` from 6.2.3 to 7.0.0, whose new Node floor of 22 is below readyup's `engines` range of `>=24`. (#621)",
+            "hash": "2918ac25522313b7be267bb29c2ec9a988a38c1d",
+            "entry": 4
+          }
+        ]
+      },
+      {
+        "title": "📚 Documentation",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Replaces the presentation deck's \"Running it\" slide with kit pages for four use cases (preflight, drift, adoption, and onboarding) that step through real `rdy run` output and its `--json` report, and adds the `preflight` kit shown on the code slide. (#617)",
+            "hash": "17d2a1565fff975f601941f36947f23004ccc154",
+            "entry": 1
+          },
+          {
+            "description": "Adds the recorded `rdy run` output that each kit page reproduces under `packages/readyup/presentation/captures/`, and excludes those files from Prettier and ESLint so that they stay byte for byte. (#617)",
+            "hash": "17d2a1565fff975f601941f36947f23004ccc154",
+            "entry": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.42.0",
     "date": "2026-10-17",
     "sections": [

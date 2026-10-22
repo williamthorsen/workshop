@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.1.2 — 2026-10-22
+
+### 📚 Documentation
+
+- States in the `thor-git branch-number` help that `--min`, `--max`, and `--offset` can give two branches the same value, and that an identity takes the unbounded value while a slot, such as a port, takes a bounded one. (#623)
+
 ## 0.1.1 — 2026-10-17
 
 ### 📦 Dependencies

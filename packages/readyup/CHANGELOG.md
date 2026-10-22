@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.43.0 — 2026-10-22
+
+### 🎉 Features
+
+- Replaces the 💊 pill that marks a fix hint in rich `rdy` output with the 🔧 wrench, which is grey rather than red like the ❌ failure glyph. (#616)
+- Colours the `rich` output style of `rdy`, showing each tally in bold in its outcome's colour from the terminal's 16-colour palette and dimming section and summary-table rules, unless `NO_COLOR` is set to a non-empty value or `TERM` is `dumb`. (#620)
+
+### 🏗️ Internal features
+
+- Replaces the formatter hand-written in readyup's presentation deck with `presentation/deck.js`, a committed bundle that `build:deck` builds from `presentation/src/` and that renders each kit page's terminal output, JSON view, and tree, and the "A run, step by step" sample, through readyup's own formatters, with a tool test that fails when the committed bundle is stale. (#622)
+- Adds `renderReportSections`, which returns the lines that `reportRdy` joins grouped by the result that produced them, and moves `SCHEMA_VERSION` into `reportSchemaVersion.ts` so that a bundle containing `formatJsonReport` does not include zod. (#622)
+
+### 🧪 Tests
+
+- Adds `captures.app.unit.test.ts`, which renders each deck page in the state of each capture under `presentation/captures/` and compares the result with the captured `rdy run` output, line for line for the preflight and adoption pages and as an ordered subsequence for the partial drift and onboard models. (#622)
+
+### 📦 Dependencies
+
+- Upgrades readyup's runtime dependency `ansi-styles` from 6.2.3 to 7.0.0, whose new Node floor of 22 is below readyup's `engines` range of `>=24`. (#621)
+
+### 📚 Documentation
+
+- Replaces the presentation deck's "Running it" slide with kit pages for four use cases (preflight, drift, adoption, and onboarding) that step through real `rdy run` output and its `--json` report, and adds the `preflight` kit shown on the code slide. (#617)
+- Adds the recorded `rdy run` output that each kit page reproduces under `packages/readyup/presentation/captures/`, and excludes those files from Prettier and ESLint so that they stay byte for byte. (#617)
+
 ## 0.42.0 — 2026-10-17
 
 ### 🎉 Features

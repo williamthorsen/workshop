@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.1.2",
+    "date": "2026-10-22",
+    "sections": [
+      {
+        "title": "📚 Documentation",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "States in the `thor-git branch-number` help that `--min`, `--max`, and `--offset` can give two branches the same value, and that an identity takes the unbounded value while a slot, such as a port, takes a bounded one. (#623)",
+            "hash": "f711971daf04c95320da891d64c288a111adeaca",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.1.1",
     "date": "2026-10-17",
     "sections": [

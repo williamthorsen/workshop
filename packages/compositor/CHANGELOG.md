@@ -2,7 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.5.4 — 2026-10-22
+
+### ⚙️ Tooling
+
+- Stops compositor's `prepare` script from regenerating the committed samples, which it did on every `pnpm install` before any check ran, so that the samples drift test can fail in CI. (#622)
+
 ## 0.5.3 — 2026-10-17
+
+### 🎉 Features
+
+- Port the repos tool into repo-tools as thor-repo (#528)
+
+  Implements the `list`, `scan`, and `add` commands of `thor-repo`, porting the configs.macos `repos` command into `@williamthorsen/repo-tools` so that any machine with the package installed can read and update the repo registry at `~/.config/repos.yaml`. Guards `--write` so that it refuses a registry whose resolved file is in a checkout on a branch named `live`.
 
 ### ♻️ Refactoring
 
