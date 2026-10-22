@@ -2,6 +2,8 @@
 
 Real output of the runs that the deck's kit pages reproduce, one file per page and state. Each file holds exactly what the command printed, except `onboard-default.txt`, as noted below. Every run used readyup 0.42.0 built from this repository after the fix-hint glyph became 🔧.
 
+`presentation/src/__tests__/captures.app.unit.test.ts` renders each page in the state of each capture and compares the result with the file, ignoring durations and colour: line for line for preflight and adoption, whose models are complete, and for drift and onboard, whose models are partial, as the order in which their check lines, reason lines, and fixes appear. `preflight-11.json` is compared as parsed JSON. `adoption-probe.txt` is not compared, because the adoption page's switches cannot reach its counts and findings. A recapture therefore requires updating the page models in `presentation/src/kits.ts` to match.
+
 | File                   | Command and state                                                                                                                                                                                                                      |
 | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `adoption-default.txt` | `rdy run --from npm:@williamthorsen/toolbelt.errors --style rich` at the repo root.                                                                                                                                                    |
