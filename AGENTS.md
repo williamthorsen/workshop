@@ -2,7 +2,7 @@
 
 ## Overview
 
-A monorepo of open-source utilities. Currently houses `readyup`, a pre-deployment verification CLI; `overlay`, a chezmoi-backed scaffolding tool; `repo-tools`, a CLI for the repositories in a machine-local registry; `git-tools`, a CLI that derives values from git branch names; `launchd-agent`, a library for per-user launchd agents on macOS; `secret-tools`, a CLI for secrets in the macOS keychain; `nodejs-tools`, a CLI and library for Node.js runtimes, toolchains, and `node_modules` directories; `atlassian-tools`, a CLI for Jira Cloud projects; and `compositor`, a private content-composition engine under construction.
+A monorepo of open-source utilities. Currently houses `readyup`, a pre-deployment verification CLI; `overlay`, a chezmoi-backed scaffolding tool; `repo-tools`, a CLI for the repositories in a machine-local registry; `git-tools`, a CLI that derives values from git branch names; `launchd-agent`, a library for per-user launchd agents on macOS; `systemd-service`, a library for systemd services on Linux; `secret-tools`, a CLI for secrets in the macOS keychain; `nodejs-tools`, a CLI and library for Node.js runtimes, toolchains, and `node_modules` directories; `atlassian-tools`, a CLI for Jira Cloud projects; and `compositor`, a private content-composition engine under construction.
 
 ## Project structure
 
@@ -17,6 +17,7 @@ Packages live under `packages/`:
 - **`readyup`**: Pre-deployment verification checks with TypeScript-authored kits, CLI runner, and JSON output. Binary: `rdy` (alias `readyup`). Its reference documentation lives in `docs/`, because npm truncates a registry README at 65,536 code points; `rdy help <topic>` prints those files and `src/__tests__/doc-links.app.unit.test.ts` keeps them linked. Its `agents/` directory is a CodeAssembly content root, published to consumers as the `consult-readyup-kits` skill; `agents/README.md` states the discipline for editing it. Its presentation deck loads `presentation/deck.js`, which `pnpm --filter readyup run build:deck` bundles from `presentation/src/` and commits; a test fails when the committed bundle is stale.
 - **`repo-tools`**: CLI that lists, scans, and registers the repositories indexed by a machine-local repo registry. Binary: `thor-repo`.
 - **`secret-tools`**: CLI that stores, reads, and removes secrets in the macOS keychain. Binary: `thor-secret`.
+- **`systemd-service`**: Library that installs, restarts, inspects, and removes systemd system services on Linux. No binary.
 
 Key files:
 
@@ -47,7 +48,7 @@ The code-quality workflow does not run `nmr ci`; it runs that command's steps as
 
 ## Commit conventions
 
-The scope values this repo uses are `atlassian-tools`, `compositor`, `git-tools`, `launchd-agent`, `nodejs-tools`, `overlay`, `readyup`, `repo-tools`, `root`, and `secret-tools`, mirroring the `scope:*` labels in `.config/release-kit.config.ts`.
+The scope values this repo uses are `atlassian-tools`, `compositor`, `git-tools`, `launchd-agent`, `nodejs-tools`, `overlay`, `readyup`, `repo-tools`, `root`, `secret-tools`, and `systemd-service`, mirroring the `scope:*` labels in `.config/release-kit.config.ts`.
 
 ## Releases
 

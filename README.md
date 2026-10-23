@@ -16,6 +16,7 @@ Open-source utilities by [William Thorsen](https://github.com/williamthorsen).
 | [`readyup`](packages/readyup)                 | Pre-deployment verification checks with TypeScript kits                         |
 | [`repo-tools`](packages/repo-tools)           | Act on the repositories indexed by a machine-local repo registry                |
 | [`secret-tools`](packages/secret-tools)       | Manage secrets in the OS credential store                                       |
+| [`systemd-service`](packages/systemd-service) | Install, restart, inspect, and remove systemd services on Linux                 |
 
 ## Development
 

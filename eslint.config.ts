@@ -260,6 +260,22 @@ const config = defineConfig([
     },
   },
   {
+    // systemd-service's root follows on the same terms; its one exception is the entry point.
+    files: ['packages/systemd-service/src/*.ts'],
+    ignores: ['packages/systemd-service/src/index.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...RESTRICTED_SYNTAX,
+        {
+          selector: 'Program',
+          message:
+            'Group this module into a directory named for its role. Only index.ts belongs at the root of systemd-service/src.',
+        },
+      ],
+    },
+  },
+  {
     // `utils` names no role, so a directory of that name under any package's source is the same defect one level
     // down. The path segment must be exactly `utils`, which leaves `check-utils` and `test-utils` untouched.
     files: ['packages/*/src/**/utils/**'],
