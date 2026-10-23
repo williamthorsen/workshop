@@ -80,8 +80,21 @@ describe(installService, () => {
     ['a relative program', { programArguments: ['bin/run.js'] }, 'Invalid program'],
     ['a relative log directory', { logDir: 'logs' }, 'Invalid log directory'],
     ['a dependency that is not a unit name', { after: ['docker service'] }, 'Invalid dependency'],
-    ['a newline in an argument', { programArguments: ['/usr/bin/node', 'a\nb'] }, 'must not contain a newline'],
-    ['a newline in an environment value', { environment: { KEY: 'a\nb' } }, 'must not contain a newline'],
+    ['an environment key with a hyphen', { environment: { 'MY-VAR': 'value' } }, 'Invalid environment variable'],
+    ['an environment key with an equals sign', { environment: { 'A=B': 'value' } }, 'Invalid environment variable'],
+    [
+      'an environment key that starts with a digit',
+      { environment: { '1KEY': 'value' } },
+      'Invalid environment variable',
+    ],
+    ['a newline in an argument', { programArguments: ['/usr/bin/node', 'a\nb'] }, 'must not contain a line break'],
+    [
+      'a carriage return in an argument',
+      { programArguments: ['/usr/bin/node', 'a\rb'] },
+      'must not contain a line break',
+    ],
+    ['a NUL in the log directory', { logDir: '/var/log/a\0b' }, 'must not contain a line break'],
+    ['a newline in an environment value', { environment: { KEY: 'a\nb' } }, 'must not contain a line break'],
   ])('rejects %s without writing or running anything', async (_description, overrides, message) => {
     await expect(installService(buildSpec(overrides))).rejects.toThrow(message);
     expect(runSystemctl).not.toHaveBeenCalled();

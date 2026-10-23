@@ -11,6 +11,12 @@ const SERVICE_NAME_PATTERN = /^[\w.:-]+$/;
 /** The characters that systemd allows in a unit name, templates included. */
 const DEPENDENCY_NAME_PATTERN = /^[\w.:@-]+$/;
 
+/** The environment variable names that systemd accepts: letters, digits, and `_`, not starting with a digit. */
+const ENVIRONMENT_KEY_PATTERN = /^[A-Z_a-z]\w*$/;
+
+/** The characters that end a line of a unit file. */
+const LINE_BREAK_PATTERN = /[\n\r\0]/;
+
 /**
  * Writes the service's unit, enables it, and starts it, replacing whatever ran under the same name, and resolves with
  * the unit's path. Rejects a spec that systemd could not run before writing anything.
@@ -20,9 +26,10 @@ export async function installService(spec: ServiceSpec): Promise<string> {
   const unitName = buildUnitName(spec.name);
   const unitPath = findUnitPath(spec.name);
 
-  // Set modes explicitly, because a caller's umask of 0 leaves both writable by every user, which systemd warns about.
+  // Set modes explicitly, because a caller's umask of 0 leaves both writable by every user. `writeFile` sets the mode
+  // only when it creates the unit, so `chmod` covers a unit that already exists.
   await mkdir(spec.logDir, { mode: 0o755, recursive: true });
-  await writeFile(unitPath, renderUnit(spec));
+  await writeFile(unitPath, renderUnit(spec), { mode: 0o644 });
   await chmod(unitPath, 0o644);
 
   await runSystemctlOrThrow(['daemon-reload']);
@@ -57,10 +64,15 @@ function assertSpecIsInstallable(spec: ServiceSpec): void {
     throw new Error(`Invalid dependency "${invalidDependency}" for ${name}: It is not a unit name.`);
   }
 
-  // A newline would end the unit line that holds the value.
-  const values = [logDir, ...programArguments, ...Object.entries(environment).flat()];
-  if (values.some((value) => value.includes('\n'))) {
-    throw new Error(`Invalid spec for ${name}: A value must not contain a newline.`);
+  const invalidKey = Object.keys(environment).find((key) => !ENVIRONMENT_KEY_PATTERN.test(key));
+  if (invalidKey !== undefined) {
+    throw new Error(`Invalid environment variable "${invalidKey}" for ${name}: It is not a valid variable name.`);
+  }
+
+  // A line break would end the unit line that holds the value.
+  const values = [logDir, ...programArguments, ...Object.values(environment)];
+  if (values.some((value) => LINE_BREAK_PATTERN.test(value))) {
+    throw new Error(`Invalid spec for ${name}: A value must not contain a line break.`);
   }
 }
 

@@ -44,5 +44,5 @@ A `ServiceSpec` has these fields:
 - `name`: The service's name, without the `.service` suffix. It may contain only letters, digits, and `:_.-`.
 - `programArguments`: The command that systemd runs. The program must be an absolute path.
 - `logDir`: The absolute directory that receives `stdout.log` and `stderr.log`. systemd appends to them.
-- `environment` (optional): More environment variables. systemd's default `PATH` for system services is `/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin`; a `PATH` entry here replaces it.
+- `environment` (optional): More environment variables, each named with letters, digits, and `_`, and not starting with a digit. systemd's default `PATH` for system services is `/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin`; a `PATH` entry here replaces it.
 - `after` (optional): Units that the service starts after and pulls in, such as `docker.service`.

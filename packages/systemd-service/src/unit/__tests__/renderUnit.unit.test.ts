@@ -5,7 +5,7 @@ import { renderUnit, type ServiceSpec } from '../renderUnit.ts';
 describe(renderUnit, () => {
   it('renders a keep-alive service that appends its output to the log directory', () => {
     expect(renderUnit(buildSpec())).toBe(`[Unit]
-Description=dev.example.service
+Description=dev.example
 StartLimitIntervalSec=0
 
 [Service]
@@ -58,7 +58,7 @@ WantedBy=multi-user.target
 function buildSpec(overrides: Partial<ServiceSpec> = {}): ServiceSpec {
   return {
     logDir: '/var/log/example',
-    name: 'dev.example.service',
+    name: 'dev.example',
     programArguments: ['/usr/bin/node', '/srv/example/bin/run.js'],
     ...overrides,
   };
