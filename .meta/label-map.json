@@ -27,6 +27,7 @@
     "readyup": "scope:readyup",
     "repo-tools": "scope:repo-tools",
     "secret-tools": "scope:secret-tools",
+    "systemd-service": "scope:systemd-service",
     "root": "scope:root"
   }
 }

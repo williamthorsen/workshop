@@ -17,6 +17,7 @@ const config = defineConfig({
       'scope:readyup': { color: '00ff96', description: '' },
       'scope:repo-tools': { color: '00ff96', description: '' },
       'scope:secret-tools': { color: '00ff96', description: '' },
+      'scope:systemd-service': { color: '00ff96', description: '' },
     },
   },
 });
