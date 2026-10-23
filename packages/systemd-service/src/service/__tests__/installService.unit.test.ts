@@ -42,6 +42,17 @@ describe(installService, () => {
     ]);
   });
 
+  it('writes the unit readable by every user and writable only by its owner, whatever the umask', async () => {
+    const previousUmask = process.umask(0);
+    try {
+      const unitPath = await installService(buildSpec());
+
+      await expect(stat(unitPath)).resolves.toSatisfy((stats: Stats) => (stats.mode & 0o777) === 0o644);
+    } finally {
+      process.umask(previousUmask);
+    }
+  });
+
   it('creates the log directory', async () => {
     const spec = buildSpec();
 

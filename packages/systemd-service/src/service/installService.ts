@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { runSystemctl } from '../systemctl/runSystemctl.ts';
@@ -20,12 +20,14 @@ export async function installService(spec: ServiceSpec): Promise<string> {
   const unitName = buildUnitName(spec.name);
   const unitPath = findUnitPath(spec.name);
 
-  await mkdir(spec.logDir, { recursive: true });
+  // Set modes explicitly, because a caller's umask of 0 leaves both writable by every user, which systemd warns about.
+  await mkdir(spec.logDir, { mode: 0o755, recursive: true });
   await writeFile(unitPath, renderUnit(spec));
+  await chmod(unitPath, 0o644);
 
   await runSystemctlOrThrow(['daemon-reload']);
   await runSystemctlOrThrow(['enable', unitName]);
-  // `restart` starts a stopped service and replaces a running one, which `start` would leave on its old code.
+  // `restart` also replaces a process that is already running, so that the service runs under the new unit.
   await runSystemctlOrThrow(['restart', unitName]);
 
   return unitPath;
