@@ -8,7 +8,7 @@ allowBuilds:
 
 catalog:
   '@vitest/coverage-v8': 4.1.12
-  '@williamthorsen/nmr': 0.50.0
+  '@williamthorsen/nmr': 0.50.1
   '@williamthorsen/toolbelt.atlassian': 0.7.0
   '@williamthorsen/toolbelt.cli': 0.5.0
   '@williamthorsen/toolbelt.errors': 0.8.3
