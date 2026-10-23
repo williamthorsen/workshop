@@ -1,0 +1,19 @@
+[
+  {
+    "version": "0.1.0",
+    "date": "2026-10-23",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Adds the `@williamthorsen/systemd-service` package, whose `installService`, `readServiceState`, `restartService`, `uninstallService`, and `renderUnit` install, inspect, restart, remove, and render a service unit in `/etc/systemd/system` that systemd restarts 10 seconds after every exit without a start limit and whose stdout and stderr it appends to `stdout.log` and `stderr.log` in the spec's log directory. (#625)",
+            "hash": "e50f531632f874923e3cdb9eccb52428455ff718",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  }
+]
