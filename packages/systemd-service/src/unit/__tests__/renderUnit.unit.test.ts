@@ -20,6 +20,32 @@ WantedBy=multi-user.target
 `);
   });
 
+  it('renders the keep-alive service for an explicit keep-alive trigger', () => {
+    expect(renderUnit(buildSpec({ trigger: { keepAlive: true } }))).toBe(renderUnit(buildSpec()));
+  });
+
+  it('renders a scheduled service as a oneshot that neither restarts nor is enabled itself', () => {
+    expect(renderUnit(buildSpec({ trigger: { startIntervalSec: 86_400 } }))).toBe(`[Unit]
+Description=dev.example
+StartLimitIntervalSec=0
+
+[Service]
+Type=oneshot
+ExecStart="/usr/bin/node" "/srv/example/bin/run.js"
+StandardError=append:/var/log/example/stderr.log
+StandardOutput=append:/var/log/example/stdout.log
+`);
+  });
+
+  it('renders the dependencies and environment of a scheduled service', () => {
+    const unit = renderUnit(
+      buildSpec({ after: ['docker.service'], environment: { HOME: '/root' }, trigger: { startIntervalSec: 60 } }),
+    );
+
+    expect(unit).toContain('After=docker.service\nWants=docker.service\nStartLimitIntervalSec=0\n');
+    expect(unit).toContain('Type=oneshot\nEnvironment="HOME=/root"\nExecStart=');
+  });
+
   it('orders the service after the units that it names and pulls them in', () => {
     const unit = renderUnit(buildSpec({ after: ['docker.service', 'network-online.target'] }));
 
