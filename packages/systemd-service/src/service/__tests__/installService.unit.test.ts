@@ -1,5 +1,5 @@
 import type { Stats } from 'node:fs';
-import { mkdir, mkdtemp, readdir, readFile, rm, stat } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -14,6 +14,7 @@ const { rootDir } = vi.hoisted(() => ({ rootDir: { path: '' } }));
 
 vi.mock('../service-targets.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../service-targets.ts')>()),
+  findTimerPath: (name: string) => path.join(rootDir.path, 'units', `${name}.timer`),
   findUnitPath: (name: string) => path.join(rootDir.path, 'units', `${name}.service`),
 }));
 vi.mock('../../systemctl/runSystemctl.ts', () => ({ runSystemctl: vi.fn() }));
@@ -72,6 +73,70 @@ describe(installService, () => {
     expect(runSystemctl).toHaveBeenCalledTimes(2);
   });
 
+  it('writes the oneshot unit and the timer, then stops the service and enables and starts the timer', async () => {
+    const unitPath = await installService(buildSpec({ trigger: { startIntervalSec: 86_400 } }));
+
+    await expect(readFile(unitPath, 'utf8')).resolves.toContain('Type=oneshot\n');
+    await expect(readFile(findTestTimerPath(), 'utf8')).resolves.toContain('OnUnitActiveSec=86400s\n');
+    expect(vi.mocked(runSystemctl).mock.calls).toStrictEqual([
+      [['daemon-reload']],
+      [['stop', 'dev.example.service']],
+      [['enable', 'dev.example.timer']],
+      [['start', 'dev.example.timer']],
+    ]);
+  });
+
+  it('stops an installed timer before rewriting it, so that the reload does not start the service', async () => {
+    await writeFile(findTestTimerPath(), '[Timer]\n');
+
+    await installService(buildSpec({ trigger: { startIntervalSec: 60 } }));
+
+    expect(vi.mocked(runSystemctl).mock.calls[0]).toStrictEqual([['stop', 'dev.example.timer']]);
+  });
+
+  it('writes the timer readable by every user and writable only by its owner, whatever the umask', async () => {
+    const previousUmask = process.umask(0);
+    try {
+      await installService(buildSpec({ trigger: { startIntervalSec: 60 } }));
+
+      await expect(stat(findTestTimerPath())).resolves.toSatisfy((stats: Stats) => (stats.mode & 0o777) === 0o644);
+    } finally {
+      process.umask(previousUmask);
+    }
+  });
+
+  it('disables an installed service before scheduling it, so that its boot link goes', async () => {
+    await writeFile(findTestUnitPath(), '[Unit]\n');
+
+    await installService(buildSpec({ trigger: { startIntervalSec: 60 } }));
+
+    expect(vi.mocked(runSystemctl).mock.calls[0]).toStrictEqual([['disable', 'dev.example.service']]);
+  });
+
+  it('disables and removes the timer of a scheduled service that it keeps alive', async () => {
+    await writeFile(findTestTimerPath(), '[Timer]\n');
+
+    await installService(buildSpec());
+
+    await expect(readdir(path.join(rootDir.path, 'units'))).resolves.toStrictEqual(['dev.example.service']);
+    expect(vi.mocked(runSystemctl).mock.calls).toStrictEqual([
+      [['disable', '--now', 'dev.example.timer']],
+      [['daemon-reload']],
+      [['enable', 'dev.example.service']],
+      [['restart', 'dev.example.service']],
+    ]);
+  });
+
+  it('rejects, writing nothing, when the timer fails to disable while it is still active', async () => {
+    await writeFile(findTestTimerPath(), '[Timer]\n');
+    vi.mocked(runSystemctl).mockResolvedValueOnce(buildSystemctlRun(1, 'Access denied\n'));
+
+    await expect(installService(buildSpec())).rejects.toThrow(
+      'systemctl disable failed while dev.example.timer is still active: Access denied',
+    );
+    await expect(readdir(path.join(rootDir.path, 'units'))).resolves.toStrictEqual(['dev.example.timer']);
+  });
+
   it.each<[string, Partial<ServiceSpec>, string]>([
     ['an empty name', { name: '' }, 'Invalid service name'],
     ['a name with a separator', { name: 'dev/example' }, 'Invalid service name'],
@@ -95,6 +160,14 @@ describe(installService, () => {
     ],
     ['a NUL in the log directory', { logDir: '/var/log/a\0b' }, 'must not contain a line break'],
     ['a newline in an environment value', { environment: { KEY: 'a\nb' } }, 'must not contain a line break'],
+    ['a zero interval', { trigger: { startIntervalSec: 0 } }, 'startIntervalSec must be a positive integer'],
+    ['a negative interval', { trigger: { startIntervalSec: -60 } }, 'startIntervalSec must be a positive integer'],
+    ['a fractional interval', { trigger: { startIntervalSec: 1.5 } }, 'startIntervalSec must be a positive integer'],
+    [
+      'an infinite interval',
+      { trigger: { startIntervalSec: Infinity } },
+      'startIntervalSec must be a positive integer',
+    ],
   ])('rejects %s without writing or running anything', async (_description, overrides, message) => {
     await expect(installService(buildSpec(overrides))).rejects.toThrow(message);
     expect(runSystemctl).not.toHaveBeenCalled();
@@ -112,6 +185,16 @@ function buildSpec(overrides: Partial<ServiceSpec> = {}): ServiceSpec {
     programArguments: ['/usr/bin/node', '/srv/example/run.js'],
     ...overrides,
   };
+}
+
+/** Locates the timer under the temporary root. */
+function findTestTimerPath(): string {
+  return path.join(rootDir.path, 'units', 'dev.example.timer');
+}
+
+/** Locates the unit under the temporary root. */
+function findTestUnitPath(): string {
+  return path.join(rootDir.path, 'units', 'dev.example.service');
 }
 
 // endregion | Helpers

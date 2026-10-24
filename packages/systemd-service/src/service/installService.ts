@@ -2,8 +2,11 @@ import { chmod, mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { runSystemctl } from '../systemctl/runSystemctl.ts';
-import { renderUnit, type ServiceSpec } from '../unit/renderUnit.ts';
-import { buildUnitName, findUnitPath } from './service-targets.ts';
+import { renderTimer } from '../unit/renderTimer.ts';
+import { readStartIntervalSec, renderUnit, type ServiceSpec } from '../unit/renderUnit.ts';
+import { isFile } from './isFile.ts';
+import { removeTimer } from './removeTimer.ts';
+import { buildTimerName, buildUnitName, findTimerPath, findUnitPath } from './service-targets.ts';
 
 /** The characters that systemd allows in a unit name, without `@` (templates) and `\` (escapes). */
 const SERVICE_NAME_PATTERN = /^[\w.:-]+$/;
@@ -18,24 +21,46 @@ const ENVIRONMENT_KEY_PATTERN = /^[A-Z_a-z]\w*$/;
 const LINE_BREAK_PATTERN = /[\n\r\0]/;
 
 /**
- * Writes the service's unit, enables it, and starts it, replacing whatever ran under the same name, and resolves with
- * the unit's path. Rejects a spec that systemd could not run before writing anything.
+ * Writes the service's unit, and the timer of a scheduled service, enables the service or its timer, and starts it,
+ * replacing whatever ran under the same name, of either kind, and resolves with the unit's path. Rejects a spec that
+ * systemd could not run before writing anything.
  */
 export async function installService(spec: ServiceSpec): Promise<string> {
   assertSpecIsInstallable(spec);
   const unitName = buildUnitName(spec.name);
   const unitPath = findUnitPath(spec.name);
+  const timerName = buildTimerName(spec.name);
+  const timerPath = findTimerPath(spec.name);
+  const timer = renderTimer(spec);
 
-  // Set modes explicitly, because a caller's umask of 0 leaves both writable by every user. `writeFile` sets the mode
-  // only when it creates the unit, so `chmod` covers a unit that already exists.
+  if (timer === undefined) {
+    await removeTimer(spec.name);
+  } else {
+    // Stop an installed timer, which `daemon-reload` would otherwise re-arm, starting the service on the old schedule.
+    if (await isFile(timerPath)) await runSystemctlOrThrow(['stop', timerName]);
+    // A kept-alive install left a `multi-user.target.wants` link, which only the `[Install]` section of the unit that
+    // made it tells `disable` to remove.
+    if (await isFile(unitPath)) await runSystemctlOrThrow(['disable', unitName]);
+  }
+
+  // Set the directory's mode explicitly, because a caller's umask of 0 leaves it writable by every user.
   await mkdir(spec.logDir, { mode: 0o755, recursive: true });
-  await writeFile(unitPath, renderUnit(spec), { mode: 0o644 });
-  await chmod(unitPath, 0o644);
+  await writeUnitFile(unitPath, renderUnit(spec));
+  if (timer === undefined) {
+    await runSystemctlOrThrow(['daemon-reload']);
+    await runSystemctlOrThrow(['enable', unitName]);
+    // `restart` also replaces a process that is already running, so that the service runs under the new unit.
+    await runSystemctlOrThrow(['restart', unitName]);
+    return unitPath;
+  }
 
+  await writeUnitFile(timerPath, timer);
   await runSystemctlOrThrow(['daemon-reload']);
-  await runSystemctlOrThrow(['enable', unitName]);
-  // `restart` also replaces a process that is already running, so that the service runs under the new unit.
-  await runSystemctlOrThrow(['restart', unitName]);
+  // Stop a process left running by the previous install, so that the timer's first start runs the new unit.
+  await runSystemctlOrThrow(['stop', unitName]);
+  await runSystemctlOrThrow(['enable', timerName]);
+  // `OnActiveSec=0` runs the new unit as soon as the timer starts.
+  await runSystemctlOrThrow(['start', timerName]);
 
   return unitPath;
 }
@@ -57,6 +82,11 @@ function assertSpecIsInstallable(spec: ServiceSpec): void {
 
   if (!path.isAbsolute(logDir)) {
     throw new Error(`Invalid log directory for ${name}: The log directory must be an absolute path.`);
+  }
+
+  const startIntervalSec = readStartIntervalSec(spec);
+  if (startIntervalSec !== undefined && !(Number.isSafeInteger(startIntervalSec) && startIntervalSec > 0)) {
+    throw new Error(`Invalid interval for ${name}: startIntervalSec must be a positive integer.`);
   }
 
   const invalidDependency = after.find((unit) => !DEPENDENCY_NAME_PATTERN.test(unit));
@@ -82,6 +112,15 @@ async function runSystemctlOrThrow(args: readonly string[]): Promise<void> {
   if (exitCode !== 0) {
     throw new Error(`systemctl ${args.join(' ')} failed: ${output.trim()}`);
   }
+}
+
+/**
+ * Writes a unit file readable by every user and writable only by its owner. `writeFile` sets the mode only when it
+ * creates the file, so `chmod` covers one that already exists, whatever the caller's umask.
+ */
+async function writeUnitFile(filePath: string, content: string): Promise<void> {
+  await writeFile(filePath, content, { mode: 0o644 });
+  await chmod(filePath, 0o644);
 }
 
 // endregion | Helpers
