@@ -1,10 +1,11 @@
-import { access, chmod, mkdir, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { runSystemctl } from '../systemctl/runSystemctl.ts';
 import { renderTimer } from '../unit/renderTimer.ts';
 import { readStartIntervalSec, renderUnit, type ServiceSpec } from '../unit/renderUnit.ts';
-import { disableUnit } from './disableUnit.ts';
+import { isFile } from './isFile.ts';
+import { removeTimer } from './removeTimer.ts';
 import { buildTimerName, buildUnitName, findTimerPath, findUnitPath } from './service-targets.ts';
 
 /** The characters that systemd allows in a unit name, without `@` (templates) and `\` (escapes). */
@@ -100,25 +101,6 @@ function assertSpecIsInstallable(spec: ServiceSpec): void {
   if (values.some((value) => LINE_BREAK_PATTERN.test(value))) {
     throw new Error(`Invalid spec for ${name}: A value must not contain a line break.`);
   }
-}
-
-/** Reports whether a file exists at the path. */
-async function isFile(filePath: string): Promise<boolean> {
-  try {
-    await access(filePath);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/** Disables and removes the service's timer, if one is installed. */
-async function removeTimer(name: string): Promise<void> {
-  const timerPath = findTimerPath(name);
-  if (!(await isFile(timerPath))) return;
-
-  await disableUnit(buildTimerName(name));
-  await rm(timerPath, { force: true });
 }
 
 /** Runs a systemctl subcommand, throwing with its output when it exits nonzero. */

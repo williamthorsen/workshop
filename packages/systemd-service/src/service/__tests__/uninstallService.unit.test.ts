@@ -13,6 +13,7 @@ const { unitDir } = vi.hoisted(() => ({ unitDir: { path: '' } }));
 
 vi.mock('../service-targets.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../service-targets.ts')>()),
+  findTimerPath: (name: string) => path.join(unitDir.path, `${name}.timer`),
   findUnitPath: (name: string) => path.join(unitDir.path, `${name}.service`),
 }));
 vi.mock('../readServiceState.ts', () => ({ readServiceState: vi.fn() }));
@@ -63,6 +64,35 @@ describe(uninstallService, () => {
     await expect(stat(findTestUnitPath())).resolves.toBeDefined();
   });
 
+  it('stops, disables, and removes the timer before the service, and clears both failed states', async () => {
+    await writeFile(findTestTimerPath(), '[Timer]\n');
+
+    await expect(uninstallService('dev.example')).resolves.toStrictEqual({ wasLoaded: true });
+
+    await expect(stat(findTestTimerPath())).rejects.toThrow('ENOENT');
+    await expect(stat(findTestUnitPath())).rejects.toThrow('ENOENT');
+    expect(vi.mocked(runSystemctl).mock.calls).toStrictEqual([
+      [['disable', '--now', 'dev.example.timer']],
+      [['disable', '--now', 'dev.example.service']],
+      [['daemon-reload']],
+      [['reset-failed', 'dev.example.service']],
+      [['reset-failed', 'dev.example.timer']],
+    ]);
+  });
+
+  it('rejects, keeping both units, when the timer fails to disable while it is still active', async () => {
+    await writeFile(findTestTimerPath(), '[Timer]\n');
+    vi.mocked(runSystemctl)
+      .mockResolvedValueOnce(buildSystemctlRun(1, 'Access denied\n'))
+      .mockResolvedValueOnce(buildSystemctlRun(0));
+
+    await expect(uninstallService('dev.example')).rejects.toThrow(
+      'systemctl disable failed while dev.example.timer is still active: Access denied',
+    );
+    await expect(stat(findTestTimerPath())).resolves.toBeDefined();
+    await expect(stat(findTestUnitPath())).resolves.toBeDefined();
+  });
+
   it('rejects with the output of a refused reload', async () => {
     vi.mocked(runSystemctl)
       .mockResolvedValueOnce(buildSystemctlRun(0))
@@ -73,6 +103,11 @@ describe(uninstallService, () => {
 });
 
 // region | Helpers
+
+/** Locates the test service's timer in the temporary unit directory. */
+function findTestTimerPath(): string {
+  return path.join(unitDir.path, 'dev.example.timer');
+}
 
 /** Locates the test service's unit in the temporary unit directory. */
 function findTestUnitPath(): string {
