@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.0 — 2026-10-24
+
+### 🎉 Features
+
+- Adds the optional `trigger` field to `ServiceSpec`, whose `{ startIntervalSec }` form makes `installService` install the service as a oneshot unit that a timer runs at install, at each boot, and every `startIntervalSec` seconds, and makes `uninstallService` remove that timer with the service. (#627)
+- Exports `renderTimer`, which returns the timer unit that `installService` writes for a scheduled service without touching the machine, and the `ServiceTrigger` type. (#627)
+
 ## 0.1.0 — 2026-10-23
 
 ### 🎉 Features
