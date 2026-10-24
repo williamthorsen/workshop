@@ -56,7 +56,7 @@ export async function installService(spec: ServiceSpec): Promise<string> {
 
   await writeUnitFile(timerPath, timer);
   await runSystemctlOrThrow(['daemon-reload']);
-  // Stop a process left running by the previous install, which the timer would otherwise skip starting over.
+  // Stop a process left running by the previous install, so that the timer's first start runs the new unit.
   await runSystemctlOrThrow(['stop', unitName]);
   await runSystemctlOrThrow(['enable', timerName]);
   // `OnActiveSec=0` runs the new unit as soon as the timer starts.
