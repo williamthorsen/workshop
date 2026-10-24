@@ -29,14 +29,18 @@ export async function installService(spec: ServiceSpec): Promise<string> {
   assertSpecIsInstallable(spec);
   const unitName = buildUnitName(spec.name);
   const unitPath = findUnitPath(spec.name);
+  const timerName = buildTimerName(spec.name);
+  const timerPath = findTimerPath(spec.name);
   const timer = renderTimer(spec);
 
   if (timer === undefined) {
     await removeTimer(spec.name);
-  } else if (await isFile(unitPath)) {
+  } else {
+    // Stop an installed timer, which `daemon-reload` would otherwise re-arm, starting the service on the old schedule.
+    if (await isFile(timerPath)) await runSystemctlOrThrow(['stop', timerName]);
     // A kept-alive install left a `multi-user.target.wants` link, which only the `[Install]` section of the unit that
     // made it tells `disable` to remove.
-    await runSystemctlOrThrow(['disable', unitName]);
+    if (await isFile(unitPath)) await runSystemctlOrThrow(['disable', unitName]);
   }
 
   // Set the directory's mode explicitly, because a caller's umask of 0 leaves it writable by every user.
@@ -50,14 +54,13 @@ export async function installService(spec: ServiceSpec): Promise<string> {
     return unitPath;
   }
 
-  const timerName = buildTimerName(spec.name);
-  await writeUnitFile(findTimerPath(spec.name), timer);
+  await writeUnitFile(timerPath, timer);
   await runSystemctlOrThrow(['daemon-reload']);
   // Stop a process left running by the previous install, which the timer would otherwise skip starting over.
   await runSystemctlOrThrow(['stop', unitName]);
   await runSystemctlOrThrow(['enable', timerName]);
-  // `restart` re-arms a timer that is already active, so that `OnActiveSec=0` runs the new unit at once.
-  await runSystemctlOrThrow(['restart', timerName]);
+  // `OnActiveSec=0` runs the new unit as soon as the timer starts.
+  await runSystemctlOrThrow(['start', timerName]);
 
   return unitPath;
 }

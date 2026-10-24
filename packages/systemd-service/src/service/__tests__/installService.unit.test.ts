@@ -73,7 +73,7 @@ describe(installService, () => {
     expect(runSystemctl).toHaveBeenCalledTimes(2);
   });
 
-  it('writes the oneshot unit and the timer, then stops the service and enables and restarts the timer', async () => {
+  it('writes the oneshot unit and the timer, then stops the service and enables and starts the timer', async () => {
     const unitPath = await installService(buildSpec({ trigger: { startIntervalSec: 86_400 } }));
 
     await expect(readFile(unitPath, 'utf8')).resolves.toContain('Type=oneshot\n');
@@ -82,8 +82,16 @@ describe(installService, () => {
       [['daemon-reload']],
       [['stop', 'dev.example.service']],
       [['enable', 'dev.example.timer']],
-      [['restart', 'dev.example.timer']],
+      [['start', 'dev.example.timer']],
     ]);
+  });
+
+  it('stops an installed timer before rewriting it, so that the reload does not start the service', async () => {
+    await writeFile(findTestTimerPath(), '[Timer]\n');
+
+    await installService(buildSpec({ trigger: { startIntervalSec: 60 } }));
+
+    expect(vi.mocked(runSystemctl).mock.calls[0]).toStrictEqual([['stop', 'dev.example.timer']]);
   });
 
   it('writes the timer readable by every user and writable only by its owner, whatever the umask', async () => {
