@@ -52,7 +52,7 @@ The scope values this repo uses are `atlassian-tools`, `compositor`, `git-tools`
 
 ## Releases
 
-Releases run through the **Release** GitHub Actions workflow (`workflow_dispatch`), which bumps versions, regenerates CHANGELOGs, and pushes tags; the resulting `<workspace>-v<semver>` tag pushes trigger **Publish** and **Create GitHub Release**. Never push a release tag by hand.
+Releases run through the **Release** GitHub Actions workflow (`workflow_dispatch`), which bumps versions, regenerates CHANGELOGs, and pushes tags; the resulting `<workspace>-v<semver>` tag pushes trigger **Publish** and **Create GitHub release**. Never push a release tag by hand.
 
 ## Gotchas
 
