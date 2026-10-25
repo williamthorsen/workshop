@@ -168,8 +168,8 @@ catalogs:
       specifier: 4.1.12
       version: 4.1.12
     '@williamthorsen/nmr':
-      specifier: 0.50.1
-      version: 0.50.1
+      specifier: 0.52.0
+      version: 0.52.0
     '@williamthorsen/toolbelt.atlassian':
       specifier: 0.7.1
       version: 0.7.1
@@ -249,7 +249,7 @@ importers:
         version: 20.1.3(@typescript-eslint/utils@8.71.2(eslint@10.13.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(@vitest/eslint-plugin@1.6.27(@typescript-eslint/eslint-plugin@8.71.2(@typescript-eslint/parser@8.71.2(eslint@10.13.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.13.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.13.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)(vitest@4.1.12))(eslint@10.13.0(jiti@2.7.0)(supports-color@7.2.0))(readyup@packages+readyup)(supports-color@7.2.0)(typescript@6.0.3)
       '@williamthorsen/nmr':
         specifier: 'catalog:'
-        version: 0.50.1(typescript@6.0.3)(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))(vitest@4.1.12)
+        version: 0.52.0(typescript@6.0.3)(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))(vitest@4.1.12)
       '@williamthorsen/release-kit':
         specifier: 14.2.4
         version: 14.2.4
@@ -460,7 +460,7 @@ importers:
         version: 4.0.3
       '@williamthorsen/nmr':
         specifier: 'catalog:'
-        version: 0.50.1(typescript@6.0.3)(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))(vitest@4.1.12)
+        version: 0.52.0(typescript@6.0.3)(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))(vitest@4.1.12)
       '@williamthorsen/toolbelt.filesystem':
         specifier: 'catalog:'
         version: 0.9.4
@@ -1368,14 +1368,14 @@ packages:
     resolution: {integrity: sha512-5zTzt2Jf2pSybzFoQus+HzKiuKg0A75eBotaLlc9EVRBJxeE3aKAV31MtrA3jOVhsV/vXvyP/xPI7+ftAaoSMA==}
     engines: {node: '>=24.16.0'}
 
-  '@williamthorsen/nmr@0.50.1':
-    resolution: {integrity: sha512-HkZqSr4HcbCc5hW7b/0AwqnTvAahZ5Fq1TO3VAprssKULfXupA8CwoxpxiI4YVCWaFMeGDvUSbmHwgH6RqNZvQ==}
+  '@williamthorsen/nmr@0.52.0':
+    resolution: {integrity: sha512-zMPcpD3yTxGO5soxTIB8BKV3gRz/OzZ6N6Zbru6YAHLE8pj7rGfN51ZbceGPm4XBnNVmN+pUCAlo9uQqqaewzg==}
     engines: {node: '>=24.16.0', pnpm: '>=11'}
     hasBin: true
     peerDependencies:
       typescript: '>=5.7.0 <7'
       vite: '>=8.0.0 <9'
-      vitest: '>=4.0.0 <5'
+      vitest: '>=4.0.0 <6'
     peerDependenciesMeta:
       typescript:
         optional: true
@@ -3624,11 +3624,11 @@ snapshots:
       diff: 9.0.0
       yaml: 2.9.1
 
-  '@williamthorsen/nmr@0.50.1(typescript@6.0.3)(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))(vitest@4.1.12)':
+  '@williamthorsen/nmr@0.52.0(typescript@6.0.3)(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))(vitest@4.1.12)':
     dependencies:
-      '@williamthorsen/nmr-core': 0.13.5
-      '@williamthorsen/toolbelt.errors': 0.8.3
-      '@williamthorsen/toolbelt.filesystem': 0.9.3
+      '@williamthorsen/nmr-core': 0.13.6
+      '@williamthorsen/toolbelt.errors': 0.8.4
+      '@williamthorsen/toolbelt.filesystem': 0.9.4
       glob: 13.0.6
       prettier: 3.9.10
       prettier-plugin-sh: 0.20.2(prettier@3.9.10)
