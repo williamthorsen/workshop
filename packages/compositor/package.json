@@ -39,6 +39,7 @@
     "@williamthorsen/toolbelt.filesystem": "catalog:",
     "@williamthorsen/toolbelt.testing": "catalog:",
     "@williamthorsen/toolbelt.vitest": "catalog:",
+    "vite": "catalog:",
     "vitest": "catalog:"
   },
   "engines": {

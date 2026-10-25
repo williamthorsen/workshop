@@ -16,8 +16,5 @@ export default defineConfig({
     lefthook: 'ignore',
     // Hold typescript at v6 until v7 supports type-aware linting.
     typescript: 'minor',
-    // Hold vitest at v4 until @williamthorsen/nmr and @williamthorsen/toolbelt.vitest accept v5 as a peer.
-    '@vitest/coverage-v8': 'minor',
-    vitest: 'minor',
   },
 });

@@ -47,6 +47,7 @@
   },
   "devDependencies": {
     "@williamthorsen/toolbelt.testing": "catalog:",
+    "vite": "catalog:",
     "vitest": "catalog:"
   },
   "engines": {

@@ -83,6 +83,7 @@
     "ajv": "8.20.0",
     "esbuild": "catalog:",
     "typescript": "catalog:",
+    "vite": "catalog:",
     "vitest": "catalog:"
   },
   "peerDependencies": {

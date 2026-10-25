@@ -40,6 +40,7 @@
     "readyup": "workspace:*",
     "typescript": "catalog:",
     "v11y-check": "0.19.6",
+    "vite": "catalog:",
     "vitest": "catalog:",
     "zod": "catalog:"
   },

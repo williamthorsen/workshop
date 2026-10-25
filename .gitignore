@@ -59,7 +59,7 @@ logs
 .playwright-mcp/
 coverage/
 .shellspec-local
-.vitest-result.json
+.vitest/
 
 # Generated files
 packages/*/docs/*.v*.md
