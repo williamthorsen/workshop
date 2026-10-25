@@ -40,6 +40,7 @@
     "@williamthorsen/toolbelt.errors": "catalog:"
   },
   "devDependencies": {
+    "vite": "catalog:",
     "vitest": "catalog:"
   },
   "engines": {
