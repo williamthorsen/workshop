@@ -10,7 +10,7 @@ catalog:
   '@vitest/coverage-v8': 4.1.12
   '@williamthorsen/nmr': 0.50.1
   '@williamthorsen/toolbelt.atlassian': 0.7.1
-  '@williamthorsen/toolbelt.cli': 0.5.0
+  '@williamthorsen/toolbelt.cli': 0.6.0
   '@williamthorsen/toolbelt.errors': 0.8.4
   '@williamthorsen/toolbelt.filesystem': 0.9.4
   '@williamthorsen/toolbelt.git': 0.6.1
@@ -19,8 +19,8 @@ catalog:
   '@williamthorsen/toolbelt.packaging': 0.6.4
   '@williamthorsen/toolbelt.secrets': 0.5.0
   '@williamthorsen/toolbelt.strings': 8.0.4
-  '@williamthorsen/toolbelt.testing': 0.6.3
-  '@williamthorsen/toolbelt.vitest': 0.10.3
+  '@williamthorsen/toolbelt.testing': 0.7.0
+  '@williamthorsen/toolbelt.vitest': 0.12.0
   esbuild: 0.28.2
   typescript: 6.0.3
   vitest: 4.1.12
