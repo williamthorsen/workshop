@@ -36,3 +36,7 @@ minimumReleaseAgeExclude:
   - codeassembly-guidance
   - readyup
   - v11y-check
+
+# Refuse a release whose provenance is weaker than that of an earlier release of the same package,
+# which can signal a compromised publisher.
+trustPolicy: no-downgrade
