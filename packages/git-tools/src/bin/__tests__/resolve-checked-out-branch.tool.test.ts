@@ -40,7 +40,7 @@ describe(resolveCheckedOutBranch, () => {
     using tree = createTempTree({});
 
     expect(() => resolveCheckedOutBranch(tree.dir)).toThrow(
-      /: fatal: not a git repository.*\nPass a branch name explicitly\.$/,
+      /: fatal: not a git repository.*\nPass a branch name explicitly\.$/s,
     );
   });
 });
