@@ -251,8 +251,8 @@ importers:
         specifier: 'catalog:'
         version: 0.52.0(typescript@6.0.3)(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))(vitest@4.1.12)
       '@williamthorsen/release-kit':
-        specifier: 14.2.4
-        version: 14.2.4
+        specifier: 15.0.2
+        version: 15.0.2
       '@williamthorsen/strict-lint':
         specifier: 14.2.1
         version: 14.2.1(eslint@10.13.0(jiti@2.7.0)(supports-color@7.2.0))
@@ -1327,6 +1327,10 @@ packages:
     resolution: {integrity: sha512-llklx9oFJX6AHRP1P0Dt0xwudBosR6kKekaNWfm2Z/z9zuRzIysZ4LT1oB5SrZILhf0EswmNq/tKOo/6pXEO+Q==}
     engines: {node: '>=24.16.0'}
 
+  '@williamthorsen/change-grammar@0.3.0':
+    resolution: {integrity: sha512-o3uKa5Q7tHCfuZW//fqQj2Lwexkh99xsT5Z3GjuDOtwp8eG8obq/Ihr51GM4P2feWU1pTlKI9x5a30ZDHt7Nug==}
+    engines: {node: '>=24.16.0'}
+
   '@williamthorsen/eslint-config-typescript@20.1.3':
     resolution: {integrity: sha512-A4X3IQiq0NzQNdXZiK1xbja5lGoWIYRiKBYOof/zgJUqunvlRtd+KqxbQ7Vcl+pygg2GbS6eFdVe1pEfZPrAhw==}
     engines: {node: '>=24'}
@@ -1384,8 +1388,8 @@ packages:
       vitest:
         optional: true
 
-  '@williamthorsen/release-kit@14.2.4':
-    resolution: {integrity: sha512-LIUrkFADCHoOuu6ZK/30WgvxTorIbbDax2Ada4ReGmAY1CEVZrEq80zuNL+nDySjY9Fj/At/F5yzTY6eIU+o2A==}
+  '@williamthorsen/release-kit@15.0.2':
+    resolution: {integrity: sha512-BAxH0EMauoAk+XAcunATU0zzAfkF7Mjlf4aGghl6yfEaZMiDnJJcU/YlxFNuxrCj2XXBBsBMv9Y+HhkicfSENg==}
     engines: {node: '>=24.16.0'}
     hasBin: true
 
@@ -3578,6 +3582,8 @@ snapshots:
 
   '@williamthorsen/change-grammar@0.2.1': {}
 
+  '@williamthorsen/change-grammar@0.3.0': {}
+
   '@williamthorsen/eslint-config-typescript@20.1.3(@typescript-eslint/utils@8.71.2(eslint@10.13.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(@vitest/eslint-plugin@1.6.27(@typescript-eslint/eslint-plugin@8.71.2(@typescript-eslint/parser@8.71.2(eslint@10.13.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.13.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3))(eslint@10.13.0(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@6.0.3)(vitest@4.1.12))(eslint@10.13.0(jiti@2.7.0)(supports-color@7.2.0))(readyup@packages+readyup)(supports-color@7.2.0)(typescript@6.0.3)':
     dependencies:
       '@eslint-community/eslint-plugin-eslint-comments': 4.8.1(eslint@10.13.0(jiti@2.7.0)(supports-color@7.2.0))
@@ -3639,11 +3645,11 @@ snapshots:
       vite: 8.3.5(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)
       vitest: 4.1.12(@types/node@24.19.2)(@vitest/coverage-v8@4.1.12)(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
 
-  '@williamthorsen/release-kit@14.2.4':
+  '@williamthorsen/release-kit@15.0.2':
     dependencies:
-      '@williamthorsen/change-grammar': 0.2.1
-      '@williamthorsen/nmr-core': 0.13.5
-      '@williamthorsen/toolbelt.errors': 0.8.3
+      '@williamthorsen/change-grammar': 0.3.0
+      '@williamthorsen/nmr-core': 0.13.6
+      '@williamthorsen/toolbelt.errors': 0.8.4
       json-stringify-pretty-compact: 4.0.0
       semver: 7.8.5
       yaml: 2.9.1
