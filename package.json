@@ -39,7 +39,7 @@
     "prettier": "3.9.10",
     "readyup": "workspace:*",
     "typescript": "catalog:",
-    "v11y-check": "0.19.5",
+    "v11y-check": "0.19.6",
     "vitest": "catalog:",
     "zod": "catalog:"
   },
