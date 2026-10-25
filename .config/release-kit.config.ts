@@ -9,6 +9,7 @@ const config = defineConfig({
     labels: {
       'scope:root': { color: '00ff96', description: '' },
       'scope:atlassian-tools': { color: '00ff96', description: '' },
+      'scope:chrome-tools': { color: '00ff96', description: '' },
       'scope:compositor': { color: '00ff96', description: '' },
       'scope:git-tools': { color: '00ff96', description: '' },
       'scope:launchd-agent': { color: '00ff96', description: '' },

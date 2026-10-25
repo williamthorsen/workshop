@@ -19,6 +19,7 @@
   },
   "scopes": {
     "atlassian-tools": "scope:atlassian-tools",
+    "chrome-tools": "scope:chrome-tools",
     "compositor": "scope:compositor",
     "git-tools": "scope:git-tools",
     "launchd-agent": "scope:launchd-agent",

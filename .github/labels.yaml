@@ -82,6 +82,9 @@
 - name: scope:atlassian-tools
   color: 00ff96
   description: ''
+- name: scope:chrome-tools
+  color: 00ff96
+  description: ''
 - name: scope:compositor
   color: 00ff96
   description: ''
