@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Inconsolata:wght@500;600&display=swap"
     />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@6.0.2/dist/reveal.css" />
     <style>
@@ -35,8 +35,18 @@
         --skip-soft: #e6eaef;
         --blocked-soft: #f6ecec;
         --on-ink-muted: #aab6c4;
+        --term: #0d1521;
+        --term-ink: #f2f5f8;
+        --term-dim: #aab6c4;
+        --term-rule: #7f8c9b;
+        --term-fix: #8fb6f2;
+        --term-pass: #5fd38a;
+        --term-error: #ff7b84;
+        --term-warn: #f3b24e;
+        --term-now: rgb(255 255 255 / 0.1);
         --sans: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
         --mono: 'IBM Plex Mono', 'SF Mono', Menlo, Consolas, monospace;
+        --mono-narrow: 'Inconsolata', 'IBM Plex Mono', Menlo, monospace;
         color-scheme: light;
       }
 
@@ -103,13 +113,6 @@
       .reveal aside.notes {
         display: none;
       }
-      .slide {
-        height: 100%;
-        padding: 26px 44px 58px;
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-      }
 
       /* Shared interaction states: every control has a pointer, a hover change, and a focus ring */
       .ctl {
@@ -129,7 +132,10 @@
         border-color: var(--accent);
       }
       .ctl:focus-visible,
-      .dot:focus-visible {
+      .dot:focus-visible,
+      .switch input:focus-visible,
+      .term-tab .tab:focus-visible,
+      .reveal a:focus-visible {
         outline: 3px solid var(--accent);
         outline-offset: 2px;
       }
@@ -446,7 +452,7 @@
       .thumb .ln {
         display: inline;
       }
-      .thumb .kt-steps,
+      .thumb .steps,
       .thumb .fragment {
         display: none;
       }
@@ -549,95 +555,125 @@
         line-height: 1.5;
         color: var(--ink-2);
       }
-      .no-js .kt-steps,
+      .no-js .steps,
       .no-js .bar,
       .no-js .notes-panel {
         display: none;
       }
 
-      /* Type */
-      .reveal h1,
-      .reveal h2,
-      .reveal h3 {
+      /* Slide type: 3.1's scale and spacing */
+      .slide {
+        height: 100%;
+        padding: 26px 44px 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        color: var(--ink);
+      }
+      .slide h1,
+      .slide h2,
+      .slide h3 {
         margin: 0;
         font-weight: 600;
         letter-spacing: -0.015em;
-        line-height: 1.05;
+        line-height: 1.1;
         text-wrap: balance;
       }
-      .reveal h1 {
-        font-size: 124px;
+      .slide h1 {
+        font-size: 110px;
+        line-height: 1;
       }
-      .reveal h2 {
-        font-size: 38px;
+      .slide h2 {
+        font-size: 36px;
       }
-      .reveal h3 {
-        font-size: 24px;
+      .slide h3 {
+        font-size: 20px;
       }
-      .reveal p {
+      .slide p {
         margin: 0;
       }
-      .reveal code,
-      .reveal pre,
-      .reveal kbd {
+      .slide code,
+      .slide pre,
+      .slide kbd {
         font-family: var(--mono);
       }
-      .reveal a {
+      .slide pre {
+        margin: 0;
+      }
+      .slide figure {
+        margin: 0;
+      }
+      .slide a {
         color: var(--ink);
         text-decoration: underline;
         text-decoration-color: var(--line);
         text-underline-offset: 0.16em;
         text-decoration-thickness: 2px;
         cursor: pointer;
-      }
-      .reveal a:hover {
-        text-decoration-color: var(--ink);
-      }
-      .reveal a:focus-visible {
-        outline: 3px solid var(--ink);
-        outline-offset: 4px;
         border-radius: 3px;
       }
-      .slide-head {
+      .slide a:hover {
+        text-decoration-color: var(--ink);
+      }
+      .head {
         display: flex;
         align-items: baseline;
         gap: 18px;
       }
-      .slide-head .who {
-        font-size: 22px;
-        color: var(--ink-2);
-      }
-      .slide-head .chip {
+      .head .chip {
         margin-left: auto;
-        font-size: 18px;
-        font-weight: 500;
+        font: 500 16px var(--sans);
         color: var(--ink-2);
         background: var(--paper);
         border: 1px solid var(--line);
         border-radius: 6px;
-        padding: 3px 10px;
-      }
-      .stage {
-        position: relative;
-        flex: 1;
-        min-height: 0;
-      }
-      .caption {
-        font-size: 26px;
-        font-weight: 500;
-        line-height: 60px;
-        height: 60px;
+        padding: 4px 10px;
         white-space: nowrap;
       }
-      .caption code,
-      .hnode code,
-      .cmd-list code {
-        font-size: 0.9em;
-        font-weight: 500;
+      .head code.chip,
+      .head .chip code {
+        font-family: var(--mono);
+      }
+      .cap {
+        font-size: 18px;
+        color: var(--ink-2);
+      }
+      .cap code {
+        font-size: 17px;
+        color: var(--ink);
+      }
+      .evidence {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+      }
+      .card {
         background: var(--paper);
         border: 1px solid var(--line);
-        border-radius: 5px;
-        padding: 1px 7px;
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+      }
+      .card-head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 14px;
+        border-bottom: 1px solid var(--line);
+        font: 500 13px var(--mono);
+        color: var(--ink-2);
+      }
+      .card-head .chip {
+        margin-left: auto;
+        font: 500 12px var(--sans);
+        color: var(--ink-2);
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 2px 8px;
       }
       .ink-box {
         display: inline-flex;
@@ -645,352 +681,207 @@
         justify-content: center;
         background: var(--ink);
         color: var(--paper);
-        border-radius: 10px;
-        font: 600 24px var(--mono);
-        padding: 10px 20px;
+        border-radius: 8px;
+        font: 600 18px var(--mono);
+        padding: 6px 14px;
+      } /* Terminal output: dark, as a developer's terminal */
+      .out {
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
+        padding: 12px 16px;
+        font: 15px/22px var(--mono);
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        background: var(--term);
+        color: var(--term-ink);
+        font-variant-numeric: tabular-nums;
+        scrollbar-width: thin;
+        scrollbar-color: var(--term-rule) transparent;
       }
-
-      /* Slide 1 */
+      .out.wide {
+        white-space: pre;
+        overflow-wrap: normal;
+      }
+      .ln {
+        display: inline;
+      }
+      .js .s-kit .ln:not(.on) {
+        display: none;
+      }
+      .ln.dim {
+        color: var(--term-dim);
+      }
+      .ln.rule {
+        color: var(--term-rule);
+      }
+      .ln.detail {
+        color: var(--term-dim);
+      }
+      .ln.fix {
+        color: var(--term-fix);
+        font-weight: 500;
+      }
+      .ln.total {
+        font-weight: 600;
+      }
+      .ln.verdict-ok {
+        color: var(--term-pass);
+        font-weight: 600;
+      }
+      .ln.verdict-bad {
+        color: var(--term-error);
+        font-weight: 600;
+      }
+      .j-key {
+        color: var(--term-fix);
+      }
+      .j-str {
+        color: var(--term-pass);
+      } /* 1 · Title */
       .s-title .slide {
         display: grid;
-        grid-template-columns: 1fr 540px;
-        align-items: center;
-        gap: 48px;
+        grid-template-columns: 1fr 680px;
+        gap: 44px;
+        align-items: start;
+        align-content: center;
       }
       .s-title .lede {
-        margin: 22px 0 0;
-        font-size: 32px;
+        margin-top: 26px;
+        font-size: 28px;
         line-height: 1.3;
-        max-width: 20ch;
-      }
-      .s-title .cmd {
-        margin: 28px 0 0;
-        font-size: 22px;
+        max-width: 24ch;
         color: var(--ink-2);
+        text-wrap: balance;
       }
-      .s-title .cmd code {
-        color: var(--ink);
-        background: var(--paper);
-        border: 1px solid var(--line);
-        border-radius: 6px;
-        padding: 3px 10px;
+      .s-title .card {
+        max-height: 100%;
+        box-shadow: 0 10px 28px rgb(20 28 38 / 0.16);
       }
-      .motif {
-        display: block;
-        width: 540px;
-        max-width: 100%;
-        height: auto;
-        overflow: visible;
+      .s-title .out {
+        font: 16px/24px var(--mono);
+      } /* 2 · The problem */
+      .s-problem .evidence {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr auto;
+        gap: 14px 20px;
       }
-
-      /* Slides 2 and 13: the same timeline, before and after */
-      .timeline {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        gap: 0;
+      .list-body {
+        padding: 12px 18px;
+        font-size: 18px;
+        line-height: 1.4;
+        flex: 1;
       }
-      .timeline .hnode {
-        flex: 0 0 256px;
-        min-height: 230px;
+      .list-body ol {
+        margin: 0;
+        padding-left: 22px;
         display: flex;
         flex-direction: column;
-        gap: 12px;
-        padding: 20px 22px;
-        background: var(--paper);
-        border: 2px solid var(--line);
-        border-radius: 10px;
-        font-size: 24px;
-        line-height: 1.3;
+        gap: 7px;
       }
-      .timeline .hnode.drift {
-        border-style: dashed;
+      .list-body code {
+        font-size: 0.9em;
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        padding: 1px 6px;
       }
-      .timeline .hnode.late {
-        background: var(--error-soft);
-        border-color: var(--error);
+      .list-body li .flaw {
+        display: none;
+        font-size: 14px;
+        color: var(--error);
+        font-weight: 500;
+        margin-left: 8px;
       }
-      .timeline .hnode.early {
-        background: var(--pass-soft);
-        border-color: var(--pass);
-      }
-      .timeline .hnode.ink {
-        background: var(--ink);
-        border-color: var(--ink);
-        color: var(--paper);
-      }
-      .timeline .hnode .mark {
-        font-size: 30px;
-        line-height: 1;
-      }
-      .timeline .hnode .sub {
-        font-size: 19px;
+      .s-problem[data-step='1'] li.stale,
+      .s-problem[data-step='2'] li.stale {
+        text-decoration: line-through;
+        text-decoration-color: var(--error);
+        text-decoration-thickness: 2px;
         color: var(--ink-2);
-        margin-top: auto;
       }
-      .timeline .hnode.ink .sub {
-        color: var(--on-ink-muted);
+      .s-problem[data-step='1'] li .flaw,
+      .s-problem[data-step='2'] li .flaw {
+        display: inline;
       }
-      .timeline .hnode .sub code {
-        background: transparent;
-        border: 0;
-        padding: 0;
-        font-size: 17px;
+      .flaws {
+        padding: 10px 18px 12px;
+        border-top: 1px solid var(--line);
+        font-size: 15px;
+        color: var(--ink-2);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        opacity: 0;
       }
-      .timeline .hnode .path {
-        font: 500 17px var(--mono);
-        color: var(--accent);
+      .flaws b {
+        color: var(--error);
+        font-weight: 600;
       }
-      .timeline .hnode .bars {
+      .s-problem[data-step='1'] .flaws,
+      .s-problem[data-step='2'] .flaws {
+        opacity: 1;
+      }
+      .need {
+        grid-column: 1 / -1;
+        font-size: 22px;
+        line-height: 1.3;
+        padding: 10px 16px;
+        border-left: 4px solid var(--accent);
+        background: var(--accent-soft);
+        border-radius: 0 8px 8px 0;
+        opacity: 0;
+      }
+      .s-problem[data-step='2'] .need {
+        opacity: 1;
+      } /* 3 · The solution */
+      .tiles {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 16px;
+      }
+      .tile {
+        padding: 14px 18px 16px;
         display: flex;
         flex-direction: column;
         gap: 8px;
-        margin-top: 6px;
       }
-      .timeline .hnode .bars i {
-        display: block;
-        height: 8px;
-        border-radius: 4px;
-        background: var(--grid);
-      }
-      .timeline .hnode .bars i:nth-child(2) {
-        width: 70%;
-      }
-      .timeline .hnode .bars i:nth-child(3) {
-        width: 85%;
-      }
-      .timeline .hnode.ink .bars i {
-        background: var(--ink-2);
-      }
-      .timeline .arrow {
-        flex: 1 1 0;
-        height: 3px;
-        background: var(--line);
-        position: relative;
-      }
-      .timeline .arrow.dashed {
-        background: repeating-linear-gradient(90deg, var(--line) 0 8px, transparent 8px 15px);
-      }
-      .timeline .arrow::after {
-        content: '';
-        position: absolute;
-        right: -2px;
-        top: -7px;
-        border-left: 12px solid var(--line);
-        border-top: 8.5px solid transparent;
-        border-bottom: 8.5px solid transparent;
-      }
-      .timeline .arrow.red {
-        background: var(--error);
-      }
-      .timeline .arrow.red::after {
-        border-left-color: var(--error);
-      }
-      .timeline .arrow.green {
-        background: var(--pass);
-      }
-      .timeline .arrow.green::after {
-        border-left-color: var(--pass);
-      }
-
-      /* Slide 3 */
-      .idea {
-        display: block;
-        width: 1192px;
-        height: 484px;
-        overflow: visible;
-      }
-      .idea text {
-        fill: var(--ink);
-        font-family: var(--sans);
-      }
-      .idea .edge {
-        fill: none;
-        stroke: var(--line);
-        stroke-width: 2.5;
-      }
-      .idea .box {
-        fill: var(--paper);
-        stroke: var(--line);
-        stroke-width: 2;
-      }
-      .idea .label {
-        font-size: 20px;
-        font-weight: 500;
-        dominant-baseline: central;
-      }
-      .idea .kind {
-        font-size: 15px;
-        fill: var(--ink-2);
-        dominant-baseline: central;
-      }
-      .idea .file {
-        font: 500 18px var(--mono);
-        fill: var(--accent);
-        dominant-baseline: central;
-      }
-      .idea .file-box {
-        fill: var(--accent-soft);
-        stroke: var(--accent);
-      }
-      .idea .root-box {
-        fill: var(--ink);
-        stroke: var(--ink);
-      }
-      .idea .root-k {
-        font-size: 14px;
-        letter-spacing: 0.08em;
-        fill: var(--on-ink-muted);
-        dominant-baseline: central;
-      }
-      .idea .root-v {
-        font: 500 18px var(--mono);
-        fill: var(--paper);
-        dominant-baseline: central;
-      }
-      .idea .cmd {
-        font: 500 20px var(--mono);
-        fill: var(--ink-2);
-        text-anchor: middle;
-      }
-      .idea .out-box {
-        fill: var(--paper);
-        stroke: var(--line);
-        stroke-width: 1.5;
-      }
-      .idea .out-mark {
+      .tile h3 {
         font-size: 22px;
-        text-anchor: middle;
-        dominant-baseline: central;
       }
-      .idea .out-text {
-        font: 500 19px var(--mono);
-        dominant-baseline: central;
-      }
-      .idea .out-sub {
-        font-size: 17px;
-        fill: var(--ink-2);
-        dominant-baseline: central;
-      }
-      .idea .exit-box {
-        fill: var(--ink);
-      }
-      .idea .exit-text {
-        font: 600 22px var(--mono);
-        fill: var(--paper);
-        text-anchor: middle;
-        dominant-baseline: central;
-      }
-      .idea .fix-box {
-        fill: var(--accent-soft);
-        stroke: var(--accent);
-      }
-      .ah-ink {
-        fill: var(--ink);
-      }
-      .ah-error {
-        fill: var(--error);
-      }
-
-      /* Slide 4 */
-      .code-sheet {
-        position: relative;
-        margin: 0;
-        background: var(--paper);
-        border: 1px solid var(--line);
-        border-radius: 10px;
-        box-shadow: 0 1px 0 var(--line);
-        overflow: hidden;
-      }
-      .code-sheet pre {
-        margin: 0;
-        padding: 16px 20px;
-        font: 19px/27px var(--mono);
-        white-space: pre;
-        color: var(--ink);
-        overflow: hidden;
-      }
-      .code-sheet .st,
-      .code-sheet .cut {
+      .tile p {
+        font-size: 16px;
         color: var(--ink-2);
+        line-height: 1.35;
       }
-      .code-sheet .f {
-        display: inline-block;
-        width: calc(100% + 40px);
-        margin: 0 -20px;
-        padding: 0 20px 0 17px;
-        border-left: 3px solid var(--accent);
-        background: var(--accent-soft);
-      }
-      .code-sheet .f b {
-        font-weight: 600;
-        color: var(--accent);
-      }
-      .note {
-        position: absolute;
-        right: 20px;
-        top: calc(var(--top) + var(--row) * var(--lh));
-        height: var(--lh);
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 18px;
-        font-style: italic;
-        color: var(--ink-2);
-        white-space: nowrap;
-      }
-      .note b {
-        font: 500 18px var(--mono);
-        color: var(--accent);
-      }
-      .code-sheet .note {
-        --top: 16px;
-        --lh: 27px;
-      }
-
-      /* Terminals: the step-by-step slide, the JSON slide, and the kit pages */
-      .term {
-        margin: 0;
-        background: var(--paper);
-        border: 1px solid var(--line);
-        border-radius: 10px;
-        box-shadow: 0 10px 28px rgb(20 28 38 / 0.16);
-      }
-      .term-tab {
-        font: 500 15px var(--mono);
-        color: var(--ink-2);
-        padding: 8px 16px;
-        border-bottom: 1px solid var(--line);
-      }
-      .term pre {
-        margin: 0;
-        padding: 12px 16px;
-        font: 17px/25px var(--mono);
+      .tile pre {
+        margin-top: auto;
+        font: 13px/18px var(--mono);
         white-space: pre;
         overflow: hidden;
+        background: var(--term);
+        color: var(--term-ink);
+        border-radius: 8px;
+        padding: 8px 12px;
       }
-      .term .dim,
-      .term .sgr-dim {
-        color: var(--ink-2);
+      .tile pre .k {
+        color: var(--term-fix);
       }
-      .term .sgr-bold {
-        font-weight: 600;
+      .tile pre .s {
+        color: var(--term-warn);
       }
-      .term .sgr-red {
-        color: var(--error);
+      .tile pre .d {
+        color: var(--term-dim);
       }
-      .term .sgr-yellow {
-        color: var(--warn);
-      }
-      .term .sgr-green {
-        color: var(--pass);
-      }
-      .term .sgr-gray {
-        color: var(--skip);
-      }
-      /* Slide 6 */
+      .tile pre .p {
+        color: var(--term-pass);
+      } /* 4 · A run, step by step (from 4.1) */
       .stage-run {
+        position: relative;
         width: 1180px;
         height: 500px;
         margin: 0 auto;
@@ -1099,6 +990,9 @@
         opacity: 0;
         stroke-dasharray: 1;
         stroke-dashoffset: 1;
+        transition:
+          stroke-dashoffset 0.5s,
+          opacity 0.3s;
       }
       .flow.on {
         opacity: 0.55;
@@ -1127,7 +1021,13 @@
         stroke-dasharray: 0.03 0.025;
         stroke-dashoffset: 0;
       }
-      .tally .frame {
+      .ah-ink {
+        fill: var(--ink);
+      }
+      .ah-error {
+        fill: var(--error);
+      }
+      .tally .tframe {
         fill: none;
         stroke: var(--line);
         stroke-width: 1.5;
@@ -1142,7 +1042,7 @@
         font-size: 16px;
         opacity: 0;
       }
-      .tally.on .frame {
+      .tally.on .tframe {
         stroke: var(--error);
         stroke-width: 2.5;
         stroke-dasharray: none;
@@ -1154,7 +1054,7 @@
       .tally.on .headmark {
         opacity: 1;
       }
-      .tally.now .frame {
+      .tally.now .tframe {
         stroke-width: 4;
       }
       .trow .rbox {
@@ -1268,6 +1168,9 @@
         stroke-dasharray: 1;
         stroke-dashoffset: 1;
         opacity: 0;
+        transition:
+          stroke-dashoffset 0.5s,
+          opacity 0.3s;
       }
       .verdict .p-error {
         stroke: var(--error);
@@ -1315,10 +1218,12 @@
         stroke-dashoffset: 0;
       }
       .s-run[data-step='8'] .rollup,
-      .s-run[data-step='8'] .flow {
+      .s-run[data-step='8'] .flow,
+      .s-run.is-final .rollup,
+      .s-run.is-final .flow {
         opacity: 0;
       }
-      .s-run .term {
+      .s-run .card.term-sample {
         position: absolute;
         left: 430px;
         top: 0;
@@ -1327,267 +1232,498 @@
         opacity: 0;
         visibility: hidden;
         transform: translateY(14px);
+        transition:
+          opacity 0.2s,
+          transform 0.2s;
       }
-      .s-run .term.on {
+      .s-run .card.term-sample.on {
         opacity: 1;
         visibility: visible;
         transform: none;
       }
+      .s-run .term-sample .out {
+        font: 16px/24px var(--mono);
+      }
       .captions {
         position: relative;
-        height: 60px;
+        height: 30px;
+        flex: none;
       }
       .captions .caption {
         position: absolute;
         inset: 0;
         opacity: 0;
         visibility: hidden;
+        font-size: 18px;
+        color: var(--ink-2);
+      }
+      .captions .caption code {
+        font-size: 17px;
+        color: var(--ink);
       }
       .captions .caption.now {
         opacity: 1;
         visibility: visible;
+      } /* 5 · Anatomy: a check beside what it printed, then the checklist, then the kit (from 3.1) */
+      .cols {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
       }
-      .reveal .fragment.step {
+      .s-anatomy .out {
+        font: 16px/24px var(--mono);
+        overflow: hidden;
+      }
+      .s-anatomy .out .ln {
+        display: block;
+        margin: 0 -16px;
+        padding: 0 16px 0 13px;
+        border-left: 3px solid transparent;
+      }
+      .code {
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        margin: 0;
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        overflow: hidden;
+        position: relative;
+      }
+      .code figcaption {
+        padding: 7px 14px;
+        border-bottom: 1px solid var(--line);
+        font: 500 13px var(--mono);
+        color: var(--ink-2);
+        display: flex;
+        gap: 10px;
+      }
+      .code figcaption .chip {
+        margin-left: auto;
+        font: 500 12px var(--sans);
+        background: var(--bg);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 1px 8px;
+      }
+      .code pre {
+        flex: 1;
+        min-height: 0;
+        margin: 0;
+        padding: 12px 16px;
+        font: 13px/18px var(--mono);
+        white-space: pre;
+        overflow: auto;
+        color: var(--ink);
+        scrollbar-width: thin;
+      }
+      .code .k {
+        color: var(--accent);
+        font-weight: 500;
+      }
+      .code .s {
+        color: var(--pass);
+      }
+      .code .m {
+        color: var(--ink-2);
+      }
+      .pair {
+        display: inline-block;
+        width: calc(100% + 32px);
+        margin: 0 -16px;
+        padding: 0 16px 0 13px;
+        border-left: 3px solid transparent;
+        transition: background 0.15s;
+      }
+      .s-anatomy[data-step='1'] [data-pair='1'],
+      .s-anatomy[data-step='2'] [data-pair='2'],
+      .s-anatomy[data-step='3'] [data-pair='3'],
+      .s-anatomy[data-step='4'] [data-pair='4'] {
+        background: var(--accent-soft);
+        border-left-color: var(--accent);
+      }
+      .s-anatomy[data-step='1'] .out [data-pair='1'],
+      .s-anatomy[data-step='2'] .out [data-pair='2'],
+      .s-anatomy[data-step='3'] .out [data-pair='3'],
+      .s-anatomy[data-step='4'] .out [data-pair='4'] {
+        background: var(--term-now);
+        border-left-color: var(--term-fix);
+      }
+      .s-anatomy .zoom {
+        display: none;
+      }
+      .s-anatomy .zoom.z0 {
+        display: block;
+      }
+      .s-anatomy[data-step='5'] .zoom.z0,
+      .s-anatomy[data-step='6'] .zoom.z0,
+      .s-anatomy.is-final .zoom.z0 {
+        display: none;
+      }
+      .s-anatomy[data-step='5'] .zoom.z1 {
+        display: block;
+      }
+      .s-anatomy[data-step='6'] .zoom.z2,
+      .s-anatomy.is-final .zoom.z2 {
+        display: block;
+      }
+      .s-anatomy .zoom .hl {
+        background: var(--accent-soft);
+        display: inline-block;
+        width: calc(100% + 32px);
+        margin: 0 -16px;
+        padding: 0 16px 0 13px;
+        border-left: 3px solid var(--accent);
+      }
+      .s-anatomy .out .lvl {
+        display: none;
+      }
+      .s-anatomy[data-step='5'] .out .lvl-1,
+      .s-anatomy[data-step='6'] .out .lvl-1,
+      .s-anatomy[data-step='6'] .out .lvl-2,
+      .s-anatomy.is-final .out .lvl-1,
+      .s-anatomy.is-final .out .lvl-2 {
+        display: block;
+      }
+      .s-anatomy[data-step='5'] .out .one,
+      .s-anatomy[data-step='6'] .out .one,
+      .s-anatomy.is-final .out .one {
+        display: none;
+      }
+      .s-anatomy .cap-stack {
+        display: grid;
+        min-height: 26px;
+        flex: none;
+      }
+      .s-anatomy .cap-stack .cap {
+        grid-area: 1 / 1;
+        opacity: 0;
+      }
+      .s-anatomy[data-step='0'] .cap[data-capfor='0'],
+      .s-anatomy[data-step='1'] .cap[data-capfor='1'],
+      .s-anatomy[data-step='2'] .cap[data-capfor='2'],
+      .s-anatomy[data-step='3'] .cap[data-capfor='3'],
+      .s-anatomy[data-step='4'] .cap[data-capfor='4'],
+      .s-anatomy[data-step='5'] .cap[data-capfor='5'],
+      .s-anatomy[data-step='6'] .cap[data-capfor='6'],
+      .s-anatomy.is-final .cap[data-capfor='6'] {
+        opacity: 1;
+      } /* Kit demo slides: the terminal on the left, the environment and the source on the right */
+      .kit {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: 1fr 392px;
+        gap: 14px;
+        position: relative;
+      }
+      .term {
+        margin: 0;
+        box-shadow: 0 10px 28px rgb(20 28 38 / 0.16);
+      }
+      .s-kit .out {
+        font: 16px/24px var(--mono);
+      }
+      .out.json {
+        font: 13px/18px var(--mono);
+      }
+      .side {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        min-height: 0;
+      }
+      .panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 8px 10px;
+        flex: none;
+      }
+      .panel h3 {
+        font: 600 11.5px var(--sans);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--ink-2);
+        margin: 0 0 4px 6px;
+      }
+      .switch {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-size: 14.5px;
+        line-height: 1.2;
+        cursor: pointer;
+        padding: 3px 6px;
+        border-radius: 6px;
+      }
+      .switch:hover {
+        background: var(--accent-soft);
+      }
+      .switch input {
+        width: 17px;
+        height: 17px;
+        margin: 0;
+        flex: none;
+        accent-color: var(--accent);
+        cursor: pointer;
+      }
+      .term {
+        position: relative;
+      }
+      .exit {
+        position: absolute;
+        right: 14px;
+        bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        pointer-events: none;
+      }
+      .exit .ink-box {
+        opacity: 0;
+        transform: translateX(-6px);
+        transition:
+          opacity 0.2s,
+          transform 0.2s;
+      }
+      .exit .ink-box.on {
+        opacity: 1;
+        transform: none;
+      }
+      .exit .exit-of {
+        font: 500 13px var(--mono);
+        color: var(--term-dim);
+      }
+      .no-js .exit .ink-box {
+        opacity: 1;
+        transform: none;
+      }
+      .term-tab {
+        gap: 18px;
+        padding-block: 0;
+      }
+      .term-tab .tab {
+        appearance: none;
+        background: none;
+        border: 0;
+        border-bottom: 3px solid transparent;
+        padding: 9px 0 6px;
+        font: 500 14px var(--mono);
+        color: var(--ink-2);
+        cursor: pointer;
+      }
+      .term-tab .tab:hover {
+        color: var(--ink);
+        border-bottom-color: var(--line);
+      }
+      .term-tab .tab.on {
+        color: var(--ink);
+        border-bottom-color: var(--accent);
+      }
+      .term-tab .tab:focus-visible {
+        outline-offset: -3px;
+      }
+      .out .dim,
+      .out .sgr-dim,
+      .out .sgr-gray {
+        color: var(--term-dim);
+      }
+      .out .sgr-bold {
+        font-weight: 600;
+      }
+      .out .sgr-red {
+        color: var(--term-error);
+      }
+      .out .sgr-yellow {
+        color: var(--term-warn);
+      }
+      .out .sgr-green {
+        color: var(--term-pass);
+      }
+      .steps {
         position: absolute;
         width: 0;
         height: 0;
-      }
-
-      /* Slide 12 */
-      .panels {
-        position: absolute;
-        inset: 0;
-        display: grid;
-        grid-template-columns: 440px 1fr;
-        gap: 32px;
-      }
-      .panel {
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
-        padding: 20px 24px 22px;
-        background: var(--paper);
-        border: 1px solid var(--line);
-        border-radius: 10px;
-        box-shadow: 0 1px 0 var(--line);
-      }
-      .panel h3 {
-        padding-bottom: 12px;
-        border-bottom: 1px solid var(--line);
-      }
-      .gate-flow {
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
+        overflow: hidden;
+      } /* Sources */
+      .sources {
         flex: 1;
-      }
-      .gate-flow .from {
-        align-self: center;
-      }
-      .gate-flow .drop {
-        align-self: center;
-        width: 3px;
-        height: 22px;
-        background: var(--line);
-      }
-      .exits {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        list-style: none;
-        margin: 0;
-        padding: 0;
-      }
-      .exits li {
+        min-height: 0;
         display: grid;
-        grid-template-columns: 96px 1fr;
-        align-items: center;
+        grid-template-columns: 430px 1fr;
         gap: 16px;
+      }
+      .sources .out {
+        font: 16px/24px var(--mono);
+      }
+      .config {
         padding: 12px 16px;
-        border: 2px solid var(--line);
-        border-radius: 10px;
-        font-size: 20px;
-        line-height: 1.3;
-      }
-      .exits code {
-        font: 600 20px var(--mono);
-      }
-      .exits .verb {
-        display: block;
-        font-size: 17px;
+        font: 13px/18px var(--mono);
+        white-space: pre;
+        overflow: auto;
         color: var(--ink-2);
       }
-      .exits .ok {
-        background: var(--pass-soft);
-        border-color: var(--pass);
+      .config .k {
+        color: var(--accent);
+        font-weight: 500;
       }
-      .exits .ok code {
-        color: var(--pass);
+      .config .s {
+        color: var(--ink);
+        font-weight: 500;
       }
-      .exits .bad {
-        background: var(--error-soft);
-        border-color: var(--error);
-      }
-      .exits .bad code {
-        color: var(--error);
-      }
-      .exits .usage {
-        background: var(--skip-soft);
-        border-color: var(--skip);
-      }
-      .exits .usage code {
+      .config .c {
         color: var(--skip);
       }
-      .trust {
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
+      .src-summary {
+        display: inline;
+      }
+      .s-sources[data-step='1'] .src-summary {
+        background: var(--term-now);
+        box-decoration-break: clone;
+      } /* Reference */
+      .ref {
         flex: 1;
-      }
-      .trust .row {
+        min-height: 0;
         display: grid;
-        grid-template-columns: 120px 1fr;
-        gap: 14px;
-        align-items: start;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
       }
-      .trust .role {
-        font-size: 18px;
+      .ref .card {
+        padding: 6px 0;
+      }
+      .ref h3 {
+        font: 600 11.5px var(--sans);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
         color: var(--ink-2);
-        padding-top: 8px;
+        padding: 8px 16px 4px;
       }
-      .trust .chain {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-      }
-      .trust .step {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 4px;
+      .ref dl {
+        margin: 0;
+        padding: 0 16px;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 8px 18px;
+        align-items: baseline;
+        font-size: 16.5px;
         line-height: 1.3;
       }
-      .trust .step > code {
-        font: 500 19px var(--mono);
-        background: var(--bg);
-        border: 1px solid var(--line);
-        border-radius: 5px;
-        padding: 3px 8px;
+      .ref dt {
+        font: 500 16px var(--mono-narrow);
         white-space: nowrap;
       }
-      .trust .step .text {
+      .ref dd {
+        margin: 0;
         color: var(--ink-2);
-        font-size: 18px;
-        padding-left: 8px;
       }
-      .trust .row.split {
-        border-top: 1px solid var(--line);
-        padding-top: 14px;
+      .ref dd code {
+        color: var(--ink);
+        font-size: 15px;
       }
-
-      /* Slide 14 */
+      .ref dl.exits {
+        gap: 8px 14px;
+        align-items: center;
+      }
+      .ref .exits .ink-box {
+        font-size: 14px;
+        padding: 3px 9px;
+      }
+      .ref .exits .ok {
+        background: var(--pass);
+      }
+      .ref .exits .bad {
+        background: var(--error);
+      }
+      .ref .exits .usage {
+        background: var(--skip);
+      } /* End */
+      .s-end .slide {
+        gap: 18px;
+      }
+      .features {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        flex: 1;
+        min-height: 0;
+      }
+      .features .card {
+        padding: 18px 20px 20px;
+        gap: 10px;
+      }
+      .features h3 {
+        font-size: 23px;
+      }
+      .features p {
+        font-size: 17.5px;
+        color: var(--ink-2);
+        line-height: 1.35;
+      }
+      .start {
+        margin-top: 30px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 20px;
+        align-items: end;
+      }
       .cmd-list {
         list-style: none;
         margin: 0;
-        padding: 0;
+        padding: 18px 24px;
         display: flex;
         flex-direction: column;
         gap: 12px;
-        width: 1192px;
+        counter-reset: cmd;
+        background: var(--term);
+        color: var(--term-ink);
+        border-radius: 10px;
       }
       .cmd-list li {
         display: grid;
-        grid-template-columns: 540px 1fr;
-        align-items: center;
-        gap: 28px;
-        padding: 22px 24px;
-        background: var(--paper);
-        border: 1px solid var(--line);
-        border-radius: 10px;
-        font-size: 22px;
+        grid-template-columns: 24px 400px 1fr;
+        align-items: baseline;
+        gap: 14px;
+        font-size: 17px;
         line-height: 1.3;
       }
-      .cmd-list li > code:first-child {
-        font: 500 26px var(--mono);
-        background: transparent;
-        border: 0;
-        padding: 0;
+      .cmd-list li::before {
+        counter-increment: cmd;
+        content: counter(cmd);
+        font: 600 14px var(--mono);
+        color: var(--term-dim);
       }
-      .cmd-list li > code:first-child::before {
-        content: '$ ';
-        color: var(--ink-2);
+      .cmd-list code {
+        font-size: 19px;
+        font-weight: 500;
       }
       .cmd-list .what {
-        color: var(--ink-2);
-        font-size: 21px;
+        color: var(--term-dim);
       }
       .cmd-list .what code {
-        font-size: 19px;
-      }
-      .cmd-list .what .path {
-        color: var(--accent);
-        background: var(--accent-soft);
-        border-color: var(--accent);
-      }
-      .links {
-        display: flex;
-        align-items: baseline;
-        gap: 40px;
-        font-size: 22px;
-        height: 60px;
-        line-height: 60px;
-        white-space: nowrap;
-      }
-      .links code {
-        font-size: 20px;
+        font-size: 14px;
         font-weight: 500;
+        color: var(--term-ink);
+      }
+      .s-end .links {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        font-size: 17px;
+        color: var(--ink-2);
+        padding-bottom: 6px;
+      }
+      .s-end .links a {
+        font: 500 17px var(--mono);
+      }
+      .s-end .links code {
+        color: var(--ink);
       }
 
       @media (prefers-reduced-motion: no-preference) {
-        .node .box,
-        .node .mark,
-        .node .ring,
-        .edge,
-        .trow .rbox,
-        .trow .count,
-        .trow .zero,
-        .tally .frame,
-        .tally .headmark,
-        .verdict .gate,
-        .verdict .vbox,
-        .verdict .xbox,
-        .verdict .gate-label,
-        .verdict .vtext,
-        .verdict .xtext,
-        .verdict .stop,
-        .pos li,
-        .rollup {
-          transition: all 0.35s ease;
-        }
-        .flow,
-        .verdict .p-error,
-        .verdict .p-warn,
-        .verdict .p-link {
-          transition:
-            stroke-dashoffset 0.7s ease,
-            opacity 0.3s ease,
-            stroke-width 0.3s ease;
-        }
-        .s-run .term,
-        .captions .caption {
-          transition:
-            opacity 0.35s ease,
-            transform 0.35s ease,
-            visibility 0s linear 0.35s;
-        }
-        .s-run .term.on,
-        .captions .caption.now {
-          transition:
-            opacity 0.35s ease,
-            transform 0.35s ease,
-            visibility 0s;
-        }
-        .reveal .controls button,
         .reveal a {
           transition:
             color 0.15s ease,
@@ -1619,317 +1755,6 @@
           display: none;
         }
       }
-      /* The JSON slide */
-      .s-json .term pre {
-        font: 15px/22px var(--mono);
-      }
-      .s-json .note {
-        --top: 48px;
-        --lh: 22px;
-      }
-      .s-json .j-key {
-        color: var(--accent);
-      }
-      .s-json .j-str {
-        color: var(--ink-2);
-      }
-
-      /* The use-cases slide */
-      .uses {
-        position: absolute;
-        inset: 0;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        grid-template-rows: 1fr 1fr;
-        gap: 20px;
-      }
-      .use {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        padding: 18px 22px;
-        background: var(--paper);
-        border: 1px solid var(--line);
-        border-radius: 10px;
-      }
-      .use h3 {
-        margin: 0;
-        font-size: 26px;
-      }
-      .use h3 small {
-        font-size: 18px;
-        font-weight: 400;
-        color: var(--ink-2);
-        margin-left: 10px;
-      }
-      .use p {
-        margin: 0;
-        font-size: 21px;
-        line-height: 1.35;
-      }
-      .use .kit {
-        margin-top: auto;
-        font: 500 17px var(--mono);
-        color: var(--ink-2);
-      }
-      .use .kit b {
-        color: var(--accent);
-        font-weight: 600;
-      }
-      .switch {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-        font-size: 24px;
-        cursor: pointer;
-        padding: 8px 12px;
-        border-radius: 8px;
-      }
-      .switch:hover {
-        background: var(--paper);
-      }
-      .switch input {
-        width: 28px;
-        height: 28px;
-        margin: 0;
-        accent-color: var(--accent);
-        cursor: pointer;
-      }
-      .switch input:focus-visible {
-        outline: 3px solid var(--accent);
-        outline-offset: 2px;
-      }
-      /* Kit pages: a tree with an environment panel, and the run that the environment produces */
-      .kt {
-        display: grid;
-        grid-template-columns: 450px 1fr;
-        grid-template-rows: minmax(0, 1fr) auto;
-        gap: 14px 24px;
-        align-items: stretch;
-      }
-      .s-kit .term {
-        overflow: hidden;
-      }
-      .kt-left {
-        display: flex;
-        flex-direction: column;
-        gap: 14px;
-        min-height: 0;
-      }
-      .kt-tree {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-      .kt-left {
-        overflow: hidden;
-      }
-      .s-kit[data-kit='preflight'] .kt-row {
-        font-size: 17px;
-        padding: 10px 14px;
-      }
-      .s-kit[data-kit='onboard'] .kt-row {
-        font-size: 14px;
-        padding: 3px 10px;
-      }
-      .s-kit[data-kit='onboard'] .kt-tree {
-        gap: 3px;
-      }
-
-      .s-kit .slide-head h2,
-      .s-kit .slide-head .chip {
-        white-space: nowrap;
-      }
-      .s-kit .slide-head .chip {
-        font-size: 15px;
-      }
-      .kt-row {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 4px 10px;
-        background: var(--paper);
-        border: 2px solid var(--line);
-        border-radius: 8px;
-        font: 500 14px var(--mono);
-        color: var(--ink-2);
-        margin-left: calc(var(--depth) * 26px);
-        position: relative;
-      }
-      .kt-row[style*='--depth: 1']::before,
-      .kt-row[style*='--depth: 2']::before {
-        content: '';
-        position: absolute;
-        left: -16px;
-        top: -8px;
-        width: 10px;
-        height: 50%;
-        border-left: 2px solid var(--line);
-        border-bottom: 2px solid var(--line);
-        border-radius: 0 0 0 6px;
-      }
-      .kt-row .mark {
-        font-size: 17px;
-        width: 22px;
-        text-align: center;
-        opacity: 0;
-      }
-      .kt-row.on {
-        color: var(--ink);
-      }
-      .kt-row.on .mark {
-        opacity: 1;
-      }
-      .kt-row.on.st-pass {
-        border-color: var(--pass);
-        background: var(--pass-soft);
-      }
-      .kt-row.on.st-error {
-        border-color: var(--error);
-        background: var(--error-soft);
-      }
-      .kt-row.on.st-warn {
-        border-color: var(--warn);
-        background: var(--warn-soft);
-      }
-      .kt-row.on.st-recommend {
-        border-color: var(--skip);
-        background: var(--skip-soft);
-      }
-      .kt-row.on.st-blocked {
-        border-color: var(--error);
-        border-style: dashed;
-        background: var(--blocked-soft);
-      }
-      .kt-row.on.st-skip {
-        border-style: dashed;
-        background: var(--skip-soft);
-      }
-      .kt-row.now {
-        box-shadow: 0 0 0 3px var(--accent-soft);
-      }
-      .kt-list {
-        font: 600 12px var(--sans);
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-        color: var(--ink-2);
-        margin: 6px 0 0;
-      }
-      .kt-exit {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        min-height: 44px;
-      }
-      .kt-exit-box {
-        font-size: 18px;
-        padding: 6px 14px;
-        opacity: 0;
-        transform: translateX(-6px);
-      }
-      .kt-exit-box.on {
-        opacity: 1;
-        transform: none;
-      }
-      .kt-env {
-        grid-column: 1 / -1;
-        padding: 6px 14px;
-        background: var(--paper);
-        border: 1px solid var(--line);
-        border-radius: 10px;
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 2px 16px;
-      }
-      .kt-env-h {
-        font: 600 13px var(--sans);
-        letter-spacing: 0.04em;
-        text-transform: uppercase;
-        color: var(--ink-2);
-        margin-right: 6px;
-      }
-      .kt-env .switch {
-        font-size: 16px;
-        gap: 10px;
-        padding: 3px 6px;
-      }
-      .kt-env .switch input {
-        width: 18px;
-        height: 18px;
-      }
-      .s-kit .term {
-        display: flex;
-        flex-direction: column;
-        min-height: 0;
-      }
-      .s-kit .term-tab {
-        display: flex;
-        gap: 18px;
-        padding: 0 16px;
-      }
-      .s-kit .term-tab .tab {
-        appearance: none;
-        background: none;
-        border: 0;
-        border-bottom: 3px solid transparent;
-        padding: 8px 0 6px;
-        font: 500 15px var(--mono);
-        color: var(--ink-2);
-        cursor: pointer;
-      }
-      .s-kit .term-tab .tab.on {
-        color: var(--ink);
-        border-bottom-color: var(--accent);
-      }
-      .s-kit .term-tab .tab:focus-visible {
-        outline: 3px solid var(--accent);
-        outline-offset: -3px;
-      }
-      .s-kit .term pre {
-        flex: 1;
-        min-height: 0;
-        font: 15px/22px var(--mono);
-        white-space: pre-wrap;
-        overflow-wrap: anywhere;
-        overflow-y: auto;
-        position: relative;
-      }
-      .s-kit[data-kit='preflight'] .term pre {
-        font: 19px/30px var(--mono);
-      }
-      .s-kit[data-kit='drift'] .term pre,
-      .s-kit[data-kit='adoption'] .term pre {
-        font: 14px/20px var(--mono);
-      }
-      .s-kit[data-kit='onboard'] .term pre {
-        font: 14px/18px var(--mono);
-        padding: 8px 14px;
-      }
-      .kt-env .switch {
-        white-space: nowrap;
-      }
-      .s-kit[data-view='json'] .term pre {
-        font: 14px/20px var(--mono);
-      }
-      .s-kit .ln {
-        display: none;
-      }
-      .s-kit .ln.on,
-      .s-kit[data-view='json'] .ln {
-        display: inline;
-      }
-      .s-kit .j-key {
-        color: var(--accent);
-      }
-      .s-kit .j-str {
-        color: var(--ink-2);
-      }
-      .s-kit .kt-steps {
-        position: absolute;
-        width: 0;
-        height: 0;
-      }
     </style>
     <script>
       document.documentElement.className = 'js';
@@ -1945,299 +1770,174 @@
               <div class="slide">
                 <div>
                   <h1>ReadyUp</h1>
-                  <p class="lede">Pre-deployment checks, written in TypeScript and run from the command line.</p>
-                  <p class="cmd"><code>rdy run</code></p>
+                  <p class="lede">One command reports what is wrong and how to fix it.</p>
                 </div>
-                <svg
-                  class="motif"
-                  viewBox="0 0 540 400"
-                  role="img"
-                  aria-label="A tree of checks with pass, fail, and blocked marks, which rdy run turns into exit code 1"
-                >
-                  <defs>
-                    <marker
-                      id="m-ink"
-                      viewBox="0 0 10 10"
-                      refX="9"
-                      refY="5"
-                      markerWidth="7"
-                      markerHeight="7"
-                      orient="auto"
-                    >
-                      <path d="M0 0L10 5L0 10z" class="ah-ink" />
-                    </marker>
-                  </defs>
-                  <path class="edge" d="M12 52H30M12 52V362H30" />
-                  <path class="edge e-pass on" d="M50 74V132H80" />
-                  <path class="edge e-blocked on" d="M100 154V212H130M100 212V284H130" />
-                  <g class="node st-pass on" transform="translate(30,30)">
-                    <rect class="box" width="72" height="44" rx="10" />
-                    <text class="mark" x="36" y="22">✅</text>
-                  </g>
-                  <g class="node st-error on" transform="translate(80,110)">
-                    <rect class="box" width="72" height="44" rx="10" />
-                    <text class="mark" x="36" y="22">❌</text>
-                  </g>
-                  <g class="node st-blocked on" transform="translate(130,190)">
-                    <rect class="box" width="72" height="44" rx="10" />
-                    <text class="mark" x="36" y="22">🚫</text>
-                  </g>
-                  <g class="node st-blocked on" transform="translate(130,262)">
-                    <rect class="box" width="72" height="44" rx="10" />
-                    <text class="mark" x="36" y="22">🚫</text>
-                  </g>
-                  <g class="node st-warn on" transform="translate(30,340)">
-                    <rect class="box" width="72" height="44" rx="10" />
-                    <text class="mark" x="36" y="22">🔶</text>
-                  </g>
-                  <path d="M232 200H370" fill="none" stroke="var(--ink)" stroke-width="3" marker-end="url(#m-ink)" />
-                  <text x="301" y="186" text-anchor="middle" style="font: 500 17px var(--mono); fill: var(--ink-2)">
-                    rdy run
-                  </text>
-                  <rect x="380" y="160" width="150" height="80" rx="12" fill="var(--ink)" />
-                  <text
-                    x="455"
-                    y="200"
-                    text-anchor="middle"
-                    dominant-baseline="central"
-                    style="font: 600 28px var(--mono); fill: var(--paper)"
-                  >
-                    exit 1
-                  </text>
-                </svg>
+                <figure class="card">
+                  <figcaption class="card-head">rdy run preflight<span class="chip">readyup 0.42.0</span></figcaption>
+                  <pre class="out"><code></code></pre>
+                </figure>
               </div>
               <aside class="notes">
-                ReadyUp is a command-line tool. A project writes its pre-deployment checks in TypeScript, groups them
-                into a kit, and runs them with rdy run before a deploy, on a laptop or in CI. The next five minutes: why
-                it exists, what a check looks like, what a run does when a check fails, and how to start.
+                <p>
+                  ReadyUp is a command-line tool. A project writes down what must be true before work starts, before a
+                  deploy, or before a release, and one command, rdy run, checks it. This is a run in which two of those
+                  things are not true: each failure, the reason under it, and a fix that the author of the check wrote.
+                </p>
               </aside>
             </section>
 
             <!-- 2 · The problem -->
-            <section class="s-problem" data-title="Where deploy checks live today">
+            <section
+              class="s-problem"
+              data-title="A written checklist drifts; a remembered one costs attention"
+              data-step="0"
+            >
               <div class="slide">
-                <header class="slide-head">
-                  <h2>Where deploy checks live today</h2>
-                  <p class="who">for engineering leads</p>
-                </header>
-                <div class="stage">
-                  <div class="timeline">
-                    <div class="hnode">
-                      <p>A checklist in a wiki</p>
-                      <div class="bars" aria-hidden="true"><i></i><i></i><i></i></div>
-                      <p class="sub">and in whoever deployed last</p>
+                <h2>A written checklist drifts; a remembered one costs attention</h2>
+                <div class="evidence">
+                  <div class="card">
+                    <div class="card-head">
+                      README.md · Getting started<span class="chip">edited 14 months ago</span>
                     </div>
-                    <div class="arrow dashed"></div>
-                    <div class="hnode drift">
-                      <p>The code changes</p>
-                      <p class="sub">The list does not</p>
+                    <div class="list-body">
+                      <ol>
+                        <li>Install the dependencies with <code>pnpm install</code></li>
+                        <li class="stale">Use Node 20<span class="flaw">.nvmrc has said 24 since March</span></li>
+                        <li>
+                          Copy <code>.env.example</code> to <code>.env</code> and fill in each value<span class="flaw"
+                            >STRIPE_WEBHOOK_SECRET was added in May; the example was not</span
+                          >
+                        </li>
+                        <li class="stale">Ask Dana for VPN access<span class="flaw">Dana left in June</span></li>
+                        <li>Start Docker; the database runs in a container</li>
+                        <li>Install the git hooks with <code>pnpm lefthook install</code></li>
+                      </ol>
                     </div>
-                    <div class="arrow dashed"></div>
-                    <div class="hnode ink">
-                      <p>Deploy</p>
-                      <p class="sub">Whoever remembers, runs the list by hand</p>
-                    </div>
-                    <div class="arrow red"></div>
-                    <div class="hnode late">
-                      <p class="mark">❌</p>
-                      <p>The failure shows up late</p>
-                      <p class="sub">after the deploy, without a fix</p>
-                    </div>
-                  </div>
-                </div>
-                <p class="caption">A checklist that lives outside the code drifts from it and fails late</p>
-              </div>
-              <aside class="notes">
-                Most teams already have deploy checks. They live in a wiki page, in a channel thread, and in whoever
-                deployed last time. The code moves and the list does not. Nobody runs the list the same way twice, and
-                the thing it was meant to catch shows up after the deploy, when it is expensive to fix. That is the gap.
-              </aside>
-            </section>
-
-            <!-- 3 · The idea -->
-            <section class="s-idea" data-title="One file of checks, one command">
-              <div class="slide">
-                <header class="slide-head"><h2>One file of checks, one command</h2></header>
-                <div class="stage">
-                  <svg
-                    class="idea"
-                    viewBox="0 0 1192 484"
-                    role="img"
-                    aria-label="A kit file containing the deploy checklist and its two checks, which rdy run turns into one line per check, a fix hint for each failure, and an exit code"
-                  >
-                    <defs>
-                      <marker
-                        id="m-ink3"
-                        viewBox="0 0 10 10"
-                        refX="9"
-                        refY="5"
-                        markerWidth="7"
-                        markerHeight="7"
-                        orient="auto"
+                    <div class="flaws">
+                      <span
+                        ><b>Documented:</b> right on the day it was written, wrong two upgrades later, and nothing
+                        reports the drift.</span
                       >
-                        <path d="M0 0L10 5L0 10z" class="ah-ink" />
-                      </marker>
-                    </defs>
-                    <g transform="translate(0,20)">
-                      <!-- Kit tree -->
-                      <path class="edge" d="M24 112V176H48" />
-                      <path class="edge" d="M72 212V280H96M72 280V352H96" />
-                      <g transform="translate(0,60)">
-                        <rect class="box file-box" width="440" height="52" rx="10" />
-                        <text class="kind" x="18" y="26">kit</text>
-                        <text class="file" x="60" y="26">.readyup/kits/default.ts</text>
-                      </g>
-                      <g transform="translate(48,158)">
-                        <rect class="box root-box" width="200" height="36" rx="18" />
-                        <text class="root-k" x="18" y="18">checklist</text>
-                        <text class="root-v" x="110" y="18">deploy</text>
-                      </g>
-                      <g transform="translate(96,256)">
-                        <rect class="box" width="344" height="48" rx="10" />
-                        <text class="kind" x="18" y="24">check</text>
-                        <text class="label" x="80" y="24">package.json exists</text>
-                      </g>
-                      <g transform="translate(96,328)">
-                        <rect class="box" width="344" height="48" rx="10" />
-                        <text class="kind" x="18" y="24">check</text>
-                        <text class="label" x="80" y="24">NODE_ENV is set</text>
-                      </g>
-                      <!-- rdy run -->
-                      <path
-                        d="M480 250H640"
-                        fill="none"
-                        stroke="var(--ink)"
-                        stroke-width="3"
-                        marker-end="url(#m-ink3)"
-                      />
-                      <text class="cmd" x="560" y="236">rdy run</text>
-                      <!-- Output -->
-                      <g transform="translate(672,80)">
-                        <rect class="out-box" width="520" height="56" rx="10" />
-                        <text class="out-mark" x="30" y="28">✅</text>
-                        <text class="out-text" x="60" y="28">passed</text>
-                        <text class="out-sub" x="190" y="28">one line per check</text>
-                      </g>
-                      <g transform="translate(672,152)">
-                        <rect class="out-box" width="520" height="56" rx="10" />
-                        <text class="out-mark" x="30" y="28">❌</text>
-                        <text class="out-text" x="60" y="28">failed</text>
-                        <text class="out-sub" x="190" y="28">with the reason beneath it</text>
-                      </g>
-                      <g transform="translate(672,224)">
-                        <rect class="out-box fix-box" width="520" height="56" rx="10" />
-                        <text class="out-mark" x="30" y="28">🔧</text>
-                        <text class="out-text" x="60" y="28" style="fill: var(--accent)">fix</text>
-                        <text class="out-sub" x="190" y="28">what to do about it, from the kit</text>
-                      </g>
-                      <g transform="translate(672,330)">
-                        <rect class="exit-box" width="150" height="56" rx="10" />
-                        <text class="exit-text" x="75" y="28">exit 0</text>
-                        <rect class="exit-box" x="170" width="150" height="56" rx="10" />
-                        <text class="exit-text" x="245" y="28">exit 1</text>
-                        <text class="out-sub" x="344" y="28">the verdict, for a pipeline</text>
-                      </g>
-                    </g>
-                  </svg>
-                </div>
-                <p class="caption">
-                  A kit is a file of checklists; <code>rdy run</code> runs them and prints what to fix
-                </p>
-              </div>
-              <aside class="notes">
-                The idea is small. A kit is a file. It exports checklists, and a checklist contains checks. One command,
-                rdy run, runs them and prints one line per check: a pass, or a failure with the reason and a fix hint
-                that the kit author wrote. The exit code says whether the run passed, so the same command works in a
-                terminal and in a pipeline.
-              </aside>
-            </section>
-
-            <!-- 4 · Writing a check -->
-            <section class="s-code" data-title="Writing a check">
-              <div class="slide">
-                <header class="slide-head">
-                  <h2>Writing a check</h2>
-                  <p class="who">for kit authors</p>
-                  <code class="chip">.readyup/kits/preflight.ts</code>
-                </header>
-                <figure class="code-sheet">
-                  <pre><code><span class="cut">⋯</span>
-<span class="st">      checks: [</span>
-<span class="st">        {</span>
-<span class="f">          <b>name</b>: 'Docker daemon is running'<span class="st">,</span></span>
-<span class="f">          <b>check</b>: () =&gt; spawnSync('docker', ['info']).status === 0<span class="st">,</span></span>
-<span class="f">          <b>fix</b>: 'Start Docker, then run the checks again'<span class="st">,</span></span>
-<span class="st">        },</span>
-<span class="st">        {</span>
-<span class="f">          <b>name</b>: 'API is listening on port 3000'<span class="st">,</span></span>
-<span class="f">          <b>severity</b>: 'warn'<span class="st">,</span></span>
-<span class="f">          <b>check</b>: async () =&gt; {</span>
-<span class="f">            const open = await portAccepts(3000);</span>
-<span class="f">            if (!open) return { ok: false, detail: 'Nothing is listening on port 3000' };</span>
-<span class="f">            return true;</span>
-<span class="f">          }<span class="st">,</span></span>
-<span class="f">          <b>fix</b>: 'Start the API with pnpm dev before the smoke test'<span class="st">,</span></span>
-<span class="st">        },</span>
-<span class="st">      ],</span>
-<span class="cut">⋯</span></code></pre>
-                  <span class="note" style="--row: 3">what must be true</span>
-                  <span class="note" style="--row: 4">the check to run</span>
-                  <span class="note" style="--row: 5">the fix if the check fails</span>
-                  <span class="note" style="--row: 9">failure results in a warning, not an error</span>
-                </figure>
-              </div>
-              <aside class="notes">
-                A preflight kit, run before a smoke test. A check is a few fields. The name states what must be true.
-                The check is the function that rdy runs; it returns true, or false with a detail. The fix is what prints
-                when the check fails. Severity decides whether a failure fails the run: error does, warn is reported and
-                does not. Everything else is structure: the checklist, and the helpers that the kit imports.
-              </aside>
-            </section>
-
-            <!-- 5 · Preflight -->
-            <section class="s-kit" data-kit="preflight" data-title="Preflight" data-step="0">
-              <div class="slide">
-                <header class="slide-head">
-                  <h2>Preflight</h2>
-                  <p class="who">before a command: the kit from the last slide</p>
-                  <code class="chip">rdy run &amp;&amp; pnpm smoke</code>
-                </header>
-                <div class="stage kt">
-                  <div class="kt-left">
-                    <div class="kt-tree"></div>
-                    <div class="kt-exit"><span class="ink-box kt-exit-box"></span></div>
+                    </div>
                   </div>
-                  <figure class="term">
-                    <figcaption class="term-tab">
-                      <button type="button" class="tab on" data-view="run"></button>
-                      <button type="button" class="tab" data-view="json"></button>
-                    </figcaption>
-                    <pre><code></code></pre>
-                  </figure>
-                  <div class="kt-env"></div>
+                  <div class="card">
+                    <div class="card-head">
+                      Before starting the app<span class="chip">in whoever deployed last</span>
+                    </div>
+                    <div class="list-body">
+                      <ol>
+                        <li>Start Docker</li>
+                        <li>Run the migrations<span class="flaw">which ones? the app says at startup</span></li>
+                        <li>Export <code>STRIPE_KEY</code> from the vault</li>
+                        <li>Make sure nothing else is on port 3000<span class="flaw">found after the crash</span></li>
+                        <li>
+                          Start the API, then the worker<span class="flaw">in that order, or the queue backs up</span>
+                        </li>
+                      </ol>
+                    </div>
+                    <div class="flaws">
+                      <span
+                        ><b>Remembered:</b> run by whoever remembers, in the order they recall, and each miss is found
+                        by the error it causes.</span
+                      >
+                    </div>
+                  </div>
+                  <p class="need">
+                    What is needed: a checklist that runs itself, before the next task, whatever that task is.
+                  </p>
                 </div>
-                <div class="captions"></div>
-                <div class="kt-steps"></div>
+                <div class="steps">
+                  <span class="fragment step" data-fragment-index="1"></span>
+                  <span class="fragment step" data-fragment-index="2"></span>
+                </div>
               </div>
               <aside class="notes">
-                Compile the kit and run it: one line per check, the count line, the verdict naming the threshold, and
-                the exit code that gates the smoke test. Step through it, then change the environment in the panel. Stop
-                Docker: the check fails at error, the fix prints, the run fails with exit one. Take the API down
-                instead: that check fails at warn, so it is reported with its fix, but the run passes. The severity
-                decides the verdict, not the check. The JSON tab is the same run for a machine.
+                <p data-at="0">
+                  Every project has these two lists. One is written down, in a README or a wiki. The other is in
+                  someone's head: the things to do before the app will start.
+                </p>
+                <p data-at="1">
+                  The written list was right on the day it was written. Two of these lines are now wrong and one is
+                  incomplete, and nothing told anyone. The remembered list is run by whoever remembers, and each miss is
+                  found by the error it causes.
+                </p>
+                <p data-at="2">
+                  What is needed is a list that runs itself, before the next task, whatever that task is: the first
+                  commit, the smoke test, the deploy.
+                </p>
               </aside>
             </section>
 
-            <!-- 6 · A run, step by step -->
-            <section class="s-run" data-title="A run, step by step" data-step="0">
+            <!-- 3 · The solution -->
+            <section class="s-solution" data-title="ReadyUp: checklists that run">
               <div class="slide">
-                <header class="slide-head"><h2>A run, step by step</h2></header>
-                <div class="stage stage-run">
+                <div class="head">
+                  <h2>ReadyUp: checklists that run</h2>
+                  <code class="chip">rdy run</code>
+                </div>
+                <div class="tiles">
+                  <div class="card tile">
+                    <h3>Easy to write</h3>
+                    <p>A check is a claim, a test, and a fix, in a few lines of TypeScript next to the code.</p>
+                    <pre>{ <span class="k">name</span>: <span class="s">'Docker daemon is running'</span>,
+  <span class="k">check</span>: () =&gt; dockerInfo().status === 0,
+  <span class="k">fix</span>: <span class="s">'Start Docker, then run the checks again'</span> }</pre>
+                  </div>
+                  <div class="card tile">
+                    <h3>Runnable from anywhere</h3>
+                    <p>
+                      The same command on a laptop, in CI, and against a kit that a package or a repository publishes.
+                    </p>
+                    <pre><span class="d">$</span> rdy run
+<span class="d">$</span> rdy run --from npm:@acme/ui
+<span class="d">$</span> rdy run --from github:acme/diagnose</pre>
+                  </div>
+                  <div class="card tile">
+                    <h3>Collections of checklists</h3>
+                    <p>
+                      A kit is a file of checklists; a checklist is a list of checks; a check can have checks beneath
+                      it.
+                    </p>
+                    <pre><span class="d">kit</span>        .readyup/kits/onboarding.ts
+<span class="d">checklist</span>  machine · repo
+<span class="d">check</span>      ✅ Node version matches .nvmrc
+<span class="d">check</span>      ❌ .env sets every required key</pre>
+                  </div>
+                  <div class="card tile">
+                    <h3>Agent-friendly</h3>
+                    <p>
+                      One exit code for a pipeline, and the whole run as one JSON document for a script or an agent.
+                    </p>
+                    <pre><span class="d">$</span> rdy run --json
+{ <span class="k">"passed"</span>: <span class="p">false</span>, <span class="k">"counts"</span>: { <span class="k">"errors"</span>: 1, … },
+  <span class="k">"kits"</span>: [ { <span class="k">"name"</span>: <span class="s">"onboarding"</span>, … } ] }
+<span class="d">exit 1</span></pre>
+                  </div>
+                </div>
+              </div>
+              <aside class="notes">
+                <p>
+                  ReadyUp is that list. A check is a few lines of TypeScript. One command runs the checks, from a
+                  laptop, from CI, or from a kit that a package or a repository publishes. Checks group into checklists
+                  and checklists into kits. The output is for a person; the exit code and the JSON are for a pipeline or
+                  an agent.
+                </p>
+              </aside>
+            </section>
+
+            <!-- 4 · A run, step by step (from 4.1) -->
+            <section
+              class="s-run is-final"
+              data-title="A failure blocks what depends on it, and the threshold decides the verdict"
+            >
+              <div class="slide">
+                <h2>A failure blocks what depends on it, and the threshold decides the verdict</h2>
+                <div class="stage-run">
                   <svg
                     class="run"
-                    viewBox="0 0 1180 520"
+                    viewBox="0 0 1180 500"
                     role="img"
-                    aria-label="The demo kit's tree of six checks, resolving step by step, with the results flowing into the total, the verdict, and the exit code"
+                    aria-label="The deploy checklist's tree of six checks, resolving step by step, with the results flowing into the total, the verdict, and the exit code"
                   >
                     <defs>
                       <marker
@@ -2263,111 +1963,101 @@
                         <path d="M0 0L10 5L0 10z" class="ah-ink" />
                       </marker>
                     </defs>
-
-                    <!-- Edges of the tree -->
                     <path class="edge" d="M20 52V100H40" />
                     <path class="edge" d="M20 100V364H40" />
                     <path class="edge" d="M20 364V430H40" />
-                    <path class="edge e-pass" data-at="1" d="M60 124V166H84" />
-                    <path class="edge e-blocked" data-at="3" d="M104 190V232H128" />
-                    <path class="edge e-blocked" data-at="3" d="M104 232V298H128" />
-
-                    <!-- Results flowing into the total -->
-                    <path class="flow c-pass" data-at="1" pathLength="1" d="M320 100C440 100 520 176 640 176" />
-                    <path class="flow c-error" data-at="2" pathLength="1" d="M364 166C484 166 520 84 640 84" />
-                    <path class="flow c-blocked" data-at="3" pathLength="1" d="M408 232C528 232 520 222 640 222" />
-                    <path class="flow c-blocked" data-at="3" pathLength="1" d="M408 298C528 298 520 222 640 222" />
-                    <path class="flow c-warn" data-at="4" pathLength="1" d="M320 364C440 364 520 130 640 130" />
-                    <path class="flow c-skip" data-at="5" pathLength="1" d="M320 430C440 430 520 268 640 268" />
-
-                    <!-- Nodes -->
+                    <path class="edge e-pass on" data-at="1" d="M60 124V166H84" />
+                    <path class="edge e-blocked on" data-at="3" d="M104 190V232H128" />
+                    <path class="edge e-blocked on" data-at="3" d="M104 232V298H128" />
+                    <path class="flow c-pass on" data-at="1" pathLength="1" d="M320 100C440 100 520 176 640 176" />
+                    <path class="flow c-error on" data-at="2" pathLength="1" d="M364 166C484 166 520 84 640 84" />
+                    <path class="flow c-blocked on" data-at="3" pathLength="1" d="M408 232C528 232 520 222 640 222" />
+                    <path class="flow c-blocked on" data-at="3" pathLength="1" d="M408 298C528 298 520 222 640 222" />
+                    <path class="flow c-warn on" data-at="4" pathLength="1" d="M320 364C440 364 520 130 640 130" />
+                    <path class="flow c-skip on" data-at="5" pathLength="1" d="M320 430C440 430 520 268 640 268" />
                     <g class="node root" transform="translate(0,16)">
                       <rect class="box" width="190" height="36" rx="18" />
                       <text class="k" x="16" y="18">checklist</text>
                       <text class="v" x="101" y="18">deploy</text>
                     </g>
-                    <g class="node st-pass" data-at="1" transform="translate(40,76)">
+                    <g class="node st-pass on" data-at="1" transform="translate(40,76)">
                       <rect class="box" width="280" height="48" rx="10" />
                       <circle class="ring" cx="26" cy="24" r="13" />
                       <text class="mark" x="26" y="24">✅</text>
                       <text class="label" x="52" y="24">package.json exists</text>
                     </g>
-                    <g class="node st-error" data-at="2" transform="translate(84,142)">
+                    <g class="node st-error on" data-at="2" transform="translate(84,142)">
                       <rect class="box" width="280" height="48" rx="10" />
                       <circle class="ring" cx="26" cy="24" r="13" />
                       <text class="mark" x="26" y="24">❌</text>
                       <text class="label" x="52" y="24">build output present</text>
                     </g>
-                    <g class="node st-blocked" data-at="3" transform="translate(128,208)">
+                    <g class="node st-blocked on" data-at="3" transform="translate(128,208)">
                       <rect class="box" width="280" height="48" rx="10" />
                       <circle class="ring" cx="26" cy="24" r="13" />
                       <text class="mark" x="26" y="24">🚫</text>
                       <text class="label" x="52" y="24">bundle under 500 kB</text>
                     </g>
-                    <g class="node st-blocked" data-at="3" transform="translate(128,274)">
+                    <g class="node st-blocked on" data-at="3" transform="translate(128,274)">
                       <rect class="box" width="280" height="48" rx="10" />
                       <circle class="ring" cx="26" cy="24" r="13" />
                       <text class="mark" x="26" y="24">🚫</text>
                       <text class="label" x="52" y="24">source maps excluded</text>
                     </g>
-                    <g class="node st-warn" data-at="4" transform="translate(40,340)">
+                    <g class="node st-warn on" data-at="4" transform="translate(40,340)">
                       <rect class="box" width="280" height="48" rx="10" />
                       <circle class="ring" cx="26" cy="24" r="13" />
                       <text class="mark" x="26" y="24">🔶</text>
                       <text class="label" x="52" y="24">NODE_ENV is set</text>
                     </g>
-                    <g class="node st-skip" data-at="5" transform="translate(40,406)">
+                    <g class="node st-skip on" data-at="5" transform="translate(40,406)">
                       <rect class="box" width="280" height="48" rx="10" />
                       <circle class="ring" cx="26" cy="24" r="13" />
                       <text class="mark" x="26" y="24">⚪</text>
                       <text class="label" x="52" y="24">base image is pinned</text>
                     </g>
-
                     <g class="rollup">
-                      <!-- Total -->
-                      <g class="tally" data-at="6">
-                        <rect class="frame" x="628" y="20" width="284" height="276" rx="12" />
+                      <g class="tally on" data-at="6">
+                        <rect class="tframe" x="628" y="20" width="284" height="276" rx="12" />
                         <text class="headmark" x="644" y="46">❌</text>
                         <text class="head" x="668" y="46">Total</text>
                       </g>
-                      <g class="trow st-error" data-at="2">
+                      <g class="trow st-error on" data-at="2">
                         <rect class="rbox" x="640" y="65" width="260" height="38" rx="8" />
                         <text class="tmark" x="660" y="84">❌</text>
                         <text class="tlabel" x="684" y="84">error</text>
                         <text class="zero" x="888" y="84">0</text>
                         <text class="count" x="888" y="84">1</text>
                       </g>
-                      <g class="trow st-warn" data-at="4">
+                      <g class="trow st-warn on" data-at="4">
                         <rect class="rbox" x="640" y="111" width="260" height="38" rx="8" />
                         <text class="tmark" x="660" y="130">🔶</text>
                         <text class="tlabel" x="684" y="130">warning</text>
                         <text class="zero" x="888" y="130">0</text>
                         <text class="count" x="888" y="130">1</text>
                       </g>
-                      <g class="trow st-pass" data-at="1">
+                      <g class="trow st-pass on" data-at="1">
                         <rect class="rbox" x="640" y="157" width="260" height="38" rx="8" />
                         <text class="tmark" x="660" y="176">✅</text>
                         <text class="tlabel" x="684" y="176">passed</text>
                         <text class="zero" x="888" y="176">0</text>
                         <text class="count" x="888" y="176">1</text>
                       </g>
-                      <g class="trow st-blocked" data-at="3">
+                      <g class="trow st-blocked on" data-at="3">
                         <rect class="rbox" x="640" y="203" width="260" height="38" rx="8" />
                         <text class="tmark" x="660" y="222">🚫</text>
                         <text class="tlabel" x="684" y="222">blocked</text>
                         <text class="zero" x="888" y="222">0</text>
                         <text class="count" x="888" y="222">2</text>
                       </g>
-                      <g class="trow st-skip" data-at="5">
+                      <g class="trow st-skip on" data-at="5">
                         <rect class="rbox" x="640" y="249" width="260" height="38" rx="8" />
                         <text class="tmark" x="660" y="268">⚪</text>
                         <text class="tlabel" x="684" y="268">skipped</text>
                         <text class="zero" x="888" y="268">0</text>
                         <text class="count" x="888" y="268">1</text>
                       </g>
-
-                      <!-- Verdict and exit code -->
-                      <g class="verdict" data-at="7">
+                      <g class="verdict on" data-at="7">
                         <path class="p-warn" pathLength="1" d="M912 130H940V316" />
                         <line class="stop" x1="930" y1="316" x2="950" y2="316" />
                         <path class="p-error" pathLength="1" d="M912 84H990V366" marker-end="url(#m-err)" />
@@ -2382,395 +2072,677 @@
                       </g>
                     </g>
                   </svg>
-
-                  <figure class="term" data-at="8">
-                    <figcaption class="term-tab">rdy run</figcaption>
-                    <pre><code class="run-sample"></code></pre>
+                  <figure class="card term term-sample on now" data-at="8">
+                    <figcaption class="card-head">rdy run deploy</figcaption>
+                    <pre class="out"><code></code></pre>
                   </figure>
                 </div>
-
                 <div class="captions">
-                  <p class="caption on now" data-at="0">The deploy checklist: six checks, three of them nested</p>
-                  <p class="caption" data-at="1"><code>package.json exists</code> passes, so the check under it runs</p>
-                  <p class="caption" data-at="2">
+                  <p class="caption on" data-at="0">The deploy checklist: six checks, three of them nested</p>
+                  <p class="caption on" data-at="1">
+                    <code>package.json exists</code> passes, so the check beneath it runs
+                  </p>
+                  <p class="caption on" data-at="2">
                     <code>build output present</code> fails at <code>error</code>: dist/index.js not found
                   </p>
-                  <p class="caption" data-at="3">
-                    Under the failed check, two checks do not run and are reported as blocked
+                  <p class="caption on" data-at="3">The two checks beneath the failure never run; they are blocked</p>
+                  <p class="caption on" data-at="4"><code>NODE_ENV is set</code> fails at <code>warn</code></p>
+                  <p class="caption on" data-at="5">
+                    <code>base image is pinned</code> does not apply here: no Dockerfile, so it is skipped
                   </p>
-                  <p class="caption" data-at="4"><code>NODE_ENV is set</code> fails at <code>warn</code></p>
-                  <p class="caption" data-at="5">
-                    <code>base image is pinned</code> is skipped: no Dockerfile in this project
+                  <p class="caption on" data-at="6">Each result counts once in the total</p>
+                  <p class="caption on" data-at="7">
+                    At <code>fail-on: error</code> the error fails the run; the warning alone would not
                   </p>
-                  <p class="caption" data-at="6">Each result counts once in the total</p>
-                  <p class="caption" data-at="7">
-                    <code>fail-on: error</code> lets the error fail the run; the warning alone would not
-                  </p>
-                  <p class="caption" data-at="8">The same run, as <code>rdy</code> prints it</p>
+                  <p class="caption on now" data-at="8">The same run, as <code>rdy</code> printed it</p>
                 </div>
-
-                <span class="fragment step" data-fragment-index="1"></span>
-                <span class="fragment step" data-fragment-index="2"></span>
-                <span class="fragment step" data-fragment-index="3"></span>
-                <span class="fragment step" data-fragment-index="4"></span>
-                <span class="fragment step" data-fragment-index="5"></span>
-                <span class="fragment step" data-fragment-index="6"></span>
-                <span class="fragment step" data-fragment-index="7"></span>
-                <span class="fragment step" data-fragment-index="8"></span>
               </div>
               <aside class="notes">
-                Here is a kit with nesting. package.json exists passes, so the check under it runs. build output present
-                fails, and its severity is error. Its two children never run: they are reported as blocked, because
-                their parent failed. NODE_ENV is set fails too, but at warn. base image is pinned does not apply here,
-                so it is skipped. Each result counts once in the total: one error, one warning, one passed, two blocked,
-                one skipped. Then the verdict. This run fails on error. The error fails it; the warning alone would have
-                left it passing, with exit code zero. Exit code one is what CI acts on. And this is what rdy printed for
-                the same run: the same tree, the fixes, the total, the verdict.
-              </aside>
-            </section>
-
-            <!-- 7 · The same run, for a machine -->
-            <section class="s-json" data-title="The same run, for a machine">
-              <div class="slide">
-                <header class="slide-head">
-                  <h2>The same run, for a machine</h2>
-                  <p class="who">for CI owners and agents</p>
-                  <code class="chip">rdy run --json</code>
-                </header>
-                <div class="stage">
-                  <figure class="term">
-                    <figcaption class="term-tab">rdy run --json | head</figcaption>
-                    <pre><code>{
-  <span class="j-key">"schemaVersion"</span>: 2,
-  <span class="j-key">"readyupVersion"</span>: <span class="j-str">"0.42.0"</span>,
-  <span class="j-key">"passed"</span>: false,
-  <span class="j-key">"counts"</span>: { "passed": 1, "errors": 1, "warnings": 1, "recommendations": 0, "blocked": 2, "optional": 1 },
-  <span class="j-key">"worstSeverity"</span>: <span class="j-str">"error"</span>,
-  <span class="j-key">"kits"</span>: [
-    { <span class="j-key">"name"</span>: <span class="j-str">"deploy"</span>, <span class="j-key">"passed"</span>: false, <span class="j-key">"failOn"</span>: <span class="j-str">"error"</span>,
-      <span class="j-key">"checklists"</span>: [ { <span class="j-key">"name"</span>: <span class="j-str">"deploy"</span>, <span class="j-key">"checks"</span>: [
-        { <span class="j-key">"name"</span>: <span class="j-str">"package.json exists"</span>, <span class="j-key">"status"</span>: <span class="j-str">"passed"</span>, <span class="j-key">"checks"</span>: [
-          { <span class="j-key">"name"</span>: <span class="j-str">"build output present"</span>, <span class="j-key">"status"</span>: <span class="j-str">"failed"</span>, <span class="j-key">"severity"</span>: <span class="j-str">"error"</span>,
-            <span class="j-key">"detail"</span>: <span class="j-str">"dist/index.js not found"</span>, <span class="j-key">"fix"</span>: <span class="j-str">"Run the build before deploying"</span>,
-            <span class="j-key">"checks"</span>: [ { <span class="j-key">"name"</span>: <span class="j-str">"bundle under 500 kB"</span>, <span class="j-key">"status"</span>: <span class="j-str">"skipped"</span>, <span class="j-key">"skipReason"</span>: <span class="j-str">"precondition"</span> }, <span class="cut">⋯</span> ] } ] },
-        { <span class="j-key">"name"</span>: <span class="j-str">"NODE_ENV is set"</span>, <span class="j-key">"status"</span>: <span class="j-str">"failed"</span>, <span class="j-key">"severity"</span>: <span class="j-str">"warn"</span>, <span class="cut">⋯</span> },
-        <span class="cut">⋯</span></code></pre>
-                    <span class="note" style="--row: 3">the verdict, as a boolean</span>
-                    <span class="note" style="--row: 4">the count line's tallies</span>
-                    <span class="note" style="--row: 10">every failure carries its detail and its fix</span>
-                  </figure>
-                </div>
-                <p class="caption">
-                  One document on stdout; <code>--detail summary</code> keeps the failures and fixes alone
+                <p data-at="0">A kit with nesting: the deploy checklist, six checks, three of them under another.</p>
+                <p data-at="1">package.json exists passes, so the check beneath it runs.</p>
+                <p data-at="2">build output present fails at error.</p>
+                <p data-at="3">
+                  Its two children never run; they are reported as blocked rather than failed, because nothing is known
+                  about them yet.
                 </p>
-              </div>
-              <aside class="notes">
-                The same run with dash dash json. One JSON document on stdout, every human line on stderr. The verdict
-                is a boolean, the counts are the same six tallies, and every failed check carries its detail and its
-                fix. Dash dash detail summary drops the passes and keeps the failures and fixes, which is the shape an
-                agent wants before it goes and fixes them. The schema ships inside the package.
-              </aside>
-            </section>
-
-            <!-- 8 · What a kit is for -->
-            <section class="s-uses" data-title="What a kit is for">
-              <div class="slide">
-                <header class="slide-head">
-                  <h2>What a kit is for</h2>
-                  <p class="who">four questions, one mechanism</p>
-                </header>
-                <div class="stage">
-                  <div class="uses">
-                    <div class="use">
-                      <h3>Preflight<small>before a command</small></h3>
-                      <p>Is the environment ready for the deploy, the smoke test, the release?</p>
-                      <p class="kit"><b>preflight</b> · rdy run &amp;&amp; pnpm smoke</p>
-                    </div>
-                    <div class="use">
-                      <h3>Drift<small>against a template</small></h3>
-                      <p>Do the workflows and configs still match the templates that the installed package ships?</p>
-                      <p class="kit"><b>release-kit</b> · rdy run --from npm:@williamthorsen/release-kit</p>
-                    </div>
-                    <div class="use">
-                      <h3>Adoption<small>and migration</small></h3>
-                      <p>Where does the code still hand-roll what a package it already installed provides?</p>
-                      <p class="kit"><b>toolbelt.errors</b> · rdy run --sources</p>
-                    </div>
-                    <div class="use">
-                      <h3>Onboarding<small>a machine or a person</small></h3>
-                      <p>Is this machine still set up the way the bootstrap left it: tools, links, worktrees?</p>
-                      <p class="kit"><b>machine</b> · rdy run machine</p>
-                    </div>
-                  </div>
-                </div>
-                <p class="caption">A kit asks one question; the same command answers all four</p>
-              </div>
-              <aside class="notes">
-                Four kinds of kit people actually write. Preflight, before a command that needs the environment ready.
-                Drift, from a package that ships its own templates and checks that the repo still matches them.
-                Adoption, where a package reports the places that still hand-roll what it provides. Onboarding, where a
-                machine checks itself against the state the bootstrap left. Same command, same output, same exit code.
-              </aside>
-            </section>
-
-            <!-- 9 · Drift -->
-            <section class="s-kit" data-kit="drift" data-title="Drift" data-step="0">
-              <div class="slide">
-                <header class="slide-head">
-                  <h2>Drift</h2>
-                  <p class="who">against a template: the kit ships with the package</p>
-                  <code class="chip">rdy run --from npm:@williamthorsen/release-kit</code>
-                </header>
-                <div class="stage kt">
-                  <div class="kt-left">
-                    <div class="kt-tree"></div>
-                    <div class="kt-exit"><span class="ink-box kt-exit-box"></span></div>
-                  </div>
-                  <figure class="term">
-                    <figcaption class="term-tab">
-                      <button type="button" class="tab on" data-view="run"></button>
-                      <button type="button" class="tab" data-view="json"></button>
-                    </figcaption>
-                    <pre><code></code></pre>
-                  </figure>
-                  <div class="kt-env"></div>
-                </div>
-                <div class="captions"></div>
-                <div class="kt-steps"></div>
-              </div>
-              <aside class="notes">
-                release-kit ships its workflows as templates, and it ships a kit that checks the repo still matches
-                them. Nothing to write: the kit comes with the package. Let a workflow drift from its template and the
-                kit says which one and how to regenerate it. Remove a workflow and the check under it is blocked rather
-                than failed: it never ran.
-              </aside>
-            </section>
-
-            <!-- 10 · Adoption -->
-            <section class="s-kit" data-kit="adoption" data-title="Adoption" data-step="0">
-              <div class="slide">
-                <header class="slide-head">
-                  <h2>Adoption</h2>
-                  <p class="who">using what is installed: a real run from this repo</p>
-                  <code class="chip">rdy run --from npm:@williamthorsen/toolbelt.errors</code>
-                </header>
-                <div class="stage kt">
-                  <div class="kt-left">
-                    <div class="kt-tree"></div>
-                    <div class="kt-exit"><span class="ink-box kt-exit-box"></span></div>
-                  </div>
-                  <figure class="term">
-                    <figcaption class="term-tab">
-                      <button type="button" class="tab on" data-view="run"></button>
-                      <button type="button" class="tab" data-view="json"></button>
-                    </figcaption>
-                    <pre><code></code></pre>
-                  </figure>
-                  <div class="kt-env"></div>
-                </div>
-                <div class="captions"></div>
-                <div class="kt-steps"></div>
-              </div>
-              <aside class="notes">
-                The errors package ships a kit that sweeps the consumer's sources for the idioms it replaces. Each check
-                reports a fraction: sites examined, of sites in scope. One site still narrows a thrown value by hand,
-                named by file and line, with the fix. It is a recommendation, so the run passes. That is adoption: the
-                package tells you where you are not using it yet.
-              </aside>
-            </section>
-
-            <!-- 11 · Onboarding -->
-            <section class="s-kit" data-kit="onboard" data-title="Onboarding" data-step="0">
-              <div class="slide">
-                <header class="slide-head">
-                  <h2>Onboarding</h2>
-                  <p class="who">a machine checks itself: two checklists, one summary</p>
-                  <code class="chip">rdy run machine</code>
-                </header>
-                <div class="stage kt">
-                  <div class="kt-left">
-                    <div class="kt-tree"></div>
-                    <div class="kt-exit"><span class="ink-box kt-exit-box"></span></div>
-                  </div>
-                  <figure class="term">
-                    <figcaption class="term-tab">
-                      <button type="button" class="tab on" data-view="run"></button>
-                      <button type="button" class="tab" data-view="json"></button>
-                    </figcaption>
-                    <pre><code></code></pre>
-                  </figure>
-                  <div class="kt-env"></div>
-                </div>
-                <div class="captions"></div>
-                <div class="kt-steps"></div>
-              </div>
-              <aside class="notes">
-                A machine kit: is this Mac still in the state the bootstrap left it? Two checklists, tools and install,
-                each with its own total, then a summary. The live worktree check has two checks under it; take the
-                worktree away and both are blocked. A stray setting in gitconfig is a warning with a fix. The run passes
-                until a tool is missing.
-              </aside>
-            </section>
-
-            <!-- 12 · Gating CI and trusting shared kits -->
-            <section class="s-ci" data-title="Gating a pipeline, trusting a shared kit">
-              <div class="slide">
-                <header class="slide-head">
-                  <h2>Gating a pipeline, trusting a shared kit</h2>
-                  <p class="who">for CI owners</p>
-                </header>
-                <div class="stage">
-                  <div class="panels">
-                    <div class="panel" role="group" aria-labelledby="h-gate">
-                      <h3 id="h-gate">The exit code is the gate</h3>
-                      <div class="gate-flow">
-                        <span class="ink-box from">rdy run</span>
-                        <span class="drop" aria-hidden="true"></span>
-                        <ul class="exits">
-                          <li class="ok"><code>exit 0</code><span>Ran and found no problems</span></li>
-                          <li class="bad">
-                            <code>exit 1</code
-                            ><span>Ran and found problems <span class="verb">fix the repo</span></span>
-                          </li>
-                          <li class="usage">
-                            <code>exit 2</code
-                            ><span>Could not complete the invocation <span class="verb">fix the invocation</span></span>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                    <div class="panel" role="group" aria-labelledby="h-trust">
-                      <h3 id="h-trust">A kit that another team publishes</h3>
-                      <div class="trust">
-                        <div class="row">
-                          <p class="role">publisher</p>
-                          <div class="chain">
-                            <p class="step"><code>rdy compile</code><span class="text">bundles the kit</span></p>
-                            <p class="step">
-                              <code>git commit</code
-                              ><span class="text"
-                                >the bundle and its manifest, in the repo or the package's <code>files</code></span
-                              >
-                            </p>
-                            <p class="step">
-                              <code>rdy verify --rebuild</code
-                              ><span class="text"
-                                >in CI: fails on a bundle that no longer reproduces from its source</span
-                              >
-                            </p>
-                          </div>
-                        </div>
-                        <div class="row split">
-                          <p class="role">consumer</p>
-                          <div class="chain">
-                            <p class="step">
-                              <code>rdy run --from npm:@acme/eslint-config</code
-                              ><span class="text">the kit published with the installed version</span>
-                            </p>
-                            <p class="step">
-                              <code>rdy run --from github:acme/ops@v2</code
-                              ><span class="text">the kit committed at that ref</span>
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <p class="caption">
-                  One exit code gates the pipeline; a published kit runs at the version the project has
+                <p data-at="4">NODE_ENV is set fails at warn.</p>
+                <p data-at="5">base image is pinned does not apply here, so it is skipped.</p>
+                <p data-at="6">Each result counts once in the total.</p>
+                <p data-at="7">
+                  Then the verdict: with the threshold at error, the error fails the run and the exit code is one. The
+                  warning on its own would have left it passing.
                 </p>
-              </div>
-              <aside class="notes">
-                Two questions for a CI owner. Gating: the exit code is the contract. Zero, no problems. One, fix the
-                repo. Two, fix the invocation. Trust: a team publishes a kit as the compiled bundle and its manifest,
-                committed to the repo or listed in its package's files, and runs verify with rebuild in CI, which fails
-                if the bundle no longer reproduces from its source. Consumers run it from the package they already
-                install, or from the repository at a pinned ref.
+                <p data-at="8">The last step is the same run as rdy printed it.</p>
               </aside>
             </section>
 
-            <!-- 13 · Why it pays off -->
-            <section class="s-payoff" data-title="Where deploy checks live with ReadyUp">
+            <!-- 5 · Anatomy of a check, then the checklist, then the kit (from 3.1) -->
+            <section class="s-anatomy is-final" data-title="A check is a claim, a test, and a fix">
               <div class="slide">
-                <header class="slide-head">
-                  <h2>Where deploy checks live with ReadyUp</h2>
-                  <p class="who">for engineering leads</p>
-                </header>
-                <div class="stage">
-                  <div class="timeline">
-                    <div class="hnode">
-                      <p>A checklist in the repo</p>
-                      <p class="path">.readyup/kits/default.ts</p>
-                      <p class="sub">next to the code that it checks</p>
-                    </div>
-                    <div class="arrow"></div>
-                    <div class="hnode">
-                      <p>The code changes</p>
-                      <p class="sub">The kit changes with it, in the same commit and the same review</p>
-                    </div>
-                    <div class="arrow"></div>
-                    <div class="hnode ink">
-                      <p>Deploy</p>
-                      <p class="sub"><code>rdy run</code> first, on a laptop and in CI</p>
-                    </div>
-                    <div class="arrow green"></div>
-                    <div class="hnode early">
-                      <p class="mark">🔧</p>
-                      <p>The failure shows up before the deploy</p>
-                      <p class="sub">with its fix beside it</p>
-                    </div>
+                <div class="head">
+                  <h2>A check is a claim, a test, and a fix</h2>
+                  <code class="chip">.readyup/kits/onboarding.ts</code>
+                </div>
+                <div class="cols">
+                  <figure class="card term">
+                    <figcaption class="card-head">rdy run onboarding</figcaption>
+                    <pre
+                      class="out"
+                    ><code><span class="ln dim">$ rdy run onboarding</span><span class="ln dim one">⋯</span><span class="ln lvl lvl-2 rule">━━ 📋 machine</span><span class="ln lvl lvl-2 st-pass">✅ Node version matches .nvmrc · v24.11.0 satisfies 24</span><span class="ln lvl lvl-2 st-pass">✅ Docker daemon is running (388ms)</span><span class="ln lvl lvl-2 st-pass">✅ Total: 2 passed (401ms)</span><span class="ln lvl lvl-2"> </span><span class="ln lvl lvl-2 rule">━━ 📋 repo</span><span class="ln lvl lvl-1 st-pass">✅ Dependencies are installed (812ms)</span><span class="ln lvl lvl-1 st-pass">✅ .env is present</span><span class="ln st-error" data-pair="1">   ❌ .env sets every required key</span><span class="ln detail" data-pair="2">      DATABASE_URL is unset</span><span class="ln lvl lvl-1 st-pass">✅ Git hooks are installed</span><span class="ln dim one">⋯</span><span class="ln rule">── Fixes</span><span class="ln st-error">❌ .env sets every required key</span><span class="ln fix" data-pair="3">   🔧 Set each key named above in .env; .env.example lists the keys</span><span class="ln total">❌ Total: 1 error, 5 passed (1216ms)</span><span class="ln"> </span><span class="ln verdict-bad" data-pair="4">❌ Run failed (fail-on: error)</span></code></pre>
+                  </figure>
+                  <figure class="code">
+                    <figcaption>one check<span class="chip" id="anatomy-chip">of six</span></figcaption>
+                    <pre><span class="zoom z0"><span class="pair" data-pair="1">name: <span class="s">'.env sets every required key'</span>,</span>
+<span class="pair" data-pair="4">severity: <span class="s">'error'</span>,</span>
+<span class="pair" data-pair="2">check: () =&gt; {</span>
+<span class="pair" data-pair="2">  <span class="k">const</span> env = envOf(<span class="s">'.env'</span>);</span>
+<span class="pair" data-pair="2">  <span class="k">const</span> missing = REQUIRED_KEYS.filter((key) =&gt; !env[key]);</span>
+<span class="pair" data-pair="2">  <span class="k">if</span> (missing.length === 0) <span class="k">return</span> true;</span>
+<span class="pair" data-pair="2">  <span class="k">return</span> { ok: false, detail: <span class="s">`${missing.join(', ')} is unset`</span> };</span>
+<span class="pair" data-pair="2">},</span>
+<span class="pair" data-pair="3">fix: <span class="s">'Set each key named above in .env; .env.example lists the keys'</span>,</span></span><span class="zoom z1">{
+  name: <span class="s">'repo'</span>, <span class="m">// a checklist: a name and its checks</span>
+  checks: [
+    { name: <span class="s">'Dependencies are installed'</span>, check: hasNodeModules, fix: <span class="s">'Run pnpm install'</span> },
+    {
+      name: <span class="s">'.env is present'</span>, check: hasEnvFile, fix: <span class="s">'Copy .env.example to .env'</span>,
+      checks: [ <span class="m">// runs only when the parent passes</span>
+<span class="hl">        { name: <span class="s">'.env sets every required key'</span>, severity: <span class="s">'error'</span>, check: hasRequiredKeys, fix: … },</span>
+      ],
+    },
+    { name: <span class="s">'Git hooks are installed'</span>, severity: <span class="s">'recommend'</span>, check: hasHooks, fix: <span class="s">'Run pnpm lefthook install'</span> },
+  ],
+}</span><span class="zoom z2"><span class="k">import</span> { defineRdyKit } <span class="k">from</span> <span class="s">'readyup'</span>;
+
+<span class="k">export default</span> defineRdyKit({ <span class="m">// a kit: a file of checklists</span>
+  checklists: [
+    {
+      name: <span class="s">'machine'</span>,
+      checks: [
+        { name: <span class="s">'Node version matches .nvmrc'</span>, check: nodeMatches, fix: <span class="s">'Run nvm use'</span> },
+        { name: <span class="s">'Docker daemon is running'</span>, check: dockerUp, fix: <span class="s">'Start Docker Desktop'</span> },
+      ],
+    },
+<span class="hl">    { name: <span class="s">'repo'</span>, checks: [ <span class="m">… four checks, one of them nested …</span> ] },</span>
+  ],
+});</span></pre>
+                  </figure>
+                </div>
+                <div class="cap-stack">
+                  <p class="cap" data-capfor="0">One check, beside what it printed</p>
+                  <p class="cap" data-capfor="1"><code>name</code> is the claim, and the claim is the line</p>
+                  <p class="cap" data-capfor="2">
+                    <code>check</code> decides; its <code>detail</code> is the reason under the line
+                  </p>
+                  <p class="cap" data-capfor="3"><code>fix</code> is the hint under the wrench</p>
+                  <p class="cap" data-capfor="4"><code>severity</code> is what the failure means to the verdict</p>
+                  <p class="cap" data-capfor="5">A checklist is a list of checks; a check can have checks beneath it</p>
+                  <p class="cap" data-capfor="6">A kit is a file of checklists; one command runs the whole file</p>
+                </div>
+              </div>
+              <aside class="notes">
+                <p data-at="0">One check, beside what it printed.</p>
+                <p data-at="1">The name is the claim, and the claim is the line.</p>
+                <p data-at="2">
+                  The function decides. It returns true, or false with a detail, and the detail is the indented reason.
+                </p>
+                <p data-at="3">
+                  The fix is the string under the wrench, written once, printed to whoever hits the failure.
+                </p>
+                <p data-at="4">Severity says what a failure means. This one is an error, so the run fails.</p>
+                <p data-at="5">Zoom out: the check sits in a checklist, under a parent that must pass first.</p>
+                <p data-at="6">
+                  Zoom out again: the checklist sits in a kit, which is one file, and one command runs it.
+                </p>
+              </aside>
+            </section>
+
+            <!-- 6 · Onboarding kit -->
+            <section class="s-kit" data-kit="onboarding" data-title="The onboarding kit: Am I set up to use this repo?">
+              <div class="slide">
+                <h2>The onboarding kit: Am I set up to use this repo?</h2>
+                <div class="kit">
+                  <figure class="card term">
+                    <figcaption class="card-head term-tab">
+                      <button type="button" class="tab on" data-view="run" aria-pressed="true">rdy run</button>
+                      <button type="button" class="tab" data-view="json" aria-pressed="false">rdy run --json</button>
+                    </figcaption>
+                    <pre class="out" data-view="run"><code></code></pre>
+                    <pre class="out json" data-view="json" hidden><code></code></pre>
+                    <div class="exit"><span class="exit-of"></span><span class="ink-box"></span></div>
+                  </figure>
+                  <div class="side">
+                    <div class="panel env"></div>
                   </div>
                 </div>
-                <p class="caption">The checklist is versioned with the code, and the same command runs everywhere</p>
+                <div class="steps"></div>
               </div>
               <aside class="notes">
-                Here is the earlier timeline with ReadyUp in place. The checklist is a file in the repo, so it is
-                versioned and reviewed with the code that it checks. The same command runs on a laptop and in CI; only
-                the rendering differs. And a failure shows up before the deploy, with the fix hint beside it, instead of
-                after.
+                <p data-at="0">
+                  A new teammate clones the repository on their first morning and runs the onboarding kit. The check
+                  being evaluated is marked in the source on the right.
+                </p>
+                <p data-at="3">The .env file is there, but one required key is unset.</p>
+                <p data-at="4">The VPN is off.</p>
+                <p data-at="8">Two errors, two fixes, each written by the person who knew the answer.</p>
+                <p data-at="9">
+                  Exit one. Flip the environment for any other morning; change fail-on to see what the threshold does to
+                  the verdict; turn on --json to see the same run for a machine.
+                </p>
               </aside>
             </section>
 
-            <!-- 14 · Get started -->
-            <section class="s-start" data-title="Get started">
+            <!-- 7 · Preflight kit -->
+            <section class="s-kit" data-kit="preflight" data-title="The preflight kit: Is the app ready to launch?">
               <div class="slide">
-                <header class="slide-head">
-                  <h2>Get started</h2>
-                  <code class="chip">Node 24 or later</code>
-                </header>
-                <div class="stage">
+                <h2>The preflight kit: Is the app ready to launch?</h2>
+                <div class="kit">
+                  <figure class="card term">
+                    <figcaption class="card-head term-tab">
+                      <button type="button" class="tab on" data-view="run" aria-pressed="true">rdy run</button>
+                      <button type="button" class="tab" data-view="json" aria-pressed="false">rdy run --json</button>
+                    </figcaption>
+                    <pre class="out" data-view="run"><code></code></pre>
+                    <pre class="out json" data-view="json" hidden><code></code></pre>
+                    <div class="exit"><span class="exit-of"></span><span class="ink-box"></span></div>
+                  </figure>
+                  <div class="side">
+                    <div class="panel env"></div>
+                  </div>
+                </div>
+                <div class="steps"></div>
+              </div>
+              <aside class="notes">
+                <p data-at="0">
+                  A preflight kit runs before the app starts, and stops the launch when it would fail anyway.
+                </p>
+                <p data-at="3">
+                  The database is up, but two migrations are pending: the app would start and then fail on the first
+                  request.
+                </p>
+                <p data-at="5">
+                  An error fails the run; the launch script never reaches pnpm start. Stop Docker and the database check
+                  fails too, with the migration check blocked beneath it. Take port 3000 instead and the run passes with
+                  a warning; set fail-on to warn and the same warning fails it.
+                </p>
+              </aside>
+            </section>
+
+            <!-- 8 · Adoption kit -->
+            <section
+              class="s-kit"
+              data-kit="adoption"
+              data-title="The adoption kit: Are the latest features being used?"
+            >
+              <div class="slide">
+                <h2>The adoption kit: Are the latest features being used?</h2>
+                <div class="kit">
+                  <figure class="card term">
+                    <figcaption class="card-head term-tab">
+                      <button type="button" class="tab on" data-view="run" aria-pressed="true">rdy run</button>
+                      <button type="button" class="tab" data-view="json" aria-pressed="false">rdy run --json</button>
+                    </figcaption>
+                    <pre class="out" data-view="run"><code></code></pre>
+                    <pre class="out json" data-view="json" hidden><code></code></pre>
+                    <div class="exit"><span class="exit-of"></span><span class="ink-box"></span></div>
+                  </figure>
+                  <div class="side">
+                    <div class="panel env"></div>
+                  </div>
+                </div>
+                <div class="steps"></div>
+              </div>
+              <aside class="notes">
+                <p data-at="0">
+                  A library ships version 5 and, in the same package, a kit. Each check sweeps the codebase and counts
+                  the sites that use the new form.
+                </p>
+                <p data-at="1">
+                  Thirty-eight of forty-one Button imports; the three that remain are listed with a file and a line, and
+                  the fix says what to write there.
+                </p>
+                <p data-at="6">
+                  This is the adoption's progress bar, and it runs in the project rather than in the release notes.
+                  Adoption is complete when every check reads N of N.
+                </p>
+              </aside>
+            </section>
+
+            <!-- 9 · Migration kit -->
+            <section
+              class="s-kit"
+              data-kit="migration"
+              data-title="The migration kit: Has this repo adjusted to breaking changes?"
+            >
+              <div class="slide">
+                <h2>The migration kit: Has this repo adjusted to breaking changes?</h2>
+                <div class="kit">
+                  <figure class="card term">
+                    <figcaption class="card-head term-tab">
+                      <button type="button" class="tab on" data-view="run" aria-pressed="true">rdy run</button>
+                      <button type="button" class="tab" data-view="json" aria-pressed="false">rdy run --json</button>
+                    </figcaption>
+                    <pre class="out" data-view="run"><code></code></pre>
+                    <pre class="out json" data-view="json" hidden><code></code></pre>
+                    <div class="exit"><span class="exit-of"></span><span class="ink-box"></span></div>
+                  </figure>
+                  <div class="side">
+                    <div class="panel env"></div>
+                  </div>
+                </div>
+                <div class="steps"></div>
+              </div>
+              <aside class="notes">
+                <p data-at="0">
+                  A library ships a major version with breaking changes, and in the same package a kit that finds every
+                  site the changes break.
+                </p>
+                <p data-at="1">
+                  Fourteen of seventeen clients use the new form; the three that do not are named by file and line.
+                </p>
+                <p data-at="6">
+                  Two errors fail the run until every site is moved: the migration is a number that moves on every run
+                  rather than a ticket that waits.
+                </p>
+              </aside>
+            </section>
+
+            <!-- 10 · IT diagnostic kit -->
+            <section
+              class="s-kit"
+              data-kit="it"
+              data-title="The IT diagnostic kit: Is this machine correctly configured?"
+            >
+              <div class="slide">
+                <h2>The IT diagnostic kit: Is this machine correctly configured?</h2>
+                <div class="kit">
+                  <figure class="card term">
+                    <figcaption class="card-head term-tab">
+                      <button type="button" class="tab on" data-view="run" aria-pressed="true">rdy run</button>
+                      <button type="button" class="tab" data-view="json" aria-pressed="false">rdy run --json</button>
+                    </figcaption>
+                    <pre class="out" data-view="run"><code></code></pre>
+                    <pre class="out json" data-view="json" hidden><code></code></pre>
+                    <div class="exit"><span class="exit-of"></span><span class="ink-box"></span></div>
+                  </figure>
+                  <div class="side">
+                    <div class="panel env"></div>
+                  </div>
+                </div>
+                <div class="steps"></div>
+              </div>
+              <aside class="notes">
+                <p data-at="0">
+                  The IT team keeps its diagnostic kit in a GitHub repository. Nothing is installed: rdy run --from
+                  fetches the committed kit at main and runs it on this machine.
+                </p>
+                <p data-at="2">FileVault is off: an error, with the setting to change.</p>
+                <p data-at="8">
+                  The person reads the fixes; the help desk reads the JSON. The same kit, the same morning, every
+                  machine.
+                </p>
+              </aside>
+            </section>
+
+            <!-- 11 · Sources -->
+            <section class="s-sources" data-title="Every tool the project installs can audit it" data-step="0">
+              <div class="slide">
+                <h2 class="claim">Every tool the project installs can audit it</h2>
+                <div class="sources">
+                  <figure class="card">
+                    <figcaption class="card-head">.config/readyup.config.ts</figcaption>
+                    <pre
+                      class="config"
+                    ><code><span class="k">import</span> { defineRdyConfig } <span class="k">from</span> 'readyup';
+
+<span class="k">export default</span> defineRdyConfig({
+  compile: {
+    include: '*.ts',
+  },
+  internal: {
+    dir: 'internal',
+  },
+  <span class="c">// `rdy run --sources` runs the `default` kit of each of these sources.</span>
+  sources: [
+    <span class="s">'github:williamthorsen/.github'</span>,
+    <span class="s">'npm:@williamthorsen/eslint-config-typescript'</span>,
+    <span class="s">'npm:@williamthorsen/nmr'</span>,
+    <span class="s">'npm:@williamthorsen/release-kit'</span>,
+    <span class="s">'npm:@williamthorsen/toolbelt.errors'</span>,
+    <span class="s">'npm:@williamthorsen/toolbelt.vitest'</span>,
+    <span class="s">'npm:@williamthorsen/tsconfig'</span>,
+    <span class="s">'npm:codeassembly'</span>,
+    <span class="s">'npm:readyup'</span>,
+    <span class="s">'npm:v11y-check'</span>,
+  ],
+});</code></pre>
+                  </figure>
+                  <figure class="card">
+                    <figcaption class="card-head">
+                      rdy run --sources<span class="chip">the workshop repository, readyup 0.43.0</span>
+                    </figcaption>
+                    <pre class="out wide" id="sources-out"><code><span class="ln dim">$ rdy run --sources
+</span>━━ 🌐 github:williamthorsen/.github@main / 📓 default
+✅ code-quality.yaml workflow exists
+   ✅ code-quality workflow references code-quality-pnpm-workflow.yaml@v8
+   ✅ code-quality workflow declares a workflow-level concurrency block
+   ✅ code-quality workflow does not reference pnpm-version
+   ✅ code-quality workflow does not reference node-version
+   ✅ code-quality workflow does not reference GH_PACKAGES_TOKEN
+✅ Total: 6 passed (1ms)
+
+━━ 📦 @williamthorsen/eslint-config-typescript@20.1.3 / 📓 default / 📋 peers
+✅ eslint satisfies the peer range declared by this config · 10.13.0 satisfies the >=10 peer range
+✅ typescript satisfies the peer range declared by this config · 6.0.3 satisfies the >=5.7 peer range
+✅ Total: 2 passed (45ms)
+
+━━ 📦 @williamthorsen/eslint-config-typescript@20.1.3 / 📓 default / 📋 config
+✅ A root eslint config exists
+   ✅ The root eslint config extends @williamthorsen/eslint-config-typescript
+✅ No JavaScript eslint config shadows a TypeScript one
+✅ Every eslint config is TypeScript
+✅ An eslint config anchors the project service with tsconfigRootDir
+⚪ An eslint config sets settings.next.rootDir · No eslint config enables the Next plugin or sets settings.next.rootDir
+✅ Total: 5 passed, 1 skipped (3ms)
+
+━━ 📦 @williamthorsen/eslint-config-typescript@20.1.3 / 📓 default / 📋 tsconfig
+✅ The repo's tsconfigs permit a TypeScript-extension import
+✅ A tsconfig enumerating an eslint config's siblings names the config itself
+✅ Total: 2 passed (11ms)
+
+━━ 📦 @williamthorsen/eslint-config-typescript@20.1.3 / 📓 default / 📋 projectservice
+✅ No eslint config sets parserOptions.project
+✅ No tsconfig.eslint.json files remain
+✅ Total: 2 passed (1ms)
+
+━━ 📦 @williamthorsen/nmr@0.52.0 / 📓 default / 📋 nmr
+✅ @williamthorsen/nmr in devDependencies (300ms)
+   ✅ @williamthorsen/nmr >= 0.52.0
+✅ pnpm-workspace.yaml exists (299ms)
+✅ package.json has packageManager field (285ms)
+✅ .config/nmr.config.ts uses defineConfig
+✅ eslint >= 10.0.0
+✅ @williamthorsen/strict-lint >= 9.3.0
+✅ all workspace packages can build (246ms)
+✅ every bin target is a committed wrapper (270ms)
+✅ every bin wrapper's build-output target is covered by files (243ms)
+✅ every vitest.config builds on @williamthorsen/nmr/vitest (178ms)
+✅ vitest.root.config.ts builds on @williamthorsen/nmr/vitest (173ms)
+✅ every workspace with a Vite config has a Vitest config (172ms)
+✅ the test suite gates the test-file conventions (170ms)
+⚪ every test file names its isolation tier · reported by checkTestFileConventions in __tests__/test-file-conventions.tool.test.ts
+⚪ every test file is under a __tests__ directory · reported by checkTestFileConventions in __tests__/test-file-conventions.tool.test.ts
+✅ Prettier config builds on @williamthorsen/nmr/prettier
+✅ taze.config.ts builds on @williamthorsen/nmr/taze
+✅ v11y-check in devDependencies
+✅ Total: 28 passed, 2 skipped (325ms)
+
+━━ 📦 @williamthorsen/nmr@0.52.0 / 📓 default / 📋 self-hosted runner
+✅ GitHub reports the repo's runner settings
+   ⚪ CI_RUNS_ON selects the self-hosted runner · williamthorsen/workshop is public, so a self-hosted runner must not run its CI: A fork's pull request would run code on the runner
+   ⚪ the self-hosted runner can run CI · CI_RUNS_ON is unset
+✅ Total: 1 passed, 2 skipped (3358ms)
+
+━━ 📦 @williamthorsen/release-kit@15.0.2 / 📓 default
+✅ @williamthorsen/release-kit in devDependencies
+   ✅ @williamthorsen/release-kit >= 15.0.2
+✅ release.yaml workflow exists
+   ✅ release.yaml matches template
+✅ publish.yaml workflow exists
+   ✅ publish.yaml matches template
+✅ create-github-release.yaml matches template
+✅ .config/release-kit.config.ts exports a config
+   ✅ releaseNotes config is consistent with changelogJson
+   ✅ .config/release-kit.config.ts uses defineConfig
+   ✅ releaseNotes.shouldInjectIntoReadme is true
+      ✅ README contains release-notes section markers
+   ✅ repoLabels block declared in .config/release-kit.config.ts
+   ✅ .github/labels.yaml exists
+      ✅ labels.yaml has current common preset
+✅ published packages ship CHANGELOG.md
+⚪ published packages ship the changelog archives · changelogMarkdown.keepVersions is not set
+✅ changelog.json generation is enabled
+   ✅ published packages ship the changelog JSON
+✅ sync-labels.yaml workflow exists
+   ✅ sync-labels.yaml matches template
+✅ Total: 27 passed, 1 skipped (13ms)
+
+━━ 📦 @williamthorsen/toolbelt.errors@0.8.4 / 📓 default
+✅ No source defines its own description helper [73 of 74]
+✅ No source describes a thrown value inline [73 of 74]
+💡 No source narrows a thrown value by hand [toolbelt.errors/no-instanceof-error] [73 of 74]
+   packages/readyup/src/run/runRdy.ts:264
+✅ No source coerces a thrown value to an Error by hand [73 of 74]
+── Fixes
+💡 No source narrows a thrown value by hand
+   <span class="ln fix">🔧 Use isError from @williamthorsen/toolbelt.errors, or assertIsError from @williamthorsen/toolbelt.errors/candidate when the narrowing throws. Both recognize an Error crossing a realm boundary, which a bare instanceof test reports as false.</span>
+💡 Total: 1 recommendation, 3 passed (251ms)
+
+━━ 📦 @williamthorsen/toolbelt.vitest@0.12.0 / 📓 default
+✅ No test declares its own process-exit sentinel error [117 of 117]
+✅ No test mocks process.exit without throwing [117 of 117]
+✅ No test hand-rolls a throwing or unreadable process-exit mock [117 of 117]
+✅ No test captures only part of a console call [117 of 117]
+✅ No test hand-rolls a console capture [117 of 117]
+✅ No test silences a console method by hand [117 of 117]
+✅ No test reads a console spy's recorded calls [117 of 117]
+✅ No test registers a disposal by hand [117 of 117]
+✅ Total: 8 passed (689ms)
+
+━━ 📦 @williamthorsen/tsconfig@0.12.1 / 📓 default / 📋 adoption
+✅ Every workspace tsconfig extends @williamthorsen/tsconfig [11 of 11]
+✅ No tsconfig re-declares an option that the base already supplies
+✅ Total: 2 passed (6ms)
+
+━━ 📦 @williamthorsen/tsconfig@0.12.1 / 📓 default / 📋 alignment
+✅ No tsconfig declares an ES year other than the one @williamthorsen/tsconfig sets · every tsconfig extending the base is at es2025
+✅ The declared Node floor supports the base's ES year · the declared Node floor implements es2025
+✅ Total: 2 passed (1ms)
+
+━━ 📦 @williamthorsen/tsconfig@0.12.1 / 📓 default / 📋 hygiene
+✅ No tsconfig's include, exclude, or files names a path outside its own directory [11 of 11]
+✅ Total: 1 passed (0ms)
+
+━━ 📦 codeassembly@0.18.0 / 📓 default
+✅ AGENTS.md is non-empty
+✅ .claude/CLAUDE.md imports AGENTS.md
+✅ AGENTS.md is current · last updated 2026-10-25, 0 commits since
+✅ AGENTS.md is harness-neutral
+✅ AGENTS.md doesn't host any rulebook region
+✅ AGENTS.md is within the ambient budget · 60 lines, budget 200
+✅ Total: 6 passed (34ms)
+
+━━ 📦 readyup@0.43.0 / 📓 default / 📋 setup
+✅ .config/readyup.config.ts exists
+✅ .readyup/manifest.json exists
+✅ Every installed dependency that publishes kits is listed in "sources" [9 of 9]
+✅ Total: 3 passed (9ms)
+
+━━ 📦 readyup@0.43.0 / 📓 default / 📋 freshness
+✅ demo is recorded with a source and a bundle hash
+   ✅ Its source is unchanged since it was compiled · .readyup/kits/demo.ts matches the recorded hash
+   ✅ Its bundle is unchanged since it was compiled · .readyup/kits/demo.js matches the recorded hash
+   ✅ Everything it inlined is unchanged since it was compiled · It inlines nothing past its source
+✅ preflight is recorded with a source and a bundle hash
+   ✅ Its source is unchanged since it was compiled · .readyup/kits/preflight.ts matches the recorded hash
+   ✅ Its bundle is unchanged since it was compiled · .readyup/kits/preflight.js matches the recorded hash
+   ✅ Everything it inlined is unchanged since it was compiled · It inlines nothing past its source
+✅ Every compiled kit is recorded in the manifest [2 of 2]
+✅ Total: 9 passed (1ms)
+
+━━ 📦 v11y-check@0.19.6 / 📓 default
+✅ v11y-check in devDependencies
+   ✅ v11y-check >= 0.19.6
+✅ audit.yaml workflow exists
+   ✅ audit.yaml matches template
+✅ Total: 5 passed (1ms)
+
+<span class="src-summary" id="src-summary">━━ Summary
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+✅ github:williamthorsen/.github@main / default                                   1ms  6 passed
+✅ @williamthorsen/eslint-config-typescript@20.1.3 / default / peers             45ms  2 passed
+✅ @williamthorsen/eslint-config-typescript@20.1.3 / default / config             3ms  5 passed, 1 skipped
+✅ @williamthorsen/eslint-config-typescript@20.1.3 / default / tsconfig          11ms  2 passed
+✅ @williamthorsen/eslint-config-typescript@20.1.3 / default / projectservice     1ms  2 passed
+✅ @williamthorsen/nmr@0.52.0 / default / nmr                                   325ms  28 passed, 2 skipped
+✅ @williamthorsen/nmr@0.52.0 / default / self-hosted runner                   3358ms  1 passed, 2 skipped
+✅ @williamthorsen/release-kit@15.0.2 / default                                  13ms  27 passed, 1 skipped
+💡 @williamthorsen/toolbelt.errors@0.8.4 / default                              251ms  1 recommendation, 3 passed
+✅ @williamthorsen/toolbelt.vitest@0.12.0 / default                             689ms  8 passed
+✅ @williamthorsen/tsconfig@0.12.1 / default / adoption                           6ms  2 passed
+✅ @williamthorsen/tsconfig@0.12.1 / default / alignment                          1ms  2 passed
+✅ @williamthorsen/tsconfig@0.12.1 / default / hygiene                            0ms  1 passed
+✅ codeassembly@0.18.0 / default                                                 34ms  6 passed
+✅ readyup@0.43.0 / default / setup                                               9ms  3 passed
+✅ readyup@0.43.0 / default / freshness                                           1ms  9 passed
+✅ v11y-check@0.19.6 / default                                                    1ms  5 passed
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+<span class="ln total">💡 Total: 1 recommendation, 112 passed, 6 skipped (4747ms)</span>
+
+<span class="ln verdict-ok">✅ Run passed (fail-on: error)</span>
+<span class="ln dim">exit 0</span></span></code></pre>
+                  </figure>
+                </div>
+                <div class="steps"><span class="fragment step" data-fragment-index="1"></span></div>
+              </div>
+              <aside class="notes">
+                The tools a project installs can audit it. The config on the left lists the sources: packages that
+                publish a kit alongside their code. rdy run --sources runs the default kit of every one of them. This is
+                the workshop repository's own run, as captured: seventeen checklists, a hundred and twelve checks
+                passed, one recommendation, with its fix printed beside it. One command covers every convention that the
+                dependencies own, and a new convention arrives with the next upgrade.
+              </aside>
+            </section>
+
+            <!-- 12 · Command-line reference -->
+            <section class="s-ref" data-title="rdy, on one page">
+              <div class="slide">
+                <div class="head">
+                  <h2>rdy, on one page</h2>
+                  <span class="chip"><code>rdy help &lt;topic&gt;</code> prints the full docs in the terminal</span>
+                </div>
+                <div class="ref">
+                  <div class="card">
+                    <h3>Kits</h3>
+                    <dl>
+                      <dt>rdy init</dt>
+                      <dd>
+                        writes <code>.config/readyup.config.ts</code> and a starter kit,
+                        <code>.readyup/kits/default.ts</code>
+                      </dd>
+                      <dt>rdy compile</dt>
+                      <dd>bundles each kit next to its source and records it in <code>.readyup/manifest.json</code></dd>
+                      <dt>rdy verify --rebuild</dt>
+                      <dd>fails on a bundle that no longer reproduces from its source; for CI</dd>
+                      <dt>rdy list</dt>
+                      <dd>lists the kits and checklists that a run would find</dd>
+                      <dt>rdy run --jit</dt>
+                      <dd>runs the TypeScript source without compiling; the loop while writing checks</dd>
+                    </dl>
+                    <h3>Where the kit comes from</h3>
+                    <dl>
+                      <dt>rdy run [kit]</dt>
+                      <dd>the repository's own kit: <code>default</code>, or the one named</dd>
+                      <dt>--from npm:@acme/ui</dt>
+                      <dd>the kit published with the installed version of a package</dd>
+                      <dt>--from bitbucket:ws/repo@ref</dt>
+                      <dd>
+                        the kit committed in a Bitbucket repository at a ref; <code>main</code> when none is named
+                      </dd>
+                      <dt>--from github:org/repo@ref</dt>
+                      <dd>the same, from GitHub</dd>
+                      <dt>--sources</dt>
+                      <dd>the default kit of every source that the config lists, with a summary table</dd>
+                    </dl>
+                  </div>
+                  <div class="card">
+                    <h3>What a run reports</h3>
+                    <dl>
+                      <dt>--fail-on error|warn|recommend</dt>
+                      <dd>the severity that fails the run; <code>error</code> by default</dd>
+                      <dt>--report-on error|warn|recommend</dt>
+                      <dd>the severity from which results are listed; the counts are unchanged</dd>
+                      <dt>--detail summary</dt>
+                      <dd>the failures and their fixes alone</dd>
+                      <dt>--json</dt>
+                      <dd>the whole run as one JSON document, for a pipeline or an agent</dd>
+                      <dt>--style rich|plain</dt>
+                      <dd>the marks, or words that a pipe and a log can read</dd>
+                      <dt>--quiet</dt>
+                      <dd>withholds the lines of checks that passed</dd>
+                    </dl>
+                    <h3>Exit codes</h3>
+                    <dl class="exits">
+                      <dt><span class="ink-box ok">0</span></dt>
+                      <dd>nothing failed at the threshold</dd>
+                      <dt><span class="ink-box bad">1</span></dt>
+                      <dd>something did: fix the repo</dd>
+                      <dt><span class="ink-box usage">2</span></dt>
+                      <dd>the invocation could not complete: fix the invocation</dd>
+                    </dl>
+                  </div>
+                </div>
+              </div>
+              <aside class="notes">
+                <p>
+                  Everything from today on one page: the commands that make a kit, the places a kit can come from, the
+                  flags that shape what a run reports, and the three exit codes that a pipeline reads. The full docs are
+                  in the terminal under rdy help.
+                </p>
+              </aside>
+            </section>
+
+            <!-- 13 · Close -->
+            <section class="s-end" data-title="ReadyUp">
+              <div class="slide">
+                <h2>ReadyUp: checklists that run</h2>
+                <div class="features">
+                  <div class="card">
+                    <h3>Easy to write</h3>
+                    <p>A check is a claim, a test, and a fix, in TypeScript next to the code it checks.</p>
+                  </div>
+                  <div class="card">
+                    <h3>Runnable from anywhere</h3>
+                    <p>One command on a laptop, in CI, and against a kit that a package or a repository publishes.</p>
+                  </div>
+                  <div class="card">
+                    <h3>Collections of checklists</h3>
+                    <p>Kits hold checklists, checklists hold checks, and a check can have checks beneath it.</p>
+                  </div>
+                  <div class="card">
+                    <h3>Agent-friendly</h3>
+                    <p>An exit code for a pipeline, and the whole run as one JSON document for a script or an agent.</p>
+                  </div>
+                </div>
+                <div class="start">
                   <ol class="cmd-list">
                     <li>
-                      <code>pnpm add --save-dev readyup esbuild</code>
-                      <span class="what">esbuild compiles the kits</span>
+                      <code>pnpm add --save-dev readyup esbuild</code
+                      ><span class="what">Node 24 or later; esbuild compiles the kits</span>
                     </li>
                     <li>
-                      <code>rdy init</code>
-                      <span class="what"
-                        >writes <code>.config/readyup.config.ts</code> and the starter kit
-                        <code class="path">.readyup/kits/default.ts</code></span
-                      >
+                      <code>rdy init</code
+                      ><span class="what">writes <code>.config/readyup.config.ts</code> and the starter kit</span>
                     </li>
-                    <li>
-                      <code>rdy compile</code>
-                      <span class="what">bundles the kit</span>
-                    </li>
-                    <li>
-                      <code>rdy run</code>
-                      <span class="what">runs it, locally or in CI</span>
-                    </li>
+                    <li><code>rdy compile</code><span class="what">bundles the kit</span></li>
+                    <li><code>rdy run</code><span class="what">runs it, on a laptop or in CI</span></li>
                   </ol>
+                  <p class="links">
+                    <a href="https://github.com/williamthorsen/workshop/tree/main/packages/readyup#readme"
+                      >github.com/williamthorsen/workshop</a
+                    >
+                    <span
+                      ><code>packages/readyup</code> · also on npm as
+                      <a href="https://www.npmjs.com/package/readyup"><code>readyup</code></a></span
+                    >
+                  </p>
                 </div>
-                <p class="links">
-                  <a href="https://www.npmjs.com/package/readyup">npmjs.com/package/readyup</a>
-                  <span><code>rdy help</code> lists the doc topics in the terminal</span>
-                </p>
               </div>
               <aside class="notes">
-                To start: add readyup and esbuild as dev dependencies, on Node 24 or later. rdy init writes the config
-                and the starter kit from earlier. rdy compile bundles it, and rdy run runs it, the same way locally and
-                in CI. The docs are on npm and in the terminal: rdy help lists the topics. Questions?
+                <p>
+                  Four commands take a project to its first run. The first check to write is the top item of the README.
+                  The source, the docs, and the issues are on GitHub. Questions?
+                </p>
               </aside>
             </section>
           </div>
@@ -2929,11 +2901,14 @@
         var notesPanel = document.getElementById('notes');
         var notesBody = document.getElementById('notes-body');
 
-        // -- Kit pages --
-        // Each page's model, and its rendering through readyup's own formatters, are in `deck.js`, which is built from
+        // -- Runs --
+        // Each kit's model, and its rendering through readyup's own formatters, are in `deck.js`, which is built from
         // `presentation/src/`.
 
-        document.querySelector('section.s-run .run-sample').innerHTML = ReadyupDeck.renderDeployRun()
+        document.querySelector('section.s-title .out code').innerHTML = ReadyupDeck.renderTitleRun()
+          .map(lineHtml)
+          .join('\n');
+        document.querySelector('section.s-run .term-sample code').innerHTML = ReadyupDeck.renderDeployRun()
           .map(lineHtml)
           .join('\n');
         document.querySelectorAll('section.s-kit').forEach(mountKit);
@@ -3092,7 +3067,7 @@
             thumb.setAttribute('aria-hidden', 'true');
             var frame = document.createElement('div');
             frame.className = 'thumb-frame reveal ' + section.className;
-            frame.setAttribute('data-step', section.getAttribute('data-step') || '0');
+            if (section.hasAttribute('data-step')) frame.setAttribute('data-step', section.getAttribute('data-step'));
             if (section.hasAttribute('data-view')) frame.setAttribute('data-view', section.getAttribute('data-view'));
             var copy = section.querySelector('.slide').cloneNode(true);
             copy.querySelectorAll('[id]').forEach(function (el) {
@@ -3188,28 +3163,29 @@
           deckEl.focus();
         }
 
-        // Mounts a kit page: builds its strip and fragments once, then redraws it whenever a toggle or a tab changes
+        // Mounts a kit page: builds its switches and fragments once, then redraws it whenever a switch or a tab changes
         function mountKit(slide) {
-          var kit = ReadyupDeck.KITS[slide.getAttribute('data-kit')];
+          var id = slide.getAttribute('data-kit');
+          var kit = ReadyupDeck.KITS[id];
           var env = {};
-          var panel = slide.querySelector('.kt-env');
-          var treeEl = slide.querySelector('.kt-tree');
-          var out = slide.querySelector('.term pre code');
-          var caps = slide.querySelector('.captions');
-          var stepsEl = slide.querySelector('.kt-steps');
-          var exitBox = slide.querySelector('.kt-exit-box');
+          var envBox = slide.querySelector('.env');
+          var panes = {
+            run: slide.querySelector('.out[data-view="run"]'),
+            json: slide.querySelector('.out[data-view="json"]'),
+          };
+          var stepsEl = slide.querySelector('.steps');
+          var exitBox = slide.querySelector('.exit .ink-box');
           var tabs = slide.querySelectorAll('.term-tab .tab');
           var view = 'run';
-          tabs[0].textContent = 'rdy run';
-          tabs[1].textContent = 'rdy run --json';
 
-          panel.innerHTML = '<span class="kt-env-h">Environment</span>';
+          envBox.innerHTML = '<h3>Environment</h3>';
           kit.conditions.forEach(function (c) {
             env[c.id] = c.on;
             var label = document.createElement('label');
             label.className = 'switch';
             var input = document.createElement('input');
             input.type = 'checkbox';
+            input.id = id + '-' + c.id;
             input.checked = c.on;
             input.addEventListener('change', function () {
               env[c.id] = input.checked;
@@ -3218,7 +3194,7 @@
             });
             label.appendChild(input);
             label.appendChild(document.createTextNode(' ' + c.label));
-            panel.appendChild(label);
+            envBox.appendChild(label);
           });
 
           tabs.forEach(function (tab) {
@@ -3226,6 +3202,7 @@
               view = tab.getAttribute('data-view');
               tabs.forEach(function (t) {
                 t.classList.toggle('on', t === tab);
+                t.setAttribute('aria-pressed', String(t === tab));
               });
               slide.setAttribute('data-view', view);
               draw();
@@ -3242,40 +3219,14 @@
 
           function draw() {
             var r = ReadyupDeck.renderKit(kit, env);
-            if (view === 'json') {
-              out.innerHTML = '<span class="ln on">' + highlightJson(r.json) + '</span>';
-            } else {
-              out.innerHTML = r.lines
-                .map(function (l) {
-                  return '<span class="ln" data-at="' + l.at + '">' + lineHtml(l) + '\n</span>';
-                })
-                .join('');
-            }
-            treeEl.innerHTML = r.tree
-              .map(function (t) {
-                if (t.kind === 'checklist') {
-                  return '<p class="kt-list" data-at="' + t.at + '">' + t.glyph + ' ' + esc(t.name) + '</p>';
-                }
-                return (
-                  '<div class="kt-row st-' +
-                  t.status +
-                  '" data-at="' +
-                  t.at +
-                  '" style="--depth: ' +
-                  t.depth +
-                  '"><span class="mark">' +
-                  t.glyph +
-                  '</span><span class="label">' +
-                  esc(t.name) +
-                  '</span></div>'
-                );
+            panes.run.querySelector('code').innerHTML = r.lines
+              .map(function (l) {
+                return '<span class="ln" data-at="' + l.at + '">' + lineHtml(l) + '\n</span>';
               })
               .join('');
-            caps.innerHTML = r.captions
-              .map(function (c) {
-                return '<p class="caption" data-at="' + c.at + '">' + c.html + '</p>';
-              })
-              .join('');
+            panes.json.querySelector('code').innerHTML = highlightJson(r.json);
+            panes.run.hidden = view !== 'run';
+            panes.json.hidden = view !== 'json';
             exitBox.textContent = 'exit ' + r.exit;
             exitBox.setAttribute('data-at', r.exitAt);
             setStep(slide);
@@ -3283,8 +3234,10 @@
           draw();
         }
 
-        // Sets a stepped slide's step from its visible fragments, and marks each stepped element reached or current
+        // Sets a stepped slide's step from its visible fragments, and marks each stepped element reached or current; a
+        // slide marked `is-final` keeps the last step that its markup shows
         function setStep(slide) {
+          if (slide.classList.contains('is-final')) return;
           var step = slide.querySelectorAll('.fragment.visible').length;
           var stepped = slide.querySelectorAll('[data-at]');
           slide.setAttribute('data-step', step);
@@ -3293,12 +3246,13 @@
             stepped[i].classList.toggle('on', at <= step);
             stepped[i].classList.toggle('now', at === step);
           }
+          if (slide.classList.contains('s-sources')) scrollSources(step);
           scrollToStep(slide);
         }
 
         // Sets each printed copy of a stepped slide to the step that its page shows
         function syncPrintedPages() {
-          document.querySelectorAll('section.s-run, section.s-kit').forEach(setStep);
+          deckEl.querySelectorAll('.slides section').forEach(setStep);
         }
 
         // Reads the deck's indices into the bar, the notes, and every stepped slide
@@ -3306,7 +3260,7 @@
           var indices = deck.getIndices();
           var total = sections.length;
           var section = sections[indices.h];
-          document.querySelectorAll('section.s-run, section.s-kit').forEach(setStep);
+          sections.forEach(setStep);
           var fragments = section.querySelectorAll('.fragment').length;
           var shown = section.querySelectorAll('.fragment.visible').length;
           document.getElementById('pos').textContent = indices.h + 1 + ' / ' + total;
@@ -3413,10 +3367,17 @@
           if (grid.hidden && help.hidden) deckEl.focus();
         }
 
+        // Scrolls the sources slide's output to its summary table at step 1, and back to the top at step 0
+        function scrollSources(step) {
+          var pre = document.getElementById('sources-out');
+          var summary = document.getElementById('src-summary');
+          pre.scrollTo({ top: step >= 1 ? summary.offsetTop - 8 : 0, behavior: reduce ? 'auto' : 'smooth' });
+        }
+
         // Scrolls a kit page's terminal so that the last line reached is in view, as a terminal follows its output
         function scrollToStep(slide) {
-          var pre = slide.querySelector('.term pre');
-          if (!pre || !slide.classList.contains('s-kit') || slide.getAttribute('data-view') === 'json') return;
+          var pre = slide.querySelector('.out[data-view="run"]');
+          if (!pre || pre.hidden) return;
           var reached = pre.querySelectorAll('.ln.on');
           var last = reached[reached.length - 1];
           pre.scrollTop = last ? Math.max(0, last.offsetTop + last.offsetHeight - pre.clientHeight) : 0;
