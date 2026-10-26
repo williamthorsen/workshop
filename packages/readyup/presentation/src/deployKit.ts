@@ -2,8 +2,8 @@ import type { KitModel } from './kits.ts';
 
 /** The deploy checklist that "A run, step by step" walks through, with its build and environment broken. */
 export const DEPLOY_KIT: KitModel = {
-  title: 'The deploy checklist',
   name: 'deploy',
+  command: 'rdy run deploy',
   conditions: [
     { id: 'build', label: 'The build output is present', on: false },
     { id: 'env', label: 'NODE_ENV is set', on: false },

@@ -32,8 +32,8 @@ var ReadyupDeck = (() => {
   var TOOLBELT_README = "https://github.com/williamthorsen/toolbelt/tree/main/packages/errors#readme";
   var KITS = {
     preflight: {
-      title: "The preflight kit",
       name: "preflight",
+      command: "rdy run preflight",
       compiledWith: "0.42.0",
       conditions: [
         { id: "docker", label: "Docker is running", on: true },
@@ -64,8 +64,8 @@ var ReadyupDeck = (() => {
       ]
     },
     drift: {
-      title: "release-kit's kit, in part",
       name: "default",
+      command: "rdy run --from npm:@williamthorsen/release-kit",
       origin: { source: "npm:@williamthorsen/release-kit", version: "14.2.2" },
       compiledWith: "0.41.0",
       conditions: [
@@ -141,8 +141,8 @@ var ReadyupDeck = (() => {
       ]
     },
     adoption: {
-      title: "toolbelt.errors's kit",
       name: "default",
+      command: "rdy run --from npm:@williamthorsen/toolbelt.errors",
       origin: { source: "npm:@williamthorsen/toolbelt.errors", version: "0.8.3" },
       compiledWith: "0.40.0",
       conditions: [
@@ -201,8 +201,8 @@ var ReadyupDeck = (() => {
       ]
     },
     onboard: {
-      title: "The machine kit, in part",
       name: "machine",
+      command: "rdy run --jit machine",
       conditions: [
         { id: "brewfile", label: "Brewfile is satisfied", on: true },
         { id: "live", label: "live worktree exists", on: true },
@@ -1351,8 +1351,8 @@ ${violations.map((violation) => `- ${violation}`).join("\n")}`);
 
   // presentation/src/deployKit.ts
   var DEPLOY_KIT = {
-    title: "The deploy checklist",
     name: "deploy",
+    command: "rdy run deploy",
     conditions: [
       { id: "build", label: "The build output is present", on: false },
       { id: "env", label: "NODE_ENV is set", on: false }
@@ -1391,6 +1391,152 @@ ${violations.map((violation) => `- ${violation}`).join("\n")}`);
       }
     ]
   };
+
+  // presentation/src/renderKit.ts
+  var FAIL_ON = "error";
+  var REPORT_ON = "recommend";
+  function renderKit(kit, env) {
+    const previousColor = getColor();
+    const previousStyle = getStyle();
+    setStyle("rich");
+    setColor(true);
+    try {
+      return composeKit(kit, env);
+    } finally {
+      setStyle(previousStyle);
+      setColor(previousColor);
+    }
+  }
+  function renderDeployRun() {
+    return renderKit(DEPLOY_KIT, buildDefaultEnvironment(DEPLOY_KIT)).lines;
+  }
+  function buildDefaultEnvironment(kit) {
+    return Object.fromEntries(kit.conditions.map((condition) => [condition.id, condition.on]));
+  }
+  function buildSegments(kit, checklist) {
+    const segments = [];
+    if (kit.origin !== void 0) {
+      const { source } = kit.origin;
+      const version = kit.origin.version === void 0 ? "" : `@${kit.origin.version}`;
+      const sourceSegment = source.startsWith("npm:") ? { role: "sourcePackage", text: `${source.slice("npm:".length)}${version}` } : { role: "sourceRemote", text: `${source}${version}` };
+      segments.push(sourceSegment, { role: "kit", text: kit.name });
+    }
+    if (kit.checklists.length > 1) segments.push({ role: "checklist", text: checklist.name });
+    return segments;
+  }
+  function buildResult(check, depth, status) {
+    const base = {
+      name: check.name,
+      id: check.id ?? null,
+      severity: check.severity,
+      quiet: false,
+      error: null,
+      progress: resolveProgress(check, status),
+      examinedCount: check.findings === true ? 0 : null,
+      durationMs: check.ms ?? 0,
+      depth
+    };
+    if (status === "pass") return { ...base, status: "passed", ok: true, detail: check.detail ?? null };
+    if (status === "skip") return { ...base, status: "skipped", ok: null, skipReason: "n/a", detail: check.na ?? null };
+    if (status === "blocked") return { ...base, status: "skipped", ok: null, skipReason: "precondition", detail: null };
+    const detail = check.sites === void 0 ? check.failDetail ?? null : check.sites.join(", ");
+    return { ...base, status: "failed", ok: false, detail, fix: check.fix ?? null };
+  }
+  function composeKit(kit, env) {
+    const layout = getLayout();
+    const lines = [{ at: 0, printed: false, text: `$ ${kit.command}` }];
+    const entries = [];
+    const summaryRows = [];
+    let step = 0;
+    function print(at, text) {
+      for (const line of text.split("\n")) lines.push({ at, printed: true, text: line });
+    }
+    for (const [index, checklist] of kit.checklists.entries()) {
+      const checks = evaluateChecklist(checklist, env, step);
+      step += checks.length;
+      const headAt = index === 0 ? 0 : step - checks.length;
+      const segments = buildSegments(kit, checklist);
+      if (index > 0) print(headAt, "");
+      if (segments.length > 0) print(headAt, layout.formatBreadcrumb(segments, "kit"));
+      const results = checks.map(({ result }) => result);
+      const report = {
+        results,
+        passed: results.every((result) => result.status !== "failed" || !meetsThreshold(result.severity, FAIL_ON)),
+        durationMs: checklist.ms
+      };
+      const sections = renderReportSections(report, { reportOn: REPORT_ON });
+      const stepByResult = new Map(checks.map(({ at, result }) => [result, at]));
+      for (const { result, lines: resultLines } of sections.results) {
+        print(stepByResult.get(result) ?? headAt, resultLines.join("\n"));
+      }
+      step++;
+      print(step, [...sections.fixes, sections.countLine].join("\n"));
+      entries.push({ name: checklist.name, report });
+      summaryRows.push({ counts: countResults(report.results), durationMs: report.durationMs, segments });
+    }
+    step++;
+    const verdictAt = step;
+    if (summaryRows.length > 1) {
+      print(verdictAt, "");
+      print(verdictAt, formatCombinedSummary(summaryRows));
+    }
+    const passed = entries.every(({ report }) => report.passed);
+    const exit = passed ? 0 : 1;
+    print(verdictAt, "");
+    print(
+      verdictAt,
+      formatRunVerdict({
+        kitThresholds: [{ kitName: kit.name, failOn: FAIL_ON }],
+        missingKitCount: 0,
+        passed,
+        withheld: void 0
+      })
+    );
+    lines.push({ at: verdictAt, printed: false, text: `exit ${exit}` });
+    const json = formatJsonReport(
+      [
+        {
+          name: kit.name,
+          ...kit.origin !== void 0 && { origin: kit.origin },
+          ...kit.compiledWith !== void 0 && { compiledWith: kit.compiledWith },
+          entries,
+          failOn: FAIL_ON,
+          reportOn: REPORT_ON
+        }
+      ],
+      { detail: "full" }
+    );
+    return { exit, exitAt: verdictAt, json: indentJson(json), lines, steps: verdictAt };
+  }
+  function evaluateChecklist(checklist, env, stepBefore) {
+    const evaluated = [];
+    function visit(check, depth, isBlocked) {
+      const status = resolveStatus(check, env, isBlocked);
+      evaluated.push({ at: stepBefore + evaluated.length + 1, result: buildResult(check, depth, status) });
+      const children = check.checks ?? [];
+      for (const child of children) visit(child, depth + 1, status !== "pass");
+    }
+    for (const check of checklist.checks) visit(check, 0, false);
+    return evaluated;
+  }
+  function indentJson(json) {
+    const parsed = JSON.parse(json);
+    return JSON.stringify(parsed, void 0, 2);
+  }
+  function resolveProgress(check, status) {
+    if (status === "blocked") return null;
+    if (check.examined !== void 0) {
+      const failingCount = status === "pass" ? 0 : new Set(check.sites?.map((site) => site.replace(/:\d+$/u, ""))).size;
+      return { type: "fraction", passedCount: check.examined - failingCount, count: check.examined };
+    }
+    if (check.progress === void 0) return null;
+    return { type: "fraction", passedCount: check.progress[0], count: check.progress[1] };
+  }
+  function resolveStatus(check, env, isBlocked) {
+    if (isBlocked) return "blocked";
+    if (check.na !== void 0) return "skip";
+    return check.when === void 0 || env[check.when] === true ? "pass" : check.severity;
+  }
 
   // presentation/src/toHtml.ts
   var ESCAPE = "\x1B";
@@ -1449,202 +1595,6 @@ ${violations.map((violation) => `- ${violation}`).join("\n")}`);
     );
     const escaped = escapeHtml(run);
     return classes.length > 0 ? `<span class="${classes.join(" ")}">${escaped}</span>` : escaped;
-  }
-
-  // presentation/src/renderKit.ts
-  var FAIL_ON = "error";
-  var REPORT_ON = "recommend";
-  function renderKit(kit, env) {
-    const previousColor = getColor();
-    const previousStyle = getStyle();
-    setStyle("rich");
-    setColor(true);
-    try {
-      return composeKit(kit, env);
-    } finally {
-      setStyle(previousStyle);
-      setColor(previousColor);
-    }
-  }
-  function renderDeployRun() {
-    return renderKit(DEPLOY_KIT, buildDefaultEnvironment(DEPLOY_KIT)).lines;
-  }
-  function buildDefaultEnvironment(kit) {
-    return Object.fromEntries(kit.conditions.map((condition) => [condition.id, condition.on]));
-  }
-  function buildSegments(kit, checklist) {
-    const segments = [];
-    if (kit.origin !== void 0) {
-      const packageName = kit.origin.source.replace(/^npm:/u, "");
-      const version = kit.origin.version === void 0 ? "" : `@${kit.origin.version}`;
-      segments.push({ role: "sourcePackage", text: `${packageName}${version}` }, { role: "kit", text: kit.name });
-    }
-    if (kit.checklists.length > 1) segments.push({ role: "checklist", text: checklist.name });
-    return segments;
-  }
-  function buildResult(check, depth, status) {
-    const base = {
-      name: check.name,
-      id: check.id ?? null,
-      severity: check.severity,
-      quiet: false,
-      error: null,
-      progress: check.progress === void 0 || status === "blocked" ? null : { type: "fraction", passedCount: check.progress[0], count: check.progress[1] },
-      examinedCount: check.findings === true ? 0 : null,
-      durationMs: check.ms ?? 0,
-      depth
-    };
-    if (status === "pass") return { ...base, status: "passed", ok: true, detail: check.detail ?? null };
-    if (status === "skip") return { ...base, status: "skipped", ok: null, skipReason: "n/a", detail: check.na ?? null };
-    if (status === "blocked") return { ...base, status: "skipped", ok: null, skipReason: "precondition", detail: null };
-    return { ...base, status: "failed", ok: false, detail: check.failDetail ?? null, fix: check.fix ?? null };
-  }
-  function captionFor({ check, status }) {
-    const name = `<code>${escapeHtml(check.name)}</code>`;
-    const childCount = check.checks?.length ?? 0;
-    const under = childCount === 1 ? "the check under it" : `the ${childCount} checks under it`;
-    if (status === "pass") {
-      return childCount > 0 ? `${name} passes, so ${under} ${childCount === 1 ? "runs" : "run"}` : `${name} passes`;
-    }
-    if (status === "skip") return `${name} is skipped: ${escapeHtml(check.na ?? "")}`;
-    if (status === "blocked") return `${name} never ran: the check above it failed`;
-    const reason = check.failDetail === void 0 ? "" : `: ${escapeHtml(check.failDetail.split("\n", 1)[0] ?? "")}`;
-    const blocked = childCount > 0 ? `; ${under} ${childCount === 1 ? "is" : "are"} blocked` : "";
-    return `${name} fails at <code>${status}</code>${reason}${blocked}`;
-  }
-  function composeKit(kit, env) {
-    const layout = getLayout();
-    const lines = [];
-    const captions = [];
-    const tree = [];
-    const evaluated = [];
-    const entries = [];
-    const summaryRows = [];
-    const isMultiChecklist = kit.checklists.length > 1;
-    let step = 0;
-    function print(at, text) {
-      for (const line of text.split("\n")) lines.push({ at, printed: true, text: line });
-    }
-    for (const [index, checklist] of kit.checklists.entries()) {
-      const checks = evaluateChecklist(checklist, env, step);
-      step += checks.length;
-      const headAt = index === 0 ? 0 : step - checks.length;
-      const segments = buildSegments(kit, checklist);
-      if (index > 0) print(headAt, "");
-      if (segments.length > 0) print(headAt, layout.formatBreadcrumb(segments, "kit"));
-      if (isMultiChecklist) {
-        tree.push({ at: headAt, glyph: richFormatter.tokens.checklist.text, kind: "checklist", name: checklist.name });
-      }
-      const results = checks.map(({ result }) => result);
-      const report = {
-        results,
-        passed: results.every((result) => result.status !== "failed" || !meetsThreshold(result.severity, FAIL_ON)),
-        durationMs: checklist.ms
-      };
-      const sections = renderReportSections(report, { reportOn: REPORT_ON });
-      const stepByResult = new Map(checks.map(({ at, result }) => [result, at]));
-      for (const { result, lines: resultLines } of sections.results) {
-        print(stepByResult.get(result) ?? headAt, resultLines.join("\n"));
-      }
-      for (const evaluatedCheck of checks) {
-        const { at, result, status } = evaluatedCheck;
-        const glyph = richFormatter.tokens[resolveResultToken2(result)].text;
-        tree.push({ at, depth: result.depth, glyph, kind: "check", name: result.name, status });
-        captions.push({ at, html: captionFor(evaluatedCheck) });
-      }
-      step++;
-      print(step, [...sections.fixes, sections.countLine].join("\n"));
-      captions.push({
-        at: step,
-        html: sections.fixes.length > 0 ? "Each failure prints its fix under <code>Fixes</code>, then the count line" : "The count line: each result counts once"
-      });
-      evaluated.push(...checks);
-      entries.push({ name: checklist.name, report });
-      summaryRows.push({ counts: countResults(report.results), durationMs: report.durationMs, segments });
-    }
-    step++;
-    const verdictAt = step;
-    if (summaryRows.length > 1) {
-      print(verdictAt, "");
-      print(verdictAt, formatCombinedSummary(summaryRows));
-    }
-    const passed = entries.every(({ report }) => report.passed);
-    const exit = passed ? 0 : 1;
-    print(verdictAt, "");
-    print(
-      verdictAt,
-      formatRunVerdict({
-        kitThresholds: [{ kitName: kit.name, failOn: FAIL_ON }],
-        missingKitCount: 0,
-        passed,
-        withheld: void 0
-      })
-    );
-    lines.push({ at: verdictAt, printed: false, text: `exit ${exit}` });
-    const worstSeverity = countResults(evaluated.map(({ result }) => result)).worstSeverity;
-    captions.push({ at: verdictAt, html: describeVerdict(worstSeverity, passed) });
-    captions.unshift({ at: 0, html: describeKit(kit, evaluated) });
-    const json = formatJsonReport(
-      [
-        {
-          name: kit.name,
-          ...kit.origin !== void 0 && { origin: kit.origin },
-          ...kit.compiledWith !== void 0 && { compiledWith: kit.compiledWith },
-          entries,
-          failOn: FAIL_ON,
-          reportOn: REPORT_ON
-        }
-      ],
-      { detail: "full" }
-    );
-    return {
-      captions,
-      exit,
-      exitAt: verdictAt,
-      json: indentJson(json),
-      lines,
-      steps: verdictAt,
-      tree
-    };
-  }
-  function describeKit(kit, evaluated) {
-    const nestedCount = evaluated.filter(({ result }) => result.depth > 0).length;
-    const nested = nestedCount > 0 ? `, ${nestedCount} of them nested` : "";
-    const checklists = kit.checklists.length > 1 ? `, in ${kit.checklists.length} checklists` : "";
-    return `${kit.title}: ${evaluated.length} checks${nested}${checklists}`;
-  }
-  function describeVerdict(worstSeverity, passed) {
-    if (!passed) return "<code>fail-on: error</code>: the error fails the run, exit 1";
-    if (worstSeverity !== null)
-      return "<code>fail-on: error</code>: nothing failed at error, so the run passes with exit 0";
-    return "Nothing to fix: the run passes with exit 0";
-  }
-  function evaluateChecklist(checklist, env, stepBefore) {
-    const evaluated = [];
-    function visit(check, depth, isBlocked) {
-      const status = resolveStatus(check, env, isBlocked);
-      evaluated.push({ at: stepBefore + evaluated.length + 1, check, result: buildResult(check, depth, status), status });
-      const children = check.checks ?? [];
-      for (const child of children) visit(child, depth + 1, status !== "pass");
-    }
-    for (const check of checklist.checks) visit(check, 0, false);
-    return evaluated;
-  }
-  function indentJson(json) {
-    const parsed = JSON.parse(json);
-    return JSON.stringify(parsed, void 0, 2);
-  }
-  function resolveResultToken2(result) {
-    if (result.status === "passed") return "passed";
-    if (result.status === "skipped") {
-      return result.skipReason === "precondition" ? "blockedPrecondition" : "skippedOptional";
-    }
-    return resolveWorstToken(result.severity);
-  }
-  function resolveStatus(check, env, isBlocked) {
-    if (isBlocked) return "blocked";
-    if (check.na !== void 0) return "skip";
-    return check.when === void 0 || env[check.when] === true ? "pass" : check.severity;
   }
   return __toCommonJS(deck_exports);
 })();

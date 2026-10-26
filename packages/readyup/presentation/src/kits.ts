@@ -15,13 +15,16 @@ export interface ConditionModel {
  * A check as a kit page models it.
  *
  * A check passes when it has no `when` or when its condition is on, and otherwise fails at its severity. `na` makes it
- * skip whatever the environment, and `findings` marks a check that reports the files that it examined.
+ * skip whatever the environment, and `findings` marks a check that reports the files that it examined. A findings check
+ * that declares `examined`, the number of files that it examined, and `sites`, each `path:line` at which it fails, has
+ * its progress and its failure detail derived from them.
  */
 export interface CheckModel {
   name: string;
   severity: Severity;
   checks?: CheckModel[];
   detail?: string;
+  examined?: number;
   failDetail?: string;
   findings?: boolean;
   fix?: string;
@@ -29,6 +32,7 @@ export interface CheckModel {
   ms?: number;
   na?: string;
   progress?: [passedCount: number, count: number];
+  sites?: string[];
   when?: string;
 }
 
@@ -39,11 +43,14 @@ export interface ChecklistModel {
   checks: CheckModel[];
 }
 
-/** A kit page's model: its checklists, the conditions that its environment strip toggles, and its provenance. */
+/**
+ * A kit's model: the command that runs it, its checklists, the conditions that its environment strip toggles, and its
+ * provenance.
+ */
 export interface KitModel {
-  title: string;
   name: string;
   checklists: ChecklistModel[];
+  command: string;
   compiledWith?: string;
   conditions: ConditionModel[];
   origin?: JsonKitOrigin;
@@ -54,8 +61,8 @@ const TOOLBELT_README = 'https://github.com/williamthorsen/toolbelt/tree/main/pa
 /** The model of each kit page, keyed by the page's `data-kit`. */
 export const KITS = {
   preflight: {
-    title: 'The preflight kit',
     name: 'preflight',
+    command: 'rdy run preflight',
     compiledWith: '0.42.0',
     conditions: [
       { id: 'docker', label: 'Docker is running', on: true },
@@ -86,8 +93,8 @@ export const KITS = {
     ],
   },
   drift: {
-    title: "release-kit's kit, in part",
     name: 'default',
+    command: 'rdy run --from npm:@williamthorsen/release-kit',
     origin: { source: 'npm:@williamthorsen/release-kit', version: '14.2.2' },
     compiledWith: '0.41.0',
     conditions: [
@@ -163,8 +170,8 @@ export const KITS = {
     ],
   },
   adoption: {
-    title: "toolbelt.errors's kit",
     name: 'default',
+    command: 'rdy run --from npm:@williamthorsen/toolbelt.errors',
     origin: { source: 'npm:@williamthorsen/toolbelt.errors', version: '0.8.3' },
     compiledWith: '0.40.0',
     conditions: [
@@ -228,8 +235,8 @@ export const KITS = {
     ],
   },
   onboard: {
-    title: 'The machine kit, in part',
     name: 'machine',
+    command: 'rdy run --jit machine',
     conditions: [
       { id: 'brewfile', label: 'Brewfile is satisfied', on: true },
       { id: 'live', label: 'live worktree exists', on: true },

@@ -1,7 +1,6 @@
-import type { RdyReport, RdyResult, Severity } from '../../src/kits/types.ts';
+import type { Progress, RdyReport, RdyResult, Severity } from '../../src/kits/types.ts';
 import { getColor, getLayout, getStyle, setColor, setStyle } from '../../src/layout/engine.ts';
-import { richFormatter, type TokenName } from '../../src/layout/formatter.ts';
-import { type BreadcrumbSegment, resolveWorstToken, type SummaryRow } from '../../src/layout/layoutEngine.ts';
+import type { BreadcrumbSegment, SummaryRow } from '../../src/layout/layoutEngine.ts';
 import { formatCombinedSummary } from '../../src/reporting/formatCombinedSummary.ts';
 import { formatJsonReport } from '../../src/reporting/formatJsonReport.ts';
 import { formatRunVerdict } from '../../src/reporting/formatRunVerdict.ts';
@@ -9,7 +8,6 @@ import { countResults, renderReportSections } from '../../src/reporting/reportRd
 import { meetsThreshold } from '../../src/severity/meetsThreshold.ts';
 import { DEPLOY_KIT } from './deployKit.ts';
 import type { ChecklistModel, CheckModel, KitModel } from './kits.ts';
-import { escapeHtml } from './toHtml.ts';
 
 /** The failure threshold of every run that the deck shows, which is readyup's default. */
 const FAIL_ON: Severity = 'error';
@@ -27,41 +25,26 @@ export interface TerminalLine {
   text: string;
 }
 
-/** A caption, as HTML, at the step that it describes. */
-export interface Caption {
-  at: number;
-  html: string;
-}
-
-/** A row of a kit page's tree panel: a checklist's name, or a check with the glyph of its outcome. */
-export type TreeRow =
-  | { at: number; glyph: string; kind: 'checklist'; name: string }
-  | { at: number; depth: number; glyph: string; kind: 'check'; name: string; status: Status };
-
 /** A kit rendered in one environment, each part placed at the step that reveals it. */
 export interface RenderedKit {
-  captions: Caption[];
   exit: 0 | 1;
   exitAt: number;
   json: string;
   lines: TerminalLine[];
   steps: number;
-  tree: TreeRow[];
 }
 
-/** A check's outcome as the deck styles it: the severity at which it failed, or what else became of it. */
+/** A check's outcome: the severity at which it failed, or what else became of it. */
 type Status = 'blocked' | 'pass' | 'skip' | Severity;
 
 /** A check evaluated in an environment, with the step that reveals it and the result that readyup renders. */
 interface EvaluatedCheck {
   at: number;
-  check: CheckModel;
   result: RdyResult;
-  status: Status;
 }
 
 /**
- * Returns a kit's run in `env` as readyup prints it, as `rdy run --json` prints it, and as the deck narrates it.
+ * Returns a kit's run in `env` as readyup prints it and as `rdy run --json` prints it, after the command that runs it.
  *
  * Each check takes one step, each checklist's fix recap and count line one more, and the verdict the last.
  */
@@ -91,15 +74,18 @@ function buildDefaultEnvironment(kit: KitModel): Environment {
 }
 
 /**
- * Returns the segments heading a kit's blocks, as a single-kit run builds them: the package and the kit when the kit
- * came from one, then the checklist when the kit has several.
+ * Returns the segments heading a kit's blocks, as a single-kit run builds them: the package or the repository and the
+ * kit when the kit came from one, then the checklist when the kit has several.
  */
 function buildSegments(kit: KitModel, checklist: ChecklistModel): BreadcrumbSegment[] {
   const segments: BreadcrumbSegment[] = [];
   if (kit.origin !== undefined) {
-    const packageName = kit.origin.source.replace(/^npm:/u, '');
+    const { source } = kit.origin;
     const version = kit.origin.version === undefined ? '' : `@${kit.origin.version}`;
-    segments.push({ role: 'sourcePackage', text: `${packageName}${version}` }, { role: 'kit', text: kit.name });
+    const sourceSegment: BreadcrumbSegment = source.startsWith('npm:')
+      ? { role: 'sourcePackage', text: `${source.slice('npm:'.length)}${version}` }
+      : { role: 'sourceRemote', text: `${source}${version}` };
+    segments.push(sourceSegment, { role: 'kit', text: kit.name });
   }
   if (kit.checklists.length > 1) segments.push({ role: 'checklist', text: checklist.name });
   return segments;
@@ -113,10 +99,7 @@ function buildResult(check: CheckModel, depth: number, status: Status): RdyResul
     severity: check.severity,
     quiet: false,
     error: null,
-    progress:
-      check.progress === undefined || status === 'blocked'
-        ? null
-        : { type: 'fraction' as const, passedCount: check.progress[0], count: check.progress[1] },
+    progress: resolveProgress(check, status),
     examinedCount: check.findings === true ? 0 : null,
     durationMs: check.ms ?? 0,
     depth,
@@ -125,36 +108,16 @@ function buildResult(check: CheckModel, depth: number, status: Status): RdyResul
   if (status === 'pass') return { ...base, status: 'passed', ok: true, detail: check.detail ?? null };
   if (status === 'skip') return { ...base, status: 'skipped', ok: null, skipReason: 'n/a', detail: check.na ?? null };
   if (status === 'blocked') return { ...base, status: 'skipped', ok: null, skipReason: 'precondition', detail: null };
-  return { ...base, status: 'failed', ok: false, detail: check.failDetail ?? null, fix: check.fix ?? null };
+  const detail = check.sites === undefined ? (check.failDetail ?? null) : check.sites.join(', ');
+  return { ...base, status: 'failed', ok: false, detail, fix: check.fix ?? null };
 }
 
-/** Returns the caption narrating one check's outcome. */
-function captionFor({ check, status }: EvaluatedCheck): string {
-  const name = `<code>${escapeHtml(check.name)}</code>`;
-  const childCount = check.checks?.length ?? 0;
-  const under = childCount === 1 ? 'the check under it' : `the ${childCount} checks under it`;
-
-  if (status === 'pass') {
-    return childCount > 0 ? `${name} passes, so ${under} ${childCount === 1 ? 'runs' : 'run'}` : `${name} passes`;
-  }
-  if (status === 'skip') return `${name} is skipped: ${escapeHtml(check.na ?? '')}`;
-  if (status === 'blocked') return `${name} never ran: the check above it failed`;
-
-  const reason = check.failDetail === undefined ? '' : `: ${escapeHtml(check.failDetail.split('\n', 1)[0] ?? '')}`;
-  const blocked = childCount > 0 ? `; ${under} ${childCount === 1 ? 'is' : 'are'} blocked` : '';
-  return `${name} fails at <code>${status}</code>${reason}${blocked}`;
-}
-
-/** Composes a kit's run block by block, as `rdy run` writes it, with the deck's steps and narration. */
+/** Composes a kit's run block by block, as `rdy run` writes it after the command, with the deck's steps. */
 function composeKit(kit: KitModel, env: Environment): RenderedKit {
   const layout = getLayout();
-  const lines: TerminalLine[] = [];
-  const captions: Caption[] = [];
-  const tree: TreeRow[] = [];
-  const evaluated: EvaluatedCheck[] = [];
+  const lines: TerminalLine[] = [{ at: 0, printed: false, text: `$ ${kit.command}` }];
   const entries: Array<{ name: string; report: RdyReport }> = [];
   const summaryRows: SummaryRow[] = [];
-  const isMultiChecklist = kit.checklists.length > 1;
   let step = 0;
 
   /** Adds each line of `text`, as rdy prints it, at step `at`. */
@@ -170,9 +133,6 @@ function composeKit(kit: KitModel, env: Environment): RenderedKit {
 
     if (index > 0) print(headAt, '');
     if (segments.length > 0) print(headAt, layout.formatBreadcrumb(segments, 'kit'));
-    if (isMultiChecklist) {
-      tree.push({ at: headAt, glyph: richFormatter.tokens.checklist.text, kind: 'checklist', name: checklist.name });
-    }
 
     const results = checks.map(({ result }) => result);
     const report: RdyReport = {
@@ -186,24 +146,9 @@ function composeKit(kit: KitModel, env: Environment): RenderedKit {
       print(stepByResult.get(result) ?? headAt, resultLines.join('\n'));
     }
 
-    for (const evaluatedCheck of checks) {
-      const { at, result, status } = evaluatedCheck;
-      const glyph = richFormatter.tokens[resolveResultToken(result)].text;
-      tree.push({ at, depth: result.depth, glyph, kind: 'check', name: result.name, status });
-      captions.push({ at, html: captionFor(evaluatedCheck) });
-    }
-
     step++;
     print(step, [...sections.fixes, sections.countLine].join('\n'));
-    captions.push({
-      at: step,
-      html:
-        sections.fixes.length > 0
-          ? 'Each failure prints its fix under <code>Fixes</code>, then the count line'
-          : 'The count line: each result counts once',
-    });
 
-    evaluated.push(...checks);
     entries.push({ name: checklist.name, report });
     summaryRows.push({ counts: countResults(report.results), durationMs: report.durationMs, segments });
   }
@@ -228,10 +173,6 @@ function composeKit(kit: KitModel, env: Environment): RenderedKit {
   );
   lines.push({ at: verdictAt, printed: false, text: `exit ${exit}` });
 
-  const worstSeverity = countResults(evaluated.map(({ result }) => result)).worstSeverity;
-  captions.push({ at: verdictAt, html: describeVerdict(worstSeverity, passed) });
-  captions.unshift({ at: 0, html: describeKit(kit, evaluated) });
-
   const json = formatJsonReport(
     [
       {
@@ -246,31 +187,7 @@ function composeKit(kit: KitModel, env: Environment): RenderedKit {
     { detail: 'full' },
   );
 
-  return {
-    captions,
-    exit,
-    exitAt: verdictAt,
-    json: indentJson(json),
-    lines,
-    steps: verdictAt,
-    tree,
-  };
-}
-
-/** Returns the opening caption: the kit's title and the shape of its tree. */
-function describeKit(kit: KitModel, evaluated: EvaluatedCheck[]): string {
-  const nestedCount = evaluated.filter(({ result }) => result.depth > 0).length;
-  const nested = nestedCount > 0 ? `, ${nestedCount} of them nested` : '';
-  const checklists = kit.checklists.length > 1 ? `, in ${kit.checklists.length} checklists` : '';
-  return `${kit.title}: ${evaluated.length} checks${nested}${checklists}`;
-}
-
-/** Returns the verdict step's caption. */
-function describeVerdict(worstSeverity: Severity | null, passed: boolean): string {
-  if (!passed) return '<code>fail-on: error</code>: the error fails the run, exit 1';
-  if (worstSeverity !== null)
-    return '<code>fail-on: error</code>: nothing failed at error, so the run passes with exit 0';
-  return 'Nothing to fix: the run passes with exit 0';
+  return { exit, exitAt: verdictAt, json: indentJson(json), lines, steps: verdictAt };
 }
 
 /**
@@ -285,7 +202,7 @@ function evaluateChecklist(checklist: ChecklistModel, env: Environment, stepBefo
   /** Evaluates one check and then its children, depth first. */
   function visit(check: CheckModel, depth: number, isBlocked: boolean): void {
     const status = resolveStatus(check, env, isBlocked);
-    evaluated.push({ at: stepBefore + evaluated.length + 1, check, result: buildResult(check, depth, status), status });
+    evaluated.push({ at: stepBefore + evaluated.length + 1, result: buildResult(check, depth, status) });
     const children = check.checks ?? [];
     for (const child of children) visit(child, depth + 1, status !== 'pass');
   }
@@ -300,13 +217,20 @@ function indentJson(json: string): string {
   return JSON.stringify(parsed, undefined, 2);
 }
 
-/** Returns the token for a result, by the rule that `reportRdy` applies to a check line. */
-function resolveResultToken(result: RdyResult): TokenName {
-  if (result.status === 'passed') return 'passed';
-  if (result.status === 'skipped') {
-    return result.skipReason === 'precondition' ? 'blockedPrecondition' : 'skippedOptional';
+/**
+ * Returns a check's progress fraction, or null when it is blocked or reports none.
+ *
+ * A findings check that declares `examined` passes every file that it examined unless it fails, in which case each
+ * file named among its sites counts once as failing.
+ */
+function resolveProgress(check: CheckModel, status: Status): Progress | null {
+  if (status === 'blocked') return null;
+  if (check.examined !== undefined) {
+    const failingCount = status === 'pass' ? 0 : new Set(check.sites?.map((site) => site.replace(/:\d+$/u, ''))).size;
+    return { type: 'fraction', passedCount: check.examined - failingCount, count: check.examined };
   }
-  return resolveWorstToken(result.severity);
+  if (check.progress === undefined) return null;
+  return { type: 'fraction', passedCount: check.progress[0], count: check.progress[1] };
 }
 
 /** Returns a check's outcome in `env`, given whether an ancestor kept it from running. */
