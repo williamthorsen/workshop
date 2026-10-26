@@ -84,7 +84,7 @@ describe('launch', () => {
       expect(fake.captured.stderr()).toBe(
         "thor-chrome: no repository or branch resolved from the working directory, so the profile fell back to 'default'\n" +
           '  Name the profile instead:\n' +
-          '    thor-chrome --profile <repo>-<branch> --port "$(thor-git branch-number <branch> --min 9000 --max 9999)"\n',
+          '    thor-chrome --profile <repo>-<branch> --port "$(thor-git branch-number <branch> --min 9000 --max 9999)"  # thor-git is in @williamthorsen/git-tools\n',
       );
     });
 

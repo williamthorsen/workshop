@@ -74,7 +74,8 @@ export async function launchProfile(invocation: Invocation, options: LaunchOptio
     const range = `--min ${MIN_DERIVED_PORT} --max ${MAX_DERIVED_PORT}`;
     assertProfileNotUnderived(
       invocation,
-      `${output.name} --profile <repo>-<branch> --port "$(thor-git branch-number <branch> ${range})"`,
+      // Name the package in a shell comment, which keeps the command pasteable, since thor-chrome does not install it
+      `${output.name} --profile <repo>-<branch> --port "$(thor-git branch-number <branch> ${range})"  # thor-git is in @williamthorsen/git-tools`,
     );
     throw refuse(invocation, 'profile-missing', `profile '${profile}' does not exist at ${profileDir}`, {
       hints: [`Pass --create to make it, or list existing profiles: ${output.name} list`],
