@@ -1,9 +1,24 @@
 /* eslint n/hashbang: off -- this is the CLI entrypoint; the build prepends the hashbang. */
-/* eslint n/no-process-exit: off, unicorn/no-process-exit: off -- the bin boundary owns the exit code so `run` stays a
-   pure, testable function returning the code. */
-
 import process from 'node:process';
 
-import { run } from './run.ts';
+import { defineCommand, runCli } from '@williamthorsen/toolbelt.cli/candidate';
 
-process.exit(run(process.argv.slice(2)));
+import { runThorChrome } from '../chrome/thor-chrome.ts';
+import { reportCommandErrorsAsync } from '../shared/errors.ts';
+
+const name = 'thor-chrome';
+
+const command = defineCommand({
+  passthrough: true,
+  summary: 'Launch a Chrome-family browser with remote debugging against a named profile',
+  run: ({ args, stderr, stdout }) => {
+    const output = { name, stderr, stdout };
+    return reportCommandErrorsAsync(output, () => runThorChrome(args, output));
+  },
+});
+
+process.exitCode = await runCli(process.argv.slice(2), command, {
+  name,
+  stderr: process.stderr,
+  stdout: process.stdout,
+});
