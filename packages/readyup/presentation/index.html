@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="no-js">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -46,15 +46,48 @@
         color: var(--ink);
         font-family: var(--sans);
       }
+      body {
+        padding: 16px max(16px, env(safe-area-inset-right, 0px)) 24px max(16px, env(safe-area-inset-left, 0px));
+        min-height: 100%;
+      }
       * {
         box-sizing: border-box;
       }
+      [hidden] {
+        display: none !important;
+      }
+      button {
+        font-family: inherit;
+      }
 
-      /* Deck frame */
+      /* Presenter: the deck's 16:9 frame, with the bar and the notes panel under it */
+      .presenter {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: min(100%, calc((100vh - 280px) * 16 / 9));
+        min-width: min(100%, 960px);
+        margin: 0 auto;
+      }
+      .deck-frame {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        overflow: hidden;
+        background: var(--bg);
+      }
       .reveal {
+        width: 100%;
+        height: 100%;
         font-family: var(--sans);
         font-size: 24px;
         color: var(--ink);
+      }
+      .reveal:focus {
+        outline: none;
       }
       .reveal-viewport {
         background: radial-gradient(var(--grid) 1.2px, transparent 1.4px) 0 0 / 24px 24px var(--bg);
@@ -77,61 +110,281 @@
         gap: 14px;
       }
 
-      /* Chrome: reveal's arrows and the position indicator */
-      .reveal .controls {
-        color: var(--ink-2);
-      }
-      .reveal .controls .enabled:hover {
+      /* Shared interaction states: every control has a pointer, a hover change, and a focus ring */
+      .ctl {
+        cursor: pointer;
+        appearance: none;
+        border: 1px solid var(--line);
+        background: var(--paper);
         color: var(--ink);
-        opacity: 1;
+        border-radius: 8px;
+        font: 500 14px var(--sans);
+        padding: 6px 10px;
+        line-height: 1.2;
+        transition: background 0.12s;
       }
-      .reveal .controls button:focus-visible {
-        outline: 3px solid var(--ink);
-        outline-offset: 6px;
-        border-radius: 4px;
-        opacity: 1;
+      .ctl:hover {
+        background: var(--accent-soft);
+        border-color: var(--accent);
       }
-      .pos {
-        position: absolute;
-        left: 24px;
-        bottom: 18px;
-        z-index: 12;
+      .ctl:focus-visible,
+      .dot:focus-visible {
+        outline: 3px solid var(--accent);
+        outline-offset: 2px;
+      }
+      .ctl[aria-pressed='true'] {
+        background: var(--ink);
+        color: var(--paper);
+        border-color: var(--ink);
+      }
+      .ctl[aria-pressed='true']:hover {
+        background: var(--accent);
+        border-color: var(--accent);
+      }
+      .ctl:disabled {
+        cursor: default;
+        opacity: 0.45;
+      }
+      .ctl:disabled:hover {
+        background: var(--paper);
+        border-color: var(--line);
+      }
+
+      /* Presenter bar */
+      .bar {
         display: flex;
         flex-direction: column;
-        gap: 6px;
-        pointer-events: none;
+        gap: 8px;
       }
-      .pos ol {
+      .progress {
         display: flex;
-        gap: 6px;
-        align-items: flex-end;
-        list-style: none;
+        gap: 4px;
+        height: 14px;
         margin: 0;
         padding: 0;
-        height: 10px;
+        list-style: none;
       }
-      .pos li {
-        width: 26px;
-        height: 6px;
-        border-radius: 3px;
+      .progress li {
+        flex: 1;
+        display: flex;
+      }
+      .progress button {
+        flex: 1;
+        appearance: none;
+        border: 0;
+        padding: 0;
+        margin: 0;
+        border-radius: 4px;
         background: var(--line);
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
       }
-      .pos-steps li {
-        width: 14px;
-      }
-      .pos li.on {
+      .progress button:hover {
         background: var(--ink-2);
       }
-      .pos li.now {
+      .progress button:focus-visible {
+        outline: 3px solid var(--accent);
+        outline-offset: 2px;
+      }
+      .progress li.done button {
+        background: var(--ink-2);
+      }
+      .progress li.now button {
         background: var(--ink);
-        height: 10px;
+        outline: 2px solid var(--accent);
+        outline-offset: 1px;
       }
-      .pos-steps:empty {
-        display: none;
+      .progress li.now button::after {
+        content: '';
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: var(--fill, 0%);
+        background: var(--accent);
       }
-      .pos-label {
-        font: 500 14px var(--mono);
+      .bar-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .nav-group {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--paper);
+      }
+      .nav-group .ctl {
+        border-color: transparent;
+        min-width: 34px;
+        height: 30px;
+        padding: 0 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+      }
+      .nav-group .ctl:disabled {
+        opacity: 0.3;
+      }
+      .nav-group .ctl .glyph {
+        font-family: var(--sans);
+        font-size: 15px;
+        line-height: 1;
+      }
+      .bar-row .pos {
+        font: 600 15px var(--mono);
+        color: var(--ink);
+        min-width: 7ch;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+      }
+      .steps-group .lbl {
+        font: 500 12px var(--sans);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
         color: var(--ink-2);
+        padding: 0 4px 0 6px;
+      }
+      .steps-group[data-empty='true'] {
+        visibility: hidden;
+      }
+      .dots {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        padding: 0 4px;
+        min-width: 24px;
+      }
+      .dot {
+        appearance: none;
+        border: 0;
+        padding: 0;
+        width: 16px;
+        height: 24px;
+        background: none;
+        cursor: pointer;
+        position: relative;
+        border-radius: 4px;
+      }
+      .dot::before {
+        content: '';
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 8px;
+        height: 8px;
+        margin: -4px 0 0 -4px;
+        border-radius: 50%;
+        background: var(--line);
+      }
+      .dot:hover::before {
+        background: var(--accent);
+      }
+      .dot.on::before {
+        background: var(--ink-2);
+      }
+      .dot.now::before {
+        width: 12px;
+        height: 12px;
+        margin: -6px 0 0 -6px;
+        background: var(--ink);
+        outline: 2px solid var(--accent);
+        outline-offset: 1px;
+      }
+      .nav-group .ctl.skip:not(:disabled) {
+        background: var(--accent-soft);
+        color: var(--ink);
+      }
+      .nav-group .ctl.skip:not(:disabled):hover {
+        background: var(--accent);
+        color: var(--paper);
+      }
+      .bar-row .spacer {
+        flex: 1;
+      }
+      .bar-row > .ctl {
+        min-width: 38px;
+        white-space: nowrap;
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        font-size: 14px;
+      }
+      .ctl kbd {
+        font: 500 12px var(--mono);
+        color: var(--ink-2);
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        padding: 1px 4px;
+        line-height: 1.2;
+      }
+      .ctl[aria-pressed='true'] kbd {
+        color: var(--on-ink-muted);
+        border-color: var(--on-ink-muted);
+      }
+
+      /* Full screen: the frame fills the presenter; the bar stays under it; the notes float over the frame */
+      .presenter:fullscreen {
+        width: 100%;
+        max-width: none;
+        height: 100%;
+        background: var(--bg);
+        padding: 8px 12px;
+        gap: 6px;
+      }
+      .presenter:fullscreen .deck-frame {
+        width: auto;
+        height: calc(100vh - 86px);
+        aspect-ratio: 16 / 9;
+        max-width: 100%;
+        margin: 0 auto;
+      }
+      .presenter:fullscreen .notes-panel {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 76px;
+        width: min(960px, 90%);
+        box-shadow: 0 10px 30px rgb(20 28 38 / 0.18);
+        z-index: 20;
+      }
+      .presenter:fullscreen .overlay {
+        inset: 8px 12px 70px;
+      }
+
+      /* Without JavaScript: every slide in sequence, its notes under it, and no chrome */
+      .no-js .reveal {
+        height: auto;
+      }
+      .no-js .deck-frame {
+        aspect-ratio: auto;
+      }
+      .no-js .reveal .slides > section {
+        display: block;
+        position: static;
+        height: auto;
+        border-bottom: 2px solid var(--line);
+      }
+      .no-js .reveal .slides > section .slide {
+        height: auto;
+      }
+      .no-js .reveal aside.notes {
+        display: block;
+        padding: 0 44px 32px;
+        font-size: 17px;
+        line-height: 1.5;
+        color: var(--ink-2);
+      }
+      .no-js .kt-steps,
+      .no-js .bar,
+      .no-js .notes-panel {
+        display: none;
       }
 
       /* Type */
@@ -1181,7 +1434,9 @@
         }
       }
       @media print {
-        .pos {
+        .bar,
+        .notes-panel,
+        .overlay {
           display: none;
         }
       }
@@ -1497,216 +1752,237 @@
         height: 0;
       }
     </style>
+    <script>
+      document.documentElement.className = 'js';
+    </script>
   </head>
   <body>
-    <div class="reveal" id="deck">
-      <div class="slides">
-        <!-- 1 · Title -->
-        <section class="s-title">
-          <div class="slide">
-            <div>
-              <h1>ReadyUp</h1>
-              <p class="lede">Pre-deployment checks, written in TypeScript and run from the command line.</p>
-              <p class="cmd"><code>rdy run</code></p>
-            </div>
-            <svg
-              class="motif"
-              viewBox="0 0 540 400"
-              role="img"
-              aria-label="A tree of checks with pass, fail, and blocked marks, which rdy run turns into exit code 1"
-            >
-              <defs>
-                <marker id="m-ink" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
-                  <path d="M0 0L10 5L0 10z" class="ah-ink" />
-                </marker>
-              </defs>
-              <path class="edge" d="M12 52H30M12 52V362H30" />
-              <path class="edge e-pass on" d="M50 74V132H80" />
-              <path class="edge e-blocked on" d="M100 154V212H130M100 212V284H130" />
-              <g class="node st-pass on" transform="translate(30,30)">
-                <rect class="box" width="72" height="44" rx="10" />
-                <text class="mark" x="36" y="22">✅</text>
-              </g>
-              <g class="node st-error on" transform="translate(80,110)">
-                <rect class="box" width="72" height="44" rx="10" />
-                <text class="mark" x="36" y="22">❌</text>
-              </g>
-              <g class="node st-blocked on" transform="translate(130,190)">
-                <rect class="box" width="72" height="44" rx="10" />
-                <text class="mark" x="36" y="22">🚫</text>
-              </g>
-              <g class="node st-blocked on" transform="translate(130,262)">
-                <rect class="box" width="72" height="44" rx="10" />
-                <text class="mark" x="36" y="22">🚫</text>
-              </g>
-              <g class="node st-warn on" transform="translate(30,340)">
-                <rect class="box" width="72" height="44" rx="10" />
-                <text class="mark" x="36" y="22">🔶</text>
-              </g>
-              <path d="M232 200H370" fill="none" stroke="var(--ink)" stroke-width="3" marker-end="url(#m-ink)" />
-              <text x="301" y="186" text-anchor="middle" style="font: 500 17px var(--mono); fill: var(--ink-2)">
-                rdy run
-              </text>
-              <rect x="380" y="160" width="150" height="80" rx="12" fill="var(--ink)" />
-              <text
-                x="455"
-                y="200"
-                text-anchor="middle"
-                dominant-baseline="central"
-                style="font: 600 28px var(--mono); fill: var(--paper)"
-              >
-                exit 1
-              </text>
-            </svg>
-          </div>
-          <aside class="notes">
-            ReadyUp is a command-line tool. A project writes its pre-deployment checks in TypeScript, groups them into a
-            kit, and runs them with rdy run before a deploy, on a laptop or in CI. The next five minutes: why it exists,
-            what a check looks like, what a run does when a check fails, and how to start.
-          </aside>
-        </section>
-
-        <!-- 2 · The problem -->
-        <section class="s-problem">
-          <div class="slide">
-            <header class="slide-head">
-              <h2>Where deploy checks live today</h2>
-              <p class="who">for engineering leads</p>
-            </header>
-            <div class="stage">
-              <div class="timeline">
-                <div class="hnode">
-                  <p>A checklist in a wiki</p>
-                  <div class="bars" aria-hidden="true"><i></i><i></i><i></i></div>
-                  <p class="sub">and in whoever deployed last</p>
+    <main class="presenter" id="presenter">
+      <div class="deck-frame">
+        <div class="reveal" id="deck" tabindex="-1">
+          <div class="slides">
+            <!-- 1 · Title -->
+            <section class="s-title">
+              <div class="slide">
+                <div>
+                  <h1>ReadyUp</h1>
+                  <p class="lede">Pre-deployment checks, written in TypeScript and run from the command line.</p>
+                  <p class="cmd"><code>rdy run</code></p>
                 </div>
-                <div class="arrow dashed"></div>
-                <div class="hnode drift">
-                  <p>The code changes</p>
-                  <p class="sub">The list does not</p>
-                </div>
-                <div class="arrow dashed"></div>
-                <div class="hnode ink">
-                  <p>Deploy</p>
-                  <p class="sub">Whoever remembers, runs the list by hand</p>
-                </div>
-                <div class="arrow red"></div>
-                <div class="hnode late">
-                  <p class="mark">❌</p>
-                  <p>The failure shows up late</p>
-                  <p class="sub">after the deploy, without a fix</p>
-                </div>
-              </div>
-            </div>
-            <p class="caption">A checklist that lives outside the code drifts from it and fails late</p>
-          </div>
-          <aside class="notes">
-            Most teams already have deploy checks. They live in a wiki page, in a channel thread, and in whoever
-            deployed last time. The code moves and the list does not. Nobody runs the list the same way twice, and the
-            thing it was meant to catch shows up after the deploy, when it is expensive to fix. That is the gap.
-          </aside>
-        </section>
-
-        <!-- 3 · The idea -->
-        <section class="s-idea">
-          <div class="slide">
-            <header class="slide-head"><h2>One file of checks, one command</h2></header>
-            <div class="stage">
-              <svg
-                class="idea"
-                viewBox="0 0 1192 484"
-                role="img"
-                aria-label="A kit file containing the deploy checklist and its two checks, which rdy run turns into one line per check, a fix hint for each failure, and an exit code"
-              >
-                <defs>
-                  <marker
-                    id="m-ink3"
-                    viewBox="0 0 10 10"
-                    refX="9"
-                    refY="5"
-                    markerWidth="7"
-                    markerHeight="7"
-                    orient="auto"
+                <svg
+                  class="motif"
+                  viewBox="0 0 540 400"
+                  role="img"
+                  aria-label="A tree of checks with pass, fail, and blocked marks, which rdy run turns into exit code 1"
+                >
+                  <defs>
+                    <marker
+                      id="m-ink"
+                      viewBox="0 0 10 10"
+                      refX="9"
+                      refY="5"
+                      markerWidth="7"
+                      markerHeight="7"
+                      orient="auto"
+                    >
+                      <path d="M0 0L10 5L0 10z" class="ah-ink" />
+                    </marker>
+                  </defs>
+                  <path class="edge" d="M12 52H30M12 52V362H30" />
+                  <path class="edge e-pass on" d="M50 74V132H80" />
+                  <path class="edge e-blocked on" d="M100 154V212H130M100 212V284H130" />
+                  <g class="node st-pass on" transform="translate(30,30)">
+                    <rect class="box" width="72" height="44" rx="10" />
+                    <text class="mark" x="36" y="22">✅</text>
+                  </g>
+                  <g class="node st-error on" transform="translate(80,110)">
+                    <rect class="box" width="72" height="44" rx="10" />
+                    <text class="mark" x="36" y="22">❌</text>
+                  </g>
+                  <g class="node st-blocked on" transform="translate(130,190)">
+                    <rect class="box" width="72" height="44" rx="10" />
+                    <text class="mark" x="36" y="22">🚫</text>
+                  </g>
+                  <g class="node st-blocked on" transform="translate(130,262)">
+                    <rect class="box" width="72" height="44" rx="10" />
+                    <text class="mark" x="36" y="22">🚫</text>
+                  </g>
+                  <g class="node st-warn on" transform="translate(30,340)">
+                    <rect class="box" width="72" height="44" rx="10" />
+                    <text class="mark" x="36" y="22">🔶</text>
+                  </g>
+                  <path d="M232 200H370" fill="none" stroke="var(--ink)" stroke-width="3" marker-end="url(#m-ink)" />
+                  <text x="301" y="186" text-anchor="middle" style="font: 500 17px var(--mono); fill: var(--ink-2)">
+                    rdy run
+                  </text>
+                  <rect x="380" y="160" width="150" height="80" rx="12" fill="var(--ink)" />
+                  <text
+                    x="455"
+                    y="200"
+                    text-anchor="middle"
+                    dominant-baseline="central"
+                    style="font: 600 28px var(--mono); fill: var(--paper)"
                   >
-                    <path d="M0 0L10 5L0 10z" class="ah-ink" />
-                  </marker>
-                </defs>
-                <g transform="translate(0,20)">
-                  <!-- Kit tree -->
-                  <path class="edge" d="M24 112V176H48" />
-                  <path class="edge" d="M72 212V280H96M72 280V352H96" />
-                  <g transform="translate(0,60)">
-                    <rect class="box file-box" width="440" height="52" rx="10" />
-                    <text class="kind" x="18" y="26">kit</text>
-                    <text class="file" x="60" y="26">.readyup/kits/default.ts</text>
-                  </g>
-                  <g transform="translate(48,158)">
-                    <rect class="box root-box" width="200" height="36" rx="18" />
-                    <text class="root-k" x="18" y="18">checklist</text>
-                    <text class="root-v" x="110" y="18">deploy</text>
-                  </g>
-                  <g transform="translate(96,256)">
-                    <rect class="box" width="344" height="48" rx="10" />
-                    <text class="kind" x="18" y="24">check</text>
-                    <text class="label" x="80" y="24">package.json exists</text>
-                  </g>
-                  <g transform="translate(96,328)">
-                    <rect class="box" width="344" height="48" rx="10" />
-                    <text class="kind" x="18" y="24">check</text>
-                    <text class="label" x="80" y="24">NODE_ENV is set</text>
-                  </g>
-                  <!-- rdy run -->
-                  <path d="M480 250H640" fill="none" stroke="var(--ink)" stroke-width="3" marker-end="url(#m-ink3)" />
-                  <text class="cmd" x="560" y="236">rdy run</text>
-                  <!-- Output -->
-                  <g transform="translate(672,80)">
-                    <rect class="out-box" width="520" height="56" rx="10" />
-                    <text class="out-mark" x="30" y="28">✅</text>
-                    <text class="out-text" x="60" y="28">passed</text>
-                    <text class="out-sub" x="190" y="28">one line per check</text>
-                  </g>
-                  <g transform="translate(672,152)">
-                    <rect class="out-box" width="520" height="56" rx="10" />
-                    <text class="out-mark" x="30" y="28">❌</text>
-                    <text class="out-text" x="60" y="28">failed</text>
-                    <text class="out-sub" x="190" y="28">with the reason beneath it</text>
-                  </g>
-                  <g transform="translate(672,224)">
-                    <rect class="out-box fix-box" width="520" height="56" rx="10" />
-                    <text class="out-mark" x="30" y="28">🔧</text>
-                    <text class="out-text" x="60" y="28" style="fill: var(--accent)">fix</text>
-                    <text class="out-sub" x="190" y="28">what to do about it, from the kit</text>
-                  </g>
-                  <g transform="translate(672,330)">
-                    <rect class="exit-box" width="150" height="56" rx="10" />
-                    <text class="exit-text" x="75" y="28">exit 0</text>
-                    <rect class="exit-box" x="170" width="150" height="56" rx="10" />
-                    <text class="exit-text" x="245" y="28">exit 1</text>
-                    <text class="out-sub" x="344" y="28">the verdict, for a pipeline</text>
-                  </g>
-                </g>
-              </svg>
-            </div>
-            <p class="caption">A kit is a file of checklists; <code>rdy run</code> runs them and prints what to fix</p>
-          </div>
-          <aside class="notes">
-            The idea is small. A kit is a file. It exports checklists, and a checklist contains checks. One command, rdy
-            run, runs them and prints one line per check: a pass, or a failure with the reason and a fix hint that the
-            kit author wrote. The exit code says whether the run passed, so the same command works in a terminal and in
-            a pipeline.
-          </aside>
-        </section>
+                    exit 1
+                  </text>
+                </svg>
+              </div>
+              <aside class="notes">
+                ReadyUp is a command-line tool. A project writes its pre-deployment checks in TypeScript, groups them
+                into a kit, and runs them with rdy run before a deploy, on a laptop or in CI. The next five minutes: why
+                it exists, what a check looks like, what a run does when a check fails, and how to start.
+              </aside>
+            </section>
 
-        <!-- 4 · Writing a check -->
-        <section class="s-code">
-          <div class="slide">
-            <header class="slide-head">
-              <h2>Writing a check</h2>
-              <p class="who">for kit authors</p>
-              <code class="chip">.readyup/kits/preflight.ts</code>
-            </header>
-            <figure class="code-sheet">
-              <pre><code><span class="cut">⋯</span>
+            <!-- 2 · The problem -->
+            <section class="s-problem">
+              <div class="slide">
+                <header class="slide-head">
+                  <h2>Where deploy checks live today</h2>
+                  <p class="who">for engineering leads</p>
+                </header>
+                <div class="stage">
+                  <div class="timeline">
+                    <div class="hnode">
+                      <p>A checklist in a wiki</p>
+                      <div class="bars" aria-hidden="true"><i></i><i></i><i></i></div>
+                      <p class="sub">and in whoever deployed last</p>
+                    </div>
+                    <div class="arrow dashed"></div>
+                    <div class="hnode drift">
+                      <p>The code changes</p>
+                      <p class="sub">The list does not</p>
+                    </div>
+                    <div class="arrow dashed"></div>
+                    <div class="hnode ink">
+                      <p>Deploy</p>
+                      <p class="sub">Whoever remembers, runs the list by hand</p>
+                    </div>
+                    <div class="arrow red"></div>
+                    <div class="hnode late">
+                      <p class="mark">❌</p>
+                      <p>The failure shows up late</p>
+                      <p class="sub">after the deploy, without a fix</p>
+                    </div>
+                  </div>
+                </div>
+                <p class="caption">A checklist that lives outside the code drifts from it and fails late</p>
+              </div>
+              <aside class="notes">
+                Most teams already have deploy checks. They live in a wiki page, in a channel thread, and in whoever
+                deployed last time. The code moves and the list does not. Nobody runs the list the same way twice, and
+                the thing it was meant to catch shows up after the deploy, when it is expensive to fix. That is the gap.
+              </aside>
+            </section>
+
+            <!-- 3 · The idea -->
+            <section class="s-idea">
+              <div class="slide">
+                <header class="slide-head"><h2>One file of checks, one command</h2></header>
+                <div class="stage">
+                  <svg
+                    class="idea"
+                    viewBox="0 0 1192 484"
+                    role="img"
+                    aria-label="A kit file containing the deploy checklist and its two checks, which rdy run turns into one line per check, a fix hint for each failure, and an exit code"
+                  >
+                    <defs>
+                      <marker
+                        id="m-ink3"
+                        viewBox="0 0 10 10"
+                        refX="9"
+                        refY="5"
+                        markerWidth="7"
+                        markerHeight="7"
+                        orient="auto"
+                      >
+                        <path d="M0 0L10 5L0 10z" class="ah-ink" />
+                      </marker>
+                    </defs>
+                    <g transform="translate(0,20)">
+                      <!-- Kit tree -->
+                      <path class="edge" d="M24 112V176H48" />
+                      <path class="edge" d="M72 212V280H96M72 280V352H96" />
+                      <g transform="translate(0,60)">
+                        <rect class="box file-box" width="440" height="52" rx="10" />
+                        <text class="kind" x="18" y="26">kit</text>
+                        <text class="file" x="60" y="26">.readyup/kits/default.ts</text>
+                      </g>
+                      <g transform="translate(48,158)">
+                        <rect class="box root-box" width="200" height="36" rx="18" />
+                        <text class="root-k" x="18" y="18">checklist</text>
+                        <text class="root-v" x="110" y="18">deploy</text>
+                      </g>
+                      <g transform="translate(96,256)">
+                        <rect class="box" width="344" height="48" rx="10" />
+                        <text class="kind" x="18" y="24">check</text>
+                        <text class="label" x="80" y="24">package.json exists</text>
+                      </g>
+                      <g transform="translate(96,328)">
+                        <rect class="box" width="344" height="48" rx="10" />
+                        <text class="kind" x="18" y="24">check</text>
+                        <text class="label" x="80" y="24">NODE_ENV is set</text>
+                      </g>
+                      <!-- rdy run -->
+                      <path
+                        d="M480 250H640"
+                        fill="none"
+                        stroke="var(--ink)"
+                        stroke-width="3"
+                        marker-end="url(#m-ink3)"
+                      />
+                      <text class="cmd" x="560" y="236">rdy run</text>
+                      <!-- Output -->
+                      <g transform="translate(672,80)">
+                        <rect class="out-box" width="520" height="56" rx="10" />
+                        <text class="out-mark" x="30" y="28">✅</text>
+                        <text class="out-text" x="60" y="28">passed</text>
+                        <text class="out-sub" x="190" y="28">one line per check</text>
+                      </g>
+                      <g transform="translate(672,152)">
+                        <rect class="out-box" width="520" height="56" rx="10" />
+                        <text class="out-mark" x="30" y="28">❌</text>
+                        <text class="out-text" x="60" y="28">failed</text>
+                        <text class="out-sub" x="190" y="28">with the reason beneath it</text>
+                      </g>
+                      <g transform="translate(672,224)">
+                        <rect class="out-box fix-box" width="520" height="56" rx="10" />
+                        <text class="out-mark" x="30" y="28">🔧</text>
+                        <text class="out-text" x="60" y="28" style="fill: var(--accent)">fix</text>
+                        <text class="out-sub" x="190" y="28">what to do about it, from the kit</text>
+                      </g>
+                      <g transform="translate(672,330)">
+                        <rect class="exit-box" width="150" height="56" rx="10" />
+                        <text class="exit-text" x="75" y="28">exit 0</text>
+                        <rect class="exit-box" x="170" width="150" height="56" rx="10" />
+                        <text class="exit-text" x="245" y="28">exit 1</text>
+                        <text class="out-sub" x="344" y="28">the verdict, for a pipeline</text>
+                      </g>
+                    </g>
+                  </svg>
+                </div>
+                <p class="caption">
+                  A kit is a file of checklists; <code>rdy run</code> runs them and prints what to fix
+                </p>
+              </div>
+              <aside class="notes">
+                The idea is small. A kit is a file. It exports checklists, and a checklist contains checks. One command,
+                rdy run, runs them and prints one line per check: a pass, or a failure with the reason and a fix hint
+                that the kit author wrote. The exit code says whether the run passed, so the same command works in a
+                terminal and in a pipeline.
+              </aside>
+            </section>
+
+            <!-- 4 · Writing a check -->
+            <section class="s-code">
+              <div class="slide">
+                <header class="slide-head">
+                  <h2>Writing a check</h2>
+                  <p class="who">for kit authors</p>
+                  <code class="chip">.readyup/kits/preflight.ts</code>
+                </header>
+                <figure class="code-sheet">
+                  <pre><code><span class="cut">⋯</span>
 <span class="st">      checks: [</span>
 <span class="st">        {</span>
 <span class="f">          <b>name</b>: 'Docker daemon is running'<span class="st">,</span></span>
@@ -1725,267 +2001,267 @@
 <span class="st">        },</span>
 <span class="st">      ],</span>
 <span class="cut">⋯</span></code></pre>
-              <span class="note" style="--row: 3">what must be true</span>
-              <span class="note" style="--row: 4">the check to run</span>
-              <span class="note" style="--row: 5">the fix if the check fails</span>
-              <span class="note" style="--row: 9">failure results in a warning, not an error</span>
-            </figure>
-          </div>
-          <aside class="notes">
-            A preflight kit, run before a smoke test. A check is a few fields. The name states what must be true. The
-            check is the function that rdy runs; it returns true, or false with a detail. The fix is what prints when
-            the check fails. Severity decides whether a failure fails the run: error does, warn is reported and does
-            not. Everything else is structure: the checklist, and the helpers that the kit imports.
-          </aside>
-        </section>
-
-        <!-- 5 · Preflight -->
-        <section class="s-kit" data-kit="preflight" data-step="0">
-          <div class="slide">
-            <header class="slide-head">
-              <h2>Preflight</h2>
-              <p class="who">before a command: the kit from the last slide</p>
-              <code class="chip">rdy run &amp;&amp; pnpm smoke</code>
-            </header>
-            <div class="stage kt">
-              <div class="kt-left">
-                <div class="kt-tree"></div>
-                <div class="kt-exit"><span class="ink-box kt-exit-box"></span></div>
+                  <span class="note" style="--row: 3">what must be true</span>
+                  <span class="note" style="--row: 4">the check to run</span>
+                  <span class="note" style="--row: 5">the fix if the check fails</span>
+                  <span class="note" style="--row: 9">failure results in a warning, not an error</span>
+                </figure>
               </div>
-              <figure class="term">
-                <figcaption class="term-tab">
-                  <button type="button" class="tab on" data-view="run"></button>
-                  <button type="button" class="tab" data-view="json"></button>
-                </figcaption>
-                <pre><code></code></pre>
-              </figure>
-              <div class="kt-env"></div>
-            </div>
-            <div class="captions"></div>
-            <div class="kt-steps"></div>
-          </div>
-          <aside class="notes">
-            Compile the kit and run it: one line per check, the count line, the verdict naming the threshold, and the
-            exit code that gates the smoke test. Step through it, then change the environment in the panel. Stop Docker:
-            the check fails at error, the fix prints, the run fails with exit one. Take the API down instead: that check
-            fails at warn, so it is reported with its fix, but the run passes. The severity decides the verdict, not the
-            check. The JSON tab is the same run for a machine.
-          </aside>
-        </section>
+              <aside class="notes">
+                A preflight kit, run before a smoke test. A check is a few fields. The name states what must be true.
+                The check is the function that rdy runs; it returns true, or false with a detail. The fix is what prints
+                when the check fails. Severity decides whether a failure fails the run: error does, warn is reported and
+                does not. Everything else is structure: the checklist, and the helpers that the kit imports.
+              </aside>
+            </section>
 
-        <!-- 6 · A run, step by step -->
-        <section class="s-run" data-step="0">
-          <div class="slide">
-            <header class="slide-head"><h2>A run, step by step</h2></header>
-            <div class="stage stage-run">
-              <svg
-                class="run"
-                viewBox="0 0 1180 520"
-                role="img"
-                aria-label="The demo kit's tree of six checks, resolving step by step, with the results flowing into the total, the verdict, and the exit code"
-              >
-                <defs>
-                  <marker
-                    id="m-err"
-                    viewBox="0 0 10 10"
-                    refX="9"
-                    refY="5"
-                    markerWidth="6"
-                    markerHeight="6"
-                    orient="auto"
+            <!-- 5 · Preflight -->
+            <section class="s-kit" data-kit="preflight" data-step="0">
+              <div class="slide">
+                <header class="slide-head">
+                  <h2>Preflight</h2>
+                  <p class="who">before a command: the kit from the last slide</p>
+                  <code class="chip">rdy run &amp;&amp; pnpm smoke</code>
+                </header>
+                <div class="stage kt">
+                  <div class="kt-left">
+                    <div class="kt-tree"></div>
+                    <div class="kt-exit"><span class="ink-box kt-exit-box"></span></div>
+                  </div>
+                  <figure class="term">
+                    <figcaption class="term-tab">
+                      <button type="button" class="tab on" data-view="run"></button>
+                      <button type="button" class="tab" data-view="json"></button>
+                    </figcaption>
+                    <pre><code></code></pre>
+                  </figure>
+                  <div class="kt-env"></div>
+                </div>
+                <div class="captions"></div>
+                <div class="kt-steps"></div>
+              </div>
+              <aside class="notes">
+                Compile the kit and run it: one line per check, the count line, the verdict naming the threshold, and
+                the exit code that gates the smoke test. Step through it, then change the environment in the panel. Stop
+                Docker: the check fails at error, the fix prints, the run fails with exit one. Take the API down
+                instead: that check fails at warn, so it is reported with its fix, but the run passes. The severity
+                decides the verdict, not the check. The JSON tab is the same run for a machine.
+              </aside>
+            </section>
+
+            <!-- 6 · A run, step by step -->
+            <section class="s-run" data-step="0">
+              <div class="slide">
+                <header class="slide-head"><h2>A run, step by step</h2></header>
+                <div class="stage stage-run">
+                  <svg
+                    class="run"
+                    viewBox="0 0 1180 520"
+                    role="img"
+                    aria-label="The demo kit's tree of six checks, resolving step by step, with the results flowing into the total, the verdict, and the exit code"
                   >
-                    <path d="M0 0L10 5L0 10z" class="ah-error" />
-                  </marker>
-                  <marker
-                    id="m-ink2"
-                    viewBox="0 0 10 10"
-                    refX="9"
-                    refY="5"
-                    markerWidth="6"
-                    markerHeight="6"
-                    orient="auto"
-                  >
-                    <path d="M0 0L10 5L0 10z" class="ah-ink" />
-                  </marker>
-                </defs>
+                    <defs>
+                      <marker
+                        id="m-err"
+                        viewBox="0 0 10 10"
+                        refX="9"
+                        refY="5"
+                        markerWidth="6"
+                        markerHeight="6"
+                        orient="auto"
+                      >
+                        <path d="M0 0L10 5L0 10z" class="ah-error" />
+                      </marker>
+                      <marker
+                        id="m-ink2"
+                        viewBox="0 0 10 10"
+                        refX="9"
+                        refY="5"
+                        markerWidth="6"
+                        markerHeight="6"
+                        orient="auto"
+                      >
+                        <path d="M0 0L10 5L0 10z" class="ah-ink" />
+                      </marker>
+                    </defs>
 
-                <!-- Edges of the tree -->
-                <path class="edge" d="M20 52V100H40" />
-                <path class="edge" d="M20 100V364H40" />
-                <path class="edge" d="M20 364V430H40" />
-                <path class="edge e-pass" data-at="1" d="M60 124V166H84" />
-                <path class="edge e-blocked" data-at="3" d="M104 190V232H128" />
-                <path class="edge e-blocked" data-at="3" d="M104 232V298H128" />
+                    <!-- Edges of the tree -->
+                    <path class="edge" d="M20 52V100H40" />
+                    <path class="edge" d="M20 100V364H40" />
+                    <path class="edge" d="M20 364V430H40" />
+                    <path class="edge e-pass" data-at="1" d="M60 124V166H84" />
+                    <path class="edge e-blocked" data-at="3" d="M104 190V232H128" />
+                    <path class="edge e-blocked" data-at="3" d="M104 232V298H128" />
 
-                <!-- Results flowing into the total -->
-                <path class="flow c-pass" data-at="1" pathLength="1" d="M320 100C440 100 520 176 640 176" />
-                <path class="flow c-error" data-at="2" pathLength="1" d="M364 166C484 166 520 84 640 84" />
-                <path class="flow c-blocked" data-at="3" pathLength="1" d="M408 232C528 232 520 222 640 222" />
-                <path class="flow c-blocked" data-at="3" pathLength="1" d="M408 298C528 298 520 222 640 222" />
-                <path class="flow c-warn" data-at="4" pathLength="1" d="M320 364C440 364 520 130 640 130" />
-                <path class="flow c-skip" data-at="5" pathLength="1" d="M320 430C440 430 520 268 640 268" />
+                    <!-- Results flowing into the total -->
+                    <path class="flow c-pass" data-at="1" pathLength="1" d="M320 100C440 100 520 176 640 176" />
+                    <path class="flow c-error" data-at="2" pathLength="1" d="M364 166C484 166 520 84 640 84" />
+                    <path class="flow c-blocked" data-at="3" pathLength="1" d="M408 232C528 232 520 222 640 222" />
+                    <path class="flow c-blocked" data-at="3" pathLength="1" d="M408 298C528 298 520 222 640 222" />
+                    <path class="flow c-warn" data-at="4" pathLength="1" d="M320 364C440 364 520 130 640 130" />
+                    <path class="flow c-skip" data-at="5" pathLength="1" d="M320 430C440 430 520 268 640 268" />
 
-                <!-- Nodes -->
-                <g class="node root" transform="translate(0,16)">
-                  <rect class="box" width="190" height="36" rx="18" />
-                  <text class="k" x="16" y="18">checklist</text>
-                  <text class="v" x="101" y="18">deploy</text>
-                </g>
-                <g class="node st-pass" data-at="1" transform="translate(40,76)">
-                  <rect class="box" width="280" height="48" rx="10" />
-                  <circle class="ring" cx="26" cy="24" r="13" />
-                  <text class="mark" x="26" y="24">✅</text>
-                  <text class="label" x="52" y="24">package.json exists</text>
-                </g>
-                <g class="node st-error" data-at="2" transform="translate(84,142)">
-                  <rect class="box" width="280" height="48" rx="10" />
-                  <circle class="ring" cx="26" cy="24" r="13" />
-                  <text class="mark" x="26" y="24">❌</text>
-                  <text class="label" x="52" y="24">build output present</text>
-                </g>
-                <g class="node st-blocked" data-at="3" transform="translate(128,208)">
-                  <rect class="box" width="280" height="48" rx="10" />
-                  <circle class="ring" cx="26" cy="24" r="13" />
-                  <text class="mark" x="26" y="24">🚫</text>
-                  <text class="label" x="52" y="24">bundle under 500 kB</text>
-                </g>
-                <g class="node st-blocked" data-at="3" transform="translate(128,274)">
-                  <rect class="box" width="280" height="48" rx="10" />
-                  <circle class="ring" cx="26" cy="24" r="13" />
-                  <text class="mark" x="26" y="24">🚫</text>
-                  <text class="label" x="52" y="24">source maps excluded</text>
-                </g>
-                <g class="node st-warn" data-at="4" transform="translate(40,340)">
-                  <rect class="box" width="280" height="48" rx="10" />
-                  <circle class="ring" cx="26" cy="24" r="13" />
-                  <text class="mark" x="26" y="24">🔶</text>
-                  <text class="label" x="52" y="24">NODE_ENV is set</text>
-                </g>
-                <g class="node st-skip" data-at="5" transform="translate(40,406)">
-                  <rect class="box" width="280" height="48" rx="10" />
-                  <circle class="ring" cx="26" cy="24" r="13" />
-                  <text class="mark" x="26" y="24">⚪</text>
-                  <text class="label" x="52" y="24">base image is pinned</text>
-                </g>
+                    <!-- Nodes -->
+                    <g class="node root" transform="translate(0,16)">
+                      <rect class="box" width="190" height="36" rx="18" />
+                      <text class="k" x="16" y="18">checklist</text>
+                      <text class="v" x="101" y="18">deploy</text>
+                    </g>
+                    <g class="node st-pass" data-at="1" transform="translate(40,76)">
+                      <rect class="box" width="280" height="48" rx="10" />
+                      <circle class="ring" cx="26" cy="24" r="13" />
+                      <text class="mark" x="26" y="24">✅</text>
+                      <text class="label" x="52" y="24">package.json exists</text>
+                    </g>
+                    <g class="node st-error" data-at="2" transform="translate(84,142)">
+                      <rect class="box" width="280" height="48" rx="10" />
+                      <circle class="ring" cx="26" cy="24" r="13" />
+                      <text class="mark" x="26" y="24">❌</text>
+                      <text class="label" x="52" y="24">build output present</text>
+                    </g>
+                    <g class="node st-blocked" data-at="3" transform="translate(128,208)">
+                      <rect class="box" width="280" height="48" rx="10" />
+                      <circle class="ring" cx="26" cy="24" r="13" />
+                      <text class="mark" x="26" y="24">🚫</text>
+                      <text class="label" x="52" y="24">bundle under 500 kB</text>
+                    </g>
+                    <g class="node st-blocked" data-at="3" transform="translate(128,274)">
+                      <rect class="box" width="280" height="48" rx="10" />
+                      <circle class="ring" cx="26" cy="24" r="13" />
+                      <text class="mark" x="26" y="24">🚫</text>
+                      <text class="label" x="52" y="24">source maps excluded</text>
+                    </g>
+                    <g class="node st-warn" data-at="4" transform="translate(40,340)">
+                      <rect class="box" width="280" height="48" rx="10" />
+                      <circle class="ring" cx="26" cy="24" r="13" />
+                      <text class="mark" x="26" y="24">🔶</text>
+                      <text class="label" x="52" y="24">NODE_ENV is set</text>
+                    </g>
+                    <g class="node st-skip" data-at="5" transform="translate(40,406)">
+                      <rect class="box" width="280" height="48" rx="10" />
+                      <circle class="ring" cx="26" cy="24" r="13" />
+                      <text class="mark" x="26" y="24">⚪</text>
+                      <text class="label" x="52" y="24">base image is pinned</text>
+                    </g>
 
-                <g class="rollup">
-                  <!-- Total -->
-                  <g class="tally" data-at="6">
-                    <rect class="frame" x="628" y="20" width="284" height="276" rx="12" />
-                    <text class="headmark" x="644" y="46">❌</text>
-                    <text class="head" x="668" y="46">Total</text>
-                  </g>
-                  <g class="trow st-error" data-at="2">
-                    <rect class="rbox" x="640" y="65" width="260" height="38" rx="8" />
-                    <text class="tmark" x="660" y="84">❌</text>
-                    <text class="tlabel" x="684" y="84">error</text>
-                    <text class="zero" x="888" y="84">0</text>
-                    <text class="count" x="888" y="84">1</text>
-                  </g>
-                  <g class="trow st-warn" data-at="4">
-                    <rect class="rbox" x="640" y="111" width="260" height="38" rx="8" />
-                    <text class="tmark" x="660" y="130">🔶</text>
-                    <text class="tlabel" x="684" y="130">warning</text>
-                    <text class="zero" x="888" y="130">0</text>
-                    <text class="count" x="888" y="130">1</text>
-                  </g>
-                  <g class="trow st-pass" data-at="1">
-                    <rect class="rbox" x="640" y="157" width="260" height="38" rx="8" />
-                    <text class="tmark" x="660" y="176">✅</text>
-                    <text class="tlabel" x="684" y="176">passed</text>
-                    <text class="zero" x="888" y="176">0</text>
-                    <text class="count" x="888" y="176">1</text>
-                  </g>
-                  <g class="trow st-blocked" data-at="3">
-                    <rect class="rbox" x="640" y="203" width="260" height="38" rx="8" />
-                    <text class="tmark" x="660" y="222">🚫</text>
-                    <text class="tlabel" x="684" y="222">blocked</text>
-                    <text class="zero" x="888" y="222">0</text>
-                    <text class="count" x="888" y="222">2</text>
-                  </g>
-                  <g class="trow st-skip" data-at="5">
-                    <rect class="rbox" x="640" y="249" width="260" height="38" rx="8" />
-                    <text class="tmark" x="660" y="268">⚪</text>
-                    <text class="tlabel" x="684" y="268">skipped</text>
-                    <text class="zero" x="888" y="268">0</text>
-                    <text class="count" x="888" y="268">1</text>
-                  </g>
+                    <g class="rollup">
+                      <!-- Total -->
+                      <g class="tally" data-at="6">
+                        <rect class="frame" x="628" y="20" width="284" height="276" rx="12" />
+                        <text class="headmark" x="644" y="46">❌</text>
+                        <text class="head" x="668" y="46">Total</text>
+                      </g>
+                      <g class="trow st-error" data-at="2">
+                        <rect class="rbox" x="640" y="65" width="260" height="38" rx="8" />
+                        <text class="tmark" x="660" y="84">❌</text>
+                        <text class="tlabel" x="684" y="84">error</text>
+                        <text class="zero" x="888" y="84">0</text>
+                        <text class="count" x="888" y="84">1</text>
+                      </g>
+                      <g class="trow st-warn" data-at="4">
+                        <rect class="rbox" x="640" y="111" width="260" height="38" rx="8" />
+                        <text class="tmark" x="660" y="130">🔶</text>
+                        <text class="tlabel" x="684" y="130">warning</text>
+                        <text class="zero" x="888" y="130">0</text>
+                        <text class="count" x="888" y="130">1</text>
+                      </g>
+                      <g class="trow st-pass" data-at="1">
+                        <rect class="rbox" x="640" y="157" width="260" height="38" rx="8" />
+                        <text class="tmark" x="660" y="176">✅</text>
+                        <text class="tlabel" x="684" y="176">passed</text>
+                        <text class="zero" x="888" y="176">0</text>
+                        <text class="count" x="888" y="176">1</text>
+                      </g>
+                      <g class="trow st-blocked" data-at="3">
+                        <rect class="rbox" x="640" y="203" width="260" height="38" rx="8" />
+                        <text class="tmark" x="660" y="222">🚫</text>
+                        <text class="tlabel" x="684" y="222">blocked</text>
+                        <text class="zero" x="888" y="222">0</text>
+                        <text class="count" x="888" y="222">2</text>
+                      </g>
+                      <g class="trow st-skip" data-at="5">
+                        <rect class="rbox" x="640" y="249" width="260" height="38" rx="8" />
+                        <text class="tmark" x="660" y="268">⚪</text>
+                        <text class="tlabel" x="684" y="268">skipped</text>
+                        <text class="zero" x="888" y="268">0</text>
+                        <text class="count" x="888" y="268">1</text>
+                      </g>
 
-                  <!-- Verdict and exit code -->
-                  <g class="verdict" data-at="7">
-                    <path class="p-warn" pathLength="1" d="M912 130H940V316" />
-                    <line class="stop" x1="930" y1="316" x2="950" y2="316" />
-                    <path class="p-error" pathLength="1" d="M912 84H990V366" marker-end="url(#m-err)" />
-                    <rect class="gate" x="628" y="324" width="350" height="24" rx="4" />
-                    <rect class="gate" x="1002" y="324" width="178" height="24" rx="4" />
-                    <text class="gate-label" x="644" y="336">fail-on: error</text>
-                    <rect class="vbox" x="628" y="372" width="400" height="50" rx="10" />
-                    <text class="vtext" x="644" y="397">❌ Run failed (fail-on: error)</text>
-                    <path class="p-link" pathLength="1" d="M1028 397H1046" marker-end="url(#m-ink2)" />
-                    <rect class="xbox" x="1052" y="372" width="128" height="50" rx="10" />
-                    <text class="xtext" x="1116" y="397">exit 1</text>
-                  </g>
-                </g>
-              </svg>
+                      <!-- Verdict and exit code -->
+                      <g class="verdict" data-at="7">
+                        <path class="p-warn" pathLength="1" d="M912 130H940V316" />
+                        <line class="stop" x1="930" y1="316" x2="950" y2="316" />
+                        <path class="p-error" pathLength="1" d="M912 84H990V366" marker-end="url(#m-err)" />
+                        <rect class="gate" x="628" y="324" width="350" height="24" rx="4" />
+                        <rect class="gate" x="1002" y="324" width="178" height="24" rx="4" />
+                        <text class="gate-label" x="644" y="336">fail-on: error</text>
+                        <rect class="vbox" x="628" y="372" width="400" height="50" rx="10" />
+                        <text class="vtext" x="644" y="397">❌ Run failed (fail-on: error)</text>
+                        <path class="p-link" pathLength="1" d="M1028 397H1046" marker-end="url(#m-ink2)" />
+                        <rect class="xbox" x="1052" y="372" width="128" height="50" rx="10" />
+                        <text class="xtext" x="1116" y="397">exit 1</text>
+                      </g>
+                    </g>
+                  </svg>
 
-              <figure class="term" data-at="8">
-                <figcaption class="term-tab">rdy run</figcaption>
-                <pre><code class="run-sample"></code></pre>
-              </figure>
-            </div>
+                  <figure class="term" data-at="8">
+                    <figcaption class="term-tab">rdy run</figcaption>
+                    <pre><code class="run-sample"></code></pre>
+                  </figure>
+                </div>
 
-            <div class="captions">
-              <p class="caption on now" data-at="0">The deploy checklist: six checks, three of them nested</p>
-              <p class="caption" data-at="1"><code>package.json exists</code> passes, so the check under it runs</p>
-              <p class="caption" data-at="2">
-                <code>build output present</code> fails at <code>error</code>: dist/index.js not found
-              </p>
-              <p class="caption" data-at="3">
-                Under the failed check, two checks do not run and are reported as blocked
-              </p>
-              <p class="caption" data-at="4"><code>NODE_ENV is set</code> fails at <code>warn</code></p>
-              <p class="caption" data-at="5">
-                <code>base image is pinned</code> is skipped: no Dockerfile in this project
-              </p>
-              <p class="caption" data-at="6">Each result counts once in the total</p>
-              <p class="caption" data-at="7">
-                <code>fail-on: error</code> lets the error fail the run; the warning alone would not
-              </p>
-              <p class="caption" data-at="8">The same run, as <code>rdy</code> prints it</p>
-            </div>
+                <div class="captions">
+                  <p class="caption on now" data-at="0">The deploy checklist: six checks, three of them nested</p>
+                  <p class="caption" data-at="1"><code>package.json exists</code> passes, so the check under it runs</p>
+                  <p class="caption" data-at="2">
+                    <code>build output present</code> fails at <code>error</code>: dist/index.js not found
+                  </p>
+                  <p class="caption" data-at="3">
+                    Under the failed check, two checks do not run and are reported as blocked
+                  </p>
+                  <p class="caption" data-at="4"><code>NODE_ENV is set</code> fails at <code>warn</code></p>
+                  <p class="caption" data-at="5">
+                    <code>base image is pinned</code> is skipped: no Dockerfile in this project
+                  </p>
+                  <p class="caption" data-at="6">Each result counts once in the total</p>
+                  <p class="caption" data-at="7">
+                    <code>fail-on: error</code> lets the error fail the run; the warning alone would not
+                  </p>
+                  <p class="caption" data-at="8">The same run, as <code>rdy</code> prints it</p>
+                </div>
 
-            <span class="fragment step" data-fragment-index="1"></span>
-            <span class="fragment step" data-fragment-index="2"></span>
-            <span class="fragment step" data-fragment-index="3"></span>
-            <span class="fragment step" data-fragment-index="4"></span>
-            <span class="fragment step" data-fragment-index="5"></span>
-            <span class="fragment step" data-fragment-index="6"></span>
-            <span class="fragment step" data-fragment-index="7"></span>
-            <span class="fragment step" data-fragment-index="8"></span>
-          </div>
-          <aside class="notes">
-            Here is a kit with nesting. package.json exists passes, so the check under it runs. build output present
-            fails, and its severity is error. Its two children never run: they are reported as blocked, because their
-            parent failed. NODE_ENV is set fails too, but at warn. base image is pinned does not apply here, so it is
-            skipped. Each result counts once in the total: one error, one warning, one passed, two blocked, one skipped.
-            Then the verdict. This run fails on error. The error fails it; the warning alone would have left it passing,
-            with exit code zero. Exit code one is what CI acts on. And this is what rdy printed for the same run: the
-            same tree, the fixes, the total, the verdict.
-          </aside>
-        </section>
+                <span class="fragment step" data-fragment-index="1"></span>
+                <span class="fragment step" data-fragment-index="2"></span>
+                <span class="fragment step" data-fragment-index="3"></span>
+                <span class="fragment step" data-fragment-index="4"></span>
+                <span class="fragment step" data-fragment-index="5"></span>
+                <span class="fragment step" data-fragment-index="6"></span>
+                <span class="fragment step" data-fragment-index="7"></span>
+                <span class="fragment step" data-fragment-index="8"></span>
+              </div>
+              <aside class="notes">
+                Here is a kit with nesting. package.json exists passes, so the check under it runs. build output present
+                fails, and its severity is error. Its two children never run: they are reported as blocked, because
+                their parent failed. NODE_ENV is set fails too, but at warn. base image is pinned does not apply here,
+                so it is skipped. Each result counts once in the total: one error, one warning, one passed, two blocked,
+                one skipped. Then the verdict. This run fails on error. The error fails it; the warning alone would have
+                left it passing, with exit code zero. Exit code one is what CI acts on. And this is what rdy printed for
+                the same run: the same tree, the fixes, the total, the verdict.
+              </aside>
+            </section>
 
-        <!-- 7 · The same run, for a machine -->
-        <section class="s-json">
-          <div class="slide">
-            <header class="slide-head">
-              <h2>The same run, for a machine</h2>
-              <p class="who">for CI owners and agents</p>
-              <code class="chip">rdy run --json</code>
-            </header>
-            <div class="stage">
-              <figure class="term">
-                <figcaption class="term-tab">rdy run --json | head</figcaption>
-                <pre><code>{
+            <!-- 7 · The same run, for a machine -->
+            <section class="s-json">
+              <div class="slide">
+                <header class="slide-head">
+                  <h2>The same run, for a machine</h2>
+                  <p class="who">for CI owners and agents</p>
+                  <code class="chip">rdy run --json</code>
+                </header>
+                <div class="stage">
+                  <figure class="term">
+                    <figcaption class="term-tab">rdy run --json | head</figcaption>
+                    <pre><code>{
   <span class="j-key">"schemaVersion"</span>: 2,
   <span class="j-key">"readyupVersion"</span>: <span class="j-str">"0.42.0"</span>,
   <span class="j-key">"passed"</span>: false,
@@ -2000,335 +2276,389 @@
             <span class="j-key">"checks"</span>: [ { <span class="j-key">"name"</span>: <span class="j-str">"bundle under 500 kB"</span>, <span class="j-key">"status"</span>: <span class="j-str">"skipped"</span>, <span class="j-key">"skipReason"</span>: <span class="j-str">"precondition"</span> }, <span class="cut">⋯</span> ] } ] },
         { <span class="j-key">"name"</span>: <span class="j-str">"NODE_ENV is set"</span>, <span class="j-key">"status"</span>: <span class="j-str">"failed"</span>, <span class="j-key">"severity"</span>: <span class="j-str">"warn"</span>, <span class="cut">⋯</span> },
         <span class="cut">⋯</span></code></pre>
-                <span class="note" style="--row: 3">the verdict, as a boolean</span>
-                <span class="note" style="--row: 4">the count line's tallies</span>
-                <span class="note" style="--row: 10">every failure carries its detail and its fix</span>
-              </figure>
-            </div>
-            <p class="caption">
-              One document on stdout; <code>--detail summary</code> keeps the failures and fixes alone
-            </p>
-          </div>
-          <aside class="notes">
-            The same run with dash dash json. One JSON document on stdout, every human line on stderr. The verdict is a
-            boolean, the counts are the same six tallies, and every failed check carries its detail and its fix. Dash
-            dash detail summary drops the passes and keeps the failures and fixes, which is the shape an agent wants
-            before it goes and fixes them. The schema ships inside the package.
-          </aside>
-        </section>
-
-        <!-- 8 · What a kit is for -->
-        <section class="s-uses">
-          <div class="slide">
-            <header class="slide-head">
-              <h2>What a kit is for</h2>
-              <p class="who">four questions, one mechanism</p>
-            </header>
-            <div class="stage">
-              <div class="uses">
-                <div class="use">
-                  <h3>Preflight<small>before a command</small></h3>
-                  <p>Is the environment ready for the deploy, the smoke test, the release?</p>
-                  <p class="kit"><b>preflight</b> · rdy run &amp;&amp; pnpm smoke</p>
+                    <span class="note" style="--row: 3">the verdict, as a boolean</span>
+                    <span class="note" style="--row: 4">the count line's tallies</span>
+                    <span class="note" style="--row: 10">every failure carries its detail and its fix</span>
+                  </figure>
                 </div>
-                <div class="use">
-                  <h3>Drift<small>against a template</small></h3>
-                  <p>Do the workflows and configs still match the templates that the installed package ships?</p>
-                  <p class="kit"><b>release-kit</b> · rdy run --from npm:@williamthorsen/release-kit</p>
-                </div>
-                <div class="use">
-                  <h3>Adoption<small>and migration</small></h3>
-                  <p>Where does the code still hand-roll what a package it already installed provides?</p>
-                  <p class="kit"><b>toolbelt.errors</b> · rdy run --sources</p>
-                </div>
-                <div class="use">
-                  <h3>Onboarding<small>a machine or a person</small></h3>
-                  <p>Is this machine still set up the way the bootstrap left it: tools, links, worktrees?</p>
-                  <p class="kit"><b>machine</b> · rdy run machine</p>
-                </div>
+                <p class="caption">
+                  One document on stdout; <code>--detail summary</code> keeps the failures and fixes alone
+                </p>
               </div>
-            </div>
-            <p class="caption">A kit asks one question; the same command answers all four</p>
-          </div>
-          <aside class="notes">
-            Four kinds of kit people actually write. Preflight, before a command that needs the environment ready.
-            Drift, from a package that ships its own templates and checks that the repo still matches them. Adoption,
-            where a package reports the places that still hand-roll what it provides. Onboarding, where a machine checks
-            itself against the state the bootstrap left. Same command, same output, same exit code.
-          </aside>
-        </section>
+              <aside class="notes">
+                The same run with dash dash json. One JSON document on stdout, every human line on stderr. The verdict
+                is a boolean, the counts are the same six tallies, and every failed check carries its detail and its
+                fix. Dash dash detail summary drops the passes and keeps the failures and fixes, which is the shape an
+                agent wants before it goes and fixes them. The schema ships inside the package.
+              </aside>
+            </section>
 
-        <!-- 9 · Drift -->
-        <section class="s-kit" data-kit="drift" data-step="0">
-          <div class="slide">
-            <header class="slide-head">
-              <h2>Drift</h2>
-              <p class="who">against a template: the kit ships with the package</p>
-              <code class="chip">rdy run --from npm:@williamthorsen/release-kit</code>
-            </header>
-            <div class="stage kt">
-              <div class="kt-left">
-                <div class="kt-tree"></div>
-                <div class="kt-exit"><span class="ink-box kt-exit-box"></span></div>
-              </div>
-              <figure class="term">
-                <figcaption class="term-tab">
-                  <button type="button" class="tab on" data-view="run"></button>
-                  <button type="button" class="tab" data-view="json"></button>
-                </figcaption>
-                <pre><code></code></pre>
-              </figure>
-              <div class="kt-env"></div>
-            </div>
-            <div class="captions"></div>
-            <div class="kt-steps"></div>
-          </div>
-          <aside class="notes">
-            release-kit ships its workflows as templates, and it ships a kit that checks the repo still matches them.
-            Nothing to write: the kit comes with the package. Let a workflow drift from its template and the kit says
-            which one and how to regenerate it. Remove a workflow and the check under it is blocked rather than failed:
-            it never ran.
-          </aside>
-        </section>
-
-        <!-- 10 · Adoption -->
-        <section class="s-kit" data-kit="adoption" data-step="0">
-          <div class="slide">
-            <header class="slide-head">
-              <h2>Adoption</h2>
-              <p class="who">using what is installed: a real run from this repo</p>
-              <code class="chip">rdy run --from npm:@williamthorsen/toolbelt.errors</code>
-            </header>
-            <div class="stage kt">
-              <div class="kt-left">
-                <div class="kt-tree"></div>
-                <div class="kt-exit"><span class="ink-box kt-exit-box"></span></div>
-              </div>
-              <figure class="term">
-                <figcaption class="term-tab">
-                  <button type="button" class="tab on" data-view="run"></button>
-                  <button type="button" class="tab" data-view="json"></button>
-                </figcaption>
-                <pre><code></code></pre>
-              </figure>
-              <div class="kt-env"></div>
-            </div>
-            <div class="captions"></div>
-            <div class="kt-steps"></div>
-          </div>
-          <aside class="notes">
-            The errors package ships a kit that sweeps the consumer's sources for the idioms it replaces. Each check
-            reports a fraction: sites examined, of sites in scope. One site still narrows a thrown value by hand, named
-            by file and line, with the fix. It is a recommendation, so the run passes. That is adoption: the package
-            tells you where you are not using it yet.
-          </aside>
-        </section>
-
-        <!-- 11 · Onboarding -->
-        <section class="s-kit" data-kit="onboard" data-step="0">
-          <div class="slide">
-            <header class="slide-head">
-              <h2>Onboarding</h2>
-              <p class="who">a machine checks itself: two checklists, one summary</p>
-              <code class="chip">rdy run machine</code>
-            </header>
-            <div class="stage kt">
-              <div class="kt-left">
-                <div class="kt-tree"></div>
-                <div class="kt-exit"><span class="ink-box kt-exit-box"></span></div>
-              </div>
-              <figure class="term">
-                <figcaption class="term-tab">
-                  <button type="button" class="tab on" data-view="run"></button>
-                  <button type="button" class="tab" data-view="json"></button>
-                </figcaption>
-                <pre><code></code></pre>
-              </figure>
-              <div class="kt-env"></div>
-            </div>
-            <div class="captions"></div>
-            <div class="kt-steps"></div>
-          </div>
-          <aside class="notes">
-            A machine kit: is this Mac still in the state the bootstrap left it? Two checklists, tools and install, each
-            with its own total, then a summary. The live worktree check has two checks under it; take the worktree away
-            and both are blocked. A stray setting in gitconfig is a warning with a fix. The run passes until a tool is
-            missing.
-          </aside>
-        </section>
-
-        <!-- 12 · Gating CI and trusting shared kits -->
-        <section class="s-ci">
-          <div class="slide">
-            <header class="slide-head">
-              <h2>Gating a pipeline, trusting a shared kit</h2>
-              <p class="who">for CI owners</p>
-            </header>
-            <div class="stage">
-              <div class="panels">
-                <div class="panel" role="group" aria-labelledby="h-gate">
-                  <h3 id="h-gate">The exit code is the gate</h3>
-                  <div class="gate-flow">
-                    <span class="ink-box from">rdy run</span>
-                    <span class="drop" aria-hidden="true"></span>
-                    <ul class="exits">
-                      <li class="ok"><code>exit 0</code><span>Ran and found no problems</span></li>
-                      <li class="bad">
-                        <code>exit 1</code><span>Ran and found problems <span class="verb">fix the repo</span></span>
-                      </li>
-                      <li class="usage">
-                        <code>exit 2</code
-                        ><span>Could not complete the invocation <span class="verb">fix the invocation</span></span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-                <div class="panel" role="group" aria-labelledby="h-trust">
-                  <h3 id="h-trust">A kit that another team publishes</h3>
-                  <div class="trust">
-                    <div class="row">
-                      <p class="role">publisher</p>
-                      <div class="chain">
-                        <p class="step"><code>rdy compile</code><span class="text">bundles the kit</span></p>
-                        <p class="step">
-                          <code>git commit</code
-                          ><span class="text"
-                            >the bundle and its manifest, in the repo or the package's <code>files</code></span
-                          >
-                        </p>
-                        <p class="step">
-                          <code>rdy verify --rebuild</code
-                          ><span class="text">in CI: fails on a bundle that no longer reproduces from its source</span>
-                        </p>
-                      </div>
+            <!-- 8 · What a kit is for -->
+            <section class="s-uses">
+              <div class="slide">
+                <header class="slide-head">
+                  <h2>What a kit is for</h2>
+                  <p class="who">four questions, one mechanism</p>
+                </header>
+                <div class="stage">
+                  <div class="uses">
+                    <div class="use">
+                      <h3>Preflight<small>before a command</small></h3>
+                      <p>Is the environment ready for the deploy, the smoke test, the release?</p>
+                      <p class="kit"><b>preflight</b> · rdy run &amp;&amp; pnpm smoke</p>
                     </div>
-                    <div class="row split">
-                      <p class="role">consumer</p>
-                      <div class="chain">
-                        <p class="step">
-                          <code>rdy run --from npm:@acme/eslint-config</code
-                          ><span class="text">the kit published with the installed version</span>
-                        </p>
-                        <p class="step">
-                          <code>rdy run --from github:acme/ops@v2</code
-                          ><span class="text">the kit committed at that ref</span>
-                        </p>
-                      </div>
+                    <div class="use">
+                      <h3>Drift<small>against a template</small></h3>
+                      <p>Do the workflows and configs still match the templates that the installed package ships?</p>
+                      <p class="kit"><b>release-kit</b> · rdy run --from npm:@williamthorsen/release-kit</p>
+                    </div>
+                    <div class="use">
+                      <h3>Adoption<small>and migration</small></h3>
+                      <p>Where does the code still hand-roll what a package it already installed provides?</p>
+                      <p class="kit"><b>toolbelt.errors</b> · rdy run --sources</p>
+                    </div>
+                    <div class="use">
+                      <h3>Onboarding<small>a machine or a person</small></h3>
+                      <p>Is this machine still set up the way the bootstrap left it: tools, links, worktrees?</p>
+                      <p class="kit"><b>machine</b> · rdy run machine</p>
                     </div>
                   </div>
                 </div>
+                <p class="caption">A kit asks one question; the same command answers all four</p>
               </div>
-            </div>
-            <p class="caption">One exit code gates the pipeline; a published kit runs at the version the project has</p>
-          </div>
-          <aside class="notes">
-            Two questions for a CI owner. Gating: the exit code is the contract. Zero, no problems. One, fix the repo.
-            Two, fix the invocation. Trust: a team publishes a kit as the compiled bundle and its manifest, committed to
-            the repo or listed in its package's files, and runs verify with rebuild in CI, which fails if the bundle no
-            longer reproduces from its source. Consumers run it from the package they already install, or from the
-            repository at a pinned ref.
-          </aside>
-        </section>
+              <aside class="notes">
+                Four kinds of kit people actually write. Preflight, before a command that needs the environment ready.
+                Drift, from a package that ships its own templates and checks that the repo still matches them.
+                Adoption, where a package reports the places that still hand-roll what it provides. Onboarding, where a
+                machine checks itself against the state the bootstrap left. Same command, same output, same exit code.
+              </aside>
+            </section>
 
-        <!-- 13 · Why it pays off -->
-        <section class="s-payoff">
-          <div class="slide">
-            <header class="slide-head">
-              <h2>Where deploy checks live with ReadyUp</h2>
-              <p class="who">for engineering leads</p>
-            </header>
-            <div class="stage">
-              <div class="timeline">
-                <div class="hnode">
-                  <p>A checklist in the repo</p>
-                  <p class="path">.readyup/kits/default.ts</p>
-                  <p class="sub">next to the code that it checks</p>
+            <!-- 9 · Drift -->
+            <section class="s-kit" data-kit="drift" data-step="0">
+              <div class="slide">
+                <header class="slide-head">
+                  <h2>Drift</h2>
+                  <p class="who">against a template: the kit ships with the package</p>
+                  <code class="chip">rdy run --from npm:@williamthorsen/release-kit</code>
+                </header>
+                <div class="stage kt">
+                  <div class="kt-left">
+                    <div class="kt-tree"></div>
+                    <div class="kt-exit"><span class="ink-box kt-exit-box"></span></div>
+                  </div>
+                  <figure class="term">
+                    <figcaption class="term-tab">
+                      <button type="button" class="tab on" data-view="run"></button>
+                      <button type="button" class="tab" data-view="json"></button>
+                    </figcaption>
+                    <pre><code></code></pre>
+                  </figure>
+                  <div class="kt-env"></div>
                 </div>
-                <div class="arrow"></div>
-                <div class="hnode">
-                  <p>The code changes</p>
-                  <p class="sub">The kit changes with it, in the same commit and the same review</p>
-                </div>
-                <div class="arrow"></div>
-                <div class="hnode ink">
-                  <p>Deploy</p>
-                  <p class="sub"><code>rdy run</code> first, on a laptop and in CI</p>
-                </div>
-                <div class="arrow green"></div>
-                <div class="hnode early">
-                  <p class="mark">🔧</p>
-                  <p>The failure shows up before the deploy</p>
-                  <p class="sub">with its fix beside it</p>
-                </div>
+                <div class="captions"></div>
+                <div class="kt-steps"></div>
               </div>
-            </div>
-            <p class="caption">The checklist is versioned with the code, and the same command runs everywhere</p>
-          </div>
-          <aside class="notes">
-            Here is the earlier timeline with ReadyUp in place. The checklist is a file in the repo, so it is versioned
-            and reviewed with the code that it checks. The same command runs on a laptop and in CI; only the rendering
-            differs. And a failure shows up before the deploy, with the fix hint beside it, instead of after.
-          </aside>
-        </section>
+              <aside class="notes">
+                release-kit ships its workflows as templates, and it ships a kit that checks the repo still matches
+                them. Nothing to write: the kit comes with the package. Let a workflow drift from its template and the
+                kit says which one and how to regenerate it. Remove a workflow and the check under it is blocked rather
+                than failed: it never ran.
+              </aside>
+            </section>
 
-        <!-- 14 · Get started -->
-        <section class="s-start">
-          <div class="slide">
-            <header class="slide-head">
-              <h2>Get started</h2>
-              <code class="chip">Node 24 or later</code>
-            </header>
-            <div class="stage">
-              <ol class="cmd-list">
-                <li>
-                  <code>pnpm add --save-dev readyup esbuild</code>
-                  <span class="what">esbuild compiles the kits</span>
-                </li>
-                <li>
-                  <code>rdy init</code>
-                  <span class="what"
-                    >writes <code>.config/readyup.config.ts</code> and the starter kit
-                    <code class="path">.readyup/kits/default.ts</code></span
-                  >
-                </li>
-                <li>
-                  <code>rdy compile</code>
-                  <span class="what">bundles the kit</span>
-                </li>
-                <li>
-                  <code>rdy run</code>
-                  <span class="what">runs it, locally or in CI</span>
-                </li>
-              </ol>
-            </div>
-            <p class="links">
-              <a href="https://www.npmjs.com/package/readyup">npmjs.com/package/readyup</a>
-              <span><code>rdy help</code> lists the doc topics in the terminal</span>
-            </p>
+            <!-- 10 · Adoption -->
+            <section class="s-kit" data-kit="adoption" data-step="0">
+              <div class="slide">
+                <header class="slide-head">
+                  <h2>Adoption</h2>
+                  <p class="who">using what is installed: a real run from this repo</p>
+                  <code class="chip">rdy run --from npm:@williamthorsen/toolbelt.errors</code>
+                </header>
+                <div class="stage kt">
+                  <div class="kt-left">
+                    <div class="kt-tree"></div>
+                    <div class="kt-exit"><span class="ink-box kt-exit-box"></span></div>
+                  </div>
+                  <figure class="term">
+                    <figcaption class="term-tab">
+                      <button type="button" class="tab on" data-view="run"></button>
+                      <button type="button" class="tab" data-view="json"></button>
+                    </figcaption>
+                    <pre><code></code></pre>
+                  </figure>
+                  <div class="kt-env"></div>
+                </div>
+                <div class="captions"></div>
+                <div class="kt-steps"></div>
+              </div>
+              <aside class="notes">
+                The errors package ships a kit that sweeps the consumer's sources for the idioms it replaces. Each check
+                reports a fraction: sites examined, of sites in scope. One site still narrows a thrown value by hand,
+                named by file and line, with the fix. It is a recommendation, so the run passes. That is adoption: the
+                package tells you where you are not using it yet.
+              </aside>
+            </section>
+
+            <!-- 11 · Onboarding -->
+            <section class="s-kit" data-kit="onboard" data-step="0">
+              <div class="slide">
+                <header class="slide-head">
+                  <h2>Onboarding</h2>
+                  <p class="who">a machine checks itself: two checklists, one summary</p>
+                  <code class="chip">rdy run machine</code>
+                </header>
+                <div class="stage kt">
+                  <div class="kt-left">
+                    <div class="kt-tree"></div>
+                    <div class="kt-exit"><span class="ink-box kt-exit-box"></span></div>
+                  </div>
+                  <figure class="term">
+                    <figcaption class="term-tab">
+                      <button type="button" class="tab on" data-view="run"></button>
+                      <button type="button" class="tab" data-view="json"></button>
+                    </figcaption>
+                    <pre><code></code></pre>
+                  </figure>
+                  <div class="kt-env"></div>
+                </div>
+                <div class="captions"></div>
+                <div class="kt-steps"></div>
+              </div>
+              <aside class="notes">
+                A machine kit: is this Mac still in the state the bootstrap left it? Two checklists, tools and install,
+                each with its own total, then a summary. The live worktree check has two checks under it; take the
+                worktree away and both are blocked. A stray setting in gitconfig is a warning with a fix. The run passes
+                until a tool is missing.
+              </aside>
+            </section>
+
+            <!-- 12 · Gating CI and trusting shared kits -->
+            <section class="s-ci">
+              <div class="slide">
+                <header class="slide-head">
+                  <h2>Gating a pipeline, trusting a shared kit</h2>
+                  <p class="who">for CI owners</p>
+                </header>
+                <div class="stage">
+                  <div class="panels">
+                    <div class="panel" role="group" aria-labelledby="h-gate">
+                      <h3 id="h-gate">The exit code is the gate</h3>
+                      <div class="gate-flow">
+                        <span class="ink-box from">rdy run</span>
+                        <span class="drop" aria-hidden="true"></span>
+                        <ul class="exits">
+                          <li class="ok"><code>exit 0</code><span>Ran and found no problems</span></li>
+                          <li class="bad">
+                            <code>exit 1</code
+                            ><span>Ran and found problems <span class="verb">fix the repo</span></span>
+                          </li>
+                          <li class="usage">
+                            <code>exit 2</code
+                            ><span>Could not complete the invocation <span class="verb">fix the invocation</span></span>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                    <div class="panel" role="group" aria-labelledby="h-trust">
+                      <h3 id="h-trust">A kit that another team publishes</h3>
+                      <div class="trust">
+                        <div class="row">
+                          <p class="role">publisher</p>
+                          <div class="chain">
+                            <p class="step"><code>rdy compile</code><span class="text">bundles the kit</span></p>
+                            <p class="step">
+                              <code>git commit</code
+                              ><span class="text"
+                                >the bundle and its manifest, in the repo or the package's <code>files</code></span
+                              >
+                            </p>
+                            <p class="step">
+                              <code>rdy verify --rebuild</code
+                              ><span class="text"
+                                >in CI: fails on a bundle that no longer reproduces from its source</span
+                              >
+                            </p>
+                          </div>
+                        </div>
+                        <div class="row split">
+                          <p class="role">consumer</p>
+                          <div class="chain">
+                            <p class="step">
+                              <code>rdy run --from npm:@acme/eslint-config</code
+                              ><span class="text">the kit published with the installed version</span>
+                            </p>
+                            <p class="step">
+                              <code>rdy run --from github:acme/ops@v2</code
+                              ><span class="text">the kit committed at that ref</span>
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <p class="caption">
+                  One exit code gates the pipeline; a published kit runs at the version the project has
+                </p>
+              </div>
+              <aside class="notes">
+                Two questions for a CI owner. Gating: the exit code is the contract. Zero, no problems. One, fix the
+                repo. Two, fix the invocation. Trust: a team publishes a kit as the compiled bundle and its manifest,
+                committed to the repo or listed in its package's files, and runs verify with rebuild in CI, which fails
+                if the bundle no longer reproduces from its source. Consumers run it from the package they already
+                install, or from the repository at a pinned ref.
+              </aside>
+            </section>
+
+            <!-- 13 · Why it pays off -->
+            <section class="s-payoff">
+              <div class="slide">
+                <header class="slide-head">
+                  <h2>Where deploy checks live with ReadyUp</h2>
+                  <p class="who">for engineering leads</p>
+                </header>
+                <div class="stage">
+                  <div class="timeline">
+                    <div class="hnode">
+                      <p>A checklist in the repo</p>
+                      <p class="path">.readyup/kits/default.ts</p>
+                      <p class="sub">next to the code that it checks</p>
+                    </div>
+                    <div class="arrow"></div>
+                    <div class="hnode">
+                      <p>The code changes</p>
+                      <p class="sub">The kit changes with it, in the same commit and the same review</p>
+                    </div>
+                    <div class="arrow"></div>
+                    <div class="hnode ink">
+                      <p>Deploy</p>
+                      <p class="sub"><code>rdy run</code> first, on a laptop and in CI</p>
+                    </div>
+                    <div class="arrow green"></div>
+                    <div class="hnode early">
+                      <p class="mark">🔧</p>
+                      <p>The failure shows up before the deploy</p>
+                      <p class="sub">with its fix beside it</p>
+                    </div>
+                  </div>
+                </div>
+                <p class="caption">The checklist is versioned with the code, and the same command runs everywhere</p>
+              </div>
+              <aside class="notes">
+                Here is the earlier timeline with ReadyUp in place. The checklist is a file in the repo, so it is
+                versioned and reviewed with the code that it checks. The same command runs on a laptop and in CI; only
+                the rendering differs. And a failure shows up before the deploy, with the fix hint beside it, instead of
+                after.
+              </aside>
+            </section>
+
+            <!-- 14 · Get started -->
+            <section class="s-start">
+              <div class="slide">
+                <header class="slide-head">
+                  <h2>Get started</h2>
+                  <code class="chip">Node 24 or later</code>
+                </header>
+                <div class="stage">
+                  <ol class="cmd-list">
+                    <li>
+                      <code>pnpm add --save-dev readyup esbuild</code>
+                      <span class="what">esbuild compiles the kits</span>
+                    </li>
+                    <li>
+                      <code>rdy init</code>
+                      <span class="what"
+                        >writes <code>.config/readyup.config.ts</code> and the starter kit
+                        <code class="path">.readyup/kits/default.ts</code></span
+                      >
+                    </li>
+                    <li>
+                      <code>rdy compile</code>
+                      <span class="what">bundles the kit</span>
+                    </li>
+                    <li>
+                      <code>rdy run</code>
+                      <span class="what">runs it, locally or in CI</span>
+                    </li>
+                  </ol>
+                </div>
+                <p class="links">
+                  <a href="https://www.npmjs.com/package/readyup">npmjs.com/package/readyup</a>
+                  <span><code>rdy help</code> lists the doc topics in the terminal</span>
+                </p>
+              </div>
+              <aside class="notes">
+                To start: add readyup and esbuild as dev dependencies, on Node 24 or later. rdy init writes the config
+                and the starter kit from earlier. rdy compile bundles it, and rdy run runs it, the same way locally and
+                in CI. The docs are on npm and in the terminal: rdy help lists the topics. Questions?
+              </aside>
+            </section>
           </div>
-          <aside class="notes">
-            To start: add readyup and esbuild as dev dependencies, on Node 24 or later. rdy init writes the config and
-            the starter kit from earlier. rdy compile bundles it, and rdy run runs it, the same way locally and in CI.
-            The docs are on npm and in the terminal: rdy help lists the topics. Questions?
-          </aside>
-        </section>
+        </div>
       </div>
 
-      <div class="pos" aria-hidden="true">
-        <ol class="pos-slides"></ol>
-        <ol class="pos-steps"></ol>
-        <span class="pos-label"></span>
-      </div>
-    </div>
+      <nav class="bar" aria-label="Presenter controls">
+        <ol class="progress" id="progress"></ol>
+        <div class="bar-row">
+          <span class="nav-group" role="group" aria-label="Slides">
+            <button type="button" class="ctl" id="first" title="First slide (Home)" aria-label="First slide">
+              <span class="glyph">⏮&#xFE0E;</span>
+            </button>
+            <button type="button" class="ctl" id="prev" title="Previous slide (Shift+←)" aria-label="Previous slide">
+              <span class="glyph">◀&#xFE0E;</span>
+            </button>
+            <span class="pos" id="pos" aria-live="polite"></span>
+            <button type="button" class="ctl" id="next" title="Next slide (Shift+→)" aria-label="Next slide">
+              <span class="glyph">▶&#xFE0E;</span>
+            </button>
+            <button type="button" class="ctl" id="last" title="Last slide (End)" aria-label="Last slide">
+              <span class="glyph">⏭&#xFE0E;</span>
+            </button>
+          </span>
+          <span class="nav-group steps-group" id="steps-group" role="group" aria-label="Steps" data-empty="true">
+            <span class="lbl">Steps</span>
+            <button
+              type="button"
+              class="ctl"
+              id="step-first"
+              title="Before the first step"
+              aria-label="Before the first step"
+            >
+              <span class="glyph">⏮&#xFE0E;</span>
+            </button>
+            <button type="button" class="ctl" id="step-prev" title="Previous step (←)" aria-label="Previous step">
+              <span class="glyph">◀&#xFE0E;</span>
+            </button>
+            <span class="dots" id="dots"></span>
+            <button type="button" class="ctl" id="step-next" title="Next step (→)" aria-label="Next step">
+              <span class="glyph">▶&#xFE0E;</span>
+            </button>
+            <button
+              type="button"
+              class="ctl skip"
+              id="step-last"
+              title="Show every remaining step (S)"
+              aria-label="Show every remaining step"
+            >
+              <span class="glyph">⏭&#xFE0E;</span>
+            </button>
+          </span>
+          <span class="spacer"></span>
+          <button type="button" class="ctl" id="full" aria-pressed="false" title="Full screen (F)">
+            Full screen <kbd>F</kbd>
+          </button>
+        </div>
+      </nav>
+    </main>
 
     <script src="https://cdn.jsdelivr.net/npm/reveal.js@6.0.2/dist/reveal.js"></script>
     <script src="deck.js"></script>
     <script>
       (function () {
         var deckEl = document.getElementById('deck');
-        var posSlides = document.querySelector('.pos-slides');
-        var posSteps = document.querySelector('.pos-steps');
-        var posLabel = document.querySelector('.pos-label');
+        var presenter = document.getElementById('presenter');
+        var sections = Array.prototype.slice.call(deckEl.querySelectorAll('.slides > section'));
         var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
         // -- Kit pages --
@@ -2339,25 +2669,151 @@
           .map(lineHtml)
           .join('\n');
         document.querySelectorAll('section.s-kit').forEach(mountKit);
+        buildProgress();
 
         var deck = new Reveal(deckEl, {
+          embedded: true,
           width: 1280,
           height: 720,
-          margin: 0.02,
+          margin: 0,
           center: false,
           hash: true,
-          controls: true,
-          controlsTutorial: false,
+          controls: false,
           progress: false,
           slideNumber: false,
+          overview: false,
+          touch: true,
           transition: reduce ? 'none' : 'fade',
           transitionSpeed: 'fast',
+          keyboard: {
+            36: firstSlide,
+            35: lastSlide,
+            83: skipSteps,
+            70: toggleFull,
+          },
         });
         deck.on('slidechanged', sync);
         deck.on('fragmentshown', sync);
         deck.on('fragmenthidden', sync);
         deck.on('pdf-ready', syncPrintedPages);
         deck.initialize().then(sync);
+
+        // Shift+arrow and Page Up/Down move whole slides, independently of the steps
+        document.addEventListener(
+          'keydown',
+          function (event) {
+            if (event.altKey || event.ctrlKey || event.metaKey) return;
+            var tag = (event.target.tagName || '').toLowerCase();
+            if (tag === 'input' || tag === 'textarea') return;
+            var slideMove =
+              (event.shiftKey && (event.key === 'ArrowRight' || event.key === 'ArrowLeft')) ||
+              event.key === 'PageDown' ||
+              event.key === 'PageUp';
+            if (!slideMove) return;
+            event.preventDefault();
+            event.stopPropagation();
+            if (event.key === 'ArrowRight' || event.key === 'PageDown') nextSlide();
+            else prevSlide();
+          },
+          true,
+        );
+
+        // -- Presenter bar --
+        bind('first', firstSlide);
+        bind('last', lastSlide);
+        bind('prev', prevSlide);
+        bind('next', nextSlide);
+        bind('step-first', function () {
+          deck.slide(deck.getIndices().h, 0, -1);
+        });
+        bind('step-prev', function () {
+          deck.prevFragment();
+        });
+        bind('step-next', function () {
+          deck.nextFragment();
+        });
+        bind('step-last', skipSteps);
+        bind('full', toggleFull);
+        document.getElementById('dots').addEventListener('click', function (event) {
+          var dot = event.target.closest('.dot');
+          if (!dot) return;
+          deck.slide(deck.getIndices().h, 0, Number(dot.getAttribute('data-step')) - 1);
+          returnFocus(dot);
+        });
+        document.addEventListener('fullscreenchange', function () {
+          document.getElementById('full').setAttribute('aria-pressed', String(!!document.fullscreenElement));
+          window.setTimeout(function () {
+            deck.layout();
+          }, 50);
+        });
+
+        // Moves to the first slide at its first step
+        function firstSlide() {
+          deck.slide(0, 0, -1);
+        }
+
+        // Moves to the last slide at its first step
+        function lastSlide() {
+          deck.slide(sections.length - 1, 0, -1);
+        }
+
+        // Moves to the next slide at its first step
+        function nextSlide() {
+          var h = deck.getIndices().h;
+          if (h < sections.length - 1) deck.slide(h + 1, 0, -1);
+        }
+
+        // Moves to the previous slide at its first step
+        function prevSlide() {
+          var h = deck.getIndices().h;
+          if (h > 0) deck.slide(h - 1, 0, -1);
+        }
+
+        // Builds one clickable progress segment per slide; hovering one shows its title
+        function buildProgress() {
+          var list = document.getElementById('progress');
+          list.innerHTML = sections
+            .map(function (section, i) {
+              var title = esc(section.getAttribute('data-title') || '');
+              return (
+                '<li><button type="button" data-index="' +
+                i +
+                '" title="' +
+                (i + 1) +
+                ' · ' +
+                title +
+                '" aria-label="Slide ' +
+                (i + 1) +
+                ': ' +
+                title +
+                '"></button></li>'
+              );
+            })
+            .join('');
+          list.addEventListener('click', function (event) {
+            var button = event.target.closest('button');
+            if (!button) return;
+            deck.slide(Number(button.getAttribute('data-index')), 0, -1);
+            returnFocus(button);
+          });
+        }
+
+        // Shows every remaining step of the current slide
+        function skipSteps() {
+          var guard = 0;
+          while (deck.nextFragment() && guard++ < 100) {}
+          sync();
+        }
+
+        // Enters or leaves full screen on the presenter, which keeps the bar and the notes reachable
+        function toggleFull() {
+          if (document.fullscreenElement) {
+            document.exitFullscreen().catch(function () {});
+          } else if (presenter.requestFullscreen) {
+            presenter.requestFullscreen().catch(function () {});
+          }
+          deckEl.focus();
+        }
 
         // Mounts a kit page: builds its strip and fragments once, then redraws it whenever a toggle or a tab changes
         function mountKit(slide) {
@@ -2472,30 +2928,64 @@
           document.querySelectorAll('section.s-run, section.s-kit').forEach(setStep);
         }
 
-        // Renders a row of pills, one per item, marking the ones reached and the current one
-        function renderPills(list, total, current) {
-          var html = '';
-          for (var i = 0; i < total; i++) {
-            html += '<li class="' + (i < current ? 'on' : i === current ? 'on now' : '') + '"></li>';
-          }
-          list.innerHTML = html;
-        }
-
-        // Derives each stepped slide's step from the fragments shown, and the position indicator from the deck's indices
+        // Reads the deck's indices into the bar and every stepped slide
         function sync() {
-          document.querySelectorAll('section.s-run, section.s-kit').forEach(setStep);
           var indices = deck.getIndices();
-          var total = deck.getTotalSlides();
-          var slide = deck.getCurrentSlide();
-          var fragments = slide.querySelectorAll('.fragment').length;
-          var shown = slide.querySelectorAll('.fragment.visible').length;
-          renderPills(posSlides, total, indices.h);
-          renderPills(posSteps, fragments ? fragments + 1 : 0, shown);
-          posLabel.textContent =
-            indices.h + 1 + ' / ' + total + (fragments ? ' · step ' + shown + ' / ' + fragments : '');
+          var total = sections.length;
+          var section = sections[indices.h];
+          document.querySelectorAll('section.s-run, section.s-kit').forEach(setStep);
+          var fragments = section.querySelectorAll('.fragment').length;
+          var shown = section.querySelectorAll('.fragment.visible').length;
+          document.getElementById('pos').textContent = indices.h + 1 + ' / ' + total;
+          document.getElementById('first').disabled = indices.h === 0;
+          document.getElementById('prev').disabled = indices.h === 0;
+          document.getElementById('next').disabled = indices.h === total - 1;
+          document.getElementById('last').disabled = indices.h === total - 1;
+          document.getElementById('steps-group').setAttribute('data-empty', String(fragments === 0));
+          document.getElementById('step-first').disabled = shown === 0;
+          document.getElementById('step-prev').disabled = shown === 0;
+          document.getElementById('step-next').disabled = shown >= fragments;
+          document.getElementById('step-last').disabled = shown >= fragments;
+          var dots = '';
+          for (var i = 0; i <= fragments; i++) {
+            dots +=
+              '<button type="button" class="dot' +
+              (i < shown ? ' on' : i === shown ? ' on now' : '') +
+              '" data-step="' +
+              i +
+              '" title="Step ' +
+              i +
+              ' of ' +
+              fragments +
+              '" aria-label="Step ' +
+              i +
+              ' of ' +
+              fragments +
+              '"' +
+              (i === shown ? ' aria-current="step"' : '') +
+              '></button>';
+          }
+          document.getElementById('dots').innerHTML = fragments ? dots : '';
+          document
+            .getElementById('progress')
+            .querySelectorAll('li')
+            .forEach(function (li, i) {
+              li.classList.toggle('done', i < indices.h);
+              li.classList.toggle('now', i === indices.h);
+              li.style.setProperty('--fill', fragments ? Math.round((shown / fragments) * 100) + '%' : '0%');
+            });
         }
 
         // region | Helpers
+
+        // Binds a click handler to a control by id and returns focus to the deck afterwards
+        function bind(id, handler) {
+          var el = document.getElementById(id);
+          el.addEventListener('click', function () {
+            handler();
+            returnFocus(el);
+          });
+        }
 
         // Escapes text for insertion as HTML
         function esc(s) {
@@ -2514,9 +3004,9 @@
           return line.printed ? ReadyupDeck.toHtml(line.text) : '<span class="dim">' + esc(line.text) + '</span>';
         }
 
-        // Moves focus from a clicked control back to the deck, so that the arrow keys keep stepping
+        // Moves focus from a used control back to the deck, so that the arrow keys keep stepping
         function returnFocus(control) {
-          control.blur();
+          if (document.activeElement === control) control.blur();
           deckEl.focus();
         }
 
