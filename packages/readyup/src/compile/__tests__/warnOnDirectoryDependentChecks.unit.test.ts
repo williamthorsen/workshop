@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { warnOnDirectoryDependentChecks } from '../warnOnDirectoryDependentChecks.ts';
 
 describe(warnOnDirectoryDependentChecks, () => {
-  it('reports checklists whose checks differ under its code, naming the kit and suggesting a run-time builder', () => {
+  it('reports checklists whose checks differ under its code, naming the kit and the edit that fixes it', () => {
     using _io = captureStdio();
 
     const [warning] = warnOnDirectoryDependentChecks('publish', { checklists: ['workspaces'] });
@@ -15,7 +15,8 @@ describe(warnOnDirectoryDependentChecks, () => {
     expect(warning?.message).toContain(
       'kit "publish" records different checks from another directory in checklist "workspaces"',
     );
-    expect(warning?.remedy).toContain('`checks`');
+    expect(warning?.remedy).toContain('assign its `checks` a function that returns them');
+    expect(warning?.remedy).toContain('`rdy help authoring`');
   });
 
   it('names every differing checklist', () => {

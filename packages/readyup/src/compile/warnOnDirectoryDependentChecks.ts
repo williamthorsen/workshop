@@ -23,7 +23,7 @@ export function warnOnDirectoryDependentChecks(
     code: 'checks-vary-by-directory',
     message: `kit "${kitName}" ${finding}, so its manifest describes the directory that compiled it rather than the kit.`,
     remedy:
-      'Build checks that depend on the repo under check in a function assigned to `checks`, which runs when the checklist runs, rather than when the kit loads.',
+      'Move the code that reads the repo under check (its files, workspaces, or manifest) out of the checklist\'s declared checks: Declare one check that asserts the condition on which those checks rely, and assign its `checks` a function that returns them, which readyup calls when the checklist runs. See `rdy help authoring`, section "Checks built at run time".',
   };
   process.stderr.write(`Warning: ${warning.message} ${warning.remedy}\n`);
   return [warning];

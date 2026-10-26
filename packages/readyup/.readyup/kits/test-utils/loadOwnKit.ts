@@ -8,9 +8,8 @@ export type OwnKitName = 'default' | 'publishing';
 /**
  * Loads one of the package's own kits from source, evaluated against the current working directory.
  *
- * Both kits build their checks when the module is evaluated, reading the manifest and the kit directory
- * to name one check per kit rather than listing every kit in one check's detail. A test that has moved
- * to a new fixture therefore has to discard the cached module to see it.
+ * Discards the cached module first, so that each load evaluates the kit afresh, as a new `rdy` process
+ * would, and a check that the kit builds when it loads reflects the fixture that the test has moved to.
  */
 export async function loadOwnKit(name: OwnKitName): Promise<RdyKit> {
   vi.resetModules();

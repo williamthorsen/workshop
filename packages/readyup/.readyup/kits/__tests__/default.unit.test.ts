@@ -178,10 +178,11 @@ describe('default kit', () => {
       const results = await runFreshness();
 
       expect(results.every((result) => result.status === 'passed')).toBe(true);
-      expect(results.filter((result) => result.depth === 0).map((result) => result.name)).toStrictEqual([
-        'default is recorded with a source and a bundle hash',
-        'release is recorded with a source and a bundle hash',
-        'Every compiled kit is recorded in the manifest',
+      expect(results.filter((result) => result.depth <= 1).map((result) => [result.depth, result.name])).toStrictEqual([
+        [0, '.readyup/manifest.json records kits'],
+        [1, 'default is recorded with a source and a bundle hash'],
+        [1, 'release is recorded with a source and a bundle hash'],
+        [0, 'Every compiled kit is recorded in the manifest'],
       ]);
     });
 
@@ -457,8 +458,10 @@ describe('default kit', () => {
 
       const results = await runFreshness();
 
-      expect(results).toHaveLength(1);
-      expect(results[0]).toMatchObject({ status: 'skipped', detail: 'There are no compiled kits' });
+      expect(results.map(({ detail, status }) => ({ detail, status }))).toStrictEqual([
+        { status: 'skipped', detail: 'The manifest records no kits' },
+        { status: 'skipped', detail: 'There are no compiled kits' },
+      ]);
     });
 
     it('reports bundles that no manifest accounts for', async () => {
@@ -466,8 +469,9 @@ describe('default kit', () => {
 
       const results = await runFreshness();
 
-      expect(results).toHaveLength(1);
-      expect(results[0]).toMatchObject({
+      expect(results).toHaveLength(2);
+      expect(pickResult(results, 'records kits')).toMatchObject({ status: 'skipped' });
+      expect(pickResult(results, 'Every compiled kit is recorded')).toMatchObject({
         status: 'failed',
         detail: '.readyup/manifest.json records no entry for .readyup/kits/default.js',
       });
