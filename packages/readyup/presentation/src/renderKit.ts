@@ -7,7 +7,7 @@ import { formatRunVerdict } from '../../src/reporting/formatRunVerdict.ts';
 import { countResults, renderReportSections } from '../../src/reporting/reportRdy.ts';
 import { meetsThreshold } from '../../src/severity/meetsThreshold.ts';
 import { DEPLOY_KIT } from './deployKit.ts';
-import type { ChecklistModel, CheckModel, KitModel } from './kits.ts';
+import { CAPTURED_PREFLIGHT, type ChecklistModel, type CheckModel, type KitModel } from './kits.ts';
 
 /** The failure threshold of every run that the deck shows, which is readyup's default. */
 const FAIL_ON: Severity = 'error';
@@ -64,6 +64,12 @@ export function renderKit(kit: KitModel, env: Environment): RenderedKit {
 /** Returns the terminal lines of the deploy run that "A run, step by step" shows. */
 export function renderDeployRun(): TerminalLine[] {
   return renderKit(DEPLOY_KIT, buildDefaultEnvironment(DEPLOY_KIT)).lines;
+}
+
+/** Returns the terminal lines of the title slide's run: the captured preflight kit with every condition off. */
+export function renderTitleRun(): TerminalLine[] {
+  const env = Object.fromEntries(CAPTURED_PREFLIGHT.conditions.map(({ id }) => [id, false]));
+  return renderKit(CAPTURED_PREFLIGHT, env).lines;
 }
 
 // region | Helpers

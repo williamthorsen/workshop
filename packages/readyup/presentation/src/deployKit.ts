@@ -11,7 +11,7 @@ export const DEPLOY_KIT: KitModel = {
   checklists: [
     {
       name: 'deploy',
-      ms: 0,
+      ms: 41,
       checks: [
         {
           name: 'package.json exists',
@@ -22,7 +22,7 @@ export const DEPLOY_KIT: KitModel = {
               severity: 'error',
               when: 'build',
               failDetail: 'dist/index.js not found',
-              fix: 'Run the build before deploying',
+              fix: 'Run pnpm build, then run the checks again',
               checks: [
                 { name: 'bundle under 500 kB', severity: 'error' },
                 { name: 'source maps excluded', severity: 'warn' },
@@ -34,10 +34,10 @@ export const DEPLOY_KIT: KitModel = {
           name: 'NODE_ENV is set',
           severity: 'warn',
           when: 'env',
-          failDetail: 'NODE_ENV has no value in the environment',
-          fix: 'Set NODE_ENV before deploying',
+          failDetail: 'NODE_ENV is unset',
+          fix: 'Set NODE_ENV=production in the deploy environment',
         },
-        { name: 'base image is pinned', severity: 'warn', na: 'no Dockerfile in this project' },
+        { name: 'base image is pinned', severity: 'warn', na: 'no Dockerfile in this repository' },
       ],
     },
   ],

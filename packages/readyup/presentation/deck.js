@@ -24,25 +24,136 @@ var ReadyupDeck = (() => {
     KITS: () => KITS,
     renderDeployRun: () => renderDeployRun,
     renderKit: () => renderKit,
+    renderTitleRun: () => renderTitleRun,
     toHtml: () => toHtml
   });
 
   // presentation/src/kits.ts
   var CAPTURED_READYUP_VERSION = "0.42.0";
-  var TOOLBELT_README = "https://github.com/williamthorsen/toolbelt/tree/main/packages/errors#readme";
+  var CAPTURED_PREFLIGHT = {
+    name: "preflight",
+    command: "rdy run preflight",
+    compiledWith: "0.42.0",
+    conditions: [
+      { id: "docker", label: "Docker is running", on: true },
+      { id: "api", label: "API is listening on port 3000", on: true }
+    ],
+    checklists: [
+      {
+        name: "preflight",
+        ms: 546,
+        checks: [
+          {
+            name: "Docker daemon is running",
+            severity: "error",
+            when: "docker",
+            ms: 544,
+            fix: "Start Docker, then run the checks again"
+          },
+          {
+            name: "API is listening on port 3000",
+            severity: "warn",
+            when: "api",
+            ms: 45,
+            failDetail: "Nothing is listening on port 3000",
+            fix: "Start the API with pnpm dev before the smoke test"
+          }
+        ]
+      }
+    ]
+  };
   var KITS = {
+    onboarding: {
+      name: "onboarding",
+      command: "rdy run onboarding",
+      compiledWith: "0.43.0",
+      conditions: [
+        { id: "deps", label: "Dependencies are installed", on: true },
+        { id: "envfile", label: ".env is present", on: true },
+        { id: "envkeys", label: ".env sets every required key", on: false },
+        { id: "vpn", label: "VPN is connected", on: false },
+        { id: "docker", label: "Docker is running", on: true },
+        { id: "node", label: "Node version matches .nvmrc", on: true },
+        { id: "hooks", label: "Git hooks are installed", on: true }
+      ],
+      checklists: [
+        {
+          name: "onboarding",
+          ms: 1216,
+          checks: [
+            {
+              name: "Dependencies are installed",
+              severity: "error",
+              when: "deps",
+              ms: 812,
+              failDetail: "node_modules is missing",
+              fix: "Run pnpm install"
+            },
+            {
+              name: ".env is present",
+              severity: "error",
+              when: "envfile",
+              failDetail: ".env is missing",
+              fix: "Copy .env.example to .env, then set each value",
+              checks: [
+                {
+                  name: ".env sets every required key",
+                  severity: "error",
+                  when: "envkeys",
+                  failDetail: "DATABASE_URL is unset",
+                  fix: "Set each key named above in .env; .env.example lists the keys"
+                }
+              ]
+            },
+            {
+              name: "VPN is connected",
+              severity: "error",
+              when: "vpn",
+              ms: 1203,
+              failDetail: "No route to 10.0.0.0/8",
+              fix: "Connect to the office VPN, then run the checks again"
+            },
+            {
+              name: "Docker daemon is running",
+              severity: "warn",
+              when: "docker",
+              ms: 388,
+              fix: "Start Docker Desktop; the database runs in a container"
+            },
+            {
+              name: "Node version matches .nvmrc",
+              severity: "warn",
+              when: "node",
+              detail: "v24.11.0 satisfies 24",
+              failDetail: "v22.12.0 does not satisfy 24",
+              fix: "Run nvm use, which reads .nvmrc"
+            },
+            {
+              name: "Git hooks are installed",
+              severity: "recommend",
+              when: "hooks",
+              failDetail: ".git/hooks/pre-commit is missing",
+              fix: "Run pnpm lefthook install"
+            }
+          ]
+        }
+      ]
+    },
     preflight: {
       name: "preflight",
       command: "rdy run preflight",
-      compiledWith: "0.42.0",
+      compiledWith: "0.43.0",
       conditions: [
         { id: "docker", label: "Docker is running", on: true },
-        { id: "api", label: "API is listening on port 3000", on: true }
+        { id: "db", label: "Database accepts connections", on: true },
+        { id: "migrations", label: "Migrations are applied", on: false },
+        { id: "port", label: "Port 3000 is free", on: true },
+        { id: "nodeenv", label: "NODE_ENV is set", on: true }
       ],
       checklists: [
         {
           name: "preflight",
-          ms: 546,
+          ms: 802,
           checks: [
             {
               name: "Docker daemon is running",
@@ -52,89 +163,35 @@ var ReadyupDeck = (() => {
               fix: "Start Docker, then run the checks again"
             },
             {
-              name: "API is listening on port 3000",
-              severity: "warn",
-              when: "api",
-              ms: 45,
-              failDetail: "Nothing is listening on port 3000",
-              fix: "Start the API with pnpm dev before the smoke test"
-            }
-          ]
-        }
-      ]
-    },
-    drift: {
-      name: "default",
-      command: "rdy run --from npm:@williamthorsen/release-kit",
-      origin: { source: "npm:@williamthorsen/release-kit", version: "14.2.2" },
-      compiledWith: "0.41.0",
-      conditions: [
-        { id: "current", label: "release-kit is current", on: true },
-        { id: "publish", label: "publish.yaml matches its template", on: true },
-        { id: "labels", label: "labels.yaml has the current preset", on: true },
-        { id: "sync", label: "sync-labels.yaml exists", on: true }
-      ],
-      checklists: [
-        {
-          name: "release-kit",
-          ms: 170,
-          checks: [
-            {
-              name: "@williamthorsen/release-kit in devDependencies",
+              name: "Database accepts connections",
               severity: "error",
-              ms: 136,
-              fix: "pnpm add --save-dev @williamthorsen/release-kit",
+              when: "db",
+              ms: 212,
+              failDetail: "ECONNREFUSED 127.0.0.1:5432",
+              fix: "Run pnpm db:up, which starts the Postgres container",
               checks: [
                 {
-                  name: "@williamthorsen/release-kit >= 14.2.2",
+                  name: "Migrations are applied",
                   severity: "error",
-                  when: "current",
-                  fix: "pnpm add --save-dev @williamthorsen/release-kit@^14.2.2"
+                  when: "migrations",
+                  failDetail: "2 migrations pending: add_refunds, add_refund_index",
+                  fix: "Run pnpm db:migrate"
                 }
               ]
             },
             {
-              name: "publish.yaml workflow exists",
+              name: "Port 3000 is free",
               severity: "warn",
-              checks: [
-                {
-                  name: "publish.yaml matches template",
-                  severity: "warn",
-                  when: "publish",
-                  fix: "Run `release-kit update-templates` to regenerate publish.yaml from the current template"
-                }
-              ]
+              when: "port",
+              failDetail: "PID 48122 (node) is listening on 3000",
+              fix: "Stop the process on port 3000, or set PORT in .env"
             },
             {
-              name: ".config/release-kit.config.ts exports a config",
-              severity: "error",
-              checks: [
-                {
-                  name: ".github/labels.yaml exists",
-                  severity: "warn",
-                  fix: "Run `release-kit sync-labels generate` to produce the labels file",
-                  checks: [
-                    {
-                      name: "labels.yaml has current common preset",
-                      severity: "warn",
-                      when: "labels",
-                      fix: "Run `release-kit sync-labels generate` to incorporate updated common labels"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              name: "published packages ship the changelog archives",
-              severity: "warn",
-              na: "changelogMarkdown.keepVersions is not set"
-            },
-            {
-              name: "sync-labels.yaml workflow exists",
-              severity: "warn",
-              when: "sync",
-              fix: "Run `release-kit sync-labels init` to scaffold the workflow",
-              checks: [{ name: "sync-labels.yaml matches template", severity: "warn" }]
+              name: "NODE_ENV is set",
+              severity: "recommend",
+              when: "nodeenv",
+              failDetail: "NODE_ENV is unset",
+              fix: "Set NODE_ENV=development in .env"
             }
           ]
         }
@@ -142,125 +199,195 @@ var ReadyupDeck = (() => {
     },
     adoption: {
       name: "default",
-      command: "rdy run --from npm:@williamthorsen/toolbelt.errors",
-      origin: { source: "npm:@williamthorsen/toolbelt.errors", version: "0.8.3" },
-      compiledWith: "0.40.0",
+      command: "rdy run --from npm:@acme/ui",
+      origin: { source: "npm:@acme/ui", version: "5.0.0" },
+      compiledWith: "0.43.0",
       conditions: [
-        { id: "helper", label: "Sources import describeError", on: true },
-        { id: "inline", label: "Sources describe thrown values with it", on: true },
-        { id: "narrow", label: "Sources narrow thrown values with isError", on: false },
-        { id: "coerce", label: "Sources do not coerce thrown values by hand", on: true }
+        { id: "button", label: "Buttons import from @acme/ui/button", on: false },
+        { id: "modal", label: "Modals pass open, not isOpen", on: true },
+        { id: "field", label: "Inputs are wrapped in a Field", on: true },
+        { id: "legacy", label: "Nothing imports @acme/ui/legacy", on: false }
       ],
       checklists: [
         {
           name: "adoption",
-          ms: 1515,
+          ms: 412,
           checks: [
             {
-              name: "No source defines its own description helper",
-              id: "toolbelt.errors/no-describe-clone",
-              progress: [72, 73],
-              findings: true,
+              name: "Every Button is imported from @acme/ui/button",
+              id: "acme-ui/button-entry",
               severity: "warn",
-              when: "helper",
-              failDetail: "describeFailure (packages/repo-tools/src/probe/probe.ts:3)",
-              fix: "Delete the function named above and import describeError from @williamthorsen/toolbelt.errors. One import replaces the whole helper. Reference: " + TOOLBELT_README
+              when: "button",
+              ms: 131,
+              findings: true,
+              examined: 41,
+              sites: ["src/checkout/Pay.tsx:4", "src/account/Profile.tsx:7", "src/admin/Users.tsx:3"],
+              fix: "Import Button from @acme/ui/button at each site above; the root entry pulls in every component"
             },
             {
-              name: "No source describes a thrown value inline",
-              id: "toolbelt.errors/no-inline-description",
-              progress: [72, 73],
+              name: "No Modal passes the removed isOpen prop",
+              id: "acme-ui/modal-open",
+              severity: "error",
+              when: "modal",
+              ms: 118,
               findings: true,
+              examined: 11,
+              sites: ["src/billing/Invoice.tsx:58", "src/admin/Users.tsx:112"],
+              fix: "Rename isOpen to open at each site above; v5 ignores isOpen, so the modal never opens"
+            },
+            {
+              name: "Every input is wrapped in a Field",
+              id: "acme-ui/field-wrapper",
               severity: "warn",
-              when: "inline",
-              failDetail: "packages/repo-tools/src/probe/probe.ts:4",
-              fix: "Replace each expression named above with describeError, imported from @williamthorsen/toolbelt.errors. A domain-literal fallback discards what was thrown; describeError keeps it."
+              when: "field",
+              ms: 104,
+              findings: true,
+              examined: 27,
+              sites: ["src/account/Address.tsx:31", "src/account/Address.tsx:47"],
+              fix: "Wrap each input above in a Field, which renders the label and the error for it"
             },
             {
-              name: "No source narrows a thrown value by hand",
-              id: "toolbelt.errors/no-instanceof-error",
-              progress: [72, 73],
-              findings: true,
+              name: "No source imports from @acme/ui/legacy",
+              id: "acme-ui/no-legacy-entry",
               severity: "recommend",
-              when: "narrow",
-              failDetail: "packages/readyup/src/run/runRdy.ts:264",
-              fix: "Use isError from @williamthorsen/toolbelt.errors, or assertIsError from @williamthorsen/toolbelt.errors/candidate when the narrowing throws. Both recognize an Error crossing a realm boundary, which a bare instanceof test reports as false."
-            },
-            {
-              name: "No source coerces a thrown value to an Error by hand",
-              id: "toolbelt.errors/no-error-coercion",
-              progress: [72, 73],
+              when: "legacy",
               findings: true,
-              severity: "recommend",
-              when: "coerce",
-              failDetail: "packages/repo-tools/src/probe/probe.ts:9",
-              fix: "@williamthorsen/toolbelt.errors publishes no coercer, so this reports an unmet need rather than a substitution. Raise it at " + TOOLBELT_README + " if the sites above are worth one."
+              examined: 41,
+              sites: ["src/reports/Export.tsx:2"],
+              fix: "Import from the component's own entry; @acme/ui/legacy is removed in v6"
             }
           ]
         }
       ]
     },
-    onboard: {
-      name: "machine",
-      command: "rdy run --jit machine",
+    migration: {
+      name: "default",
+      command: "rdy run --from npm:@acme/http-client",
+      origin: { source: "npm:@acme/http-client", version: "3.1.0" },
+      compiledWith: "0.43.0",
       conditions: [
-        { id: "brewfile", label: "Brewfile is satisfied", on: true },
-        { id: "live", label: "live worktree exists", on: true },
-        { id: "gitconfig", label: "~/.gitconfig is clean", on: false }
+        { id: "create", label: "Clients are created with createClient", on: false },
+        { id: "timeout", label: "No request passes timeout", on: false },
+        { id: "rawbody", label: "No call reads rawBody", on: true },
+        { id: "retries", label: "Retries are set on the client", on: false }
       ],
       checklists: [
         {
-          name: "tools",
-          ms: 4926,
+          name: "migration",
+          ms: 604,
           checks: [
             {
-              name: "brew is installed",
+              name: "Every client is created with createClient",
+              id: "acme-http/create-client",
               severity: "error",
-              checks: [
-                {
-                  name: "Homebrew packages match the Brewfile",
-                  severity: "warn",
-                  when: "brewfile",
-                  ms: 4885,
-                  failDetail: "Formula delta needs to be installed or updated.\nFormula zoxide needs to be installed or updated.",
-                  fix: "brew bundle install --global"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          name: "install",
-          ms: 1034,
-          checks: [
-            {
-              name: "live worktree is checked out on branch live",
-              severity: "error",
-              when: "live",
-              detail: "~/repos/configs/macos.live is a worktree of ~/repos/configs/macos",
-              failDetail: "~/repos/configs/macos.live does not exist",
-              fix: "Run configs-bootstrap, which creates the live branch and worktree when absent; first move aside anything else at ~/repos/configs/macos.live",
-              checks: [
-                {
-                  name: "Machine profile resolves to a profile root",
-                  severity: "error",
-                  detail: "Profile laptop resolves to ~/repos/configs/macos.live/profiles/laptop",
-                  checks: [
-                    {
-                      name: "Every varied path has a current mirror point",
-                      severity: "warn",
-                      detail: "The profile root varies no base file"
-                    }
-                  ]
-                }
-              ]
+              when: "create",
+              ms: 212,
+              findings: true,
+              examined: 17,
+              sites: ["src/api/orders.ts:12", "src/api/users.ts:8", "src/jobs/sync.ts:21"],
+              fix: "Replace new HttpClient(options) with createClient(options) at each site above; the constructor is removed in v3"
             },
             {
-              name: "~/.gitconfig sets nothing outside its include chain",
+              name: "No request passes the removed timeout option",
+              id: "acme-http/no-timeout-option",
+              severity: "error",
+              when: "timeout",
+              ms: 140,
+              findings: true,
+              examined: 17,
+              sites: ["src/api/orders.ts:40", "src/api/reports.ts:19"],
+              fix: "Pass signal: AbortSignal.timeout(ms) instead; v3 ignores timeout"
+            },
+            {
+              name: "No call reads response.rawBody",
+              id: "acme-http/no-raw-body",
+              severity: "error",
+              when: "rawbody",
+              ms: 131,
+              findings: true,
+              examined: 17,
+              sites: ["src/api/reports.ts:52"],
+              fix: "Read the body through response.json() or response.text(); rawBody is removed in v3"
+            },
+            {
+              name: "Retries are configured on the client, not per call",
+              id: "acme-http/client-retries",
+              severity: "recommend",
+              when: "retries",
+              ms: 121,
+              findings: true,
+              examined: 17,
+              sites: ["src/api/orders.ts:44", "src/api/users.ts:30"],
+              fix: "Move retries to createClient; per-call retries are removed in v4"
+            }
+          ]
+        }
+      ]
+    },
+    it: {
+      name: "default",
+      command: "rdy run --from github:acme/diagnose",
+      origin: { source: "github:acme/diagnose", version: "main" },
+      compiledWith: "0.43.0",
+      conditions: [
+        { id: "os", label: "macOS is 15 or later", on: true },
+        { id: "filevault", label: "FileVault is on", on: false },
+        { id: "vpn", label: "VPN profile is installed", on: true },
+        { id: "chrome", label: "Managed Chrome is installed", on: true },
+        { id: "node", label: "Node 24 through asdf", on: true },
+        { id: "brew", label: "Homebrew is current", on: false }
+      ],
+      checklists: [
+        {
+          name: "machine",
+          ms: 1402,
+          checks: [
+            {
+              name: "macOS is 15 or later",
+              severity: "error",
+              when: "os",
+              detail: "macOS 15.6",
+              failDetail: "macOS 14.7",
+              fix: "Update macOS from System Settings › General › Software Update"
+            },
+            {
+              name: "FileVault is on",
+              severity: "error",
+              when: "filevault",
+              ms: 118,
+              failDetail: "FileVault is off",
+              fix: "Turn on FileVault in System Settings › Privacy & Security"
+            },
+            {
+              name: "Company VPN profile is installed",
+              severity: "error",
+              when: "vpn",
+              ms: 204,
+              failDetail: 'No configuration profile named "Acme VPN"',
+              fix: "Install the profile from it.acme.internal/vpn"
+            },
+            {
+              name: "Managed Chrome is installed",
               severity: "warn",
-              when: "gitconfig",
-              failDetail: "commit.gpgsign=true\ngpg.format=ssh",
-              fix: 'Move each setting to the fragment that README.md, section "Git identity, signing, and GitHub credentials", names, then remove it from ~/.gitconfig'
+              when: "chrome",
+              failDetail: "Google Chrome is not in /Applications",
+              fix: "Install Chrome from Self Service"
+            },
+            {
+              name: "Node 24 is installed through asdf",
+              severity: "warn",
+              when: "node",
+              detail: "node 24.11.0",
+              failDetail: ".tool-versions names node 22.12.0",
+              fix: "Run asdf install nodejs 24.11.0, then asdf set --home nodejs 24.11.0"
+            },
+            {
+              name: "Homebrew is current",
+              severity: "recommend",
+              when: "brew",
+              ms: 1012,
+              failDetail: "3 formulae are outdated",
+              fix: "Run brew upgrade"
             }
           ]
         }
@@ -1360,7 +1487,7 @@ ${violations.map((violation) => `- ${violation}`).join("\n")}`);
     checklists: [
       {
         name: "deploy",
-        ms: 0,
+        ms: 41,
         checks: [
           {
             name: "package.json exists",
@@ -1371,7 +1498,7 @@ ${violations.map((violation) => `- ${violation}`).join("\n")}`);
                 severity: "error",
                 when: "build",
                 failDetail: "dist/index.js not found",
-                fix: "Run the build before deploying",
+                fix: "Run pnpm build, then run the checks again",
                 checks: [
                   { name: "bundle under 500 kB", severity: "error" },
                   { name: "source maps excluded", severity: "warn" }
@@ -1383,10 +1510,10 @@ ${violations.map((violation) => `- ${violation}`).join("\n")}`);
             name: "NODE_ENV is set",
             severity: "warn",
             when: "env",
-            failDetail: "NODE_ENV has no value in the environment",
-            fix: "Set NODE_ENV before deploying"
+            failDetail: "NODE_ENV is unset",
+            fix: "Set NODE_ENV=production in the deploy environment"
           },
-          { name: "base image is pinned", severity: "warn", na: "no Dockerfile in this project" }
+          { name: "base image is pinned", severity: "warn", na: "no Dockerfile in this repository" }
         ]
       }
     ]
@@ -1409,6 +1536,10 @@ ${violations.map((violation) => `- ${violation}`).join("\n")}`);
   }
   function renderDeployRun() {
     return renderKit(DEPLOY_KIT, buildDefaultEnvironment(DEPLOY_KIT)).lines;
+  }
+  function renderTitleRun() {
+    const env = Object.fromEntries(CAPTURED_PREFLIGHT.conditions.map(({ id }) => [id, false]));
+    return renderKit(CAPTURED_PREFLIGHT, env).lines;
   }
   function buildDefaultEnvironment(kit) {
     return Object.fromEntries(kit.conditions.map((condition) => [condition.id, condition.on]));

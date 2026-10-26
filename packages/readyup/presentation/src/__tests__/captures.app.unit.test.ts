@@ -4,8 +4,9 @@ import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 
 import { stripEscapes } from '../../../src/layout/test-utils/stripEscapes.ts';
-import { type KitModel, KITS } from '../kits.ts';
+import { CAPTURED_PREFLIGHT, type KitModel } from '../kits.ts';
 import { type Environment, type RenderedKit, renderKit } from '../renderKit.ts';
+import { CAPTURED_KITS } from './fixtures/capturedKits.ts';
 
 vi.mock('../../../src/version.ts', async () => ({
   VERSION: (await import('../kits.ts')).CAPTURED_READYUP_VERSION,
@@ -18,18 +19,18 @@ const DURATION_SUFFIX = / \(\d+ms\)$/u;
 
 /** Captures whose page models the whole kit, so that the page prints exactly what rdy printed. */
 const COMPLETE_CAPTURES: Array<[file: string, kit: KitModel, off: string[]]> = [
-  ['preflight-00.txt', KITS.preflight, ['docker', 'api']],
-  ['preflight-01.txt', KITS.preflight, ['docker']],
-  ['preflight-10.txt', KITS.preflight, ['api']],
-  ['preflight-11.txt', KITS.preflight, []],
-  ['adoption-default.txt', KITS.adoption, ['narrow']],
+  ['preflight-00.txt', CAPTURED_PREFLIGHT, ['docker', 'api']],
+  ['preflight-01.txt', CAPTURED_PREFLIGHT, ['docker']],
+  ['preflight-10.txt', CAPTURED_PREFLIGHT, ['api']],
+  ['preflight-11.txt', CAPTURED_PREFLIGHT, []],
+  ['adoption-default.txt', CAPTURED_KITS.adoption, ['narrow']],
 ];
 
 /** Captures whose page models part of the kit, so that its lines appear in the capture in order among others. */
 const PARTIAL_CAPTURES: Array<[file: string, kit: KitModel, off: string[]]> = [
-  ['drift-default.txt', KITS.drift, []],
-  ['drift-drifted.txt', KITS.drift, ['publish', 'sync']],
-  ['onboard-default.txt', KITS.onboard, ['gitconfig']],
+  ['drift-default.txt', CAPTURED_KITS.drift, []],
+  ['drift-drifted.txt', CAPTURED_KITS.drift, ['publish', 'sync']],
+  ['onboard-default.txt', CAPTURED_KITS.onboard, ['gitconfig']],
 ];
 
 describe('the deck against the captures', () => {
@@ -50,7 +51,7 @@ describe('the deck against the captures', () => {
   });
 
   it('preflight-11.json matches as parsed JSON', () => {
-    const rendered = renderKit(KITS.preflight, buildEnvironment(KITS.preflight, []));
+    const rendered = renderKit(CAPTURED_PREFLIGHT, buildEnvironment(CAPTURED_PREFLIGHT, []));
 
     expect(zeroDurations(JSON.parse(rendered.json))).toStrictEqual(
       zeroDurations(JSON.parse(readFileSync(path.join(capturesDir, 'preflight-11.json'), 'utf8'))),
