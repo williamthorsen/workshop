@@ -1,3 +1,5 @@
+import { isError } from '@williamthorsen/toolbelt.errors';
+
 import type { CommandOutput } from './output.ts';
 
 /** A failure that ends a command, reported on stderr as `<name>: <message>` and exiting with its own status. */
@@ -13,7 +15,7 @@ export class CommandError extends Error {
 
 /** Reports whether a thrown value is a Node system error. */
 export function isErrnoException(error: unknown): error is NodeJS.ErrnoException {
-  return error instanceof Error && 'code' in error;
+  return isError(error) && 'code' in error;
 }
 
 /** Runs an asynchronous command body, reporting a thrown `CommandError` as `reportCommandErrors` does. */
