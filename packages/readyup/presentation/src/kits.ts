@@ -4,7 +4,7 @@ import type { JsonKitOrigin } from '../../src/schemas/reportSchema.ts';
 /** The readyup version that recorded the captures, and the one that the deck reports as its own. */
 export const CAPTURED_READYUP_VERSION = '0.42.0';
 
-/** A switch on a kit page's environment strip. */
+/** A switch in a kit page's environment panel. */
 export interface ConditionModel {
   id: string;
   label: string;
@@ -44,7 +44,7 @@ export interface ChecklistModel {
 }
 
 /**
- * A kit's model: the command that runs it, its checklists, the conditions that its environment strip toggles, and its
+ * A kit's model: the command that runs it, its checklists, the conditions that its environment panel toggles, and its
  * provenance.
  */
 export interface KitModel {
