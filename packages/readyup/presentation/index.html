@@ -195,6 +195,9 @@
         outline: 2px solid var(--accent);
         outline-offset: 1px;
       }
+      .progress li button:hover {
+        background: var(--accent);
+      }
       .progress li.now button::after {
         content: '';
         position: absolute;
@@ -229,6 +232,9 @@
       }
       .nav-group .ctl:disabled {
         opacity: 0.3;
+      }
+      .nav-group .ctl:disabled:hover {
+        border-color: transparent;
       }
       .nav-group .ctl .glyph {
         font-family: var(--sans);
@@ -327,6 +333,10 @@
       .ctl[aria-pressed='true'] kbd {
         color: var(--on-ink-muted);
         border-color: var(--on-ink-muted);
+      }
+      .ctl[aria-pressed='true']:hover kbd {
+        color: var(--paper);
+        border-color: var(--paper);
       }
 
       /* Notes panel: the paragraph for the current step is marked */
@@ -513,6 +523,11 @@
       /* Without JavaScript: every slide in sequence, its notes under it, and no chrome */
       .no-js .reveal {
         height: auto;
+        overflow: visible;
+      }
+      .no-js .reveal .slides {
+        position: static;
+        pointer-events: auto;
       }
       .no-js .deck-frame {
         aspect-ratio: auto;
@@ -524,7 +539,7 @@
         border-bottom: 2px solid var(--line);
       }
       .no-js .reveal .slides > section .slide {
-        height: auto;
+        height: 720px;
       }
       .no-js .reveal aside.notes {
         display: block;
