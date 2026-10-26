@@ -16,7 +16,7 @@ export const KITS_DIR = path.join(MANIFEST_DIR, 'kits');
 // -- Skip reasons --
 
 /** Detail reported by a check that skips for want of a compiled bundle. */
-export const NO_BUNDLES_REASON = 'There are no compiled kits';
+const NO_BUNDLES_REASON = 'There are no compiled kits';
 
 /**
  * Paths of the compiled bundles in the kit directory, relative to the working directory.

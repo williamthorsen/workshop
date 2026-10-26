@@ -1,7 +1,7 @@
 import type { CheckOutcome, RdyCheck } from 'readyup';
 import { readFile } from 'readyup/check-utils';
 
-import { listCompiledBundlePaths, NO_BUNDLES_REASON } from './kit-layout.ts';
+import { KITS_DIR, listCompiledBundlePaths, skipWithoutBundles } from './kit-layout.ts';
 
 /**
  * Module specifiers that a compiled kit may import verbatim.
@@ -32,28 +32,26 @@ const SPECIFIER_PATTERNS = [
 ];
 
 /**
- * One check per compiled bundle, asserting it imports nothing the runner does not supply.
+ * Checks that the kit directory contains compiled kits, with one check per bundle built beneath it when the checklist
+ * runs, asserting that the bundle imports nothing the runner does not supply.
  *
- * A project with nothing compiled has nothing to publish; the single skipped check says so rather than
- * reporting a clean pass over an empty set.
+ * A project with nothing compiled has nothing to publish; the skipped gate says so rather than reporting a clean pass
+ * over an empty set.
  */
 export function buildSelfContainmentChecks(): RdyCheck[] {
-  const bundlePaths = listCompiledBundlePaths();
-  if (bundlePaths.length === 0) {
-    return [
-      {
-        name: 'Every compiled kit imports only what the runner supplies',
-        skip: () => NO_BUNDLES_REASON,
-        check: () => true,
-      },
-    ];
-  }
-
-  return bundlePaths.map((bundlePath) => ({
-    name: `${bundlePath} imports only what the runner supplies`,
-    check: () => describeSelfContainment(bundlePath),
-    fix: 'Move the imported code into the kit source, where esbuild inlines it into the bundle',
-  }));
+  return [
+    {
+      name: `${KITS_DIR} contains compiled kits`,
+      skip: skipWithoutBundles,
+      check: () => true,
+      checks: () =>
+        listCompiledBundlePaths().map((bundlePath) => ({
+          name: `${bundlePath} imports only what the runner supplies`,
+          check: () => describeSelfContainment(bundlePath),
+          fix: 'Move the imported code into the kit source, where esbuild inlines it into the bundle',
+        })),
+    },
+  ];
 }
 
 /** Specifiers that a compiled bundle imports and that `rdy compile` would not have left unbundled. */

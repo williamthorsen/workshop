@@ -20,6 +20,9 @@ import {
   skipWithoutBundles,
 } from './kit-layout.ts';
 
+/** Detail reported by the gate check when the manifest records no kit. */
+const NO_ENTRIES_REASON = 'The manifest records no kits';
+
 /** Detail reported by a check that skips an entry compiled before readyup recorded a closure. */
 const NO_INPUTS_REASON = 'The manifest records no inputs for it';
 
@@ -27,13 +30,12 @@ const NO_INPUTS_REASON = 'The manifest records no inputs for it';
  * Checks asserting that every kit that the manifest records still matches what was recorded for it, and that the
  * manifest records every compiled kit.
  *
- * The checks are built when the kit module is evaluated, so a drifted kit is named on its own line
- * rather than listed in one check's detail. Severity is left to the kit: Freshness is advisory while
- * authoring and blocking while publishing, and the same checks serve both.
+ * The per-kit checks are built when the checklist runs, beneath a check that the manifest records kits, so a drifted
+ * kit is named on its own line while the kit declares the same checks wherever it is imported. Severity is left to
+ * the kit: Freshness is advisory while authoring and blocking while publishing, and the same checks serve both.
  */
 export function buildFreshnessChecks(): RdyCheck[] {
-  const entries = readManifestEntries();
-  return [...entries.map(buildEntryCheck), buildUnrecordedBundlesCheck(entries)];
+  return [buildRecordedEntriesCheck(), buildUnrecordedBundlesCheck()];
 }
 
 // region | Helpers
@@ -67,6 +69,16 @@ function buildEntryCheck(entry: ManifestEntry): RdyCheck {
   };
 }
 
+/** Checks that the manifest records kits, with one check per recorded kit built beneath it when the checklist runs. */
+function buildRecordedEntriesCheck(): RdyCheck {
+  return {
+    name: `${DEFAULT_MANIFEST_PATH} records kits`,
+    skip: () => (readManifestEntries().length === 0 ? NO_ENTRIES_REASON : false),
+    check: () => describeRecordedEntries(readManifestEntries()),
+    checks: () => readManifestEntries().map(buildEntryCheck),
+  };
+}
+
 /**
  * Checks that the manifest records every bundle in the kit directory.
  *
@@ -75,11 +87,11 @@ function buildEntryCheck(entry: ManifestEntry): RdyCheck {
  * fetched by a consumer who names it, while `rdy list` no longer names it, and a compile deletes only
  * the bundles that the manifest records.
  */
-function buildUnrecordedBundlesCheck(entries: ManifestEntry[]): RdyCheck {
+function buildUnrecordedBundlesCheck(): RdyCheck {
   return {
     name: 'Every compiled kit is recorded in the manifest',
     skip: skipWithoutBundles,
-    check: () => describeUnrecordedBundles(entries),
+    check: () => describeUnrecordedBundles(readManifestEntries()),
     fix: `Delete each bundle whose kit was removed, and run 'rdy compile' to record the rest`,
   };
 }
@@ -191,6 +203,11 @@ function describeInputDrift(input: ManifestInput): string | undefined {
   }
 
   return describeHashDrift(filePath, projection, hash, 'projects to');
+}
+
+/** Reports how many kits the manifest records, as the evidence for its gate check. */
+function describeRecordedEntries(entries: ManifestEntry[]): CheckOutcome {
+  return { ok: true, detail: `It records ${entries.length} ${entries.length === 1 ? 'kit' : 'kits'}` };
 }
 
 /** Reports which of a manifest entry's two hash records are absent. */

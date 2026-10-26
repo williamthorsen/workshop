@@ -5,7 +5,7 @@ import process from 'node:process';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import type { RdyResult } from '../../../src/kits/types.ts';
+import type { RdyCheck, RdyKit, RdyResult } from '../../../src/kits/types.ts';
 import { README_CODE_POINT_LIMIT } from '../checks/describeReadmeSize.ts';
 import { pickResult, runChecklist } from '../test-utils/checklist-results.ts';
 import { loadOwnKit } from '../test-utils/loadOwnKit.ts';
@@ -266,7 +266,10 @@ describe('publishing kit', () => {
 
       const results = await runSelfContainment();
 
-      expect(results.map((result) => result.status)).toStrictEqual(['passed']);
+      expect(results.map(({ depth, status }) => ({ depth, status }))).toStrictEqual([
+        { depth: 0, status: 'passed' },
+        { depth: 1, status: 'passed' },
+      ]);
     });
 
     it('reports a bundle reaching for a package that the consumer would have to supply', async () => {
@@ -275,7 +278,10 @@ describe('publishing kit', () => {
 
       const results = await runSelfContainment();
 
-      expect(results[0]).toMatchObject({ status: 'failed', detail: 'It imports picomatch' });
+      expect(pickResult(results, 'imports only what the runner supplies')).toMatchObject({
+        status: 'failed',
+        detail: 'It imports picomatch',
+      });
     });
 
     it('skips when the package compiles nothing', async () => {
@@ -286,6 +292,15 @@ describe('publishing kit', () => {
       expect(results).toHaveLength(1);
       expect(results[0]).toMatchObject({ status: 'skipped', detail: 'There are no compiled kits' });
     });
+  });
+
+  // `rdy compile` records the checks that a kit declares when it loads, so they must not reflect the fixture.
+  it('declares the same checks in a project with compiled kits as in an empty one', async () => {
+    const emptyChecks = listDeclaredCheckNames(await loadOwnKit('publishing'));
+    writePublishablePackage(projectRoot);
+    writeKit(projectRoot, 'legacy');
+
+    expect(listDeclaredCheckNames(await loadOwnKit('publishing'))).toStrictEqual(emptyChecks);
   });
 
   // A published stale kit contains checks that do not describe the package that contains them, which
@@ -337,6 +352,19 @@ function describeKitSetResults(results: RdyResult[]): Array<Pick<RdyResult, 'det
     const { detail, status } = pickResult(results, name);
     return { status, detail };
   });
+}
+
+/** Returns a check's name followed by the names of its declared dependents, depth-first. */
+function flattenCheckNames(check: RdyCheck): string[] {
+  const children = Array.isArray(check.checks) ? check.checks : [];
+  return [check.name, ...children.flatMap(flattenCheckNames)];
+}
+
+/** Returns each checklist's declared check names, depth-first, leaving every builder uncalled. */
+function listDeclaredCheckNames(kit: RdyKit): string[][] {
+  return kit.checklists.map((checklist) =>
+    ('checks' in checklist ? checklist.checks : checklist.groups.flat()).flatMap(flattenCheckNames),
+  );
 }
 
 /** Runs the `packaging` checklist against the fixture as it now stands. */
