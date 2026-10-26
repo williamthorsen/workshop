@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.2.2",
+    "date": "2026-10-26",
+    "sections": [
+      {
+        "title": "📦 Dependencies",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Upgrades `vitest` and `@vitest/coverage-v8` from 4.1.12 to 5.0.5, and declares Vitest 5's required `vite` peer at 8.3.5 through the catalog in every workspace. (#632)",
+            "hash": "b02820593ff87f66c73c7ce81a2ffc8606582871",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.2.1",
     "date": "2026-10-17",
     "sections": [

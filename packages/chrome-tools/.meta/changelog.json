@@ -1,0 +1,24 @@
+[
+  {
+    "version": "0.1.0",
+    "date": "2026-10-26",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Adds the initial `@williamthorsen/chrome-tools` package, whose `thor-chrome` binary prints its help and rejects every other argument with exit code 2 until its commands for managing Chrome debug sessions are implemented. (#635)",
+            "hash": "8aa9148ffe491c3dd4bc4de24cdc22f6a74a58cd",
+            "entry": 1
+          },
+          {
+            "description": "Implements the `thor-chrome` commands `launch`, `list`, `status`, `quit`, `delete`, and `show-instance-page`, which run Chrome debug sessions on macOS, giving each worktree its own profile and port, and replace the placeholder that printed only its help. (#637)",
+            "hash": "f4ce061ab568fb49e72906712ffe76e7eab93b87",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  }
+]

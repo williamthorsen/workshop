@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.44.0 — 2026-10-26
+
+### 🎉 Features
+
+- Port chrome-debug from configs.macos into chrome-tools as thor-chrome (#637)
+
+  Ports the `chrome-debug` command from `williamthorsen/configs.macos` into `@williamthorsen/chrome-tools` as `thor-chrome`, which launches Chrome with remote debugging on a profile and port derived from the working directory's repository and branch. Installing the command no longer requires a clone of the configs repository, and running it no longer requires `thor-git`.
+
+- Rewrites the remedy in the `checks-vary-by-directory` warning from `rdy compile` to name the edit: Move the code that reads the repo into one check that asserts the condition on which the dependent checks rely, and assign its `checks` a function that returns them, as `rdy help authoring` describes in "Checks built at run time". (#639)
+
+### 🐛 Bug fixes
+
+- Fixes the issue that readyup's own `default` and `publishing` kits built one `freshness` and `self-containment` check per compiled kit when the kit loaded, which made the checks declared by each kit depend on the directory in which it was imported and made `rdy compile` raise `checks-vary-by-directory` for them. (#639)
+
+### 📦 Dependencies
+
+- Upgrades `vitest` and `@vitest/coverage-v8` from 4.1.12 to 5.0.5, and declares Vitest 5's required `vite` peer at 8.3.5 through the catalog in every workspace. (#632)
+
 ## 0.43.0 — 2026-10-22
 
 ### 🎉 Features

@@ -1,5 +1,49 @@
 [
   {
+    "version": "0.44.0",
+    "date": "2026-10-26",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Port chrome-debug from configs.macos into chrome-tools as thor-chrome (#637)",
+            "body": "Ports the `chrome-debug` command from `williamthorsen/configs.macos` into `@williamthorsen/chrome-tools` as `thor-chrome`, which launches Chrome with remote debugging on a profile and port derived from the working directory's repository and branch. Installing the command no longer requires a clone of the configs repository, and running it no longer requires `thor-git`.",
+            "hash": "f4ce061ab568fb49e72906712ffe76e7eab93b87"
+          },
+          {
+            "description": "Rewrites the remedy in the `checks-vary-by-directory` warning from `rdy compile` to name the edit: Move the code that reads the repo into one check that asserts the condition on which the dependent checks rely, and assign its `checks` a function that returns them, as `rdy help authoring` describes in \"Checks built at run time\". (#639)",
+            "hash": "6f937c5d0fadc496cd12d3113ff1f25b3a764025",
+            "entry": 2
+          }
+        ]
+      },
+      {
+        "title": "🐛 Bug fixes",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Fixes the issue that readyup's own `default` and `publishing` kits built one `freshness` and `self-containment` check per compiled kit when the kit loaded, which made the checks declared by each kit depend on the directory in which it was imported and made `rdy compile` raise `checks-vary-by-directory` for them. (#639)",
+            "hash": "6f937c5d0fadc496cd12d3113ff1f25b3a764025",
+            "entry": 1
+          }
+        ]
+      },
+      {
+        "title": "📦 Dependencies",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Upgrades `vitest` and `@vitest/coverage-v8` from 4.1.12 to 5.0.5, and declares Vitest 5's required `vite` peer at 8.3.5 through the catalog in every workspace. (#632)",
+            "hash": "b02820593ff87f66c73c7ce81a2ffc8606582871",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.43.0",
     "date": "2026-10-22",
     "sections": [

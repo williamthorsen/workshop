@@ -1,6 +1,6 @@
 {
   "name": "@williamthorsen/nodejs-tools",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": false,
   "description": "Inspect Node.js runtimes and toolchains, prune node_modules directories, and resolve the node that asdf selects for a checkout",
   "keywords": [

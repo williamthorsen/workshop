@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.1 — 2026-10-26
+
+### 📦 Dependencies
+
+- Upgrades `vitest` and `@vitest/coverage-v8` from 4.1.12 to 5.0.5, and declares Vitest 5's required `vite` peer at 8.3.5 through the catalog in every workspace. (#632)
+
 ## 0.2.0 — 2026-10-24
 
 ### 🎉 Features

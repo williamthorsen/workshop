@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.1.3 — 2026-10-26
+
+### 🧪 Tests
+
+- Adds the `s` flag to the pattern in the outside-a-repository test of `resolveCheckedOutBranch`, so that `.*` matches across a line break and the test accepts a git cause of more than one line. (#629)
+
+### 📦 Dependencies
+
+- Upgrades `vitest` and `@vitest/coverage-v8` from 4.1.12 to 5.0.5, and declares Vitest 5's required `vite` peer at 8.3.5 through the catalog in every workspace. (#632)
+
 ## 0.1.2 — 2026-10-22
 
 ### 📚 Documentation
