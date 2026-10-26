@@ -329,6 +329,158 @@
         border-color: var(--on-ink-muted);
       }
 
+      /* Notes panel: the paragraph for the current step is marked */
+      .notes-panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 12px 18px 12px;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 4px 18px;
+        align-items: baseline;
+      }
+      .notes-panel .label {
+        font: 600 12px var(--sans);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--ink-2);
+      }
+      .notes-panel .notes-title {
+        font: 500 14px var(--mono);
+        color: var(--ink-2);
+      }
+      .notes-panel .notes-body {
+        grid-column: 1 / -1;
+        font-size: 16px;
+        line-height: 1.5;
+        max-width: 110ch;
+        max-height: 150px;
+        overflow: auto;
+      }
+      .notes-panel .notes-body p {
+        margin: 0 0 6px;
+        padding-left: 10px;
+        border-left: 3px solid transparent;
+        color: var(--ink-2);
+      }
+      .notes-panel .notes-body p.said {
+        color: var(--ink);
+      }
+      .notes-panel .notes-body p.now {
+        color: var(--ink);
+        border-left-color: var(--accent);
+      }
+
+      /* Overlays in the frame: the grid of live thumbnails, and the key bindings */
+      .overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 30;
+        background: color-mix(in srgb, var(--bg) 96%, transparent);
+        backdrop-filter: blur(2px);
+        border-radius: 6px;
+        padding: 16px;
+        overflow: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .overlay-head {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .overlay-head h2 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+      }
+      .overlay-head .ctl {
+        margin-left: auto;
+      }
+      .tiles-grid {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+      }
+      .tile-btn {
+        width: 100%;
+        text-align: left;
+        padding: 6px;
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .thumb {
+        aspect-ratio: 16 / 9;
+        position: relative;
+        overflow: hidden;
+        border-radius: 5px;
+        background: radial-gradient(var(--grid) 1.2px, transparent 1.4px) 0 0 / 24px 24px var(--bg);
+      }
+      .thumb-frame {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 1280px;
+        height: 720px;
+        transform-origin: 0 0;
+        pointer-events: none;
+      }
+      .thumb .ln {
+        display: inline;
+      }
+      .thumb .kt-steps,
+      .thumb .fragment {
+        display: none;
+      }
+      .tile-cap {
+        display: flex;
+        gap: 8px;
+        align-items: baseline;
+        font-size: 13px;
+        line-height: 1.3;
+        padding: 0 4px 2px;
+      }
+      .tile-cap .n {
+        font: 600 13px var(--mono);
+        color: var(--ink-2);
+      }
+      .tiles-grid li.now .tile-btn {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-soft);
+      }
+      .keys {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px 32px;
+        font-size: 16px;
+        max-width: 760px;
+      }
+      .keys li {
+        display: grid;
+        grid-template-columns: 150px 1fr;
+        gap: 12px;
+        align-items: baseline;
+      }
+      .keys kbd {
+        font: 500 13px var(--mono);
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        padding: 1px 6px;
+        background: var(--paper);
+        color: var(--ink);
+        margin-right: 4px;
+      }
+
       /* Full screen: the frame fills the presenter; the bar stays under it; the notes float over the frame */
       .presenter:fullscreen {
         width: 100%;
@@ -2596,6 +2748,69 @@
             </section>
           </div>
         </div>
+        <div class="overlay" id="grid" hidden role="dialog" aria-label="Every slide">
+          <div class="overlay-head">
+            <h2>Every slide</h2>
+            <button type="button" class="ctl" id="grid-close">Close <kbd>Esc</kbd></button>
+          </div>
+          <ol class="tiles-grid" id="grid-cards"></ol>
+        </div>
+        <div class="overlay" id="help" hidden role="dialog" aria-label="Key bindings">
+          <div class="overlay-head">
+            <h2>Keys</h2>
+            <button type="button" class="ctl" id="help-close">Close <kbd>Esc</kbd></button>
+          </div>
+          <ul class="keys">
+            <li>
+              <span><kbd>→</kbd><kbd>Space</kbd></span
+              ><span>next step, then the next slide</span>
+            </li>
+            <li>
+              <span><kbd>←</kbd></span
+              ><span>previous step, then the previous slide</span>
+            </li>
+            <li>
+              <span><kbd>Shift</kbd>+<kbd>→</kbd></span
+              ><span>next slide, at its first step</span>
+            </li>
+            <li>
+              <span><kbd>Shift</kbd>+<kbd>←</kbd></span
+              ><span>previous slide, at its first step</span>
+            </li>
+            <li>
+              <span><kbd>PgDn</kbd><kbd>PgUp</kbd></span
+              ><span>next slide, previous slide</span>
+            </li>
+            <li>
+              <span><kbd>S</kbd></span
+              ><span>show every remaining step of the slide</span>
+            </li>
+            <li>
+              <span><kbd>Home</kbd><kbd>End</kbd></span
+              ><span>first slide, last slide</span>
+            </li>
+            <li>
+              <span><kbd>G</kbd><kbd>O</kbd></span
+              ><span>grid of every slide</span>
+            </li>
+            <li>
+              <span><kbd>N</kbd></span
+              ><span>notes on or off</span>
+            </li>
+            <li>
+              <span><kbd>F</kbd></span
+              ><span>full screen</span>
+            </li>
+            <li>
+              <span><kbd>?</kbd></span
+              ><span>this list</span>
+            </li>
+            <li>
+              <span><kbd>Esc</kbd></span
+              ><span>close the grid or this list</span>
+            </li>
+          </ul>
+        </div>
       </div>
 
       <nav class="bar" aria-label="Presenter controls">
@@ -2645,11 +2860,33 @@
             </button>
           </span>
           <span class="spacer"></span>
+          <button type="button" class="ctl" id="grid-toggle" aria-pressed="false" title="Every slide (G)">
+            Grid <kbd>G</kbd>
+          </button>
+          <button type="button" class="ctl" id="notes-toggle" aria-pressed="true" title="Speaker notes (N)">
+            Notes <kbd>N</kbd>
+          </button>
           <button type="button" class="ctl" id="full" aria-pressed="false" title="Full screen (F)">
             Full screen <kbd>F</kbd>
           </button>
+          <button
+            type="button"
+            class="ctl"
+            id="help-toggle"
+            aria-pressed="false"
+            title="Key bindings (?)"
+            aria-label="Key bindings"
+          >
+            <kbd>?</kbd>
+          </button>
         </div>
       </nav>
+
+      <aside class="notes-panel" id="notes">
+        <span class="label">Notes</span>
+        <span class="notes-title" id="notes-title"></span>
+        <div class="notes-body" id="notes-body"></div>
+      </aside>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/reveal.js@6.0.2/dist/reveal.js"></script>
@@ -2660,6 +2897,10 @@
         var presenter = document.getElementById('presenter');
         var sections = Array.prototype.slice.call(deckEl.querySelectorAll('.slides > section'));
         var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var grid = document.getElementById('grid');
+        var help = document.getElementById('help');
+        var notesPanel = document.getElementById('notes');
+        var notesBody = document.getElementById('notes-body');
 
         // -- Kit pages --
         // Each page's model, and its rendering through readyup's own formatters, are in `deck.js`, which is built from
@@ -2689,7 +2930,12 @@
             36: firstSlide,
             35: lastSlide,
             83: skipSteps,
+            71: toggleGrid,
+            79: toggleGrid,
+            78: toggleNotes,
             70: toggleFull,
+            191: toggleHelp,
+            27: closeOverlays,
           },
         });
         deck.on('slidechanged', sync);
@@ -2712,6 +2958,7 @@
             if (!slideMove) return;
             event.preventDefault();
             event.stopPropagation();
+            if (!grid.hidden || !help.hidden) return;
             if (event.key === 'ArrowRight' || event.key === 'PageDown') nextSlide();
             else prevSlide();
           },
@@ -2733,6 +2980,11 @@
           deck.nextFragment();
         });
         bind('step-last', skipSteps);
+        bind('grid-toggle', toggleGrid);
+        bind('grid-close', toggleGrid);
+        bind('help-toggle', toggleHelp);
+        bind('help-close', toggleHelp);
+        bind('notes-toggle', toggleNotes);
         bind('full', toggleFull);
         document.getElementById('dots').addEventListener('click', function (event) {
           var dot = event.target.closest('.dot');
@@ -2798,11 +3050,108 @@
           });
         }
 
+        // Builds the grid overview: a scaled live copy of every slide in its current state, click to jump
+        function buildGrid() {
+          var cards = document.getElementById('grid-cards');
+          var current = deck.getIndices().h;
+          cards.innerHTML = '';
+          sections.forEach(function (section, i) {
+            var title = section.getAttribute('data-title') || '';
+            var li = document.createElement('li');
+            li.className = i === current ? 'now' : '';
+            var tile = document.createElement('button');
+            tile.type = 'button';
+            tile.className = 'ctl tile-btn';
+            tile.setAttribute('aria-label', 'Slide ' + (i + 1) + ': ' + title);
+            var thumb = document.createElement('div');
+            thumb.className = 'thumb';
+            thumb.setAttribute('aria-hidden', 'true');
+            var frame = document.createElement('div');
+            frame.className = 'thumb-frame reveal ' + section.className;
+            frame.setAttribute('data-step', section.getAttribute('data-step') || '0');
+            if (section.hasAttribute('data-view')) frame.setAttribute('data-view', section.getAttribute('data-view'));
+            var copy = section.querySelector('.slide').cloneNode(true);
+            copy.querySelectorAll('[id]').forEach(function (el) {
+              if (el.tagName.toLowerCase() !== 'marker') el.removeAttribute('id');
+            });
+            copy.querySelectorAll('input').forEach(function (el) {
+              el.removeAttribute('name');
+              el.disabled = true;
+              el.tabIndex = -1;
+            });
+            copy.querySelectorAll('button, a').forEach(function (el) {
+              el.tabIndex = -1;
+            });
+            frame.appendChild(copy);
+            thumb.appendChild(frame);
+            var cap = document.createElement('span');
+            cap.className = 'tile-cap';
+            cap.innerHTML = '<span class="n">' + (i + 1) + '</span><span>' + esc(title) + '</span>';
+            tile.appendChild(thumb);
+            tile.appendChild(cap);
+            tile.addEventListener('click', function () {
+              toggleGrid();
+              deck.slide(i, 0, -1);
+            });
+            li.appendChild(tile);
+            cards.appendChild(li);
+          });
+          scaleThumbs();
+        }
+
+        // Scales each thumbnail's 1280-wide frame to its tile
+        function scaleThumbs() {
+          grid.querySelectorAll('.thumb').forEach(function (thumb) {
+            thumb.firstChild.style.transform = 'scale(' + thumb.clientWidth / 1280 + ')';
+          });
+        }
+        window.addEventListener('resize', function () {
+          if (!grid.hidden) scaleThumbs();
+        });
+
+        // Closes whichever overlay is open
+        function closeOverlays() {
+          if (!grid.hidden) toggleGrid();
+          if (!help.hidden) toggleHelp();
+        }
+
         // Shows every remaining step of the current slide
         function skipSteps() {
           var guard = 0;
           while (deck.nextFragment() && guard++ < 100) {}
           sync();
+        }
+
+        // Opens or closes the grid overview
+        function toggleGrid() {
+          var open = grid.hidden;
+          if (open && !help.hidden) toggleHelp();
+          grid.hidden = !open;
+          document.getElementById('grid-toggle').setAttribute('aria-pressed', String(open));
+          if (open) {
+            buildGrid();
+            var current = grid.querySelector('li.now button');
+            if (current) current.focus();
+          } else {
+            deckEl.focus();
+          }
+        }
+
+        // Opens or closes the key-binding overlay
+        function toggleHelp() {
+          var open = help.hidden;
+          if (open && !grid.hidden) toggleGrid();
+          help.hidden = !open;
+          document.getElementById('help-toggle').setAttribute('aria-pressed', String(open));
+          if (open) document.getElementById('help-close').focus();
+          else deckEl.focus();
+        }
+
+        // Shows or hides the notes panel
+        function toggleNotes() {
+          notesPanel.hidden = !notesPanel.hidden;
+          document.getElementById('notes-toggle').setAttribute('aria-pressed', String(!notesPanel.hidden));
+          deckEl.focus();
         }
 
         // Enters or leaves full screen on the presenter, which keeps the bar and the notes reachable
@@ -2928,7 +3277,7 @@
           document.querySelectorAll('section.s-run, section.s-kit').forEach(setStep);
         }
 
-        // Reads the deck's indices into the bar and every stepped slide
+        // Reads the deck's indices into the bar, the notes, and every stepped slide
         function sync() {
           var indices = deck.getIndices();
           var total = sections.length;
@@ -2974,6 +3323,36 @@
               li.classList.toggle('now', i === indices.h);
               li.style.setProperty('--fill', fragments ? Math.round((shown / fragments) * 100) + '%' : '0%');
             });
+          syncNotes(section, shown);
+        }
+
+        // Copies the current slide's notes into the panel, marking the paragraph that the current step reaches
+        function syncNotes(section, shown) {
+          var notes = section.querySelector('aside.notes');
+          document.getElementById('notes-title').textContent =
+            sections.indexOf(section) + 1 + ' · ' + (section.getAttribute('data-title') || '');
+          if (!notes) {
+            notesBody.innerHTML = '';
+            return;
+          }
+          notesBody.innerHTML = notes.querySelector('p')
+            ? notes.innerHTML
+            : '<p>' + esc(notes.textContent.replace(/\s+/g, ' ').trim()) + '</p>';
+          var current = null;
+          notesBody.querySelectorAll('p').forEach(function (p) {
+            var raw = p.getAttribute('data-at');
+            var at = raw === null ? 0 : Number(raw);
+            p.classList.toggle('said', at <= shown);
+            if (at <= shown) current = p;
+          });
+          if (current) {
+            current.classList.add('now');
+            if (current.offsetTop + current.offsetHeight > notesBody.scrollTop + notesBody.clientHeight) {
+              notesBody.scrollTop = current.offsetTop - 20;
+            }
+          } else {
+            notesBody.scrollTop = 0;
+          }
         }
 
         // region | Helpers
@@ -3007,7 +3386,7 @@
         // Moves focus from a used control back to the deck, so that the arrow keys keep stepping
         function returnFocus(control) {
           if (document.activeElement === control) control.blur();
-          deckEl.focus();
+          if (grid.hidden && help.hidden) deckEl.focus();
         }
 
         // Scrolls a kit page's terminal so that the last line reached is in view, as a terminal follows its output
