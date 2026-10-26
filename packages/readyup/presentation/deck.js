@@ -1678,9 +1678,6 @@ ${violations.map((violation) => `- ${violation}`).join("\n")}`);
     [33, "sgr-yellow"],
     [90, "sgr-gray"]
   ]);
-  function escapeHtml(text) {
-    return text.replaceAll("&", "&amp;").replaceAll("<", "&lt;");
-  }
   function toHtml(text) {
     const state = { bold: false, color: void 0, dim: false };
     let html = "";
@@ -1718,6 +1715,9 @@ ${violations.map((violation) => `- ${violation}`).join("\n")}`);
           state.color = COLOR_CLASSES.get(code) ?? state.color;
       }
     }
+  }
+  function escapeHtml(text) {
+    return text.replaceAll("&", "&amp;").replaceAll("<", "&lt;");
   }
   function wrapRun(run, state) {
     if (run === "") return "";

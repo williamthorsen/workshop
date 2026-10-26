@@ -19,11 +19,6 @@ interface SgrState {
   dim: boolean;
 }
 
-/** Returns `text` escaped for insertion into HTML. */
-export function escapeHtml(text: string): string {
-  return text.replaceAll('&', '&amp;').replaceAll('<', '&lt;');
-}
-
 /**
  * Returns terminal text as HTML, each run of styled text in a `<span>` whose classes name its attributes.
  *
@@ -73,6 +68,11 @@ function applyParameters(state: SgrState, parameters: string): void {
         state.color = COLOR_CLASSES.get(code) ?? state.color;
     }
   }
+}
+
+/** Returns `text` escaped for insertion into HTML. */
+function escapeHtml(text: string): string {
+  return text.replaceAll('&', '&amp;').replaceAll('<', '&lt;');
 }
 
 /** Returns one run of text escaped, inside a span naming `state`'s attributes when it has any. */
