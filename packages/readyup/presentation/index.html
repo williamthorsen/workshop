@@ -21,6 +21,7 @@
         --ink: #141c26;
         --ink-2: #4b5664;
         --line: #c3cbd5;
+        --track: #7d8896;
         --grid: #d9dfe7;
         --accent: #1a56b0;
         --accent-soft: #e4ecf8;
@@ -175,7 +176,7 @@
         padding: 0;
         margin: 0;
         border-radius: 4px;
-        background: var(--line);
+        background: var(--track);
         cursor: pointer;
         position: relative;
         overflow: hidden;
@@ -285,7 +286,7 @@
         height: 8px;
         margin: -4px 0 0 -4px;
         border-radius: 50%;
-        background: var(--line);
+        background: var(--track);
       }
       .dot:hover::before {
         background: var(--accent);
@@ -2952,6 +2953,10 @@
           touch: true,
           transition: reduce ? 'none' : 'fade',
           transitionSpeed: 'fast',
+          // While an overlay is open, only the keys that close or switch it reach the deck
+          keyboardCondition: function (event) {
+            return (grid.hidden && help.hidden) || [27, 71, 79, 191].indexOf(event.keyCode) !== -1;
+          },
           keyboard: {
             36: firstSlide,
             35: lastSlide,
@@ -3050,24 +3055,17 @@
         // Builds one clickable progress segment per slide; hovering one shows its title
         function buildProgress() {
           var list = document.getElementById('progress');
-          list.innerHTML = sections
-            .map(function (section, i) {
-              var title = esc(section.getAttribute('data-title') || '');
-              return (
-                '<li><button type="button" data-index="' +
-                i +
-                '" title="' +
-                (i + 1) +
-                ' · ' +
-                title +
-                '" aria-label="Slide ' +
-                (i + 1) +
-                ': ' +
-                title +
-                '"></button></li>'
-              );
-            })
-            .join('');
+          sections.forEach(function (section, i) {
+            var title = section.getAttribute('data-title') || '';
+            var item = document.createElement('li');
+            var button = document.createElement('button');
+            button.type = 'button';
+            button.setAttribute('data-index', i);
+            button.title = i + 1 + ' · ' + title;
+            button.setAttribute('aria-label', 'Slide ' + (i + 1) + ': ' + title);
+            item.appendChild(button);
+            list.appendChild(item);
+          });
           list.addEventListener('click', function (event) {
             var button = event.target.closest('button');
             if (!button) return;
