@@ -9,19 +9,19 @@ allowBuilds:
 catalog:
   '@vitest/coverage-v8': 5.0.5
   '@williamthorsen/nmr': 0.52.0
-  '@williamthorsen/toolbelt.atlassian': 0.7.1
-  '@williamthorsen/toolbelt.cli': 0.6.0
-  '@williamthorsen/toolbelt.errors': 0.8.4
-  '@williamthorsen/toolbelt.filesystem': 0.9.4
-  '@williamthorsen/toolbelt.git': 0.6.1
-  '@williamthorsen/toolbelt.nodejs': 4.0.0
-  '@williamthorsen/toolbelt.numbers': 7.2.4
-  '@williamthorsen/toolbelt.packaging': 0.6.4
-  '@williamthorsen/toolbelt.secrets': 0.5.0
-  '@williamthorsen/toolbelt.strings': 8.0.4
-  '@williamthorsen/toolbelt.terminal': 0.2.1
-  '@williamthorsen/toolbelt.testing': 0.7.0
-  '@williamthorsen/toolbelt.vitest': 0.12.0
+  '@williamthorsen/toolbelt.atlassian': 0.8.0
+  '@williamthorsen/toolbelt.cli': 0.7.0
+  '@williamthorsen/toolbelt.errors': 0.9.0
+  '@williamthorsen/toolbelt.filesystem': 0.10.0
+  '@williamthorsen/toolbelt.git': 0.7.0
+  '@williamthorsen/toolbelt.nodejs': 4.1.0
+  '@williamthorsen/toolbelt.numbers': 7.3.0
+  '@williamthorsen/toolbelt.packaging': 0.7.0
+  '@williamthorsen/toolbelt.secrets': 0.6.0
+  '@williamthorsen/toolbelt.strings': 8.1.0
+  '@williamthorsen/toolbelt.terminal': 0.3.0
+  '@williamthorsen/toolbelt.testing': 0.8.0
+  '@williamthorsen/toolbelt.vitest': 0.13.0
   esbuild: 0.28.2
   typescript: 6.0.3
   vite: 8.3.5
