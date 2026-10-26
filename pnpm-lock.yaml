@@ -200,6 +200,9 @@ catalogs:
     '@williamthorsen/toolbelt.strings':
       specifier: 8.0.4
       version: 8.0.4
+    '@williamthorsen/toolbelt.terminal':
+      specifier: 0.2.1
+      version: 0.2.1
     '@williamthorsen/toolbelt.testing':
       specifier: 0.7.0
       version: 0.7.0
@@ -328,6 +331,16 @@ importers:
         version: 5.0.5(@types/node@24.19.2)(@vitest/coverage-v8@5.0.5)(vite@8.3.5(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
 
   packages/chrome-tools:
+    dependencies:
+      '@williamthorsen/toolbelt.cli':
+        specifier: 'catalog:'
+        version: 0.6.0
+      '@williamthorsen/toolbelt.git':
+        specifier: 'catalog:'
+        version: 0.6.1
+      '@williamthorsen/toolbelt.terminal':
+        specifier: 'catalog:'
+        version: 0.2.1
     devDependencies:
       '@williamthorsen/toolbelt.testing':
         specifier: 'catalog:'
@@ -470,7 +483,7 @@ importers:
         specifier: 'catalog:'
         version: 8.0.4
       '@williamthorsen/toolbelt.terminal':
-        specifier: 0.2.1
+        specifier: 'catalog:'
         version: 0.2.1
       ansi-styles:
         specifier: 7.0.0
