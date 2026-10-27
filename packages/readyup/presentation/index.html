@@ -1218,9 +1218,7 @@
         stroke-dashoffset: 0;
       }
       .s-run[data-step='8'] .rollup,
-      .s-run[data-step='8'] .flow,
-      .s-run.is-final .rollup,
-      .s-run.is-final .flow {
+      .s-run[data-step='8'] .flow {
         opacity: 0;
       }
       .s-run .card.term-sample {
@@ -1359,15 +1357,13 @@
         display: block;
       }
       .s-anatomy[data-step='5'] .zoom.z0,
-      .s-anatomy[data-step='6'] .zoom.z0,
-      .s-anatomy.is-final .zoom.z0 {
+      .s-anatomy[data-step='6'] .zoom.z0 {
         display: none;
       }
       .s-anatomy[data-step='5'] .zoom.z1 {
         display: block;
       }
-      .s-anatomy[data-step='6'] .zoom.z2,
-      .s-anatomy.is-final .zoom.z2 {
+      .s-anatomy[data-step='6'] .zoom.z2 {
         display: block;
       }
       .s-anatomy .zoom .hl {
@@ -1383,14 +1379,11 @@
       }
       .s-anatomy[data-step='5'] .out .lvl-1,
       .s-anatomy[data-step='6'] .out .lvl-1,
-      .s-anatomy[data-step='6'] .out .lvl-2,
-      .s-anatomy.is-final .out .lvl-1,
-      .s-anatomy.is-final .out .lvl-2 {
+      .s-anatomy[data-step='6'] .out .lvl-2 {
         display: block;
       }
       .s-anatomy[data-step='5'] .out .one,
-      .s-anatomy[data-step='6'] .out .one,
-      .s-anatomy.is-final .out .one {
+      .s-anatomy[data-step='6'] .out .one {
         display: none;
       }
       .s-anatomy .cap-stack {
@@ -1408,8 +1401,7 @@
       .s-anatomy[data-step='3'] .cap[data-capfor='3'],
       .s-anatomy[data-step='4'] .cap[data-capfor='4'],
       .s-anatomy[data-step='5'] .cap[data-capfor='5'],
-      .s-anatomy[data-step='6'] .cap[data-capfor='6'],
-      .s-anatomy.is-final .cap[data-capfor='6'] {
+      .s-anatomy[data-step='6'] .cap[data-capfor='6'] {
         opacity: 1;
       } /* Kit demo slides: the terminal on the left, the environment and the source on the right */
       .cmdrow {
@@ -2038,7 +2030,8 @@
 
             <!-- 4 · A run, step by step (from 4.1) -->
             <section
-              class="s-run is-final"
+              class="s-run"
+              data-step="0"
               data-title="A failure blocks what depends on it, and the threshold decides the verdict"
             >
               <div class="slide">
@@ -2077,98 +2070,98 @@
                     <path class="edge" d="M20 52V100H40" />
                     <path class="edge" d="M20 100V364H40" />
                     <path class="edge" d="M20 364V430H40" />
-                    <path class="edge e-pass on" data-at="1" d="M60 124V166H84" />
-                    <path class="edge e-blocked on" data-at="3" d="M104 190V232H128" />
-                    <path class="edge e-blocked on" data-at="3" d="M104 232V298H128" />
-                    <path class="flow c-pass on" data-at="1" pathLength="1" d="M320 100C440 100 520 176 640 176" />
-                    <path class="flow c-error on" data-at="2" pathLength="1" d="M364 166C484 166 520 84 640 84" />
-                    <path class="flow c-blocked on" data-at="3" pathLength="1" d="M408 232C528 232 520 222 640 222" />
-                    <path class="flow c-blocked on" data-at="3" pathLength="1" d="M408 298C528 298 520 222 640 222" />
-                    <path class="flow c-warn on" data-at="4" pathLength="1" d="M320 364C440 364 520 130 640 130" />
-                    <path class="flow c-skip on" data-at="5" pathLength="1" d="M320 430C440 430 520 268 640 268" />
+                    <path class="edge e-pass" data-at="1" d="M60 124V166H84" />
+                    <path class="edge e-blocked" data-at="3" d="M104 190V232H128" />
+                    <path class="edge e-blocked" data-at="3" d="M104 232V298H128" />
+                    <path class="flow c-pass" data-at="1" pathLength="1" d="M320 100C440 100 520 176 640 176" />
+                    <path class="flow c-error" data-at="2" pathLength="1" d="M364 166C484 166 520 84 640 84" />
+                    <path class="flow c-blocked" data-at="3" pathLength="1" d="M408 232C528 232 520 222 640 222" />
+                    <path class="flow c-blocked" data-at="3" pathLength="1" d="M408 298C528 298 520 222 640 222" />
+                    <path class="flow c-warn" data-at="4" pathLength="1" d="M320 364C440 364 520 130 640 130" />
+                    <path class="flow c-skip" data-at="5" pathLength="1" d="M320 430C440 430 520 268 640 268" />
                     <g class="node root" transform="translate(0,16)">
                       <rect class="box" width="190" height="36" rx="18" />
                       <text class="k" x="16" y="18">checklist</text>
                       <text class="v" x="101" y="18">deploy</text>
                     </g>
-                    <g class="node st-pass on" data-at="1" transform="translate(40,76)">
+                    <g class="node st-pass" data-at="1" transform="translate(40,76)">
                       <rect class="box" width="280" height="48" rx="10" />
                       <circle class="ring" cx="26" cy="24" r="13" />
                       <text class="mark" x="26" y="24">✅</text>
                       <text class="label" x="52" y="24">package.json exists</text>
                     </g>
-                    <g class="node st-error on" data-at="2" transform="translate(84,142)">
+                    <g class="node st-error" data-at="2" transform="translate(84,142)">
                       <rect class="box" width="280" height="48" rx="10" />
                       <circle class="ring" cx="26" cy="24" r="13" />
                       <text class="mark" x="26" y="24">❌</text>
                       <text class="label" x="52" y="24">build output present</text>
                     </g>
-                    <g class="node st-blocked on" data-at="3" transform="translate(128,208)">
+                    <g class="node st-blocked" data-at="3" transform="translate(128,208)">
                       <rect class="box" width="280" height="48" rx="10" />
                       <circle class="ring" cx="26" cy="24" r="13" />
                       <text class="mark" x="26" y="24">🚫</text>
                       <text class="label" x="52" y="24">bundle under 500 kB</text>
                     </g>
-                    <g class="node st-blocked on" data-at="3" transform="translate(128,274)">
+                    <g class="node st-blocked" data-at="3" transform="translate(128,274)">
                       <rect class="box" width="280" height="48" rx="10" />
                       <circle class="ring" cx="26" cy="24" r="13" />
                       <text class="mark" x="26" y="24">🚫</text>
                       <text class="label" x="52" y="24">source maps excluded</text>
                     </g>
-                    <g class="node st-warn on" data-at="4" transform="translate(40,340)">
+                    <g class="node st-warn" data-at="4" transform="translate(40,340)">
                       <rect class="box" width="280" height="48" rx="10" />
                       <circle class="ring" cx="26" cy="24" r="13" />
                       <text class="mark" x="26" y="24">🔶</text>
                       <text class="label" x="52" y="24">NODE_ENV is set</text>
                     </g>
-                    <g class="node st-skip on" data-at="5" transform="translate(40,406)">
+                    <g class="node st-skip" data-at="5" transform="translate(40,406)">
                       <rect class="box" width="280" height="48" rx="10" />
                       <circle class="ring" cx="26" cy="24" r="13" />
                       <text class="mark" x="26" y="24">⚪</text>
                       <text class="label" x="52" y="24">base image is pinned</text>
                     </g>
                     <g class="rollup">
-                      <g class="tally on" data-at="6">
+                      <g class="tally" data-at="6">
                         <rect class="tframe" x="628" y="20" width="284" height="276" rx="12" />
                         <text class="headmark" x="644" y="46">❌</text>
                         <text class="head" x="668" y="46">Total</text>
                       </g>
-                      <g class="trow st-error on" data-at="2">
+                      <g class="trow st-error" data-at="2">
                         <rect class="rbox" x="640" y="65" width="260" height="38" rx="8" />
                         <text class="tmark" x="660" y="84">❌</text>
                         <text class="tlabel" x="684" y="84">error</text>
                         <text class="zero" x="888" y="84">0</text>
                         <text class="count" x="888" y="84">1</text>
                       </g>
-                      <g class="trow st-warn on" data-at="4">
+                      <g class="trow st-warn" data-at="4">
                         <rect class="rbox" x="640" y="111" width="260" height="38" rx="8" />
                         <text class="tmark" x="660" y="130">🔶</text>
                         <text class="tlabel" x="684" y="130">warning</text>
                         <text class="zero" x="888" y="130">0</text>
                         <text class="count" x="888" y="130">1</text>
                       </g>
-                      <g class="trow st-pass on" data-at="1">
+                      <g class="trow st-pass" data-at="1">
                         <rect class="rbox" x="640" y="157" width="260" height="38" rx="8" />
                         <text class="tmark" x="660" y="176">✅</text>
                         <text class="tlabel" x="684" y="176">passed</text>
                         <text class="zero" x="888" y="176">0</text>
                         <text class="count" x="888" y="176">1</text>
                       </g>
-                      <g class="trow st-blocked on" data-at="3">
+                      <g class="trow st-blocked" data-at="3">
                         <rect class="rbox" x="640" y="203" width="260" height="38" rx="8" />
                         <text class="tmark" x="660" y="222">🚫</text>
                         <text class="tlabel" x="684" y="222">blocked</text>
                         <text class="zero" x="888" y="222">0</text>
                         <text class="count" x="888" y="222">2</text>
                       </g>
-                      <g class="trow st-skip on" data-at="5">
+                      <g class="trow st-skip" data-at="5">
                         <rect class="rbox" x="640" y="249" width="260" height="38" rx="8" />
                         <text class="tmark" x="660" y="268">⚪</text>
                         <text class="tlabel" x="684" y="268">skipped</text>
                         <text class="zero" x="888" y="268">0</text>
                         <text class="count" x="888" y="268">1</text>
                       </g>
-                      <g class="verdict on" data-at="7">
+                      <g class="verdict" data-at="7">
                         <path class="p-warn" pathLength="1" d="M912 130H940V316" />
                         <line class="stop" x1="930" y1="316" x2="950" y2="316" />
                         <path class="p-error" pathLength="1" d="M912 84H990V366" marker-end="url(#m-err)" />
@@ -2183,29 +2176,39 @@
                       </g>
                     </g>
                   </svg>
-                  <figure class="card term term-sample on now" data-at="8">
+                  <figure class="card term term-sample" data-at="8">
                     <figcaption class="card-head">rdy run deploy</figcaption>
                     <pre class="out"><code></code></pre>
                   </figure>
                 </div>
                 <div class="captions">
-                  <p class="caption on" data-at="0">The deploy checklist: six checks, three of them nested</p>
-                  <p class="caption on" data-at="1">
+                  <p class="caption" data-at="0">The deploy checklist: six checks, three of them nested</p>
+                  <p class="caption" data-at="1">
                     <code>package.json exists</code> passes, so the check beneath it runs
                   </p>
-                  <p class="caption on" data-at="2">
+                  <p class="caption" data-at="2">
                     <code>build output present</code> fails at <code>error</code>: dist/index.js not found
                   </p>
-                  <p class="caption on" data-at="3">The two checks beneath the failure never run; they are blocked</p>
-                  <p class="caption on" data-at="4"><code>NODE_ENV is set</code> fails at <code>warn</code></p>
-                  <p class="caption on" data-at="5">
+                  <p class="caption" data-at="3">The two checks beneath the failure never run; they are blocked</p>
+                  <p class="caption" data-at="4"><code>NODE_ENV is set</code> fails at <code>warn</code></p>
+                  <p class="caption" data-at="5">
                     <code>base image is pinned</code> does not apply here: no Dockerfile, so it is skipped
                   </p>
-                  <p class="caption on" data-at="6">Each result counts once in the total</p>
-                  <p class="caption on" data-at="7">
+                  <p class="caption" data-at="6">Each result counts once in the total</p>
+                  <p class="caption" data-at="7">
                     At <code>fail-on: error</code> the error fails the run; the warning alone would not
                   </p>
-                  <p class="caption on now" data-at="8">The same run, as <code>rdy</code> printed it</p>
+                  <p class="caption" data-at="8">The same run, as <code>rdy</code> printed it</p>
+                </div>
+                <div class="steps">
+                  <span class="fragment step" data-fragment-index="1"></span>
+                  <span class="fragment step" data-fragment-index="2"></span>
+                  <span class="fragment step" data-fragment-index="3"></span>
+                  <span class="fragment step" data-fragment-index="4"></span>
+                  <span class="fragment step" data-fragment-index="5"></span>
+                  <span class="fragment step" data-fragment-index="6"></span>
+                  <span class="fragment step" data-fragment-index="7"></span>
+                  <span class="fragment step" data-fragment-index="8"></span>
                 </div>
               </div>
               <aside class="notes">
@@ -2228,7 +2231,7 @@
             </section>
 
             <!-- 5 · Anatomy of a check, then the checklist, then the kit (from 3.1) -->
-            <section class="s-anatomy is-final" data-title="A check is a claim, a test, and a fix">
+            <section class="s-anatomy" data-step="0" data-title="A check is a claim, a test, and a fix">
               <div class="slide">
                 <div class="head">
                   <h2>A check is a claim, a test, and a fix</h2>
@@ -2289,6 +2292,14 @@
                   <p class="cap" data-capfor="4"><code>severity</code> is what the failure means to the verdict</p>
                   <p class="cap" data-capfor="5">A checklist is a list of checks; a check can have checks beneath it</p>
                   <p class="cap" data-capfor="6">A kit is a file of checklists; one command runs the whole file</p>
+                </div>
+                <div class="steps">
+                  <span class="fragment step" data-fragment-index="1"></span>
+                  <span class="fragment step" data-fragment-index="2"></span>
+                  <span class="fragment step" data-fragment-index="3"></span>
+                  <span class="fragment step" data-fragment-index="4"></span>
+                  <span class="fragment step" data-fragment-index="5"></span>
+                  <span class="fragment step" data-fragment-index="6"></span>
                 </div>
               </div>
               <aside class="notes">
@@ -3730,10 +3741,8 @@
           draw();
         }
 
-        // Sets a stepped slide's step from its visible fragments, and marks each stepped element reached or current; a
-        // slide marked `is-final` keeps the last step that its markup shows
+        // Sets a stepped slide's step from its visible fragments, and marks each stepped element reached or current
         function setStep(slide) {
-          if (slide.classList.contains('is-final')) return;
           var step = slide.querySelectorAll('.fragment.visible').length;
           var stepped = slide.querySelectorAll('[data-at]');
           slide.setAttribute('data-step', step);
