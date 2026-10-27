@@ -836,30 +836,30 @@
       .s-problem[data-step='2'] .need {
         opacity: 1;
       } /* 3 · The solution */
-      .tiles {
+      .claims {
         flex: 1;
         min-height: 0;
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        grid-template-rows: 1fr 1fr;
-        gap: 16px;
+        grid-template-rows: repeat(4, 1fr);
+        gap: 12px;
       }
-      .tile {
-        padding: 14px 18px 16px;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
+      .claim {
+        display: grid;
+        grid-template-columns: 440px 1fr;
+        align-items: center;
+        gap: 28px;
+        padding: 14px 20px;
       }
-      .tile h3 {
-        font-size: 22px;
+      .claim h3 {
+        margin-bottom: 6px;
       }
-      .tile p {
-        font-size: 16px;
+      .claim p {
+        font-size: 18px;
         color: var(--ink-2);
         line-height: 1.35;
       }
-      .tile pre {
-        margin-top: auto;
+      .claim pre {
+        margin: 0;
         font: 13px/18px var(--mono);
         white-space: pre;
         overflow: hidden;
@@ -868,16 +868,16 @@
         border-radius: 8px;
         padding: 8px 12px;
       }
-      .tile pre .k {
+      .claim pre .k {
         color: var(--term-fix);
       }
-      .tile pre .s {
+      .claim pre .s {
         color: var(--term-warn);
       }
-      .tile pre .d {
+      .claim pre .d {
         color: var(--term-dim);
       }
-      .tile pre .p {
+      .claim pre .p {
         color: var(--term-pass);
       } /* 4 · A run, step by step (from 4.1) */
       .stage-run {
@@ -1749,37 +1749,26 @@
       }
       .features {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: 1fr 1fr;
         gap: 14px;
-        flex: 1;
-        min-height: 0;
       }
       .features .card {
-        padding: 18px 20px 20px;
-        gap: 10px;
-      }
-      .features h3 {
-        font-size: 23px;
+        padding: 16px 20px;
+        gap: 6px;
       }
       .features p {
-        font-size: 17.5px;
+        font-size: 18px;
         color: var(--ink-2);
         line-height: 1.35;
       }
-      .start {
-        margin-top: 30px;
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 20px;
-        align-items: end;
-      }
       .cmd-list {
+        flex: 1;
         list-style: none;
         margin: 0;
-        padding: 18px 24px;
+        padding: 20px 28px;
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        justify-content: space-evenly;
         counter-reset: cmd;
         background: var(--term);
         color: var(--term-ink);
@@ -1787,10 +1776,10 @@
       }
       .cmd-list li {
         display: grid;
-        grid-template-columns: 24px 400px 1fr;
+        grid-template-columns: 24px 420px 1fr;
         align-items: baseline;
         gap: 14px;
-        font-size: 17px;
+        font-size: 18px;
         line-height: 1.3;
       }
       .cmd-list li::before {
@@ -1800,8 +1789,7 @@
         color: var(--term-dim);
       }
       .cmd-list code {
-        font-size: 19px;
-        font-weight: 500;
+        font: 500 16px/24px var(--mono);
       }
       .cmd-list .what {
         color: var(--term-dim);
@@ -1813,14 +1801,12 @@
       }
       .s-end .links {
         display: flex;
-        flex-direction: column;
-        gap: 8px;
-        font-size: 17px;
+        justify-content: space-between;
+        font-size: 18px;
         color: var(--ink-2);
-        padding-bottom: 6px;
       }
       .s-end .links a {
-        font: 500 17px var(--mono);
+        font: 500 18px var(--mono);
       }
       .s-end .links code {
         color: var(--ink);
@@ -1972,45 +1958,46 @@
             </section>
 
             <!-- 3 · The solution -->
-            <section class="s-solution" data-title="ReadyUp: checklists that run">
+            <section class="s-solution" data-title="ReadyUp is a checklist that runs itself">
               <div class="slide">
                 <div class="head">
-                  <h2>ReadyUp: checklists that run</h2>
+                  <h2>ReadyUp is a checklist that runs itself</h2>
                   <code class="chip">rdy run</code>
                 </div>
-                <div class="tiles">
-                  <div class="card tile">
-                    <h3>Easy to write</h3>
-                    <p>A check is a claim, a test, and a fix, in a few lines of TypeScript next to the code.</p>
+                <div class="claims">
+                  <div class="card claim">
+                    <div>
+                      <h3>A check is a few lines of TypeScript</h3>
+                      <p>A name, a test, and the fix to show when it fails.</p>
+                    </div>
                     <pre>{ <span class="k">name</span>: <span class="s">'Docker daemon is running'</span>,
   <span class="k">check</span>: () =&gt; dockerInfo().status === 0,
   <span class="k">fix</span>: <span class="s">'Start Docker, then run the checks again'</span> }</pre>
                   </div>
-                  <div class="card tile">
-                    <h3>Runnable from anywhere</h3>
-                    <p>
-                      The same command on a laptop, in CI, and against a kit that a package or a repository publishes.
-                    </p>
+                  <div class="card claim">
+                    <div>
+                      <h3>One command runs it anywhere</h3>
+                      <p>On a laptop, in CI, or from a kit that a package or a repository publishes.</p>
+                    </div>
                     <pre><span class="d">$</span> rdy run
 <span class="d">$</span> rdy run --from npm:@acme/ui
 <span class="d">$</span> rdy run --from github:acme/diagnose</pre>
                   </div>
-                  <div class="card tile">
-                    <h3>Collections of checklists</h3>
-                    <p>
-                      A kit is a file of checklists; a checklist is a list of checks; a check can have checks beneath
-                      it.
-                    </p>
+                  <div class="card claim">
+                    <div>
+                      <h3>Checks group into checklists and kits</h3>
+                      <p>A kit is one file, and a check can hold checks of its own.</p>
+                    </div>
                     <pre><span class="d">kit</span>        .readyup/kits/onboarding.ts
 <span class="d">checklist</span>  machine · repo
 <span class="d">check</span>      ✅ Node version matches .nvmrc
 <span class="d">check</span>      ❌ .env sets every required key</pre>
                   </div>
-                  <div class="card tile">
-                    <h3>Agent-friendly</h3>
-                    <p>
-                      One exit code for a pipeline, and the whole run as one JSON document for a script or an agent.
-                    </p>
+                  <div class="card claim">
+                    <div>
+                      <h3>The result is an exit code and a JSON report</h3>
+                      <p>A pipeline gates on the exit code, and a script or an agent reads the JSON.</p>
+                    </div>
                     <pre><span class="d">$</span> rdy run --json
 { <span class="k">"passed"</span>: <span class="p">false</span>, <span class="k">"counts"</span>: { <span class="k">"errors"</span>: 1, … },
   <span class="k">"kits"</span>: [ { <span class="k">"name"</span>: <span class="s">"onboarding"</span>, … } ] }
@@ -3165,48 +3152,46 @@
             <!-- 13 · Close -->
             <section class="s-end" data-title="ReadyUp">
               <div class="slide">
-                <h2>ReadyUp: checklists that run</h2>
+                <h2>Start with four commands</h2>
                 <div class="features">
                   <div class="card">
-                    <h3>Easy to write</h3>
-                    <p>A check is a claim, a test, and a fix, in TypeScript next to the code it checks.</p>
+                    <h3>A check is a few lines of TypeScript</h3>
+                    <p>A name, a test, and the fix to show when it fails.</p>
                   </div>
                   <div class="card">
-                    <h3>Runnable from anywhere</h3>
-                    <p>One command on a laptop, in CI, and against a kit that a package or a repository publishes.</p>
+                    <h3>One command runs it anywhere</h3>
+                    <p>On a laptop, in CI, or from a kit that a package or a repository publishes.</p>
                   </div>
                   <div class="card">
-                    <h3>Collections of checklists</h3>
-                    <p>Kits hold checklists, checklists hold checks, and a check can have checks beneath it.</p>
+                    <h3>Checks group into checklists and kits</h3>
+                    <p>A kit is one file, and a check can hold checks of its own.</p>
                   </div>
                   <div class="card">
-                    <h3>Agent-friendly</h3>
-                    <p>An exit code for a pipeline, and the whole run as one JSON document for a script or an agent.</p>
+                    <h3>The result is an exit code and a JSON report</h3>
+                    <p>A pipeline gates on the exit code, and a script or an agent reads the JSON.</p>
                   </div>
                 </div>
-                <div class="start">
-                  <ol class="cmd-list">
-                    <li>
-                      <code>pnpm add --save-dev readyup esbuild</code
-                      ><span class="what">Node 24 or later; esbuild compiles the kits</span>
-                    </li>
-                    <li>
-                      <code>rdy init</code
-                      ><span class="what">writes <code>.config/readyup.config.ts</code> and the starter kit</span>
-                    </li>
-                    <li><code>rdy compile</code><span class="what">bundles the kit</span></li>
-                    <li><code>rdy run</code><span class="what">runs it, on a laptop or in CI</span></li>
-                  </ol>
-                  <p class="links">
-                    <a href="https://github.com/williamthorsen/workshop/tree/main/packages/readyup#readme"
-                      >github.com/williamthorsen/workshop</a
-                    >
-                    <span
-                      ><code>packages/readyup</code> · also on npm as
-                      <a href="https://www.npmjs.com/package/readyup"><code>readyup</code></a></span
-                    >
-                  </p>
-                </div>
+                <ol class="cmd-list">
+                  <li>
+                    <code>pnpm add --save-dev readyup esbuild</code
+                    ><span class="what">Node 24 or later; esbuild compiles the kits</span>
+                  </li>
+                  <li>
+                    <code>rdy init</code
+                    ><span class="what">writes <code>.config/readyup.config.ts</code> and the starter kit</span>
+                  </li>
+                  <li><code>rdy compile</code><span class="what">bundles the kit</span></li>
+                  <li><code>rdy run</code><span class="what">runs it, on a laptop or in CI</span></li>
+                </ol>
+                <p class="links">
+                  <a href="https://github.com/williamthorsen/workshop/tree/main/packages/readyup#readme"
+                    >github.com/williamthorsen/workshop</a
+                  >
+                  <span
+                    ><code>packages/readyup</code> · also on npm as
+                    <a href="https://www.npmjs.com/package/readyup"><code>readyup</code></a></span
+                  >
+                </p>
               </div>
               <aside class="notes">
                 <p>
