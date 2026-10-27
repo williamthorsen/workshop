@@ -1522,13 +1522,13 @@ ${violations.map((violation) => `- ${violation}`).join("\n")}`);
   // presentation/src/renderKit.ts
   var FAIL_ON = "error";
   var REPORT_ON = "recommend";
-  function renderKit(kit, env) {
+  function renderKit(kit, env, options = {}) {
     const previousColor = getColor();
     const previousStyle = getStyle();
     setStyle("rich");
     setColor(true);
     try {
-      return composeKit(kit, env);
+      return composeKit(kit, env, options);
     } finally {
       setStyle(previousStyle);
       setColor(previousColor);
@@ -1540,6 +1540,9 @@ ${violations.map((violation) => `- ${violation}`).join("\n")}`);
   function renderTitleRun() {
     const env = Object.fromEntries(CAPTURED_PREFLIGHT.conditions.map(({ id }) => [id, false]));
     return renderKit(CAPTURED_PREFLIGHT, env).lines;
+  }
+  function buildCommand(kit, { failOn = FAIL_ON, json = false }) {
+    return kit.command + (failOn === FAIL_ON ? "" : ` --fail-on=${failOn}`) + (json ? " --json" : "");
   }
   function buildDefaultEnvironment(kit) {
     return Object.fromEntries(kit.conditions.map((condition) => [condition.id, condition.on]));
@@ -1573,9 +1576,12 @@ ${violations.map((violation) => `- ${violation}`).join("\n")}`);
     const detail = check.sites === void 0 ? check.failDetail ?? null : check.sites.join(", ");
     return { ...base, status: "failed", ok: false, detail, fix: check.fix ?? null };
   }
-  function composeKit(kit, env) {
+  function composeKit(kit, env, options) {
     const layout = getLayout();
-    const lines = [{ at: 0, printed: false, text: `$ ${kit.command}` }];
+    const failOn = options.failOn ?? FAIL_ON;
+    const command = buildCommand(kit, options);
+    const lines = [{ at: 0, printed: false, text: `$ ${command}` }];
+    const checkSteps = [];
     const entries = [];
     const summaryRows = [];
     let step = 0;
@@ -1585,6 +1591,7 @@ ${violations.map((violation) => `- ${violation}`).join("\n")}`);
     for (const [index, checklist] of kit.checklists.entries()) {
       const checks = evaluateChecklist(checklist, env, step);
       step += checks.length;
+      checkSteps.push(...checks.map(({ at }) => at));
       const headAt = index === 0 ? 0 : step - checks.length;
       const segments = buildSegments(kit, checklist);
       if (index > 0) print(headAt, "");
@@ -1592,7 +1599,7 @@ ${violations.map((violation) => `- ${violation}`).join("\n")}`);
       const results = checks.map(({ result }) => result);
       const report = {
         results,
-        passed: results.every((result) => result.status !== "failed" || !meetsThreshold(result.severity, FAIL_ON)),
+        passed: results.every((result) => result.status !== "failed" || !meetsThreshold(result.severity, failOn)),
         durationMs: checklist.ms
       };
       const sections = renderReportSections(report, { reportOn: REPORT_ON });
@@ -1617,7 +1624,7 @@ ${violations.map((violation) => `- ${violation}`).join("\n")}`);
     print(
       verdictAt,
       formatRunVerdict({
-        kitThresholds: [{ kitName: kit.name, failOn: FAIL_ON }],
+        kitThresholds: [{ kitName: kit.name, failOn }],
         missingKitCount: 0,
         passed,
         withheld: void 0
@@ -1631,13 +1638,14 @@ ${violations.map((violation) => `- ${violation}`).join("\n")}`);
           ...kit.origin !== void 0 && { origin: kit.origin },
           ...kit.compiledWith !== void 0 && { compiledWith: kit.compiledWith },
           entries,
-          failOn: FAIL_ON,
+          failOn,
           reportOn: REPORT_ON
         }
       ],
-      { detail: "full" }
+      // rdy echoes the threshold at the top level only when the flag was given.
+      { detail: "full", ...failOn !== FAIL_ON && { failOn } }
     );
-    return { exit, exitAt: verdictAt, json: indentJson(json), lines, steps: verdictAt };
+    return { checkSteps, command, exit, exitAt: verdictAt, json: indentJson(json), lines, steps: verdictAt };
   }
   function evaluateChecklist(checklist, env, stepBefore) {
     const evaluated = [];
