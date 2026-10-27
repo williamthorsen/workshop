@@ -1749,37 +1749,26 @@
       }
       .features {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: 1fr 1fr;
         gap: 14px;
-        flex: 1;
-        min-height: 0;
       }
       .features .card {
-        padding: 18px 20px 20px;
-        gap: 10px;
-      }
-      .features h3 {
-        font-size: 23px;
+        padding: 16px 20px;
+        gap: 6px;
       }
       .features p {
-        font-size: 17.5px;
+        font-size: 18px;
         color: var(--ink-2);
         line-height: 1.35;
       }
-      .start {
-        margin-top: 30px;
-        display: grid;
-        grid-template-columns: 1fr auto;
-        gap: 20px;
-        align-items: end;
-      }
       .cmd-list {
+        flex: 1;
         list-style: none;
         margin: 0;
-        padding: 18px 24px;
+        padding: 20px 28px;
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        justify-content: space-evenly;
         counter-reset: cmd;
         background: var(--term);
         color: var(--term-ink);
@@ -1787,10 +1776,10 @@
       }
       .cmd-list li {
         display: grid;
-        grid-template-columns: 24px 400px 1fr;
+        grid-template-columns: 24px 420px 1fr;
         align-items: baseline;
         gap: 14px;
-        font-size: 17px;
+        font-size: 18px;
         line-height: 1.3;
       }
       .cmd-list li::before {
@@ -1800,8 +1789,7 @@
         color: var(--term-dim);
       }
       .cmd-list code {
-        font-size: 19px;
-        font-weight: 500;
+        font: 500 16px/24px var(--mono);
       }
       .cmd-list .what {
         color: var(--term-dim);
@@ -1813,14 +1801,12 @@
       }
       .s-end .links {
         display: flex;
-        flex-direction: column;
-        gap: 8px;
-        font-size: 17px;
+        justify-content: space-between;
+        font-size: 18px;
         color: var(--ink-2);
-        padding-bottom: 6px;
       }
       .s-end .links a {
-        font: 500 17px var(--mono);
+        font: 500 18px var(--mono);
       }
       .s-end .links code {
         color: var(--ink);
@@ -3166,48 +3152,46 @@
             <!-- 13 · Close -->
             <section class="s-end" data-title="ReadyUp">
               <div class="slide">
-                <h2>ReadyUp: checklists that run</h2>
+                <h2>Start with four commands</h2>
                 <div class="features">
                   <div class="card">
-                    <h3>Easy to write</h3>
-                    <p>A check is a claim, a test, and a fix, in TypeScript next to the code it checks.</p>
+                    <h3>A check is a few lines of TypeScript</h3>
+                    <p>A name, a test, and the fix to show when it fails.</p>
                   </div>
                   <div class="card">
-                    <h3>Runnable from anywhere</h3>
-                    <p>One command on a laptop, in CI, and against a kit that a package or a repository publishes.</p>
+                    <h3>One command runs it anywhere</h3>
+                    <p>On a laptop, in CI, or from a kit that a package or a repository publishes.</p>
                   </div>
                   <div class="card">
-                    <h3>Collections of checklists</h3>
-                    <p>Kits hold checklists, checklists hold checks, and a check can have checks beneath it.</p>
+                    <h3>Checks group into checklists and kits</h3>
+                    <p>A kit is one file, and a check can hold checks of its own.</p>
                   </div>
                   <div class="card">
-                    <h3>Agent-friendly</h3>
-                    <p>An exit code for a pipeline, and the whole run as one JSON document for a script or an agent.</p>
+                    <h3>The result is an exit code and a JSON report</h3>
+                    <p>A pipeline gates on the exit code, and a script or an agent reads the JSON.</p>
                   </div>
                 </div>
-                <div class="start">
-                  <ol class="cmd-list">
-                    <li>
-                      <code>pnpm add --save-dev readyup esbuild</code
-                      ><span class="what">Node 24 or later; esbuild compiles the kits</span>
-                    </li>
-                    <li>
-                      <code>rdy init</code
-                      ><span class="what">writes <code>.config/readyup.config.ts</code> and the starter kit</span>
-                    </li>
-                    <li><code>rdy compile</code><span class="what">bundles the kit</span></li>
-                    <li><code>rdy run</code><span class="what">runs it, on a laptop or in CI</span></li>
-                  </ol>
-                  <p class="links">
-                    <a href="https://github.com/williamthorsen/workshop/tree/main/packages/readyup#readme"
-                      >github.com/williamthorsen/workshop</a
-                    >
-                    <span
-                      ><code>packages/readyup</code> · also on npm as
-                      <a href="https://www.npmjs.com/package/readyup"><code>readyup</code></a></span
-                    >
-                  </p>
-                </div>
+                <ol class="cmd-list">
+                  <li>
+                    <code>pnpm add --save-dev readyup esbuild</code
+                    ><span class="what">Node 24 or later; esbuild compiles the kits</span>
+                  </li>
+                  <li>
+                    <code>rdy init</code
+                    ><span class="what">writes <code>.config/readyup.config.ts</code> and the starter kit</span>
+                  </li>
+                  <li><code>rdy compile</code><span class="what">bundles the kit</span></li>
+                  <li><code>rdy run</code><span class="what">runs it, on a laptop or in CI</span></li>
+                </ol>
+                <p class="links">
+                  <a href="https://github.com/williamthorsen/workshop/tree/main/packages/readyup#readme"
+                    >github.com/williamthorsen/workshop</a
+                  >
+                  <span
+                    ><code>packages/readyup</code> · also on npm as
+                    <a href="https://www.npmjs.com/package/readyup"><code>readyup</code></a></span
+                  >
+                </p>
               </div>
               <aside class="notes">
                 <p>
