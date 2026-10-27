@@ -134,7 +134,7 @@
       .ctl:focus-visible,
       .dot:focus-visible,
       .switch input:focus-visible,
-      .term-tab .tab:focus-visible,
+      .seg input:focus-visible + span,
       .reveal a:focus-visible {
         outline: 3px solid var(--accent);
         outline-offset: 2px;
@@ -1412,6 +1412,34 @@
       .s-anatomy.is-final .cap[data-capfor='6'] {
         opacity: 1;
       } /* Kit demo slides: the terminal on the left, the environment and the source on the right */
+      .cmdrow {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 6px 14px;
+        border-bottom: 1px solid var(--line);
+        background: var(--paper);
+        min-height: 44px;
+      }
+      .cmdrow .cmd {
+        font: 500 15px var(--mono);
+        color: var(--ink);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        min-width: 0;
+        flex: 1;
+      }
+      .cmdrow .opts {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: none;
+      }
+      .cmdrow .lbl {
+        font: 500 12px var(--mono);
+        color: var(--ink-2);
+      }
       .kit {
         flex: 1;
         min-height: 0;
@@ -1471,6 +1499,114 @@
         accent-color: var(--accent);
         cursor: pointer;
       }
+      .switch.json {
+        padding: 4px 8px;
+        border: 1px solid var(--line);
+        font: 500 14px var(--mono);
+      }
+      .seg {
+        display: flex;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .seg label {
+        cursor: pointer;
+        position: relative;
+      }
+      .seg label + label {
+        border-left: 1px solid var(--line);
+      }
+      .seg input {
+        position: absolute;
+        opacity: 0;
+        width: 1px;
+        height: 1px;
+        margin: 0;
+      }
+      .seg span {
+        display: block;
+        text-align: center;
+        padding: 5px 10px;
+        font: 500 13.5px var(--mono);
+        color: var(--ink);
+      }
+      .seg label:hover span {
+        background: var(--accent-soft);
+      }
+      .seg input:checked + span {
+        background: var(--ink);
+        color: var(--paper);
+      }
+      .seg input:focus-visible + span {
+        outline-offset: -3px;
+      }
+      .srcbox {
+        flex: 1;
+        min-height: 120px;
+        margin: 0;
+        position: relative;
+      }
+      .srcbox .card-head .ctl {
+        margin-left: auto;
+        padding: 2px;
+        width: 26px;
+        height: 24px;
+        border-color: transparent;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .srcbox .card-head .ctl svg {
+        width: 16px;
+        height: 16px;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+      }
+      .srcbox .card-head .ctl .minus,
+      .srcbox .card-head .ctl[aria-pressed='true'] .plus {
+        display: none;
+      }
+      .srcbox .card-head .ctl[aria-pressed='true'] .minus {
+        display: block;
+      }
+      .out.src {
+        white-space: pre;
+        overflow-wrap: normal;
+        font: 13px/18px var(--mono);
+        background: var(--paper);
+        color: var(--ink);
+        padding: 8px 12px;
+        scrollbar-color: auto;
+      }
+      .src .chk {
+        display: inline-block;
+        width: calc(100% + 24px);
+        margin: 0 -12px;
+        padding: 0 12px 0 9px;
+        border-left: 3px solid transparent;
+      }
+      .src .chk.now {
+        background: var(--accent-soft);
+        border-left-color: var(--accent);
+      }
+      .s-kit.src-expanded .srcbox {
+        position: absolute;
+        inset: 0;
+        z-index: 5;
+        box-shadow: 0 16px 40px rgb(20 28 38 / 0.3);
+      }
+      .s-kit.src-expanded .out.src {
+        font: 16px/24px var(--mono);
+        padding: 12px 18px;
+      }
+      .s-kit.src-expanded .src .chk {
+        width: calc(100% + 36px);
+        margin: 0 -18px;
+        padding: 0 18px 0 15px;
+      }
       .term {
         position: relative;
       }
@@ -1501,31 +1637,6 @@
       .no-js .exit .ink-box {
         opacity: 1;
         transform: none;
-      }
-      .term-tab {
-        gap: 18px;
-        padding-block: 0;
-      }
-      .term-tab .tab {
-        appearance: none;
-        background: none;
-        border: 0;
-        border-bottom: 3px solid transparent;
-        padding: 9px 0 6px;
-        font: 500 14px var(--mono);
-        color: var(--ink-2);
-        cursor: pointer;
-      }
-      .term-tab .tab:hover {
-        color: var(--ink);
-        border-bottom-color: var(--line);
-      }
-      .term-tab .tab.on {
-        color: var(--ink);
-        border-bottom-color: var(--accent);
-      }
-      .term-tab .tab:focus-visible {
-        outline-offset: -3px;
       }
       .out .dim,
       .out .sgr-dim,
@@ -2203,16 +2314,93 @@
                 <h2>The onboarding kit: Am I set up to use this repo?</h2>
                 <div class="kit">
                   <figure class="card term">
-                    <figcaption class="card-head term-tab">
-                      <button type="button" class="tab on" data-view="run" aria-pressed="true">rdy run</button>
-                      <button type="button" class="tab" data-view="json" aria-pressed="false">rdy run --json</button>
-                    </figcaption>
+                    <figcaption class="cmdrow"></figcaption>
                     <pre class="out" data-view="run"><code></code></pre>
                     <pre class="out json" data-view="json" hidden><code></code></pre>
                     <div class="exit"><span class="exit-of"></span><span class="ink-box"></span></div>
                   </figure>
                   <div class="side">
                     <div class="panel env"></div>
+                    <figure class="card srcbox">
+                      <figcaption class="card-head">
+                        <span>onboarding.ts</span
+                        ><button
+                          type="button"
+                          class="ctl expand"
+                          aria-pressed="false"
+                          aria-label="Zoom in on the source"
+                          title="Zoom in"
+                        >
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="10.5" cy="10.5" r="6.5" />
+                            <path d="M15.5 15.5L21 21M7.5 10.5h6M10.5 7.5v6" class="plus" />
+                            <path d="M15.5 15.5L21 21M7.5 10.5h6" class="minus" />
+                          </svg>
+                        </button>
+                      </figcaption>
+                      <pre
+                        class="out src"
+                      ><code><span class="k">import</span> { existsSync, readFileSync } <span class="k">from</span> <span class="s">'node:fs'</span>;
+<span class="k">import</span> { defineRdyKit } <span class="k">from</span> <span class="s">'readyup'</span>;
+<span class="k">import</span> { canReach, dockerInfo, envOf, hasHook, nodeSatisfies } <span class="k">from</span> <span class="s">'./lib/machine.ts'</span>;
+
+<span class="k">const</span> REQUIRED_KEYS = [<span class="s">'DATABASE_URL'</span>, <span class="s">'SESSION_SECRET'</span>, <span class="s">'STRIPE_KEY'</span>];
+
+<span class="k">export default</span> defineRdyKit({
+  checklists: [
+    {
+      name: <span class="s">'onboarding'</span>,
+      checks: [
+        {
+<span class="chk" data-check="0">          name: <span class="s">'Dependencies are installed'</span>,</span>
+          check: () =&gt; existsSync(<span class="s">'node_modules'</span>) || { ok: <span class="k">false</span>, detail: <span class="s">'node_modules is missing'</span> },
+          fix: <span class="s">'Run pnpm install'</span>,
+        },
+        {
+<span class="chk" data-check="1">          name: <span class="s">'.env is present'</span>,</span>
+          check: () =&gt; existsSync(<span class="s">'.env'</span>) || { ok: <span class="k">false</span>, detail: <span class="s">'.env is missing'</span> },
+          fix: <span class="s">'Copy .env.example to .env, then set each value'</span>,
+          checks: [
+            {
+<span class="chk" data-check="2">              name: <span class="s">'.env sets every required key'</span>,</span>
+              check: () =&gt; {
+                <span class="k">const</span> env = envOf(<span class="s">'.env'</span>);
+                <span class="k">const</span> missing = REQUIRED_KEYS.filter((key) =&gt; !env[key]);
+                <span class="k">if</span> (missing.length === 0) <span class="k">return true</span>;
+                <span class="k">return</span> { ok: <span class="k">false</span>, detail: <span class="s">`${missing.join(', ')} is unset`</span> };
+              },
+              fix: <span class="s">'Set each key named above in .env; .env.example lists the keys'</span>,
+            },
+          ],
+        },
+        {
+<span class="chk" data-check="3">          name: <span class="s">'VPN is connected'</span>,</span>
+          check: <span class="k">async</span> () =&gt; (<span class="k">await</span> canReach(<span class="s">'10.0.0.1'</span>)) || { ok: <span class="k">false</span>, detail: <span class="s">'No route to 10.0.0.0/8'</span> },
+          fix: <span class="s">'Connect to the office VPN, then run the checks again'</span>,
+        },
+        {
+<span class="chk" data-check="4">          name: <span class="s">'Docker daemon is running'</span>,</span>
+          severity: <span class="s">'warn'</span>,
+          check: () =&gt; dockerInfo().status === 0,
+          fix: <span class="s">'Start Docker Desktop; the database runs in a container'</span>,
+        },
+        {
+<span class="chk" data-check="5">          name: <span class="s">'Node version matches .nvmrc'</span>,</span>
+          severity: <span class="s">'warn'</span>,
+          check: () =&gt; nodeSatisfies(readFileSync(<span class="s">'.nvmrc'</span>, <span class="s">'utf8'</span>).trim()),
+          fix: <span class="s">'Run nvm use, which reads .nvmrc'</span>,
+        },
+        {
+<span class="chk" data-check="6">          name: <span class="s">'Git hooks are installed'</span>,</span>
+          severity: <span class="s">'recommend'</span>,
+          check: () =&gt; hasHook(<span class="s">'pre-commit'</span>) || { ok: <span class="k">false</span>, detail: <span class="s">'.git/hooks/pre-commit is missing'</span> },
+          fix: <span class="s">'Run pnpm lefthook install'</span>,
+        },
+      ],
+    },
+  ],
+});</code></pre>
+                    </figure>
                   </div>
                 </div>
                 <div class="steps"></div>
@@ -2238,16 +2426,79 @@
                 <h2>The preflight kit: Is the app ready to launch?</h2>
                 <div class="kit">
                   <figure class="card term">
-                    <figcaption class="card-head term-tab">
-                      <button type="button" class="tab on" data-view="run" aria-pressed="true">rdy run</button>
-                      <button type="button" class="tab" data-view="json" aria-pressed="false">rdy run --json</button>
-                    </figcaption>
+                    <figcaption class="cmdrow"></figcaption>
                     <pre class="out" data-view="run"><code></code></pre>
                     <pre class="out json" data-view="json" hidden><code></code></pre>
                     <div class="exit"><span class="exit-of"></span><span class="ink-box"></span></div>
                   </figure>
                   <div class="side">
                     <div class="panel env"></div>
+                    <figure class="card srcbox">
+                      <figcaption class="card-head">
+                        <span>preflight.ts</span
+                        ><button
+                          type="button"
+                          class="ctl expand"
+                          aria-pressed="false"
+                          aria-label="Zoom in on the source"
+                          title="Zoom in"
+                        >
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="10.5" cy="10.5" r="6.5" />
+                            <path d="M15.5 15.5L21 21M7.5 10.5h6M10.5 7.5v6" class="plus" />
+                            <path d="M15.5 15.5L21 21M7.5 10.5h6" class="minus" />
+                          </svg>
+                        </button>
+                      </figcaption>
+                      <pre
+                        class="out src"
+                      ><code><span class="k">import</span> { spawnSync } <span class="k">from</span> <span class="s">'node:child_process'</span>;
+<span class="k">import</span> { defineRdyKit } <span class="k">from</span> <span class="s">'readyup'</span>;
+<span class="k">import</span> { pendingMigrations, pgAccepts, portIsFree } <span class="k">from</span> <span class="s">'./lib/services.ts'</span>;
+
+<span class="k">export default</span> defineRdyKit({
+  checklists: [
+    {
+      name: <span class="s">'preflight'</span>,
+      checks: [
+        {
+<span class="chk" data-check="0">          name: <span class="s">'Docker daemon is running'</span>,</span>
+          check: () =&gt; spawnSync(<span class="s">'docker'</span>, [<span class="s">'info'</span>]).status === 0,
+          fix: <span class="s">'Start Docker, then run the checks again'</span>,
+        },
+        {
+<span class="chk" data-check="1">          name: <span class="s">'Database accepts connections'</span>,</span>
+          check: <span class="k">async</span> () =&gt; (<span class="k">await</span> pgAccepts(5432)) || { ok: <span class="k">false</span>, detail: <span class="s">'ECONNREFUSED 127.0.0.1:5432'</span> },
+          fix: <span class="s">'Run pnpm db:up, which starts the Postgres container'</span>,
+          checks: [
+            {
+<span class="chk" data-check="2">              name: <span class="s">'Migrations are applied'</span>,</span>
+              check: <span class="k">async</span> () =&gt; {
+                <span class="k">const</span> pending = <span class="k">await</span> pendingMigrations();
+                <span class="k">if</span> (pending.length === 0) <span class="k">return true</span>;
+                <span class="k">return</span> { ok: <span class="k">false</span>, detail: <span class="s">`${pending.length} migrations pending: ${pending.join(', ')}`</span> };
+              },
+              fix: <span class="s">'Run pnpm db:migrate'</span>,
+            },
+          ],
+        },
+        {
+<span class="chk" data-check="3">          name: <span class="s">'Port 3000 is free'</span>,</span>
+          severity: <span class="s">'warn'</span>,
+          check: <span class="k">async</span> () =&gt; (<span class="k">await</span> portIsFree(3000)) || { ok: <span class="k">false</span>, detail: <span class="s">'PID 48122 (node) is listening on 3000'</span> },
+          fix: <span class="s">'Stop the process on port 3000, or set PORT in .env'</span>,
+        },
+        {
+<span class="chk" data-check="4">          name: <span class="s">'NODE_ENV is set'</span>,</span>
+          severity: <span class="s">'recommend'</span>,
+          check: () =&gt; Boolean(process.env.NODE_ENV) || { ok: <span class="k">false</span>, detail: <span class="s">'NODE_ENV is unset'</span> },
+          fix: <span class="s">'Set NODE_ENV=development in .env'</span>,
+        },
+      ],
+    },
+  ],
+});</code></pre>
+                    </figure>
                   </div>
                 </div>
                 <div class="steps"></div>
@@ -2278,16 +2529,85 @@
                 <h2>The adoption kit: Are the latest features being used?</h2>
                 <div class="kit">
                   <figure class="card term">
-                    <figcaption class="card-head term-tab">
-                      <button type="button" class="tab on" data-view="run" aria-pressed="true">rdy run</button>
-                      <button type="button" class="tab" data-view="json" aria-pressed="false">rdy run --json</button>
-                    </figcaption>
+                    <figcaption class="cmdrow"></figcaption>
                     <pre class="out" data-view="run"><code></code></pre>
                     <pre class="out json" data-view="json" hidden><code></code></pre>
                     <div class="exit"><span class="exit-of"></span><span class="ink-box"></span></div>
                   </figure>
                   <div class="side">
                     <div class="panel env"></div>
+                    <figure class="card srcbox">
+                      <figcaption class="card-head">
+                        <span>@acme/ui · .readyup/kits/default.ts</span
+                        ><button
+                          type="button"
+                          class="ctl expand"
+                          aria-pressed="false"
+                          aria-label="Zoom in on the source"
+                          title="Zoom in"
+                        >
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="10.5" cy="10.5" r="6.5" />
+                            <path d="M15.5 15.5L21 21M7.5 10.5h6M10.5 7.5v6" class="plus" />
+                            <path d="M15.5 15.5L21 21M7.5 10.5h6" class="minus" />
+                          </svg>
+                        </button>
+                      </figcaption>
+                      <pre
+                        class="out src"
+                      ><code><span class="c">// Published inside @acme/ui@5: the v5 features, as checks over the consumer's sources</span>
+<span class="k">import</span> { defineRdyKit } <span class="k">from</span> <span class="s">'readyup'</span>;
+<span class="k">import</span> { listImports, listProps } <span class="k">from</span> <span class="s">'./lib/sites.ts'</span>;
+
+<span class="k">export default</span> defineRdyKit({
+  checklists: [
+    {
+      name: <span class="s">'adoption'</span>,
+      checks: [
+        {
+<span class="chk" data-check="0">          name: <span class="s">'Every Button is imported from @acme/ui/button'</span>,</span>
+          id: <span class="s">'acme-ui/button-entry'</span>,
+          severity: <span class="s">'warn'</span>,
+          check: <span class="k">async</span> () =&gt; {
+            <span class="k">const</span> sites = <span class="k">await</span> listImports(<span class="s">'Button'</span>); <span class="c">// every import site: path, line, and the module it imports from</span>
+            <span class="k">return</span> { findings: sites.map((site) =&gt; ({ ...site, reported: site.from === <span class="s">'@acme/ui'</span> })) };
+          },
+          fix: <span class="s">'Import Button from @acme/ui/button at each site above; the root entry pulls in every component'</span>,
+        },
+        {
+<span class="chk" data-check="1">          name: <span class="s">'No Modal passes the removed isOpen prop'</span>,</span>
+          id: <span class="s">'acme-ui/modal-open'</span>,
+          check: <span class="k">async</span> () =&gt; {
+            <span class="k">const</span> sites = <span class="k">await</span> listProps(<span class="s">'Modal'</span>);
+            <span class="k">return</span> { findings: sites.map((site) =&gt; ({ ...site, reported: <span class="s">'isOpen'</span> <span class="k">in</span> site.props })) };
+          },
+          fix: <span class="s">'Rename isOpen to open at each site above; v5 ignores isOpen, so the modal never opens'</span>,
+        },
+        {
+<span class="chk" data-check="2">          name: <span class="s">'Every input is wrapped in a Field'</span>,</span>
+          id: <span class="s">'acme-ui/field-wrapper'</span>,
+          severity: <span class="s">'warn'</span>,
+          check: <span class="k">async</span> () =&gt; {
+            <span class="k">const</span> sites = <span class="k">await</span> listProps(<span class="s">'Input'</span>);
+            <span class="k">return</span> { findings: sites.map((site) =&gt; ({ ...site, reported: site.parent !== <span class="s">'Field'</span> })) };
+          },
+          fix: <span class="s">'Wrap each input above in a Field, which renders the label and the error for it'</span>,
+        },
+        {
+<span class="chk" data-check="3">          name: <span class="s">'No source imports from @acme/ui/legacy'</span>,</span>
+          id: <span class="s">'acme-ui/no-legacy-entry'</span>,
+          severity: <span class="s">'recommend'</span>,
+          check: <span class="k">async</span> () =&gt; {
+            <span class="k">const</span> sites = <span class="k">await</span> listImports(<span class="s">'*'</span>);
+            <span class="k">return</span> { findings: sites.map((site) =&gt; ({ ...site, reported: site.from === <span class="s">'@acme/ui/legacy'</span> })) };
+          },
+          fix: <span class="s">"Import from the component's own entry; @acme/ui/legacy is removed in v6"</span>,
+        },
+      ],
+    },
+  ],
+});</code></pre>
+                    </figure>
                   </div>
                 </div>
                 <div class="steps"></div>
@@ -2318,16 +2638,83 @@
                 <h2>The migration kit: Has this repo adjusted to breaking changes?</h2>
                 <div class="kit">
                   <figure class="card term">
-                    <figcaption class="card-head term-tab">
-                      <button type="button" class="tab on" data-view="run" aria-pressed="true">rdy run</button>
-                      <button type="button" class="tab" data-view="json" aria-pressed="false">rdy run --json</button>
-                    </figcaption>
+                    <figcaption class="cmdrow"></figcaption>
                     <pre class="out" data-view="run"><code></code></pre>
                     <pre class="out json" data-view="json" hidden><code></code></pre>
                     <div class="exit"><span class="exit-of"></span><span class="ink-box"></span></div>
                   </figure>
                   <div class="side">
                     <div class="panel env"></div>
+                    <figure class="card srcbox">
+                      <figcaption class="card-head">
+                        <span>@acme/http-client · .readyup/kits/default.ts</span
+                        ><button
+                          type="button"
+                          class="ctl expand"
+                          aria-pressed="false"
+                          aria-label="Zoom in on the source"
+                          title="Zoom in"
+                        >
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="10.5" cy="10.5" r="6.5" />
+                            <path d="M15.5 15.5L21 21M7.5 10.5h6M10.5 7.5v6" class="plus" />
+                            <path d="M15.5 15.5L21 21M7.5 10.5h6" class="minus" />
+                          </svg>
+                        </button>
+                      </figcaption>
+                      <pre
+                        class="out src"
+                      ><code><span class="c">// Published inside @acme/http-client@3: the breaking changes of v3, as checks over the consumer's sources</span>
+<span class="k">import</span> { defineRdyKit } <span class="k">from</span> <span class="s">'readyup'</span>;
+<span class="k">import</span> { listCalls, listNews, listOptions } <span class="k">from</span> <span class="s">'./lib/sites.ts'</span>;
+
+<span class="k">export default</span> defineRdyKit({
+  checklists: [
+    {
+      name: <span class="s">'migration'</span>,
+      checks: [
+        {
+<span class="chk" data-check="0">          name: <span class="s">'Every client is created with createClient'</span>,</span>
+          id: <span class="s">'acme-http/create-client'</span>,
+          check: <span class="k">async</span> () =&gt; {
+            <span class="k">const</span> sites = <span class="k">await</span> listNews(<span class="s">'HttpClient'</span>); <span class="c">// every `new HttpClient(…)` and `createClient(…)` site</span>
+            <span class="k">return</span> { findings: sites.map((site) =&gt; ({ ...site, reported: site.form === <span class="s">'new'</span> })) };
+          },
+          fix: <span class="s">'Replace new HttpClient(options) with createClient(options) at each site above; the constructor is removed in v3'</span>,
+        },
+        {
+<span class="chk" data-check="1">          name: <span class="s">'No request passes the removed timeout option'</span>,</span>
+          id: <span class="s">'acme-http/no-timeout-option'</span>,
+          check: <span class="k">async</span> () =&gt; {
+            <span class="k">const</span> sites = <span class="k">await</span> listOptions(<span class="s">'request'</span>);
+            <span class="k">return</span> { findings: sites.map((site) =&gt; ({ ...site, reported: <span class="s">'timeout'</span> <span class="k">in</span> site.options })) };
+          },
+          fix: <span class="s">'Pass signal: AbortSignal.timeout(ms) instead; v3 ignores timeout'</span>,
+        },
+        {
+<span class="chk" data-check="2">          name: <span class="s">'No call reads response.rawBody'</span>,</span>
+          id: <span class="s">'acme-http/no-raw-body'</span>,
+          check: <span class="k">async</span> () =&gt; {
+            <span class="k">const</span> sites = <span class="k">await</span> listCalls(<span class="s">'request'</span>);
+            <span class="k">return</span> { findings: sites.map((site) =&gt; ({ ...site, reported: site.reads.includes(<span class="s">'rawBody'</span>) })) };
+          },
+          fix: <span class="s">'Read the body through response.json() or response.text(); rawBody is removed in v3'</span>,
+        },
+        {
+<span class="chk" data-check="3">          name: <span class="s">'Retries are configured on the client, not per call'</span>,</span>
+          id: <span class="s">'acme-http/client-retries'</span>,
+          severity: <span class="s">'recommend'</span>,
+          check: <span class="k">async</span> () =&gt; {
+            <span class="k">const</span> sites = <span class="k">await</span> listOptions(<span class="s">'request'</span>);
+            <span class="k">return</span> { findings: sites.map((site) =&gt; ({ ...site, reported: <span class="s">'retries'</span> <span class="k">in</span> site.options })) };
+          },
+          fix: <span class="s">'Move retries to createClient; per-call retries are removed in v4'</span>,
+        },
+      ],
+    },
+  ],
+});</code></pre>
+                    </figure>
                   </div>
                 </div>
                 <div class="steps"></div>
@@ -2357,16 +2744,88 @@
                 <h2>The IT diagnostic kit: Is this machine correctly configured?</h2>
                 <div class="kit">
                   <figure class="card term">
-                    <figcaption class="card-head term-tab">
-                      <button type="button" class="tab on" data-view="run" aria-pressed="true">rdy run</button>
-                      <button type="button" class="tab" data-view="json" aria-pressed="false">rdy run --json</button>
-                    </figcaption>
+                    <figcaption class="cmdrow"></figcaption>
                     <pre class="out" data-view="run"><code></code></pre>
                     <pre class="out json" data-view="json" hidden><code></code></pre>
                     <div class="exit"><span class="exit-of"></span><span class="ink-box"></span></div>
                   </figure>
                   <div class="side">
                     <div class="panel env"></div>
+                    <figure class="card srcbox">
+                      <figcaption class="card-head">
+                        <span>github:acme/diagnose · .readyup/kits/default.ts</span
+                        ><button
+                          type="button"
+                          class="ctl expand"
+                          aria-pressed="false"
+                          aria-label="Zoom in on the source"
+                          title="Zoom in"
+                        >
+                          <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="10.5" cy="10.5" r="6.5" />
+                            <path d="M15.5 15.5L21 21M7.5 10.5h6M10.5 7.5v6" class="plus" />
+                            <path d="M15.5 15.5L21 21M7.5 10.5h6" class="minus" />
+                          </svg>
+                        </button>
+                      </figcaption>
+                      <pre
+                        class="out src"
+                      ><code><span class="c">// Committed in the IT team's repository; any machine runs it with rdy run --from github:acme/diagnose</span>
+<span class="k">import</span> { defineRdyKit } <span class="k">from</span> <span class="s">'readyup'</span>;
+<span class="k">import</span> { fileVault, macosVersion, outdatedFormulae, profileNamed, toolVersion } <span class="k">from</span> <span class="s">'./lib/mac.ts'</span>;
+
+<span class="k">export default</span> defineRdyKit({
+  checklists: [
+    {
+      name: <span class="s">'machine'</span>,
+      checks: [
+        {
+<span class="chk" data-check="0">          name: <span class="s">'macOS is 15 or later'</span>,</span>
+          check: () =&gt; {
+            <span class="k">const</span> version = macosVersion();
+            <span class="k">return</span> version.major &gt;= 15 ? { ok: <span class="k">true</span>, detail: <span class="s">`macOS ${version}`</span> } : { ok: <span class="k">false</span>, detail: <span class="s">`macOS ${version}`</span> };
+          },
+          fix: <span class="s">'Update macOS from System Settings › General › Software Update'</span>,
+        },
+        {
+<span class="chk" data-check="1">          name: <span class="s">'FileVault is on'</span>,</span>
+          check: () =&gt; fileVault() || { ok: <span class="k">false</span>, detail: <span class="s">'FileVault is off'</span> },
+          fix: <span class="s">'Turn on FileVault in System Settings › Privacy &amp; Security'</span>,
+        },
+        {
+<span class="chk" data-check="2">          name: <span class="s">'Company VPN profile is installed'</span>,</span>
+          check: () =&gt; profileNamed(<span class="s">'Acme VPN'</span>) || { ok: <span class="k">false</span>, detail: <span class="s">'No configuration profile named "Acme VPN"'</span> },
+          fix: <span class="s">'Install the profile from it.acme.internal/vpn'</span>,
+        },
+        {
+<span class="chk" data-check="3">          name: <span class="s">'Managed Chrome is installed'</span>,</span>
+          severity: <span class="s">'warn'</span>,
+          check: () =&gt; existsSync(<span class="s">'/Applications/Google Chrome.app'</span>) || { ok: <span class="k">false</span>, detail: <span class="s">'Google Chrome is not in /Applications'</span> },
+          fix: <span class="s">'Install Chrome from Self Service'</span>,
+        },
+        {
+<span class="chk" data-check="4">          name: <span class="s">'Node 24 is installed through asdf'</span>,</span>
+          severity: <span class="s">'warn'</span>,
+          check: () =&gt; {
+            <span class="k">const</span> node = toolVersion(<span class="s">'nodejs'</span>);
+            <span class="k">return</span> node.startsWith(<span class="s">'24.'</span>) ? { ok: <span class="k">true</span>, detail: <span class="s">`node ${node}`</span> } : { ok: <span class="k">false</span>, detail: <span class="s">`.tool-versions names node ${node}`</span> };
+          },
+          fix: <span class="s">'Run asdf install nodejs 24.11.0, then asdf set --home nodejs 24.11.0'</span>,
+        },
+        {
+<span class="chk" data-check="5">          name: <span class="s">'Homebrew is current'</span>,</span>
+          severity: <span class="s">'recommend'</span>,
+          check: () =&gt; {
+            <span class="k">const</span> outdated = outdatedFormulae();
+            <span class="k">return</span> outdated.length === 0 || { ok: <span class="k">false</span>, detail: <span class="s">`${outdated.length} formulae are outdated`</span> };
+          },
+          fix: <span class="s">'Run brew upgrade'</span>,
+        },
+      ],
+    },
+  ],
+});</code></pre>
+                    </figure>
                   </div>
                 </div>
                 <div class="steps"></div>
@@ -3163,11 +3622,13 @@
           deckEl.focus();
         }
 
-        // Mounts a kit page: builds its switches and fragments once, then redraws it whenever a switch or a tab changes
+        // Mounts a kit page: builds its controls and fragments once, then redraws it whenever a control changes
         function mountKit(slide) {
           var id = slide.getAttribute('data-kit');
           var kit = ReadyupDeck.KITS[id];
           var env = {};
+          var options = { failOn: 'error', json: false };
+          var cmdrow = slide.querySelector('.cmdrow');
           var envBox = slide.querySelector('.env');
           var panes = {
             run: slide.querySelector('.out[data-view="run"]'),
@@ -3175,8 +3636,44 @@
           };
           var stepsEl = slide.querySelector('.steps');
           var exitBox = slide.querySelector('.exit .ink-box');
-          var tabs = slide.querySelectorAll('.term-tab .tab');
-          var view = 'run';
+          var zoom = slide.querySelector('.srcbox .expand');
+
+          cmdrow.innerHTML =
+            '<span class="cmd"></span><span class="opts">' +
+            '<label class="switch json"><input type="checkbox" id="' +
+            id +
+            '-json"> --json</label><span class="lbl">--fail-on</span><span class="seg">' +
+            ['error', 'warn', 'recommend']
+              .map(function (level) {
+                return (
+                  '<label><input type="radio" name="' +
+                  id +
+                  '-failon" value="' +
+                  level +
+                  '"' +
+                  (level === options.failOn ? ' checked' : '') +
+                  '><span>' +
+                  level +
+                  '</span></label>'
+                );
+              })
+              .join('') +
+            '</span></span>';
+          cmdrow.querySelector('.cmd').textContent = '$ ' + kit.command;
+
+          var jsonInput = cmdrow.querySelector('input[type="checkbox"]');
+          jsonInput.addEventListener('change', function () {
+            options.json = jsonInput.checked;
+            draw();
+            returnFocus(jsonInput);
+          });
+          cmdrow.querySelectorAll('input[type="radio"]').forEach(function (input) {
+            input.addEventListener('change', function () {
+              options.failOn = input.value;
+              draw();
+              returnFocus(input);
+            });
+          });
 
           envBox.innerHTML = '<h3>Environment</h3>';
           kit.conditions.forEach(function (c) {
@@ -3197,20 +3694,17 @@
             envBox.appendChild(label);
           });
 
-          tabs.forEach(function (tab) {
-            tab.addEventListener('click', function () {
-              view = tab.getAttribute('data-view');
-              tabs.forEach(function (t) {
-                t.classList.toggle('on', t === tab);
-                t.setAttribute('aria-pressed', String(t === tab));
-              });
-              slide.setAttribute('data-view', view);
-              draw();
-              returnFocus(tab);
-            });
+          zoom.addEventListener('click', function () {
+            var open = !slide.classList.contains('src-expanded');
+            slide.classList.toggle('src-expanded', open);
+            zoom.setAttribute('aria-pressed', String(open));
+            zoom.setAttribute('aria-label', open ? 'Zoom out of the source' : 'Zoom in on the source');
+            zoom.title = open ? 'Zoom out' : 'Zoom in';
+            markSource(slide);
+            returnFocus(zoom);
           });
 
-          // The step count follows the model's shape rather than the environment, so the fragments are built once
+          // The step count follows the model's shape rather than the controls, so the fragments are built once
           var html = '';
           for (var i = 1; i <= ReadyupDeck.renderKit(kit, env).steps; i++) {
             html += '<span class="fragment step" data-fragment-index="' + i + '"></span>';
@@ -3218,17 +3712,19 @@
           stepsEl.innerHTML = html;
 
           function draw() {
-            var r = ReadyupDeck.renderKit(kit, env);
+            var r = ReadyupDeck.renderKit(kit, env, options);
             panes.run.querySelector('code').innerHTML = r.lines
               .map(function (l) {
                 return '<span class="ln" data-at="' + l.at + '">' + lineHtml(l) + '\n</span>';
               })
               .join('');
-            panes.json.querySelector('code').innerHTML = highlightJson(r.json);
-            panes.run.hidden = view !== 'run';
-            panes.json.hidden = view !== 'json';
+            panes.json.querySelector('code').innerHTML =
+              '<span class="dim">' + esc('$ ' + r.command) + '</span>\n' + highlightJson(r.json);
+            panes.run.hidden = options.json;
+            panes.json.hidden = !options.json;
             exitBox.textContent = 'exit ' + r.exit;
             exitBox.setAttribute('data-at', r.exitAt);
+            slide.setAttribute('data-check-steps', r.checkSteps.join(' '));
             setStep(slide);
           }
           draw();
@@ -3247,6 +3743,7 @@
             stepped[i].classList.toggle('now', at === step);
           }
           if (slide.classList.contains('s-sources')) scrollSources(step);
+          if (slide.hasAttribute('data-check-steps')) markSource(slide);
           scrollToStep(slide);
         }
 
@@ -3359,6 +3856,24 @@
         // Returns a terminal line as HTML: rdy's output with its colour, or the deck's own line dimmed
         function lineHtml(line) {
           return line.printed ? ReadyupDeck.toHtml(line.text) : '<span class="dim">' + esc(line.text) + '</span>';
+        }
+
+        // Marks the check that a kit page's current step evaluates in its source, and scrolls the viewer to it
+        function markSource(slide) {
+          var pre = slide.querySelector('.out.src');
+          if (!pre) return;
+          var step = Number(slide.getAttribute('data-step'));
+          var index = slide.getAttribute('data-check-steps').split(' ').map(Number).indexOf(step);
+          var target = null;
+          pre.querySelectorAll('.chk').forEach(function (el) {
+            var hit = Number(el.getAttribute('data-check')) === index;
+            el.classList.toggle('now', hit);
+            if (hit) target = el;
+          });
+          if (!target) return;
+          // Measure in layout offsets, because reveal's scale transform distorts client rects
+          var top = target.offsetTop - pre.offsetTop - pre.clientHeight / 2 + target.offsetHeight / 2;
+          pre.scrollTo({ top: Math.max(0, top), behavior: reduce ? 'auto' : 'smooth' });
         }
 
         // Moves focus from a used control back to the deck, so that the arrow keys keep stepping
