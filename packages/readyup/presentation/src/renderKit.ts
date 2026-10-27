@@ -9,7 +9,7 @@ import { meetsThreshold } from '../../src/severity/meetsThreshold.ts';
 import { DEPLOY_KIT } from './deployKit.ts';
 import { CAPTURED_PREFLIGHT, type ChecklistModel, type CheckModel, type KitModel } from './kits.ts';
 
-/** The failure threshold of every run that the deck shows, which is readyup's default. */
+/** readyup's default failure threshold, at which a run's command omits `--fail-on`. */
 const FAIL_ON: Severity = 'error';
 
 /** The reporting threshold of every run that the deck shows, which is readyup's default. */
@@ -25,13 +25,26 @@ export interface TerminalLine {
   text: string;
 }
 
-/** A kit rendered in one environment, each part placed at the step that reveals it. */
+/**
+ * A kit rendered in one environment, each part placed at the step that reveals it.
+ *
+ * `command` is the kit's command with the flags that produced the run, and `checkSteps` holds the step of each check
+ * in tree order across the kit's checklists.
+ */
 export interface RenderedKit {
+  checkSteps: number[];
+  command: string;
   exit: 0 | 1;
   exitAt: number;
   json: string;
   lines: TerminalLine[];
   steps: number;
+}
+
+/** The flags of a kit's run that a kit page sets; each takes readyup's default when absent. */
+export interface RenderOptions {
+  failOn?: Severity;
+  json?: boolean;
 }
 
 /** A check's outcome: the severity at which it failed, or what else became of it. */
@@ -48,13 +61,13 @@ interface EvaluatedCheck {
  *
  * Each check takes one step, each checklist's fix recap and count line one more, and the verdict the last.
  */
-export function renderKit(kit: KitModel, env: Environment): RenderedKit {
+export function renderKit(kit: KitModel, env: Environment, options: RenderOptions = {}): RenderedKit {
   const previousColor = getColor();
   const previousStyle = getStyle();
   setStyle('rich');
   setColor(true);
   try {
-    return composeKit(kit, env);
+    return composeKit(kit, env, options);
   } finally {
     setStyle(previousStyle);
     setColor(previousColor);
@@ -73,6 +86,14 @@ export function renderTitleRun(): TerminalLine[] {
 }
 
 // region | Helpers
+
+/**
+ * Returns a kit's command with the flags in `options`, in the form `rdy run {kit} --fail-on={level} --json`; the
+ * default threshold adds no flag.
+ */
+function buildCommand(kit: KitModel, { failOn = FAIL_ON, json = false }: RenderOptions): string {
+  return kit.command + (failOn === FAIL_ON ? '' : ` --fail-on=${failOn}`) + (json ? ' --json' : '');
+}
 
 /** Returns the environment in which every condition of `kit` takes its declared default. */
 function buildDefaultEnvironment(kit: KitModel): Environment {
@@ -119,9 +140,12 @@ function buildResult(check: CheckModel, depth: number, status: Status): RdyResul
 }
 
 /** Composes a kit's run block by block, as `rdy run` writes it after the command, with the deck's steps. */
-function composeKit(kit: KitModel, env: Environment): RenderedKit {
+function composeKit(kit: KitModel, env: Environment, options: RenderOptions): RenderedKit {
   const layout = getLayout();
-  const lines: TerminalLine[] = [{ at: 0, printed: false, text: `$ ${kit.command}` }];
+  const failOn = options.failOn ?? FAIL_ON;
+  const command = buildCommand(kit, options);
+  const lines: TerminalLine[] = [{ at: 0, printed: false, text: `$ ${command}` }];
+  const checkSteps: number[] = [];
   const entries: Array<{ name: string; report: RdyReport }> = [];
   const summaryRows: SummaryRow[] = [];
   let step = 0;
@@ -134,6 +158,7 @@ function composeKit(kit: KitModel, env: Environment): RenderedKit {
   for (const [index, checklist] of kit.checklists.entries()) {
     const checks = evaluateChecklist(checklist, env, step);
     step += checks.length;
+    checkSteps.push(...checks.map(({ at }) => at));
     const headAt = index === 0 ? 0 : step - checks.length;
     const segments = buildSegments(kit, checklist);
 
@@ -143,7 +168,7 @@ function composeKit(kit: KitModel, env: Environment): RenderedKit {
     const results = checks.map(({ result }) => result);
     const report: RdyReport = {
       results,
-      passed: results.every((result) => result.status !== 'failed' || !meetsThreshold(result.severity, FAIL_ON)),
+      passed: results.every((result) => result.status !== 'failed' || !meetsThreshold(result.severity, failOn)),
       durationMs: checklist.ms,
     };
     const sections = renderReportSections(report, { reportOn: REPORT_ON });
@@ -171,7 +196,7 @@ function composeKit(kit: KitModel, env: Environment): RenderedKit {
   print(
     verdictAt,
     formatRunVerdict({
-      kitThresholds: [{ kitName: kit.name, failOn: FAIL_ON }],
+      kitThresholds: [{ kitName: kit.name, failOn }],
       missingKitCount: 0,
       passed,
       withheld: undefined,
@@ -186,14 +211,15 @@ function composeKit(kit: KitModel, env: Environment): RenderedKit {
         ...(kit.origin !== undefined && { origin: kit.origin }),
         ...(kit.compiledWith !== undefined && { compiledWith: kit.compiledWith }),
         entries,
-        failOn: FAIL_ON,
+        failOn,
         reportOn: REPORT_ON,
       },
     ],
-    { detail: 'full' },
+    // rdy echoes the threshold at the top level only when the flag was given.
+    { detail: 'full', ...(failOn !== FAIL_ON && { failOn }) },
   );
 
-  return { exit, exitAt: verdictAt, json: indentJson(json), lines, steps: verdictAt };
+  return { checkSteps, command, exit, exitAt: verdictAt, json: indentJson(json), lines, steps: verdictAt };
 }
 
 /**
