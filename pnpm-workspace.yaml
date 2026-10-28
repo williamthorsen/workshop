@@ -1,6 +1,3 @@
-packages:
-  - packages/*
-
 allowBuilds:
   esbuild: true
   lefthook: true
@@ -8,7 +5,7 @@ allowBuilds:
 
 catalog:
   '@vitest/coverage-v8': 5.0.5
-  '@williamthorsen/nmr': 0.52.0
+  '@williamthorsen/nmr': 0.53.0
   '@williamthorsen/toolbelt.atlassian': 0.8.0
   '@williamthorsen/toolbelt.cli': 0.7.0
   '@williamthorsen/toolbelt.errors': 0.9.0
@@ -29,8 +26,6 @@ catalog:
   yaml: 2.9.1
   zod: 4.6.7
 
-savePrefix: ''
-
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - '@williamthorsen/*'
@@ -38,6 +33,11 @@ minimumReleaseAgeExclude:
   - codeassembly-guidance
   - readyup
   - v11y-check
+
+packages:
+  - packages/*
+
+savePrefix: ''
 
 # Refuse a release whose provenance is weaker than that of an earlier release of the same package,
 # which can signal a compromised publisher.
