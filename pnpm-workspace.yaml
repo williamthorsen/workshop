@@ -1,3 +1,6 @@
+# Don't install declared peers: Each demo repository installs demo-tools' aidemo peer itself.
+autoInstallPeers: false
+
 allowBuilds:
   esbuild: true
   lefthook: true
