@@ -1,12 +1,20 @@
+import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { run, type RunEffects } from '../run.ts';
 
 const VERSION = '9.9.9';
 
+const HOME = '/home/demo';
+
 const EFFECTS: RunEffects = {
+  cwd: '/',
+  env: {},
+  homeDir: HOME,
   resolveVersion: () => VERSION,
 };
+
+const AIDEMO_MANIFEST = 'node_modules/@tandryukha/aidemo/package.json';
 
 describe(run, () => {
   describe('help and version', () => {
@@ -16,7 +24,8 @@ describe(run, () => {
       expect(exitCode).toBe(0);
       expect(stderr).toBe('');
       expect(stdout).toContain('Usage: thor-demo [options] <command>');
-      expect(stdout).toContain('Exit codes:');
+      expect(stdout).toMatch(/mcp .*\n.*probe .*\n.*render /);
+      expect(stdout).toContain('Otherwise, the exit code of aidemo');
     });
 
     it('prints the root help when given no arguments', async () => {
@@ -27,11 +36,17 @@ describe(run, () => {
     });
 
     it.each([['--version'], ['-V']])('prints the resolved version on %o', async (flag) => {
-      await expect(run([flag], EFFECTS)).resolves.toStrictEqual({ exitCode: 0, stderr: '', stdout: `${VERSION}\n` });
+      await expect(run([flag], EFFECTS)).resolves.toStrictEqual({
+        exitCode: 0,
+        launch: undefined,
+        stderr: '',
+        stdout: `${VERSION}\n`,
+      });
     });
 
     it('reports a failure to resolve the version as a usage error', async () => {
       const failing: RunEffects = {
+        ...EFFECTS,
         resolveVersion: () => {
           throw new Error('The manifest declares no version.');
         },
@@ -39,23 +54,187 @@ describe(run, () => {
 
       await expect(run(['--version'], failing)).resolves.toStrictEqual({
         exitCode: 2,
+        launch: undefined,
         stderr: "Error: The manifest declares no version.\nTry 'thor-demo --help'.\n",
         stdout: '',
       });
+    });
+
+    it.each([
+      ['render', ['--help']],
+      ['probe', ['-h']],
+      ['render', ['quickstart', '--tts', 'local', '--help']],
+    ])('prints the help of %s for %o without reading any configuration', async (command, args) => {
+      const { exitCode, launch, stdout } = await run([command, ...args], EFFECTS);
+
+      expect(exitCode).toBe(0);
+      expect(launch).toBeUndefined();
+      expect(stdout).toContain(`Usage: thor-demo ${command}`);
+      expect(stdout).toContain('Example:');
+    });
+
+    it.each([['--help'], ['-h']])('prints the help of mcp on %o', async (flag) => {
+      const { exitCode, stdout } = await run(['mcp', flag], EFFECTS);
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('Usage: thor-demo mcp');
+      expect(stdout).toContain('"args": ["mcp"]');
     });
   });
 
   describe('given a bad invocation', () => {
     it.each([
-      { args: ['render'], expected: 'Error: Unknown command: render' },
+      { args: ['nope'], expected: 'Error: Unknown command: nope' },
       { args: ['--bogus'], expected: 'Error: Unknown option: --bogus' },
+      { args: ['render'], expected: 'Error: expects a demo name before any option' },
+      { args: ['probe', '--golden'], expected: 'Error: expects a demo name before any option' },
     ])('exits 2, pointing at the help: $args', async ({ args, expected }) => {
-      const { exitCode, stderr, stdout } = await run(args, EFFECTS);
+      const { exitCode, launch, stderr, stdout } = await run(args, EFFECTS);
 
       expect(exitCode).toBe(2);
+      expect(launch).toBeUndefined();
       expect(stdout).toBe('');
       expect(stderr).toContain(expected);
-      expect(stderr).toContain("Try 'thor-demo --help'.");
+      expect(stderr).toMatch(/Try 'thor-demo( \w+)? --help'\./);
+    });
+
+    it('rejects an argument to mcp', async () => {
+      using tree = createDemoRepo();
+
+      const { exitCode, launch } = await run(['mcp', 'extra'], { ...EFFECTS, cwd: tree.dir });
+
+      expect(exitCode).toBe(2);
+      expect(launch).toBeUndefined();
+    });
+  });
+
+  describe.each([['render'], ['probe']])('%s', (command) => {
+    it('launches the aidemo command on the demo from the repository root', async () => {
+      using tree = createDemoRepo();
+
+      const { exitCode, launch, stderr } = await run([command, 'demos/quickstart', '--tts', 'local'], {
+        ...EFFECTS,
+        cwd: tree.resolve('demos'),
+      });
+
+      expect(exitCode).toBe(0);
+      expect(stderr).toBe('');
+      expect(launch).toStrictEqual({
+        args: [command, tree.resolve('demos/quickstart'), '--tts', 'local'],
+        bin: tree.resolve('node_modules/@tandryukha/aidemo/bin/aidemo.mjs'),
+        cwd: tree.dir,
+        env: {},
+      });
+    });
+
+    it('forwards the arguments after a literal --, help flags included', async () => {
+      using tree = createDemoRepo();
+
+      const { launch } = await run([command, 'quickstart', '--golden', '--', '--help'], { ...EFFECTS, cwd: tree.dir });
+
+      expect(launch?.args).toStrictEqual([command, tree.resolve('demos/quickstart'), '--golden', '--help']);
+    });
+
+    it('lists the demos for an unknown one, as a usage error', async () => {
+      using tree = createDemoRepo();
+
+      const { exitCode, launch, stderr } = await run([command, 'quick'], { ...EFFECTS, cwd: tree.dir });
+
+      expect(exitCode).toBe(2);
+      expect(launch).toBeUndefined();
+      expect(stderr).toContain('unknown demo "quick"; the demos in demos are: quickstart');
+    });
+
+    it('reports a missing configuration with exit 1', async () => {
+      using tree = createTempTree({ 'x/.keep': '' });
+
+      const { exitCode, launch, stderr } = await run([command, 'quickstart'], { ...EFFECTS, cwd: tree.dir });
+
+      expect(exitCode).toBe(1);
+      expect(launch).toBeUndefined();
+      expect(stderr).toMatch(new RegExp(String.raw`^thor-demo ${command}: \.config/thor-demo\.yaml not found`));
+    });
+
+    it('refuses an unsupported aidemo with exit 1', async () => {
+      using tree = createDemoRepo({ aidemoVersion: '0.15.2' });
+
+      const { exitCode, launch, stderr } = await run([command, 'quickstart'], { ...EFFECTS, cwd: tree.dir });
+
+      expect(exitCode).toBe(1);
+      expect(launch).toBeUndefined();
+      expect(stderr).toContain('0.15.2 is installed');
+      expect(stderr).toContain('pnpm add --save-dev @tandryukha/aidemo');
+    });
+  });
+
+  describe('mcp', () => {
+    it('launches aidemo mcp from the repository root and writes nothing to stdout', async () => {
+      using tree = createDemoRepo();
+
+      const { exitCode, launch, stdout } = await run(['mcp'], { ...EFFECTS, cwd: tree.dir });
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toBe('');
+      expect(launch).toMatchObject({ args: ['mcp'], cwd: tree.dir });
+    });
+
+    it('refuses a missing aidemo with exit 1', async () => {
+      using tree = createDemoRepo({ aidemoVersion: false });
+
+      const { exitCode, launch, stderr, stdout } = await run(['mcp'], { ...EFFECTS, cwd: tree.dir });
+
+      expect(exitCode).toBe(1);
+      expect(launch).toBeUndefined();
+      expect(stdout).toBe('');
+      expect(stderr).toMatch(/^thor-demo mcp: @tandryukha\/aidemo is not installed/);
+    });
+  });
+
+  describe('environment', () => {
+    it('passes the declared environment and drops undeclared OpenAI variables', async () => {
+      using tree = createDemoRepo({
+        config: 'aidemo:\n  env:\n    AIDEMO_CHROME_PROFILE: ~/profile\n    OPENAI_BASE_URL: http://local\n',
+      });
+
+      const { launch } = await run(['mcp'], {
+        ...EFFECTS,
+        cwd: tree.dir,
+        env: { OPENAI_API_KEY: 'sk-x', OPENAI_BASE_URL: 'http://remote', PATH: '/bin' },
+      });
+
+      expect(launch?.env).toStrictEqual({
+        AIDEMO_CHROME_PROFILE: `${HOME}/profile`,
+        OPENAI_BASE_URL: 'http://local',
+        PATH: '/bin',
+      });
+    });
+
+    it('reports an invalid configuration with exit 1', async () => {
+      using tree = createDemoRepo({ config: 'aidemo:\n  env:\n    K: ${UNSET}\n' });
+
+      const { exitCode, stderr } = await run(['mcp'], { ...EFFECTS, cwd: tree.dir });
+
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain('aidemo.env.K: UNSET is not set');
     });
   });
 });
+
+// region | Helpers
+
+/** Builds a demo repository with one demo, `quickstart`, and a fake aidemo of the given version, or none for `false`. */
+function createDemoRepo({
+  aidemoVersion = '0.20.0',
+  config = '',
+}: { aidemoVersion?: string | false; config?: string } = {}): TempTree {
+  return createTempTree({
+    '.config/thor-demo.yaml': config,
+    'demos/quickstart/generated/storyboard.json': '{}',
+    'package.json': '{}',
+    ...(aidemoVersion !== false && {
+      [AIDEMO_MANIFEST]: JSON.stringify({ version: aidemoVersion, bin: { aidemo: 'bin/aidemo.mjs' } }),
+    }),
+  });
+}
+
+// endregion | Helpers
