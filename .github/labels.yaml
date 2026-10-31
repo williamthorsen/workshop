@@ -88,6 +88,9 @@
 - name: scope:compositor
   color: 00ff96
   description: ''
+- name: scope:demo-tools
+  color: 00ff96
+  description: ''
 - name: scope:git-tools
   color: 00ff96
   description: ''

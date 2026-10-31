@@ -10,6 +10,7 @@ Open-source utilities by [William Thorsen](https://github.com/williamthorsen).
 | --------------------------------------------- | ------------------------------------------------------------------------------- |
 | [`atlassian-tools`](packages/atlassian-tools) | Work with Jira Cloud from the command line                                      |
 | [`chrome-tools`](packages/chrome-tools)       | Launch and manage Chrome debug sessions                                         |
+| [`demo-tools`](packages/demo-tools)           | Render and archive aidemo demos                                                 |
 | [`git-tools`](packages/git-tools)             | Utilities for working with git                                                  |
 | [`launchd-agent`](packages/launchd-agent)     | Install, replace, restart, inspect, and remove per-user launchd agents on macOS |
 | [`nodejs-tools`](packages/nodejs-tools)       | Inspect Node.js toolchains, prune node_modules, and resolve asdf's node binary  |
