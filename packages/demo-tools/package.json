@@ -1,0 +1,59 @@
+{
+  "name": "@williamthorsen/demo-tools",
+  "version": "0.0.0",
+  "private": false,
+  "description": "Render and archive aidemo demos",
+  "keywords": [
+    "aidemo",
+    "cli",
+    "demo",
+    "demo-tools",
+    "video"
+  ],
+  "homepage": "https://github.com/williamthorsen/workshop/tree/main/packages/demo-tools#readme",
+  "bugs": {
+    "url": "https://github.com/williamthorsen/workshop/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/williamthorsen/workshop.git",
+    "directory": "packages/demo-tools"
+  },
+  "license": "ISC",
+  "author": "William Thorsen <william@thorsen.dev> (https://github.com/williamthorsen)",
+  "sideEffects": [
+    "./dist/esm/bin/thor-demo.js"
+  ],
+  "type": "module",
+  "exports": {
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "thor-demo": "bin/thor-demo.js"
+  },
+  "files": [
+    ".meta/changelog.json",
+    "CHANGELOG.md",
+    "bin",
+    "dist"
+  ],
+  "scripts": {
+    "prepare": "nmr-compile"
+  },
+  "dependencies": {
+    "@williamthorsen/toolbelt.cli": "catalog:",
+    "@williamthorsen/toolbelt.errors": "catalog:",
+    "@williamthorsen/toolbelt.packaging": "catalog:"
+  },
+  "devDependencies": {
+    "@williamthorsen/toolbelt.testing": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
