@@ -2,7 +2,15 @@
   "$schema": "https://github.com/williamthorsen/node-monorepo-tools/raw/audit-deps-v0.4.0/packages/audit-deps/schemas/config.json",
   "dev": {
     "severityThreshold": "moderate",
-    "allowlist": []
+    "allowlist": [
+      {
+        "addedAt": "2026-10-31T22:51:39.872Z",
+        "id": "1244012",
+        "path": ".>@vitest/eslint-plugin>@typescript-eslint/utils>@eslint-community/eslint-utils>eslint>@eslint/config-array>minimatch",
+        "reason": "Added by v11y sync at 2026-10-31 22:51:39 UTC",
+        "url": "https://github.com/advisories/GHSA-g3hv-75wg-m249"
+      }
+    ]
   },
   "prod": {
     "severityThreshold": "low",

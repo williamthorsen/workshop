@@ -435,12 +435,13 @@ ${violations.map((violation) => `- ${violation}`).join("\n")}`);
     return Object.fromEntries(entries);
   }
 
-  // ../../node_modules/.pnpm/ansi-regex@6.4.0/node_modules/ansi-regex/index.js
+  // ../../node_modules/.pnpm/ansi-regex@6.5.0/node_modules/ansi-regex/index.js
   function ansiRegex({ onlyFirst = false } = {}) {
-    const ST = "(?:\\u0007|\\u001B\\u005C|\\u009C)";
-    const osc = `(?:(?:\\u001B\\]|\\u009D)[^\\u0007\\u001B\\u009C\\u009D]*${ST})`;
-    const csi = "[\\u001B\\u009B][[\\]()#;?]*(?:\\d{1,4}(?:[;:]\\d{0,4})*)?[\\dA-PR-TZcf-nq-uy=><~]";
-    const pattern = `${osc}|${csi}`;
+    const ST = String.raw`(?:\u0007|\u001B\u005C|\u009C)`;
+    const osc = String.raw`(?:(?:\u001B\]|\u009D)[^\u0007\u001B\u009C\u009D]*${ST})`;
+    const csi = String.raw`[\u001B\u009B][[\]()#;?]*(?:\d{1,4}(?:[;:]\d{0,4})*)?[A-PR-TZcf-nq-uy=><~]`;
+    const csiPrivate = String.raw`(?:\u001B\[|\u009B)[<=>][0-9;:]*[A-PR-TZcf-nq-uy~]`;
+    const pattern = `${osc}|${csiPrivate}|${csi}`;
     return new RegExp(pattern, onlyFirst ? void 0 : "g");
   }
 
