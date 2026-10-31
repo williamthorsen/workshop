@@ -306,6 +306,14 @@ const config = defineConfig([
     },
   },
   {
+    // Each demo repository installs demo-tools' aidemo peer. The package's tests run a fake aidemo, so the workspace
+    // does not install the real one as a devDependency.
+    files: ['packages/demo-tools/package.json'],
+    rules: {
+      'package-json/specify-peers-locally': 'off',
+    },
+  },
+  {
     // `utils` names no role, so a directory of that name under any package's source is the same defect one level
     // down. The path segment must be exactly `utils`, which leaves `check-utils` and `test-utils` untouched.
     files: ['packages/*/src/**/utils/**'],

@@ -22,7 +22,7 @@ export function findEnvFileOverrides(
   if (!existsSync(envFilePath)) return undefined;
 
   const fileEnv = parseEnv(readFileSync(envFilePath, 'utf8'));
-  const names = OPENAI_VARIABLES.filter((name) => name in fileEnv && !(name in declaredEnv));
+  const names = OPENAI_VARIABLES.filter((name) => Object.hasOwn(fileEnv, name) && !Object.hasOwn(declaredEnv, name));
 
   return names.length === 0 ? undefined : { envFilePath, names };
 }

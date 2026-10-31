@@ -74,11 +74,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /** Returns the leading `major.minor.patch` of a version as numbers, ignoring any prerelease or build suffix. */
-function parseVersion(version: string): [number, number, number] | undefined {
+function parseVersion(version: string): number[] | undefined {
   const match = /^v?(\d+)\.(\d+)\.(\d+)/.exec(version);
   if (match === null) return undefined;
 
-  return [Number(match[1]), Number(match[2]), Number(match[3])];
+  return match.slice(1, 4).map((part) => Number.parseInt(part, 10));
 }
 
 /** Reads the `aidemo` bin from a manifest's `bin`, which is either a path or a map of names to paths. */

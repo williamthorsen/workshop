@@ -41,7 +41,9 @@ export function readRepoConfig({ cwd, env, homeDir }: RepoConfigInput): RepoConf
   }
 
   const configPath = path.join(root, REPO_CONFIG_PATH);
-  const fail = (problem: string): RepoConfigResult => ({ ok: false, message: `${configPath}: ${problem}` });
+  function fail(problem: string): RepoConfigResult {
+    return { ok: false, message: `${configPath}: ${problem}` };
+  }
 
   let parsed: unknown;
   try {
