@@ -2,7 +2,7 @@
 
 ## Overview
 
-A monorepo of open-source utilities. Currently houses `readyup`, a pre-deployment verification CLI; `overlay`, a chezmoi-backed scaffolding tool; `repo-tools`, a CLI for the repositories in a machine-local registry; `git-tools`, a CLI that derives values from git branch names; `launchd-agent`, a library for per-user launchd agents on macOS; `systemd-service`, a library for systemd services on Linux; `secret-tools`, a CLI for secrets in the macOS keychain; `nodejs-tools`, a CLI and library for Node.js runtimes, toolchains, and `node_modules` directories; `atlassian-tools`, a CLI for Jira Cloud projects; `chrome-tools`, a CLI for Chrome debug sessions; and `compositor`, a private content-composition engine under construction.
+A monorepo of open-source utilities. Currently houses `readyup`, a pre-deployment verification CLI; `overlay`, a chezmoi-backed scaffolding tool; `repo-tools`, a CLI for the repositories in a machine-local registry; `git-tools`, a CLI that derives values from git branch names; `launchd-agent`, a library for per-user launchd agents on macOS; `systemd-service`, a library for systemd services on Linux; `secret-tools`, a CLI for secrets in the macOS keychain; `nodejs-tools`, a CLI and library for Node.js runtimes, toolchains, and `node_modules` directories; `atlassian-tools`, a CLI for Jira Cloud projects; `chrome-tools`, a CLI for Chrome debug sessions; `demo-tools`, a CLI for aidemo demos, under construction; and `compositor`, a private content-composition engine under construction.
 
 ## Project structure
 
@@ -11,6 +11,7 @@ Packages live under `packages/`:
 - **`atlassian-tools`**: CLI that reconciles a Jira Cloud project against a declarative spec, lists its work items, and manages the API token in the macOS keychain. Binary: `thor-jira`.
 - **`chrome-tools`**: CLI that launches and manages Chrome debug sessions, each on a profile and port derived from the working directory's repository and branch. macOS only. Binary: `thor-chrome`.
 - **`compositor`**: Content-agnostic engine that resolves declared content across precedence-ordered sources and plans idempotent writes to targets. Private and unreleased; no binary.
+- **`demo-tools`**: CLI that renders and archives aidemo demos. Its commands are not implemented yet; the binary prints only its help and version. Binary: `thor-demo`.
 - **`git-tools`**: CLI that derives values from git branch names: a stable number per branch, and the ticket that a branch encodes. Binary: `thor-git`.
 - **`launchd-agent`**: Library that installs, replaces, restarts, inspects, and removes per-user launchd agents on macOS. No binary.
 - **`nodejs-tools`**: CLI that inspects Node.js runtimes and toolchains and prunes `node_modules` directories, and a library export, `resolveNodePath`, that returns the node binary that asdf selects for a checkout. Binary: `thor-node`.
@@ -49,7 +50,7 @@ The code-quality workflow does not run `nmr ci`; it runs that command's steps as
 
 ## Commit conventions
 
-The scope values this repo uses are `atlassian-tools`, `chrome-tools`, `compositor`, `git-tools`, `launchd-agent`, `nodejs-tools`, `overlay`, `readyup`, `repo-tools`, `root`, `secret-tools`, and `systemd-service`, mirroring the `scope:*` labels in `.config/release-kit.config.ts`.
+The scope values this repo uses are `atlassian-tools`, `chrome-tools`, `compositor`, `demo-tools`, `git-tools`, `launchd-agent`, `nodejs-tools`, `overlay`, `readyup`, `repo-tools`, `root`, `secret-tools`, and `systemd-service`, mirroring the `scope:*` labels in `.config/release-kit.config.ts`.
 
 ## Releases
 

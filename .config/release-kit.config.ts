@@ -11,6 +11,7 @@ const config = defineConfig({
       'scope:atlassian-tools': { color: '00ff96', description: '' },
       'scope:chrome-tools': { color: '00ff96', description: '' },
       'scope:compositor': { color: '00ff96', description: '' },
+      'scope:demo-tools': { color: '00ff96', description: '' },
       'scope:git-tools': { color: '00ff96', description: '' },
       'scope:launchd-agent': { color: '00ff96', description: '' },
       'scope:nodejs-tools': { color: '00ff96', description: '' },

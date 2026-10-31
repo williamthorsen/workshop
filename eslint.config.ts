@@ -291,6 +291,21 @@ const config = defineConfig([
     },
   },
   {
+    // demo-tools's source is grouped by role on the same terms; no module belongs at its root yet.
+    files: ['packages/demo-tools/src/*.ts'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...RESTRICTED_SYNTAX,
+        {
+          selector: 'Program',
+          message:
+            'Group this module into a directory named for its role. No module belongs at the root of demo-tools/src.',
+        },
+      ],
+    },
+  },
+  {
     // `utils` names no role, so a directory of that name under any package's source is the same defect one level
     // down. The path segment must be exactly `utils`, which leaves `check-utils` and `test-utils` untouched.
     files: ['packages/*/src/**/utils/**'],

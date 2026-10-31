@@ -21,6 +21,7 @@
     "atlassian-tools": "scope:atlassian-tools",
     "chrome-tools": "scope:chrome-tools",
     "compositor": "scope:compositor",
+    "demo-tools": "scope:demo-tools",
     "git-tools": "scope:git-tools",
     "launchd-agent": "scope:launchd-agent",
     "nodejs-tools": "scope:nodejs-tools",
