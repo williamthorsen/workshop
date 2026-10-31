@@ -24,8 +24,9 @@ const { exitCode, launch, stderr, stdout } = await run(process.argv.slice(2), {
   resolveVersion: () => resolveSelfVersion(import.meta.url),
 });
 
-if (stdout !== '') process.stdout.write(stdout);
-if (stderr !== '') process.stderr.write(stderr);
+// Wait for each write to flush, so that a warning reaches a pipe before anything that aidemo writes.
+await writeFully(process.stdout, stdout);
+await writeFully(process.stderr, stderr);
 
 // Set rather than exit, so that buffered output reaches a pipe before the process ends.
 process.exitCode = launch === undefined ? exitCode : await runLaunch(launch);
@@ -69,6 +70,17 @@ async function runLaunch({ args, bin, cwd, env }: Launch): Promise<number> {
     process.off('SIGTERM', forwardSignal);
     process.off('SIGHUP', forwardSignal);
   }
+}
+
+/** Writes `text` to `stream` and resolves once the stream has flushed it. */
+async function writeFully(stream: NodeJS.WriteStream, text: string): Promise<void> {
+  if (text === '') return;
+
+  await new Promise<void>((resolve) => {
+    stream.write(text, () => {
+      resolve();
+    });
+  });
 }
 
 // endregion | Helpers
