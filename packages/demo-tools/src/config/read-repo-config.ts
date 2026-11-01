@@ -6,8 +6,8 @@ import { parse } from 'yaml';
 
 import { isRecord } from '../portable/is-record.ts';
 import { expandValue } from './expand-value.ts';
-import { findUnknownKey } from './find-unknown-key.ts';
 import { findRepoRoot, REPO_CONFIG_PATH } from './find-repo-root.ts';
+import { findUnknownKey } from './find-unknown-key.ts';
 
 /** The demo repository's settings, resolved from its configuration file. */
 export interface RepoConfig {
