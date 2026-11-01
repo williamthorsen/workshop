@@ -12,6 +12,7 @@ import {
   type FakeVoiceMachine,
 } from '../test-utils/create-fake-voice-tools.ts';
 import { runThorDemo } from '../test-utils/run-thor-demo.ts';
+import { waitFor } from '../test-utils/wait-for.ts';
 
 const ENTRY_POINT = path.join(import.meta.dirname, '../thor-demo.ts');
 
@@ -150,15 +151,6 @@ function isServerRunning(machine: FakeVoiceMachine): boolean {
 /** Runs `thor-demo voice setup` on the fake machine, with `extraEnv` added. */
 function runVoiceSetup(machine: FakeVoiceMachine, extraEnv: NodeJS.ProcessEnv = {}) {
   return runThorDemo(['voice', 'setup'], machine.tree.dir, { ...machine.env, ...extraEnv });
-}
-
-/** Resolves once `condition` holds, polling every 50 ms, or rejects after 10 seconds. */
-async function waitFor(condition: () => boolean): Promise<void> {
-  const deadline = Date.now() + 10_000;
-  while (!condition()) {
-    if (Date.now() > deadline) throw new Error('timed out waiting for the condition');
-    await new Promise((resolve) => setTimeout(resolve, 50));
-  }
 }
 
 // endregion | Helpers

@@ -38,6 +38,9 @@ export const FAKE_SPEECH_STATUS = 'FAKE_SPEECH_STATUS';
 /** The variable that sets the peak level, in dB, that the fake ffmpeg reports for a recording. */
 export const FAKE_PEAK_DB = 'FAKE_PEAK_DB';
 
+/** The variable that keeps the fake afplay playing until a signal stops it. */
+export const FAKE_PLAYBACK_HOLD = 'FAKE_PLAYBACK_HOLD';
+
 /** The variable that delays the fake speech server's response, in milliseconds. */
 export const FAKE_SPEECH_DELAY_MS = 'FAKE_SPEECH_DELAY_MS';
 
@@ -127,6 +130,7 @@ function log(tool) {
 }`;
 
 const AFPLAY_SOURCE = `log('afplay');
+if (process.env.${FAKE_PLAYBACK_HOLD} !== undefined) setInterval(() => {}, 1000);
 `;
 
 // Measuring reports fixed levels; converting copies the input, so that a test can follow a take to its destination.

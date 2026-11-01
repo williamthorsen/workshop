@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync } from 'node:fs';
 import path from 'node:path';
+import process from 'node:process';
 
 import type { VoiceConfig } from '../config/read-machine-config.ts';
 import type { RunInvocation } from './invocation.ts';
@@ -98,7 +99,13 @@ export async function performVoiceRecord(
   }
 
   report('playing the take back; press Ctrl-C to stop');
-  await run({ command: 'afplay', args: [referenceAudio], env: {} });
+  // Leave Ctrl-C, which the terminal sends to the player and to this process alike, to stop the player alone.
+  process.on('SIGINT', ignoreSignal);
+  try {
+    await run({ command: 'afplay', args: [referenceAudio], env: {} });
+  } finally {
+    process.off('SIGINT', ignoreSignal);
+  }
   return { ok: true, output: `${referenceAudio}\n` };
 }
 
@@ -109,5 +116,8 @@ function formatPreviousPath(filePath: string): string {
   const extension = path.extname(filePath);
   return `${filePath.slice(0, filePath.length - extension.length)}.previous${extension}`;
 }
+
+/** Handles a signal by doing nothing, which keeps it from ending this process. */
+function ignoreSignal(): void {}
 
 // endregion | Helpers

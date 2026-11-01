@@ -1,9 +1,19 @@
+import { spawn } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { createFakeVoiceTools, FAKE_PEAK_DB, type FakeVoiceMachine } from '../test-utils/create-fake-voice-tools.ts';
+import {
+  createFakeVoiceTools,
+  FAKE_PEAK_DB,
+  FAKE_PLAYBACK_HOLD,
+  type FakeVoiceMachine,
+} from '../test-utils/create-fake-voice-tools.ts';
 import { runThorDemo } from '../test-utils/run-thor-demo.ts';
+import { waitFor } from '../test-utils/wait-for.ts';
+
+const ENTRY_POINT = path.join(import.meta.dirname, '../thor-demo.ts');
 
 describe('thor-demo voice record', () => {
   it('shows the transcript, records the named microphone to the reference, and plays it back', () => {
@@ -58,6 +68,30 @@ describe('thor-demo voice record', () => {
 
     expect(status).toBe(0);
     expect(existsSync(machine.tree.resolve('home/reference.previous.m4a'))).toBe(false);
+  });
+
+  it("finishes with the take's path when Ctrl-C stops the playback", async () => {
+    using machine = createFakeVoiceTools();
+    // Lead a process group of its own, as a terminal's foreground job does, so that the signal reaches the player too.
+    const child = spawn(process.execPath, [ENTRY_POINT, 'voice', 'record'], {
+      cwd: machine.tree.dir,
+      detached: true,
+      env: { ...process.env, ...machine.env, [FAKE_PLAYBACK_HOLD]: '1' },
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+    let stdout = '';
+    child.stdout.setEncoding('utf8');
+    child.stdout.on('data', (chunk: string) => {
+      stdout += chunk;
+    });
+    const closed = new Promise<number | null>((resolve) => child.once('close', (code) => resolve(code)));
+
+    await waitFor(() => machine.readCalls().some(({ tool }) => tool === 'afplay'));
+    if (child.pid === undefined) throw new Error('thor-demo did not start');
+    process.kill(-child.pid, 'SIGINT');
+
+    await expect(closed).resolves.toBe(0);
+    expect(stdout).toBe(`${machine.tree.resolve('home/reference.m4a')}\n`);
   });
 });
 
