@@ -26,11 +26,15 @@ export function formatEntryName(entry: RegistryEntry): string {
   return entry.name ?? entry.path ?? '(unnamed)';
 }
 
-/** Returns the `owner/name` path of a remote URL in SSH, `ssh://`, or HTTPS form, or `undefined`. */
-export function parseRemotePath(url: string): string | undefined {
-  const match = /[:/]([^/:]+)\/([^/]+?)(?:\.git)?\/?$/.exec(url);
-  if (match?.[1] === undefined || match[2] === undefined) return undefined;
-  return `${match[1]}/${match[2]}`;
+/**
+ * Returns the host and the `owner/name` path of a remote URL in scp-like SSH, `ssh://`, or HTTP(S) form, or
+ * `undefined`. The host is lowercased and excludes any user and port; the path is the URL's last two segments.
+ */
+export function parseRemoteUrl(url: string): RemoteUrl | undefined {
+  const match =
+    /^(?:[a-z][a-z\d+.-]*:\/\/)?(?:[^@/]+@)?([^:/]+)(?::\d+)?[:/](?:.*\/)?([^/:]+)\/([^/]+?)(?:\.git)?\/?$/i.exec(url);
+  if (match?.[1] === undefined || match[2] === undefined || match[3] === undefined) return undefined;
+  return { host: match[1].toLowerCase(), path: `${match[2]}/${match[3]}` };
 }
 
 /** Reports a failure under the program's name and returns the failure status. */
@@ -50,6 +54,12 @@ export interface CloneAdapters {
   readFile: (file: string) => string;
   readOriginUrl: (cloneDir: string) => string | undefined;
   readCloneRoot: (dir: string) => string | undefined;
+}
+
+/** The parts of a remote URL that `add` reads. */
+export interface RemoteUrl {
+  host: string;
+  path: string;
 }
 
 /** The environment in which the commands run. */

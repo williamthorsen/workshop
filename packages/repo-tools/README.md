@@ -40,7 +40,7 @@ thor-repo list --clone absent
 thor-repo scan --write --file path/to/branch-worktree/repos.yaml
 ```
 
-`add` prints the entry that registers a clone, deriving `name` and `repo` from its `origin` remote, `stack` from its tracked files, and `visibility` and `runner` from GitHub, which it omits when GitHub cannot be read. `--write` appends it:
+`add` prints the entry that registers a clone, deriving `name` from its `origin` remote, `stack` from its tracked files, and, for an origin on `github.com`, `repo` from the remote and `visibility` and `runner` from GitHub, which it omits when GitHub cannot be read. For an origin hosted elsewhere, `add` omits `repo`, `visibility`, and `runner` and does not query GitHub. `--write` appends the entry:
 
 ```bash
 thor-repo add ~/repos/example --write
@@ -63,8 +63,8 @@ repos:
 
 - `name`: the repo's name on its remote.
 - `path`: the clone's location, written with a leading `~`; `list` expands it, and `list --json` leaves it as written.
-- `repo`: the GitHub path, in the `owner/name` form that `gh --repo` takes.
-- `visibility`: `public` or `private`, the repo's visibility on GitHub. `scan` writes it.
+- `repo`: the GitHub path, in the `owner/name` form that `gh --repo` takes; absent for a repo hosted elsewhere.
+- `visibility`: `public` or `private`, the repo's visibility on GitHub, absent when the entry has no `repo`. `scan` writes it.
 - `runner`: optional, the label that the repo's `CI_RUNS_ON` Actions variable selects: a bare label as written, or a JSON string decoded. `scan` writes it, removes it when the variable is unset, and keeps it, with a report, when the variable holds a list or an object.
 - `tags`: optional, asserted by hand. `live` marks a repo that deploys from a `live` worktree.
 - `stack`: optional, the built-in stack names that `scan` derives from the clone's tracked files. Edit it through `scan --write` rather than by hand.

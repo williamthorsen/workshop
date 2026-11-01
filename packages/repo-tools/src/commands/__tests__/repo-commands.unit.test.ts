@@ -322,6 +322,45 @@ describe('REPO_COMMANDS', () => {
       expect(result.stderr).toContain('thor-repo: owner/delta: CI_RUNS_ON is empty; the entry omits runner');
     });
 
+    it('omits the GitHub fields for an origin hosted elsewhere, appending the entry under --write', async () => {
+      // The reader knows the path, so a GitHub read would add `visibility` to the entry.
+      const github = { 'ws/wthorsen-demos': facts('private') };
+      const { registryText, result } = await run(['add', '~/repos/demos', '--write'], {
+        clones: { demos: clone({}) },
+        github,
+        origins: { demos: 'https://u@bitbucket.org/ws/wthorsen-demos.git' },
+      });
+      expect(result.stdout).toBe('  - name: wthorsen-demos\n    path: ~/repos/demos');
+      expect(result.stderr).toContain(
+        `thor-repo: ${HOME}/repos/demos: origin host bitbucket.org is not github.com; the entry omits repo, visibility, and runner`,
+      );
+      expect(result.stderr).not.toContain('GitHub');
+      expect(registryText).toBe(`${REGISTRY}  - name: wthorsen-demos\n    path: ~/repos/demos\n`);
+      expect(result.status).toBe(0);
+    });
+
+    it('does not match a new clone hosted elsewhere to an entry that also lacks repo', async () => {
+      const registry = `${REGISTRY}  - name: epsilon\n    path: ~/repos/epsilon\n`;
+      const { result } = await run(['add', '~/repos/demos'], {
+        clones: { demos: clone({}) },
+        origins: { demos: 'git@bitbucket.org:ws/demos.git' },
+        registry,
+      });
+      expect(result.stdout).toBe('  - name: demos\n    path: ~/repos/demos');
+      expect(result.status).toBe(0);
+    });
+
+    it('refuses a clone hosted elsewhere that is registered without repo, matching its path', async () => {
+      const registry = `${REGISTRY}  - name: demos\n    path: ~/repos/demos\n`;
+      const { result } = await run(['add', '~/repos/demos'], {
+        clones: { demos: clone({}) },
+        origins: { demos: 'git@bitbucket.org:ws/wthorsen-demos.git' },
+        registry,
+      });
+      expect(result.stderr).toContain('already registered as demos');
+      expect(result.status).toBe(1);
+    });
+
     it.each([
       [
         'a registered clone',

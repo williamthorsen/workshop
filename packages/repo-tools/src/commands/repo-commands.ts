@@ -41,7 +41,7 @@ const WRITE_FLAG = {
 const add = defineCommand({
   summary: 'Print the entry that registers a clone, and append it under --write',
   description:
-    'Prints the entry that registers the clone at <path>, deriving name and repo from its origin remote, stack from its tracked files, and visibility and runner from GitHub through gh. When GitHub cannot be read, the entry omits visibility and runner.',
+    'Prints the entry that registers the clone at <path>, deriving name from its origin remote, stack from its tracked files, and, for an origin on github.com, repo from the remote and visibility and runner from GitHub through gh. When GitHub cannot be read, the entry omits visibility and runner. For an origin hosted elsewhere, the entry omits repo, visibility, and runner, and GitHub is not queried.',
   operands: [{ name: 'path', description: 'A directory in the clone to register' }],
   flags: { file: FILE_FLAG, write: WRITE_FLAG },
   run: ({ context, flags, operands, stderr, stdout }) =>
