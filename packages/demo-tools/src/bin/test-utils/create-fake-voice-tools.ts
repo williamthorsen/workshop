@@ -35,6 +35,9 @@ export interface FakeVoiceMachine extends Disposable {
 /** The variable that sets the fake speech server's response status. */
 export const FAKE_SPEECH_STATUS = 'FAKE_SPEECH_STATUS';
 
+/** The variable that sets the peak level, in dB, that the fake ffmpeg reports for a recording. */
+export const FAKE_PEAK_DB = 'FAKE_PEAK_DB';
+
 /** The variable that delays the fake speech server's response, in milliseconds. */
 export const FAKE_SPEECH_DELAY_MS = 'FAKE_SPEECH_DELAY_MS';
 
@@ -42,20 +45,25 @@ const PRETEND_APPLE_SILICON = path.join(import.meta.dirname, 'pretend-apple-sili
 
 /**
  * Creates a machine whose home has a machine configuration with a `voice` section and a reference recording, and
- * whose `PATH` holds fake `uv` and `ffmpeg`. The fake `uv venv` writes a fake `python` and `hf` into the virtual
- * environment, and the fake `python -m mlx_audio.server` serves the speech endpoint. Each fake appends its call to a
+ * whose `PATH` holds fake `afplay`, `ffmpeg`, `swiftc`, and `uv`. The fake `uv venv` writes a fake `python` and `hf`
+ * into the virtual environment, the fake `python -m mlx_audio.server` serves the speech endpoint, and the fake
+ * `swiftc` writes a fake recorder. Each fake appends its call to a
  * log. `NODE_OPTIONS` makes `thor-demo` report Apple Silicon whatever the host.
  */
-export function createFakeVoiceTools({ model }: { model?: string } = {}): FakeVoiceMachine {
+export function createFakeVoiceTools({
+  model,
+  withoutReference = false,
+}: { model?: string; withoutReference?: boolean } = {}): FakeVoiceMachine {
   const tree = createTempTree({
+    'bin/afplay': buildScript(AFPLAY_SOURCE),
     'bin/ffmpeg': buildScript(FFMPEG_SOURCE),
+    'bin/swiftc': buildScript(SWIFTC_SOURCE),
     'bin/uv': buildScript(UV_SOURCE),
     'home/.config/thor-demo/config.yaml': buildVoiceConfig(model),
-    'home/reference.m4a': 'audio',
+    ...(!withoutReference && { 'home/reference.m4a': 'audio' }),
     'home/reference.txt': 'Hello there.\n',
   });
-  chmodSync(tree.resolve('bin/ffmpeg'), 0o755);
-  chmodSync(tree.resolve('bin/uv'), 0o755);
+  for (const tool of ['afplay', 'ffmpeg', 'swiftc', 'uv']) chmodSync(tree.resolve(`bin/${tool}`), 0o755);
 
   return {
     env: {
@@ -118,8 +126,32 @@ function log(tool) {
   fs.appendFileSync(path.join(process.env.FAKE_LOG_DIR, 'calls.jsonl'), JSON.stringify({ tool, args: process.argv.slice(2), env }) + '\n');
 }`;
 
+const AFPLAY_SOURCE = `log('afplay');
+`;
+
+// Measuring reports fixed levels; converting copies the input, so that a test can follow a take to its destination.
 const FFMPEG_SOURCE = `log('ffmpeg');
-fs.writeFileSync(process.argv.at(-1), 'RIFFfake');
+const args = process.argv.slice(2);
+if (args.includes('volumedetect')) {
+  console.error('  Duration: 00:00:12.50, bitrate: 768 kb/s');
+  console.error('[Parsed_volumedetect_0] mean_volume: -24.0 dB');
+  console.error('[Parsed_volumedetect_0] max_volume: ' + (process.env.${FAKE_PEAK_DB} ?? '-6.0') + ' dB');
+} else {
+  const input = args[args.indexOf('-i') + 1];
+  fs.writeFileSync(args.at(-1), fs.existsSync(input) ? fs.readFileSync(input) : 'RIFFfake');
+}
+`;
+
+const RECORDER_SOURCE = String.raw`log('recorder');
+const [mode, , output] = process.argv.slice(2);
+if (mode === 'list') console.log('Desk Mic\nLaptop Mic');
+else fs.writeFileSync(output, 'RIFFtake');
+`;
+
+const SWIFTC_SOURCE = String.raw`log('swiftc');
+const output = process.argv[process.argv.indexOf('-o') + 1];
+fs.writeFileSync(output, fs.readFileSync(__filename, 'utf8').split('\n')[0] + '\n' + ${JSON.stringify(LOG_SOURCE)} + '\n' + ${JSON.stringify(RECORDER_SOURCE)});
+fs.chmodSync(output, 0o755);
 `;
 
 const HF_SOURCE = `log('hf');

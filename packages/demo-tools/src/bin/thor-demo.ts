@@ -12,7 +12,9 @@ import { archiveTake } from '../archive/archive-take.ts';
 import type { TakeDisposition } from '../archive/plan-take.ts';
 import { readSourceState } from '../clients/git/read-source-state.ts';
 import { runInvocation } from '../voice/invocation.ts';
-import { performVoiceSetup, type VoiceSetupRequest } from '../voice/perform-voice-setup.ts';
+import { listMicrophones, performVoiceRecord, type VoiceCommandOutcome } from '../voice/perform-voice-record.ts';
+import { performVoiceSetup } from '../voice/perform-voice-setup.ts';
+import type { VoiceRequest } from '../voice/voice-request.ts';
 import { type Launch, run } from './run.ts';
 
 // A reader that exits first closes the pipe, which node reports as an error event rather than the quiet termination
@@ -23,7 +25,7 @@ for (const stream of [process.stdout, process.stderr]) {
   });
 }
 
-const { exitCode, launch, setup, stderr, stdout } = await run(process.argv.slice(2), {
+const { exitCode, launch, stderr, stdout, voice } = await run(process.argv.slice(2), {
   arch: process.arch,
   cwd: process.cwd(),
   env: process.env,
@@ -45,7 +47,7 @@ process.exitCode = await completeRequest();
 /** Performs what the run requested, resolving to the exit code. */
 async function completeRequest(): Promise<number> {
   if (launch !== undefined) return completeLaunch(launch);
-  if (setup !== undefined) return completeSetup(setup);
+  if (voice !== undefined) return completeVoice(voice);
   return exitCode;
 }
 
@@ -76,20 +78,31 @@ async function completeTake(take: TakeDisposition): Promise<number> {
   return 1;
 }
 
-/** Performs a voice setup, reporting each step on stderr and the verification recording's path on stdout. */
-async function completeSetup(request: VoiceSetupRequest): Promise<number> {
-  const prefix = 'thor-demo voice setup';
-  const outcome = await performVoiceSetup(request, {
-    report: (line) => process.stderr.write(`${prefix}: ${line}\n`),
+/** Performs a voice command, reporting its steps on stderr and its result on stdout, and resolves to the exit code. */
+async function completeVoice(request: VoiceRequest): Promise<number> {
+  const prefix = `thor-demo voice ${request.kind}`;
+  const effects = {
+    report: (line: string) => process.stderr.write(`${prefix}: ${line}\n`),
     run: runInvocation,
-  });
+    show: (text: string) => process.stderr.write(text),
+  };
+
+  let outcome: VoiceCommandOutcome;
+  if (request.kind === 'microphones') {
+    outcome = await listMicrophones(request.home, effects);
+  } else if (request.kind === 'record') {
+    outcome = await performVoiceRecord(request, effects);
+  } else {
+    const setup = await performVoiceSetup(request, effects);
+    if (setup.ok) effects.report('listen to the verification recording to judge the clone');
+    outcome = setup.ok ? { ok: true, output: `${setup.verifyPath}\n` } : setup;
+  }
+
   if (!outcome.ok) {
     await writeFully(process.stderr, `${prefix}: ${outcome.message}\n`);
     return 1;
   }
-
-  await writeFully(process.stderr, `${prefix}: listen to the verification recording to judge the clone\n`);
-  await writeFully(process.stdout, `${outcome.verifyPath}\n`);
+  await writeFully(process.stdout, outcome.output);
   return 0;
 }
 

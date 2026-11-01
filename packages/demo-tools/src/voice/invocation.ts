@@ -8,6 +8,8 @@ export interface Invocation {
   readonly args: readonly string[];
   readonly command: string;
   readonly env: Readonly<Record<string, string>>;
+  /** Gives the program this process's stdin, for a program that reads the keyboard. */
+  readonly interactive?: boolean;
 }
 
 /** The outcome of running an invocation: success, or a message naming the program and how it failed. */
@@ -20,8 +22,16 @@ export type RunInvocation = (invocation: Invocation) => Promise<InvocationOutcom
  * Runs an invocation with its output sent to this process's stderr, which keeps stdout free for what the command
  * reports, and resolves once it exits.
  */
-export async function runInvocation({ args, command, env }: Invocation): Promise<InvocationOutcome> {
-  const child = spawn(command, args, { env: { ...process.env, ...env }, stdio: ['ignore', process.stderr, 'inherit'] });
+export async function runInvocation({
+  args,
+  command,
+  env,
+  interactive = false,
+}: Invocation): Promise<InvocationOutcome> {
+  const child = spawn(command, args, {
+    env: { ...process.env, ...env },
+    stdio: [interactive ? 'inherit' : 'ignore', process.stderr, 'inherit'],
+  });
 
   return new Promise((resolve) => {
     child.once('error', (error) => {

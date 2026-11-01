@@ -1,4 +1,4 @@
-import { chmodSync } from 'node:fs';
+import { chmodSync, rmSync } from 'node:fs';
 
 import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
@@ -46,9 +46,9 @@ describe(run, () => {
       await expect(run([flag], EFFECTS)).resolves.toStrictEqual({
         exitCode: 0,
         launch: undefined,
-        setup: undefined,
         stderr: '',
         stdout: `${VERSION}\n`,
+        voice: undefined,
       });
     });
 
@@ -63,9 +63,9 @@ describe(run, () => {
       await expect(run(['--version'], failing)).resolves.toStrictEqual({
         exitCode: 2,
         launch: undefined,
-        setup: undefined,
         stderr: "Error: The manifest declares no version.\nTry 'thor-demo --help'.\n",
         stdout: '',
+        voice: undefined,
       });
     });
 
@@ -318,7 +318,10 @@ describe(run, () => {
       expect(result).toStrictEqual({
         exitCode: 0,
         launch: undefined,
-        setup: {
+        stderr: '',
+        stdout: '',
+        voice: {
+          kind: 'setup',
           voice: {
             home: tree.resolve('home/.local/share/thor-demo/voice'),
             model: 'mlx-community/Qwen3-TTS-12Hz-1.7B-Base-bf16',
@@ -326,8 +329,6 @@ describe(run, () => {
             referenceTranscript: tree.resolve('home/reference.txt'),
           },
         },
-        stderr: '',
-        stdout: '',
       });
     });
 
@@ -340,7 +341,7 @@ describe(run, () => {
       const result = await run(['voice', 'setup'], { ...buildVoiceEffects(tree), arch, platform });
 
       expect(result.exitCode).toBe(1);
-      expect(result.setup).toBeUndefined();
+      expect(result.voice).toBeUndefined();
       expect(result.stderr).toBe(
         `thor-demo voice setup: the voice clone runs on Apple Silicon (darwin on arm64) only, not ${platform} on ${arch}\n`,
       );
@@ -352,7 +353,7 @@ describe(run, () => {
       const result = await run(['voice', 'setup'], buildVoiceEffects(tree));
 
       expect(result.exitCode).toBe(1);
-      expect(result.setup).toBeUndefined();
+      expect(result.voice).toBeUndefined();
       expect(result.stderr).toContain(`${tool} is not on PATH; install it with brew install ${tool}`);
     });
 
@@ -377,10 +378,24 @@ describe(run, () => {
     it('is not stopped by a malformed archive section', async () => {
       using tree = createVoiceMachine({ config: `archive: /takes\n${VOICE_SECTION}` });
 
-      const { exitCode, setup } = await run(['voice', 'setup'], buildVoiceEffects(tree));
+      const { exitCode, voice } = await run(['voice', 'setup'], buildVoiceEffects(tree));
 
       expect(exitCode).toBe(0);
-      expect(setup).toBeDefined();
+      expect(voice).toBeDefined();
+    });
+
+    it.each([
+      ['audio', 'home/reference.m4a', 'record it with thor-demo voice record'],
+      ['transcript', 'home/reference.txt', 'write in it exactly what the recording says'],
+    ])('stops when the reference %s does not exist, naming how to make it', async (_label, file, hint) => {
+      using tree = createVoiceMachine();
+      rmSync(tree.resolve(file));
+
+      const { exitCode, stderr, voice } = await run(['voice', 'setup'], buildVoiceEffects(tree));
+
+      expect(exitCode).toBe(1);
+      expect(voice).toBeUndefined();
+      expect(stderr).toContain(`${tree.resolve(file)}, which does not exist; ${hint}`);
     });
 
     it('documents every voice key in its help', async () => {
@@ -398,6 +413,65 @@ describe(run, () => {
       expect(stdout).toMatch(/\n\s+voice\s/);
     });
   });
+
+  describe('voice record', () => {
+    it('requests a recording from the named microphone before the reference exists', async () => {
+      using tree = createVoiceMachine({ tools: ['ffmpeg', 'swiftc'] });
+      rmSync(tree.resolve('home/reference.m4a'));
+
+      const { exitCode, voice } = await run(['voice', 'record', '--microphone', 'Desk Mic'], {
+        ...buildVoiceEffects(tree),
+        arch: 'x64',
+      });
+
+      expect(exitCode).toBe(0);
+      expect(voice).toMatchObject({
+        kind: 'record',
+        microphone: 'Desk Mic',
+        voice: { referenceAudio: tree.resolve('home/reference.m4a') },
+      });
+    });
+
+    it('leaves the microphone to the system when the flag is absent', async () => {
+      using tree = createVoiceMachine({ tools: ['ffmpeg', 'swiftc'] });
+
+      const { voice } = await run(['voice', 'record'], buildVoiceEffects(tree));
+
+      expect(voice).toMatchObject({ kind: 'record', microphone: undefined });
+    });
+
+    it.each([
+      ['swiftc', 'install the Xcode Command Line Tools with xcode-select --install'],
+      ['ffmpeg', 'install it with brew install ffmpeg'],
+    ])('stops when %s is not on PATH, naming how to install it', async (missing, hint) => {
+      using tree = createVoiceMachine({ tools: ['ffmpeg', 'swiftc'].filter((tool) => tool !== missing) });
+
+      const { exitCode, stderr } = await run(['voice', 'record'], buildVoiceEffects(tree));
+
+      expect(exitCode).toBe(1);
+      expect(stderr).toBe(`thor-demo voice record: ${missing} is not on PATH; ${hint}\n`);
+    });
+
+    it('stops outside macOS', async () => {
+      using tree = createVoiceMachine({ tools: ['ffmpeg', 'swiftc'] });
+
+      const { exitCode, stderr } = await run(['voice', 'record'], { ...buildVoiceEffects(tree), platform: 'linux' });
+
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain('the recorder runs on macOS only, not linux');
+    });
+  });
+
+  describe('voice microphones', () => {
+    it('installs the recorder under the default voice home when the voice section is absent', async () => {
+      using tree = createVoiceMachine({ config: '', tools: ['swiftc'] });
+
+      const { exitCode, voice } = await run(['voice', 'microphones'], buildVoiceEffects(tree));
+
+      expect(exitCode).toBe(0);
+      expect(voice).toStrictEqual({ kind: 'microphones', home: tree.resolve('home/.local/share/thor-demo/voice') });
+    });
+  });
 });
 
 // region | Helpers
@@ -409,17 +483,21 @@ function buildVoiceEffects(tree: TempTree): RunEffects {
 
 /**
  * Builds a machine whose home has a machine configuration and a reference recording and transcript, and whose `bin`
- * holds executable `uv` and `ffmpeg`, leaving out `without`.
+ * holds executable `tools`, leaving out `without`.
  */
-function createVoiceMachine({ config = VOICE_SECTION, without }: { config?: string; without?: string } = {}): TempTree {
-  const tools = ['ffmpeg', 'uv'].filter((tool) => tool !== without);
+function createVoiceMachine({
+  config = VOICE_SECTION,
+  tools = ['ffmpeg', 'uv'],
+  without,
+}: { config?: string; tools?: readonly string[]; without?: string } = {}): TempTree {
+  const present = tools.filter((tool) => tool !== without);
   const tree = createTempTree({
     'home/.config/thor-demo/config.yaml': config,
     'home/reference.m4a': 'audio',
     'home/reference.txt': 'Hello.',
-    ...Object.fromEntries(tools.map((tool) => [`bin/${tool}`, ''])),
+    ...Object.fromEntries(present.map((tool) => [`bin/${tool}`, ''])),
   });
-  for (const tool of tools) chmodSync(tree.resolve(`bin/${tool}`), 0o755);
+  for (const tool of present) chmodSync(tree.resolve(`bin/${tool}`), 0o755);
   return tree;
 }
 

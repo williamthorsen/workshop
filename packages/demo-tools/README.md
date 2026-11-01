@@ -125,7 +125,7 @@ voice:
   home: ~/.local/share/thor-demo/voice # optional; absolute after expansion
   model: mlx-community/Qwen3-TTS-12Hz-1.7B-Base-bf16 # optional
   reference:
-    audio: ~/Voice/reference.m4a # required; absolute after expansion; must exist
+    audio: ~/Voice/reference.m4a # required; absolute after expansion; voice record writes it
     transcript: ~/Voice/reference.txt # required; a file containing exactly what the recording says
 ```
 
@@ -133,7 +133,16 @@ Paths expand `${VAR}` and a leading `~`, like `archive.root`. `voice.model` may 
 
 ### Recording the reference
 
-Record 10 to 30 seconds of the presenter reading a paragraph aloud, in a quiet room and in the tone wanted for narration; the default model needs at least 3 seconds. Save it in any format that ffmpeg reads, and save the paragraph, word for word as read, as the transcript.
+Write a paragraph of three or four sentences to `voice.reference.transcript`, then record the presenter reading it:
+
+```bash
+thor-demo voice microphones
+thor-demo voice record --microphone "MacBook Pro Microphone"
+```
+
+`voice record` prints the transcript, records until Enter is pressed, saves the take to `voice.reference.audio` in the format that its extension names, keeping the previous take beside it, then reports the take's loudness and plays it back. It compiles a small recorder on first use, which needs the Xcode Command Line Tools (`xcode-select --install`); ffmpeg's own capture drops audio on macOS, which leaves clicks in a take.
+
+Aim for 10 to 30 seconds read in a quiet room, in the tone wanted for narration, with the microphone close; the default model needs at least 3 seconds. If a word comes out differently, edit the transcript to match what was said.
 
 ### Setting up
 

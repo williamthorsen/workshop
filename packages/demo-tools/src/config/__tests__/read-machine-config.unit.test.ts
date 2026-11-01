@@ -128,16 +128,6 @@ describe(readMachineConfig, () => {
       'voice:\n  reference:\n    audio: reference.m4a\n',
       /voice\.reference\.audio must be an absolute path, not "reference\.m4a"/,
     ],
-    [
-      'a reference audio that does not exist',
-      'voice:\n  reference:\n    audio: /nowhere/reference.m4a\n',
-      /voice\.reference\.audio must name a file, but \/nowhere\/reference\.m4a is not one/,
-    ],
-    [
-      'a reference transcript that is a directory',
-      'voice:\n  reference:\n    audio: ~/voice/reference.m4a\n    transcript: ~/voice\n',
-      /voice\.reference\.transcript must name a file, but .*\/voice is not one/,
-    ],
   ])('reports %s in the voice section, naming the file', (_label, content, expected) => {
     using home = createTempTree({ [MACHINE_CONFIG_PATH]: content, ...REFERENCE_FILES });
 

@@ -17,18 +17,12 @@ import { resolveAidemo } from '../aidemo/resolve-aidemo.ts';
 import { planTake, type TakeDisposition } from '../archive/plan-take.ts';
 import type { SourceState } from '../clients/git/read-source-state.ts';
 import { REPO_CONFIG_PATH } from '../config/find-repo-root.ts';
-import {
-  DEFAULT_VOICE_HOME,
-  DEFAULT_VOICE_MODEL,
-  MACHINE_CONFIG_PATH,
-  readMachineConfig,
-} from '../config/read-machine-config.ts';
+import { MACHINE_CONFIG_PATH } from '../config/read-machine-config.ts';
 import { readRepoConfig, type RepoConfig } from '../config/read-repo-config.ts';
 import { ARCHIVE_ROOT_VARIABLE, resolveArchiveRoot } from '../config/resolve-archive-root.ts';
 import { resolveDemoDir } from '../demos/resolve-demo-dir.ts';
-import { findOnPath } from '../portable/find-on-path.ts';
-import { MLX_AUDIO_VERSION } from '../voice/mlx-audio/plan-install.ts';
-import type { VoiceSetupRequest } from '../voice/perform-voice-setup.ts';
+import type { VoiceRequest } from '../voice/voice-request.ts';
+import { VOICE_GROUP } from './voice-commands.ts';
 
 const EXIT_FAILURE = 1;
 
@@ -56,13 +50,13 @@ const ROOT = defineGroup({
   ${REPO_CONFIG_PATH}, found in the working directory or a parent, marks the root of the
   demo repository and sets demosDir, aidemo.env, and archive.label.
   ~/${MACHINE_CONFIG_PATH} sets archive.root, where render archives each take,
-  which ${ARCHIVE_ROOT_VARIABLE} overrides, and the voice section, which voice
-  setup reads.
+  which ${ARCHIVE_ROOT_VARIABLE} overrides, and the voice section, which the voice
+  commands read.
 
 Exit codes:
-  0  Help or version printed, aidemo succeeded, or voice setup succeeded
+  0  Help or version printed, aidemo succeeded, or a voice command succeeded
   1  The configuration or the aidemo install is unusable, a rendered take
-     cannot be archived, or a voice setup step failed
+     cannot be archived, or a voice command failed
   2  Usage or validation error
   Otherwise, the exit code of aidemo`,
   commands: {
@@ -83,26 +77,7 @@ Exit codes:
     }),
     probe: PROBE,
     render: RENDER,
-    voice: defineGroup({
-      summary: "Manage the local voice clone that narrates demos in the presenter's voice",
-      commands: {
-        setup: defineCommand({
-          summary: 'Install the voice-clone server and build the voice profile',
-          description: `Install mlx-audio ${MLX_AUDIO_VERSION} into a virtual environment under voice.home, download voice.model there, build a voice profile from voice.reference, and verify the install by starting the server offline on 127.0.0.1 and synthesizing a phrase in the cloned voice to <voice.home>/verify.mp3, whose path it prints. A rerun skips each step whose inputs are unchanged. Requires Apple Silicon, uv, and ffmpeg.`,
-          epilog: `Configuration (the voice section of ~/${MACHINE_CONFIG_PATH}):
-  voice.reference.audio       Required. A recording of the voice to clone, in any
-                              format that ffmpeg reads
-  voice.reference.transcript  Required. A text file containing exactly what the
-                              recording says
-  voice.home                  Where to install. Default: ~/${DEFAULT_VOICE_HOME}
-  voice.model                 Any mlx-audio model that clones from a reference
-                              recording. Default: ${DEFAULT_VOICE_MODEL}
-
-Paths expand ~ and \${VAR} and must be absolute.`,
-          run: ({ context, stderr }) => runVoiceSetup(context, stderr),
-        }),
-      },
-    }),
+    voice: VOICE_GROUP,
   },
 });
 
@@ -115,7 +90,7 @@ export async function run(args: readonly string[], effects: RunEffects): Promise
   const stdout = createTextBuffer();
   const stderr = createTextBuffer();
   let launch: Launch | undefined;
-  let setup: VoiceSetupRequest | undefined;
+  let voice: VoiceRequest | undefined;
   const exitCode = await runCli(args.length === 0 ? ['--help'] : args, ROOT, {
     name: 'thor-demo',
     context: {
@@ -123,8 +98,8 @@ export async function run(args: readonly string[], effects: RunEffects): Promise
       launch: (requested) => {
         launch = requested;
       },
-      requestSetup: (requested) => {
-        setup = requested;
+      requestVoice: (requested) => {
+        voice = requested;
       },
     },
     version: () => resolveVersion(effects),
@@ -132,7 +107,7 @@ export async function run(args: readonly string[], effects: RunEffects): Promise
     stderr,
   });
 
-  return { exitCode, launch, setup, stderr: stderr.text, stdout: stdout.text };
+  return { exitCode, launch, stderr: stderr.text, stdout: stdout.text, voice };
 }
 
 /** An aidemo process for the entry point to start once it has written the result's output. */
@@ -161,17 +136,17 @@ export interface RunEffects {
 export interface RunResult {
   readonly exitCode: number;
   readonly launch: Launch | undefined;
-  /** A voice setup to perform. A command requests at most one of `launch` and `setup`. */
-  readonly setup: VoiceSetupRequest | undefined;
+  /** A voice command to perform. A command requests at most one of `launch` and `voice`. */
+  readonly voice: VoiceRequest | undefined;
   readonly stderr: string;
   readonly stdout: string;
 }
 
-/** What each command receives: the effects, and a way to request a launch or a voice setup. */
-interface CommandContext {
+/** What each command receives: the effects, and a way to request a launch or a voice command. */
+export interface CommandContext {
   readonly effects: RunEffects;
   readonly launch: (launch: Launch) => void;
-  readonly requestSetup: (setup: VoiceSetupRequest) => void;
+  readonly requestVoice: (voice: VoiceRequest) => void;
 }
 
 // region | Helpers
@@ -314,39 +289,6 @@ function runDemoCommand(
     root,
   });
   context.launch({ ...launch, take });
-  return;
-}
-
-/**
- * Runs `voice setup`: Checks the platform and the tools that setup needs, reads the voice section of the machine
- * configuration, then requests the setup.
- */
-function runVoiceSetup(context: CommandContext, stderr: Writer): number | undefined {
-  const prefix = 'thor-demo voice setup';
-  const { arch, env, platform } = context.effects;
-  function fail(problem: string): number {
-    stderr.write(`${prefix}: ${problem}\n`);
-    return EXIT_FAILURE;
-  }
-
-  if (platform !== 'darwin' || arch !== 'arm64') {
-    return fail(`the voice clone runs on Apple Silicon (darwin on arm64) only, not ${platform} on ${arch}`);
-  }
-  for (const tool of ['uv', 'ffmpeg']) {
-    if (findOnPath(tool, env['PATH']) === undefined)
-      return fail(`${tool} is not on PATH; install it with brew install ${tool}`);
-  }
-
-  const config = readMachineConfig(context.effects);
-  if (!config.ok) return fail(config.message);
-  if (!config.voice.ok) return fail(config.voice.message);
-  if (config.voice.voice === undefined) {
-    return fail(
-      `~/${MACHINE_CONFIG_PATH} does not set voice; add voice.reference.audio and voice.reference.transcript, and optionally voice.home and voice.model`,
-    );
-  }
-
-  context.requestSetup({ voice: config.voice.voice });
   return;
 }
 

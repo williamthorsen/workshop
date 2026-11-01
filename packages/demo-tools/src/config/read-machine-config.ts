@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { describeError } from '@williamthorsen/toolbelt.errors';
@@ -121,17 +121,10 @@ function readAbsolutePath(
   return { ok: true, value: expansion.value };
 }
 
-/** Reads a configured path that must name an existing file. */
-function readExistingFile(key: string, raw: unknown, paths: MachineConfigInput): SectionResult<{ value: string }> {
+/** Reads a configured path that must be set. Whether the file exists is for the command that reads it to check. */
+function readRequiredPath(key: string, raw: unknown, paths: MachineConfigInput): SectionResult<{ value: string }> {
   if (raw === undefined || raw === null) return { ok: false, problem: `${key} is required` };
-
-  const file = readAbsolutePath(key, raw, paths);
-  if (!file.ok) return file;
-  if (!existsSync(file.value) || !statSync(file.value).isFile()) {
-    return { ok: false, problem: `${key} must name a file, but ${file.value} is not one` };
-  }
-
-  return file;
+  return readAbsolutePath(key, raw, paths);
 }
 
 /** Reads the `voice` section, applying the defaults for `home` and `model`. */
@@ -177,10 +170,10 @@ function readVoiceSection(
     };
   }
 
-  const audio = readExistingFile('voice.reference.audio', reference['audio'], paths);
+  const audio = readRequiredPath('voice.reference.audio', reference['audio'], paths);
   if (!audio.ok) return audio;
 
-  const transcript = readExistingFile('voice.reference.transcript', reference['transcript'], paths);
+  const transcript = readRequiredPath('voice.reference.transcript', reference['transcript'], paths);
   if (!transcript.ok) return transcript;
 
   return {
