@@ -27,13 +27,6 @@ const it = baseIt.extend(
   }),
 );
 
-it.aroundEach(async (runTest, { temp }) => {
-  // `scaffoldConfig` writes relative paths, which resolve against the real process directory.
-  using _cwd = pointCwdAt(temp.dir, { chdir: true });
-
-  await runTest();
-});
-
 /**
  * Covers the kit that `rdy init` writes by running it, rather than comparing it to the template from which it came.
  *
@@ -41,6 +34,13 @@ it.aroundEach(async (runTest, { temp }) => {
  * `rdy run --jit` takes proves that a scaffolded project works before its author has written anything.
  */
 describe('scaffolded kit', () => {
+  it.aroundEach(async (runTest, { temp }) => {
+    // `scaffoldConfig` writes relative paths, which resolve against the real process directory.
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+    await runTest();
+  });
+
   it('passes every check with NODE_ENV set', async () => {
     using _silent = silenceConsole(['error', 'info']);
 

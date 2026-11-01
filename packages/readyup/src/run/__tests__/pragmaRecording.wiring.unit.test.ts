@@ -33,14 +33,14 @@ const it = baseIt.extend(
   makeFixture(() => createTempTree({}, { prefix: 'rdy-pragma-recording-' })),
 );
 
-it.aroundEach(async (runTest, { temp }) => {
-  using _cwd = pointCwdAt(temp.dir);
-  trackPaths(OTHER_PATH, SOURCE_PATH);
-
-  await runTest();
-});
-
 describe('a run recording what its checks examined and suppressed', () => {
+  it.aroundEach(async (runTest, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir);
+    trackPaths(OTHER_PATH, SOURCE_PATH);
+
+    await runTest();
+  });
+
   it('records the examined paths and the suppressed sites', async ({ temp }) => {
     temp.write(SOURCE_PATH, SOURCE_TEXT);
     const ledger = createPragmaLedger();

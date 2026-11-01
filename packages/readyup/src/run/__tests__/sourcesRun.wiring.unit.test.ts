@@ -17,12 +17,6 @@ const it = baseIt.extend(
   makeFixture(() => createTempTree({}, { prefix: 'sources-run-' })),
 );
 
-it.aroundEach(async (runTest, { temp }) => {
-  using _cwd = pointCwdAt(temp.dir, { chdir: true });
-
-  await runTest();
-});
-
 /**
  * Joins `--sources` to the kits published by a configured `npm:` source, against a real fixture project.
  * The unit tests cover the expansion and the resolver separately; this locks in the seam between them:
@@ -30,6 +24,12 @@ it.aroundEach(async (runTest, { temp }) => {
  * and that the kit name selects which of its kits run.
  */
 describe('--sources run path wiring', () => {
+  it.aroundEach(async (runTest, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+    await runTest();
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
   });

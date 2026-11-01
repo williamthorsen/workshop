@@ -18,13 +18,13 @@ const it = baseIt.extend(
   makeFixture(() => createTempTree({ '.readyup/kits/default.js': MIXED_KIT }, { prefix: 'readyup-detail-' })),
 );
 
-it.aroundAll(async (runSuite, { temp }) => {
-  using _cwd = pointCwdAt(temp.dir, { chdir: true });
-
-  await runSuite();
-});
-
 describe('--detail projection', () => {
+  it.aroundAll(async (runSuite, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+    await runSuite();
+  });
+
   it('defaults to the full tree, echoing the projection that it used', async () => {
     using io = captureStdio();
 

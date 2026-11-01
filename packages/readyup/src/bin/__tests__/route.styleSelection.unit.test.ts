@@ -49,214 +49,216 @@ const it = baseIt.extend(
   }),
 );
 
-it.aroundAll(async (runSuite, { temp }) => {
-  using _cwd = pointCwdAt(temp.dir, { chdir: true });
+describe('route.ts', () => {
+  it.aroundAll(async (runSuite, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
 
-  await runSuite();
-});
-
-describe('--style plain', () => {
-  it.for(RENDERING_COMMANDS)('renders $name without leaving the ASCII range', async ({ args }) => {
-    const { stdout, stderr } = await route([...args, '--style', 'plain']);
-
-    const rendered = stdout + stderr;
-    expect(rendered).not.toBe('');
-    expect(rendered).toMatch(/^[\u{20}-\u{7E}\n]*$/u);
+    await runSuite();
   });
 
-  it.for(RENDERING_COMMANDS)('renders $name through the plain vocabulary', async ({ args, expected }) => {
-    const { stdout, stderr } = await route([...args, '--style', 'plain']);
+  describe('--style plain', () => {
+    it.for(RENDERING_COMMANDS)('renders $name without leaving the ASCII range', async ({ args }) => {
+      const { stdout, stderr } = await route([...args, '--style', 'plain']);
 
-    expect(stdout + stderr).toMatch(expected);
+      const rendered = stdout + stderr;
+      expect(rendered).not.toBe('');
+      expect(rendered).toMatch(/^[\u{20}-\u{7E}\n]*$/u);
+    });
+
+    it.for(RENDERING_COMMANDS)('renders $name through the plain vocabulary', async ({ args, expected }) => {
+      const { stdout, stderr } = await route([...args, '--style', 'plain']);
+
+      expect(stdout + stderr).toMatch(expected);
+    });
+
+    it('is accepted as an assigned value too', async () => {
+      const { stdout } = await route(['verify', '--manifest', 'manifest.json', '--style=plain']);
+
+      expect(stdout).toContain(`${PLAIN_PASS}  passing`);
+    });
   });
 
-  it('is accepted as an assigned value too', async () => {
-    const { stdout } = await route(['verify', '--manifest', 'manifest.json', '--style=plain']);
+  describe('a style named ahead of the command', () => {
+    it.for(RENDERING_COMMANDS)('applies to $name without being taken for a kit name', async ({ args }) => {
+      const { exitCode, stderr } = await route(['--style', 'plain', ...args]);
 
-    expect(stdout).toContain(`${PLAIN_PASS}  passing`);
-  });
-});
+      expect(stderr).not.toContain('not found');
+      expect(exitCode).not.toBe(2);
+    });
 
-describe('a style named ahead of the command', () => {
-  it.for(RENDERING_COMMANDS)('applies to $name without being taken for a kit name', async ({ args }) => {
-    const { exitCode, stderr } = await route(['--style', 'plain', ...args]);
+    it('is accepted as an assigned value too', async () => {
+      const { exitCode, stdout } = await route(['--style=plain', 'verify', '--manifest', 'manifest.json']);
 
-    expect(stderr).not.toContain('not found');
-    expect(exitCode).not.toBe(2);
-  });
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain(`${PLAIN_PASS}  passing`);
+    });
 
-  it('is accepted as an assigned value too', async () => {
-    const { exitCode, stdout } = await route(['--style=plain', 'verify', '--manifest', 'manifest.json']);
+    it('leaves --help showing the top-level help rather than the run subcommand\u{2019}s', async () => {
+      const { stdout } = await route(['--style', 'plain', '--help']);
 
-    expect(exitCode).toBe(0);
-    expect(stdout).toContain(`${PLAIN_PASS}  passing`);
-  });
+      expect(stdout).toContain('rdy <command> [options]');
+    });
 
-  it('leaves --help showing the top-level help rather than the run subcommand\u{2019}s', async () => {
-    const { stdout } = await route(['--style', 'plain', '--help']);
+    it('leaves --version reporting the version', async () => {
+      const { stdout } = await route(['--style', 'plain', '--version']);
 
-    expect(stdout).toContain('rdy <command> [options]');
-  });
+      expect(stdout).toMatch(/^\d+\.\d+\.\d+/u);
+    });
 
-  it('leaves --version reporting the version', async () => {
-    const { stdout } = await route(['--style', 'plain', '--version']);
+    it('still rejects a trailing --style with no value', async () => {
+      const { exitCode } = await route(['--style']);
 
-    expect(stdout).toMatch(/^\d+\.\d+\.\d+/u);
-  });
+      expect(exitCode).toBe(2);
+    });
 
-  it('still rejects a trailing --style with no value', async () => {
-    const { exitCode } = await route(['--style']);
+    it('rejects a flag standing where its value belongs, and does not drop that flag', async () => {
+      const { exitCode, stdout } = await route(['--style', '--json', 'verify', '--manifest', 'manifest.json']);
 
-    expect(exitCode).toBe(2);
-  });
-
-  it('rejects a flag standing where its value belongs, and does not drop that flag', async () => {
-    const { exitCode, stdout } = await route(['--style', '--json', 'verify', '--manifest', 'manifest.json']);
-
-    expect(exitCode).toBe(2);
-    expect(stdout).toContain('--style requires a value');
-  });
-});
-
-describe('--style rich', () => {
-  it('renders glyphs even when the environment would detect otherwise', async () => {
-    vi.stubEnv('CI', 'true');
-
-    const { stdout } = await route(['verify', '--manifest', 'manifest.json', '--style', 'rich'], { isTty: false });
-
-    expect(stdout).toContain(`${RICH_PASS} passing`);
-  });
-});
-
-describe('an unrecognized style', () => {
-  it('fails the invocation and names the valid set', async () => {
-    const { exitCode, stderr } = await route(['verify', '--style', 'emoji']);
-
-    expect(exitCode).toBe(2);
-    expect(stderr).toContain('--style must be one of: auto, plain, rich (got "emoji")');
+      expect(exitCode).toBe(2);
+      expect(stdout).toContain('--style requires a value');
+    });
   });
 
-  it('is rejected from the environment variable as well', async () => {
-    vi.stubEnv(STYLE_ENV_VAR, 'text');
+  describe('--style rich', () => {
+    it('renders glyphs even when the environment would detect otherwise', async () => {
+      vi.stubEnv('CI', 'true');
 
-    const { exitCode, stderr } = await route(['verify', '--manifest', 'manifest.json']);
+      const { stdout } = await route(['verify', '--manifest', 'manifest.json', '--style', 'rich'], { isTty: false });
 
-    expect(exitCode).toBe(2);
-    expect(stderr).toContain(`${STYLE_ENV_VAR} must be one of: auto, plain, rich (got "text")`);
-  });
-});
-
-describe('detection', () => {
-  // The only coverage of the wiring that reads CI and the terminal. Each test clears RDY_STYLE, which the
-  // developer's own environment may carry and which would otherwise outrank detection.
-  it('chooses plain under CI', async () => {
-    vi.stubEnv(STYLE_ENV_VAR, undefined);
-    vi.stubEnv('CI', 'true');
-
-    const { stdout } = await route(['verify', '--manifest', 'manifest.json'], { isTty: true });
-
-    expect(stdout).toContain(`${PLAIN_PASS}  passing`);
+      expect(stdout).toContain(`${RICH_PASS} passing`);
+    });
   });
 
-  it('chooses plain when the output is not a terminal', async () => {
-    vi.stubEnv(STYLE_ENV_VAR, undefined);
-    vi.stubEnv('CI', undefined);
+  describe('an unrecognized style', () => {
+    it('fails the invocation and names the valid set', async () => {
+      const { exitCode, stderr } = await route(['verify', '--style', 'emoji']);
 
-    const { stdout } = await route(['verify', '--manifest', 'manifest.json'], { isTty: false });
+      expect(exitCode).toBe(2);
+      expect(stderr).toContain('--style must be one of: auto, plain, rich (got "emoji")');
+    });
 
-    expect(stdout).toContain(`${PLAIN_PASS}  passing`);
+    it('is rejected from the environment variable as well', async () => {
+      vi.stubEnv(STYLE_ENV_VAR, 'text');
+
+      const { exitCode, stderr } = await route(['verify', '--manifest', 'manifest.json']);
+
+      expect(exitCode).toBe(2);
+      expect(stderr).toContain(`${STYLE_ENV_VAR} must be one of: auto, plain, rich (got "text")`);
+    });
   });
 
-  it('chooses rich for a terminal outside CI', async () => {
-    vi.stubEnv(STYLE_ENV_VAR, undefined);
-    vi.stubEnv('CI', undefined);
-    vi.stubEnv('TERM', 'xterm-256color');
+  describe('detection', () => {
+    // The only coverage of the wiring that reads CI and the terminal. Each test clears RDY_STYLE, which the
+    // developer's own environment may carry and which would otherwise outrank detection.
+    it('chooses plain under CI', async () => {
+      vi.stubEnv(STYLE_ENV_VAR, undefined);
+      vi.stubEnv('CI', 'true');
 
-    const { stdout } = await route(['verify', '--manifest', 'manifest.json'], { isTty: true });
+      const { stdout } = await route(['verify', '--manifest', 'manifest.json'], { isTty: true });
 
-    expect(stdout).toContain(`${RICH_PASS} passing`);
+      expect(stdout).toContain(`${PLAIN_PASS}  passing`);
+    });
+
+    it('chooses plain when the output is not a terminal', async () => {
+      vi.stubEnv(STYLE_ENV_VAR, undefined);
+      vi.stubEnv('CI', undefined);
+
+      const { stdout } = await route(['verify', '--manifest', 'manifest.json'], { isTty: false });
+
+      expect(stdout).toContain(`${PLAIN_PASS}  passing`);
+    });
+
+    it('chooses rich for a terminal outside CI', async () => {
+      vi.stubEnv(STYLE_ENV_VAR, undefined);
+      vi.stubEnv('CI', undefined);
+      vi.stubEnv('TERM', 'xterm-256color');
+
+      const { stdout } = await route(['verify', '--manifest', 'manifest.json'], { isTty: true });
+
+      expect(stdout).toContain(`${RICH_PASS} passing`);
+    });
+
+    it('is outranked by the environment variable', async () => {
+      vi.stubEnv(STYLE_ENV_VAR, 'rich');
+      vi.stubEnv('CI', 'true');
+
+      const { stdout } = await route(['verify', '--manifest', 'manifest.json']);
+
+      expect(stdout).toContain(`${RICH_PASS} passing`);
+    });
   });
 
-  it('is outranked by the environment variable', async () => {
-    vi.stubEnv(STYLE_ENV_VAR, 'rich');
-    vi.stubEnv('CI', 'true');
+  describe('an explicitly chosen style', () => {
+    it.for(['plain', 'rich'] as const)('renders %s identically with and without a terminal', async (style) => {
+      const args = ['verify', '--manifest', 'manifest.json', '--style', style];
 
-    const { stdout } = await route(['verify', '--manifest', 'manifest.json']);
+      const attached = await route(args, { isTty: true });
+      const piped = await route(args, { isTty: false });
 
-    expect(stdout).toContain(`${RICH_PASS} passing`);
-  });
-});
-
-describe('an explicitly chosen style', () => {
-  it.for(['plain', 'rich'] as const)('renders %s identically with and without a terminal', async (style) => {
-    const args = ['verify', '--manifest', 'manifest.json', '--style', style];
-
-    const attached = await route(args, { isTty: true });
-    const piped = await route(args, { isTty: false });
-
-    expect(piped.stdout).toBe(attached.stdout);
-  });
-});
-
-describe('alongside --json', () => {
-  it('leaves the JSON document on stdout and styles the prose on stderr', async () => {
-    const { stdout, stderr } = await route(['verify', '--manifest', 'manifest.json', '--json', '--style', 'plain']);
-
-    const document: unknown = JSON.parse(stdout);
-    expect(document).toMatchObject({ passed: true });
-    expect(stderr).toContain(PLAIN_PASS);
-    expect(stderr).not.toContain(RICH_PASS);
+      expect(piped.stdout).toBe(attached.stdout);
+    });
   });
 
-  it('emits the same JSON whichever style is selected', async () => {
-    const plain = await route(['verify', '--manifest', 'manifest.json', '--json', '--style', 'plain']);
-    const rich = await route(['verify', '--manifest', 'manifest.json', '--json', '--style', 'rich']);
+  describe('alongside --json', () => {
+    it('leaves the JSON document on stdout and styles the prose on stderr', async () => {
+      const { stdout, stderr } = await route(['verify', '--manifest', 'manifest.json', '--json', '--style', 'plain']);
 
-    expect(rich.stdout).toBe(plain.stdout);
-  });
-});
+      const document: unknown = JSON.parse(stdout);
+      expect(document).toMatchObject({ passed: true });
+      expect(stderr).toContain(PLAIN_PASS);
+      expect(stderr).not.toContain(RICH_PASS);
+    });
 
-describe('colour', () => {
-  /** Matches the start of an SGR escape sequence. */
-  const ESCAPE = '\u{1B}[';
+    it('emits the same JSON whichever style is selected', async () => {
+      const plain = await route(['verify', '--manifest', 'manifest.json', '--json', '--style', 'plain']);
+      const rich = await route(['verify', '--manifest', 'manifest.json', '--json', '--style', 'rich']);
 
-  const RUN = ['run', 'passing', '--style', 'rich'];
-
-  it('paints rich output when the environment allows it', async () => {
-    const { stdout } = await route(RUN, { color: true });
-
-    expect(stdout).toContain(`${ESCAPE}32m1 passed`);
+      expect(rich.stdout).toBe(plain.stdout);
+    });
   });
 
-  it('is turned off by NO_COLOR', async () => {
-    const { stdout } = await route(RUN, { env: { NO_COLOR: '1' } });
+  describe('colour', () => {
+    /** Matches the start of an SGR escape sequence. */
+    const ESCAPE = '\u{1B}[';
 
-    expect(stdout).toContain('1 passed');
-    expect(stdout).not.toContain(ESCAPE);
-  });
+    const RUN = ['run', 'passing', '--style', 'rich'];
 
-  it('is turned off by TERM=dumb', async () => {
-    const { stdout } = await route(RUN, { color: true, env: { TERM: 'dumb' } });
+    it('paints rich output when the environment allows it', async () => {
+      const { stdout } = await route(RUN, { color: true });
 
-    expect(stdout).toContain('1 passed');
-    expect(stdout).not.toContain(ESCAPE);
-  });
+      expect(stdout).toContain(`${ESCAPE}32m1 passed`);
+    });
 
-  it.for([
-    { name: 'plain output', args: ['run', 'passing', '--style', 'plain'] },
-    { name: 'JSON output', args: ['run', 'passing', '--style', 'rich', '--json'] },
-  ])('never reaches $name', async ({ args }) => {
-    const { stdout } = await route(args, { color: true });
+    it('is turned off by NO_COLOR', async () => {
+      const { stdout } = await route(RUN, { env: { NO_COLOR: '1' } });
 
-    expect(stdout).not.toBe('');
-    expect(stdout).not.toContain(ESCAPE);
-  });
+      expect(stdout).toContain('1 passed');
+      expect(stdout).not.toContain(ESCAPE);
+    });
 
-  it('renders rich output identically with and without a terminal', async () => {
-    const attached = await route(RUN, { color: true, isTty: true });
-    const piped = await route(RUN, { color: true, isTty: false });
+    it('is turned off by TERM=dumb', async () => {
+      const { stdout } = await route(RUN, { color: true, env: { TERM: 'dumb' } });
 
-    expect(piped.stdout).toBe(attached.stdout);
+      expect(stdout).toContain('1 passed');
+      expect(stdout).not.toContain(ESCAPE);
+    });
+
+    it.for([
+      { name: 'plain output', args: ['run', 'passing', '--style', 'plain'] },
+      { name: 'JSON output', args: ['run', 'passing', '--style', 'rich', '--json'] },
+    ])('never reaches $name', async ({ args }) => {
+      const { stdout } = await route(args, { color: true });
+
+      expect(stdout).not.toBe('');
+      expect(stdout).not.toContain(ESCAPE);
+    });
+
+    it('renders rich output identically with and without a terminal', async () => {
+      const attached = await route(RUN, { color: true, isTty: true });
+      const piped = await route(RUN, { color: true, isTty: false });
+
+      expect(piped.stdout).toBe(attached.stdout);
+    });
   });
 });
 

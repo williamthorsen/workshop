@@ -24,13 +24,13 @@ const it = baseIt.extend(
   ),
 );
 
-it.aroundAll(async (runSuite, { temp }) => {
-  using _cwd = pointCwdAt(temp.dir, { chdir: true });
-
-  await runSuite();
-});
-
 describe('compile-time readyup version in the run report', () => {
+  it.aroundAll(async (runSuite, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+    await runSuite();
+  });
+
   it('names the readyup by which a local bundle was built, with no origin to nest it under', async () => {
     using io = captureStdio();
 

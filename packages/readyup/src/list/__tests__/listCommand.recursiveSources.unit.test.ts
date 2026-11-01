@@ -54,14 +54,14 @@ const it = baseIt.extend(
   ),
 );
 
-it.aroundEach(async (runTest, { temp }) => {
-  using _cwd = pointCwdAt(temp.dir);
-
-  configureProjects({ '.': ['npm:@acme/kits'] });
-  await runTest();
-});
-
 describe('list --recursive --sources', () => {
+  it.aroundEach(async (runTest, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir);
+
+    configureProjects({ '.': ['npm:@acme/kits'] });
+    await runTest();
+  });
+
   describe('rendering', () => {
     it('reports each project as a directory heading over its kit-publishing dependencies', async () => {
       const { exitCode, stdout } = await list();

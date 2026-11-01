@@ -22,13 +22,13 @@ const it = baseIt.extend(
   ),
 );
 
-it.aroundAll(async (runSuite, { temp }) => {
-  using _cwd = pointCwdAt(temp.dir, { chdir: true });
-
-  await runSuite();
-});
-
 describe('partial results when a kit fails after dispatch', () => {
+  it.aroundAll(async (runSuite, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+    await runSuite();
+  });
+
   describe('JSON mode', () => {
     it('keeps results from the kits on either side of a failed kit', async () => {
       const { exitCode, stdout } = await routeCli(['passing', 'absent', 'failing', '--json']);

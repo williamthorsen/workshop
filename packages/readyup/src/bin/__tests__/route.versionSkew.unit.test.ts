@@ -25,13 +25,13 @@ const it = baseIt.extend(
   ),
 );
 
-it.aroundAll(async (runSuite, { temp }) => {
-  using _cwd = pointCwdAt(temp.dir, { chdir: true });
-
-  await runSuite();
-});
-
 describe('skew between a bundle stamp and the runner', () => {
+  it.aroundAll(async (runSuite, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+    await runSuite();
+  });
+
   it('reports a bundle compiled ahead of the runner, naming both versions', async () => {
     using io = captureStdio();
 

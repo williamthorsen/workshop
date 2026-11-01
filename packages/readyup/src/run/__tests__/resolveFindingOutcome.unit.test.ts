@@ -19,13 +19,13 @@ const it = baseIt.extend(
   makeFixture(() => createTempTree({}, { prefix: 'rdy-finding-outcome-' })),
 );
 
-it.aroundEach(async (runTest, { temp }) => {
-  using _cwd = pointCwdAt(temp.dir);
-
-  await runTest();
-});
-
 describe(resolveFindingOutcome, () => {
+  it.aroundEach(async (runTest, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir);
+
+    await runTest();
+  });
+
   it('fails and names each reported finding, by symbol when one is declared', () => {
     const outcome = resolveFindingOutcome({ adoptedCount: 0, findings: [CLONE, INLINE] }, []);
 

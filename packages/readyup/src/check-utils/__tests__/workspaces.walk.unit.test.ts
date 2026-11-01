@@ -31,13 +31,13 @@ const it = baseIt.extend(
   makeFixture(() => createTempTree({}, { prefix: 'rdy-ws-walk-' })),
 );
 
-it.aroundEach(async (runTest, { temp }) => {
-  using _cwd = pointCwdAt(temp.dir);
-
-  await runTest();
-});
-
 describe(`${discoverWorkspaces.name} directory walk`, () => {
+  it.aroundEach(async (runTest, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir);
+
+    await runTest();
+  });
+
   beforeEach(() => {
     failures.clear();
   });

@@ -56,14 +56,14 @@ const it = baseIt.extend(
   ),
 );
 
-it.aroundEach(async (runTest, { temp }) => {
-  using _cwd = pointCwdAt(temp.dir);
-
-  configurePackages([]);
-  await runTest();
-});
-
 describe('list --sources', () => {
+  it.aroundEach(async (runTest, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir);
+
+    configurePackages([]);
+    await runTest();
+  });
+
   describe('rendering', () => {
     it('heads one block per kit-publishing dependency, alphabetically', async () => {
       const { exitCode, stdout } = await list(['--sources']);

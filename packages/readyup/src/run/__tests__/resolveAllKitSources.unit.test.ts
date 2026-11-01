@@ -30,13 +30,13 @@ const it = baseIt.extend(
   makeFixture(() => createTempTree({}, { prefix: 'resolve-all-kit-sources-' })),
 );
 
-it.aroundEach(async (runTest, { temp }) => {
-  using _cwd = pointCwdAt(temp.dir, { chdir: true });
-
-  await runTest();
-});
-
 describe(resolveAllKitSources, () => {
+  it.aroundEach(async (runTest, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+    await runTest();
+  });
+
   afterEach(() => {
     vi.unstubAllGlobals();
   });

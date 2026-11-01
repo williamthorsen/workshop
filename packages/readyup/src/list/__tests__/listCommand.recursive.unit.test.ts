@@ -96,13 +96,13 @@ const it = baseIt
   )
   .extend('reads', { auto: true }, ({ temp }) => useFailingDirectoryRead(mockReaddirSync, temp.dir));
 
-it.aroundEach(async (runTest, { temp }) => {
-  using _cwd = pointCwdAt(temp.dir);
-
-  await runTest();
-});
-
 describe('list --recursive', () => {
+  it.aroundEach(async (runTest, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir);
+
+    await runTest();
+  });
+
   afterEach(() => {
     setStyle('rich');
   });

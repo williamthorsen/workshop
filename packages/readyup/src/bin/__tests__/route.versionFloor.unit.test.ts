@@ -28,13 +28,13 @@ const it = baseIt.extend(
   ),
 );
 
-it.aroundAll(async (runSuite, { temp }) => {
-  using _cwd = pointCwdAt(temp.dir, { chdir: true });
-
-  await runSuite();
-});
-
 describe('a kit-declared readyup floor', () => {
+  it.aroundAll(async (runSuite, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+    await runSuite();
+  });
+
   it('fails a kit whose floor the runner does not meet, naming both versions', async () => {
     using io = captureStdio();
 

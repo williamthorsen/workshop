@@ -51,18 +51,18 @@ const it = baseIt
   )
   .extend('compiled', { auto: true }, async ({ temp }): Promise<CompileResult> => recordCompiledManifest(temp));
 
-it.aroundEach(async (runTest, { temp }) => {
-  // `runVerify` names the manifest by a relative path, as a real project's invocation does.
-  using _cwd = pointCwdAt(temp.dir, { chdir: true });
-
-  await runTest();
-});
-
 /**
  * Exercises `--rebuild` against real esbuild, which is what the check is for: The inputs that it
  * catches and the recorded hashes miss are the ones that a mocked bundler stands in for.
  */
 describe('verifyCommand --rebuild', () => {
+  it.aroundEach(async (runTest, { temp }) => {
+    // `runVerify` names the manifest by a relative path, as a real project's invocation does.
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+    await runTest();
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
   });

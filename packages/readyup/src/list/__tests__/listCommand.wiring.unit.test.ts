@@ -20,18 +20,18 @@ const it = baseIt.extend(
   makeFixture(() => createTempTree({}, { prefix: 'list-integ-' })),
 );
 
-it.aroundEach(async (runTest, { temp }) => {
-  using _cwd = pointCwdAt(temp.dir, { chdir: true });
-
-  await runTest();
-});
-
 /**
  * Exercises `listCommand` against real directories, without mocking the manifest reader or the
  * filesystem enumerator. The unit tests cover each mode's branches; this locks in the wiring on which
  * the manifest-less fallback depends -- that `list --from` looks where `run --from` loads.
  */
 describe('listCommand wiring', () => {
+  it.aroundEach(async (runTest, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+    await runTest();
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
   });

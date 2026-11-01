@@ -12,191 +12,193 @@ const it = baseIt.extend(
   makeFixture(() => createTempTree({}, { prefix: 'rdy-fs-' })),
 );
 
-it.aroundEach(async (runTest, { temp }) => {
-  using _cwd = pointCwdAt(temp.dir);
+describe('filesystem.ts', () => {
+  it.aroundEach(async (runTest, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir);
 
-  await runTest();
-});
-
-describe(fileExists, () => {
-  it('returns true when the file exists', ({ temp }) => {
-    temp.write('found.txt', 'content');
-
-    expect(fileExists('found.txt')).toBe(true);
+    await runTest();
   });
 
-  it('returns false when the file does not exist', () => {
-    expect(fileExists('missing.txt')).toBe(false);
-  });
+  describe(fileExists, () => {
+    it('returns true when the file exists', ({ temp }) => {
+      temp.write('found.txt', 'content');
 
-  it('reads an absolute path as itself', ({ temp }) => {
-    temp.write('found.txt', 'content');
+      expect(fileExists('found.txt')).toBe(true);
+    });
 
-    expect(fileExists(join(temp.dir, 'found.txt'))).toBe(true);
-  });
-});
+    it('returns false when the file does not exist', () => {
+      expect(fileExists('missing.txt')).toBe(false);
+    });
 
-describe(fileContains, () => {
-  it('returns true when the file matches the pattern', ({ temp }) => {
-    temp.write('data.txt', 'version: 3.2.1');
+    it('reads an absolute path as itself', ({ temp }) => {
+      temp.write('found.txt', 'content');
 
-    expect(fileContains('data.txt', /version:\s*\d+/)).toBe(true);
-  });
-
-  it('returns false when the file does not match the pattern', ({ temp }) => {
-    temp.write('data.txt', 'no match here');
-
-    expect(fileContains('data.txt', /version:/)).toBe(false);
-  });
-
-  it('returns false when the file does not exist', () => {
-    expect(fileContains('missing.txt', /anything/)).toBe(false);
-  });
-
-  it('matches a string as a literal substring', ({ temp }) => {
-    temp.write('data.txt', 'import @.agents/PROJECT.md');
-
-    expect(fileContains('data.txt', '@.agents/PROJECT.md')).toBe(true);
-  });
-
-  it('does not read a string as a regex', ({ temp }) => {
-    temp.write('data.txt', 'axb');
-
-    expect(fileContains('data.txt', 'a.b')).toBe(false);
-  });
-
-  it.for(['g', 'y'])('returns the same result on every call with a %s-flagged regex', (flags, { temp }) => {
-    temp.write('data.txt', 'bad stuff');
-    const pattern = new RegExp('bad', flags);
-    pattern.lastIndex = 5;
-
-    expect([fileContains('data.txt', pattern), fileContains('data.txt', pattern)]).toStrictEqual([true, true]);
-    expect(pattern.lastIndex).toBe(5);
-  });
-});
-
-describe(fileDoesNotContain, () => {
-  it('returns true when the file does not match the pattern', ({ temp }) => {
-    temp.write('clean.txt', 'all good');
-
-    expect(fileDoesNotContain('clean.txt', /bad/)).toBe(true);
-  });
-
-  it('returns false when the file matches the pattern', ({ temp }) => {
-    temp.write('dirty.txt', 'contains bad stuff');
-
-    expect(fileDoesNotContain('dirty.txt', /bad/)).toBe(false);
-  });
-
-  it('returns true when the file does not exist', () => {
-    expect(fileDoesNotContain('missing.txt', /anything/)).toBe(true);
-  });
-
-  it('returns false when the file contains the string', ({ temp }) => {
-    temp.write('dirty.txt', 'uses a.b here');
-
-    expect(fileDoesNotContain('dirty.txt', 'a.b')).toBe(false);
-  });
-
-  it('does not read a string as a regex', ({ temp }) => {
-    temp.write('clean.txt', 'axb');
-
-    expect(fileDoesNotContain('clean.txt', 'a.b')).toBe(true);
-  });
-
-  it.for(['g', 'y'])('returns the same result on every call with a %s-flagged regex', (flags, { temp }) => {
-    temp.write('dirty.txt', 'bad stuff');
-    const pattern = new RegExp('bad', flags);
-    pattern.lastIndex = 5;
-
-    expect([fileDoesNotContain('dirty.txt', pattern), fileDoesNotContain('dirty.txt', pattern)]).toStrictEqual([
-      false,
-      false,
-    ]);
-    expect(pattern.lastIndex).toBe(5);
-  });
-});
-
-describe(filesExist, () => {
-  it('returns ok with zero counts when paths array is empty', () => {
-    const result = filesExist([]);
-
-    expect(result).toStrictEqual({
-      ok: true,
-      progress: { type: 'fraction', passedCount: 0, count: 0 },
+      expect(fileExists(join(temp.dir, 'found.txt'))).toBe(true);
     });
   });
 
-  it('returns ok when all files exist', ({ temp }) => {
-    temp.write('a.txt', '');
-    temp.write('b.txt', '');
+  describe(fileContains, () => {
+    it('returns true when the file matches the pattern', ({ temp }) => {
+      temp.write('data.txt', 'version: 3.2.1');
 
-    const result = filesExist(['a.txt', 'b.txt']);
+      expect(fileContains('data.txt', /version:\s*\d+/)).toBe(true);
+    });
 
-    expect(result).toStrictEqual({
-      ok: true,
-      progress: { type: 'fraction', passedCount: 2, count: 2 },
+    it('returns false when the file does not match the pattern', ({ temp }) => {
+      temp.write('data.txt', 'no match here');
+
+      expect(fileContains('data.txt', /version:/)).toBe(false);
+    });
+
+    it('returns false when the file does not exist', () => {
+      expect(fileContains('missing.txt', /anything/)).toBe(false);
+    });
+
+    it('matches a string as a literal substring', ({ temp }) => {
+      temp.write('data.txt', 'import @.agents/PROJECT.md');
+
+      expect(fileContains('data.txt', '@.agents/PROJECT.md')).toBe(true);
+    });
+
+    it('does not read a string as a regex', ({ temp }) => {
+      temp.write('data.txt', 'axb');
+
+      expect(fileContains('data.txt', 'a.b')).toBe(false);
+    });
+
+    it.for(['g', 'y'])('returns the same result on every call with a %s-flagged regex', (flags, { temp }) => {
+      temp.write('data.txt', 'bad stuff');
+      const pattern = new RegExp('bad', flags);
+      pattern.lastIndex = 5;
+
+      expect([fileContains('data.txt', pattern), fileContains('data.txt', pattern)]).toStrictEqual([true, true]);
+      expect(pattern.lastIndex).toBe(5);
     });
   });
 
-  it('returns not ok with missing files listed', ({ temp }) => {
-    temp.write('a.txt', '');
+  describe(fileDoesNotContain, () => {
+    it('returns true when the file does not match the pattern', ({ temp }) => {
+      temp.write('clean.txt', 'all good');
 
-    const result = filesExist(['a.txt', 'b.txt', 'c.txt']);
+      expect(fileDoesNotContain('clean.txt', /bad/)).toBe(true);
+    });
 
-    expect(result).toStrictEqual({
-      ok: false,
-      detail: 'Of the files, b.txt and c.txt are missing',
-      progress: { type: 'fraction', passedCount: 1, count: 3 },
+    it('returns false when the file matches the pattern', ({ temp }) => {
+      temp.write('dirty.txt', 'contains bad stuff');
+
+      expect(fileDoesNotContain('dirty.txt', /bad/)).toBe(false);
+    });
+
+    it('returns true when the file does not exist', () => {
+      expect(fileDoesNotContain('missing.txt', /anything/)).toBe(true);
+    });
+
+    it('returns false when the file contains the string', ({ temp }) => {
+      temp.write('dirty.txt', 'uses a.b here');
+
+      expect(fileDoesNotContain('dirty.txt', 'a.b')).toBe(false);
+    });
+
+    it('does not read a string as a regex', ({ temp }) => {
+      temp.write('clean.txt', 'axb');
+
+      expect(fileDoesNotContain('clean.txt', 'a.b')).toBe(true);
+    });
+
+    it.for(['g', 'y'])('returns the same result on every call with a %s-flagged regex', (flags, { temp }) => {
+      temp.write('dirty.txt', 'bad stuff');
+      const pattern = new RegExp('bad', flags);
+      pattern.lastIndex = 5;
+
+      expect([fileDoesNotContain('dirty.txt', pattern), fileDoesNotContain('dirty.txt', pattern)]).toStrictEqual([
+        false,
+        false,
+      ]);
+      expect(pattern.lastIndex).toBe(5);
     });
   });
 
-  it('resolves paths relative to baseDir when provided', ({ temp }) => {
-    temp.write('sub/found.txt', '');
+  describe(filesExist, () => {
+    it('returns ok with zero counts when paths array is empty', () => {
+      const result = filesExist([]);
 
-    const result = filesExist(['found.txt', 'missing.txt'], { baseDir: 'sub' });
+      expect(result).toStrictEqual({
+        ok: true,
+        progress: { type: 'fraction', passedCount: 0, count: 0 },
+      });
+    });
 
-    expect(result).toStrictEqual({
-      ok: false,
-      detail: 'Of the files, missing.txt is missing',
-      progress: { type: 'fraction', passedCount: 1, count: 2 },
+    it('returns ok when all files exist', ({ temp }) => {
+      temp.write('a.txt', '');
+      temp.write('b.txt', '');
+
+      const result = filesExist(['a.txt', 'b.txt']);
+
+      expect(result).toStrictEqual({
+        ok: true,
+        progress: { type: 'fraction', passedCount: 2, count: 2 },
+      });
+    });
+
+    it('returns not ok with missing files listed', ({ temp }) => {
+      temp.write('a.txt', '');
+
+      const result = filesExist(['a.txt', 'b.txt', 'c.txt']);
+
+      expect(result).toStrictEqual({
+        ok: false,
+        detail: 'Of the files, b.txt and c.txt are missing',
+        progress: { type: 'fraction', passedCount: 1, count: 3 },
+      });
+    });
+
+    it('resolves paths relative to baseDir when provided', ({ temp }) => {
+      temp.write('sub/found.txt', '');
+
+      const result = filesExist(['found.txt', 'missing.txt'], { baseDir: 'sub' });
+
+      expect(result).toStrictEqual({
+        ok: false,
+        detail: 'Of the files, missing.txt is missing',
+        progress: { type: 'fraction', passedCount: 1, count: 2 },
+      });
+    });
+
+    it('reads an absolute path as itself', ({ temp }) => {
+      temp.write('found.txt', '');
+
+      const result = filesExist([join(temp.dir, 'found.txt')]);
+
+      expect(result).toStrictEqual({
+        ok: true,
+        progress: { type: 'fraction', passedCount: 1, count: 1 },
+      });
+    });
+
+    it('reads an absolute path as itself in preference to baseDir', ({ temp }) => {
+      temp.write('outside-base.txt', '');
+
+      const result = filesExist([join(temp.dir, 'outside-base.txt')], { baseDir: 'sub' });
+
+      expect(result.ok).toBe(true);
     });
   });
 
-  it('reads an absolute path as itself', ({ temp }) => {
-    temp.write('found.txt', '');
+  describe(readFile, () => {
+    it('returns the file content as a string', ({ temp }) => {
+      temp.write('hello.txt', 'hello world');
 
-    const result = filesExist([join(temp.dir, 'found.txt')]);
-
-    expect(result).toStrictEqual({
-      ok: true,
-      progress: { type: 'fraction', passedCount: 1, count: 1 },
+      expect(readFile('hello.txt')).toBe('hello world');
     });
-  });
 
-  it('reads an absolute path as itself in preference to baseDir', ({ temp }) => {
-    temp.write('outside-base.txt', '');
+    it('returns undefined when the file does not exist', () => {
+      expect(readFile('missing.txt')).toBeUndefined();
+    });
 
-    const result = filesExist([join(temp.dir, 'outside-base.txt')], { baseDir: 'sub' });
+    it('reads an absolute path as itself', ({ temp }) => {
+      temp.write('hello.txt', 'hello world');
 
-    expect(result.ok).toBe(true);
-  });
-});
-
-describe(readFile, () => {
-  it('returns the file content as a string', ({ temp }) => {
-    temp.write('hello.txt', 'hello world');
-
-    expect(readFile('hello.txt')).toBe('hello world');
-  });
-
-  it('returns undefined when the file does not exist', () => {
-    expect(readFile('missing.txt')).toBeUndefined();
-  });
-
-  it('reads an absolute path as itself', ({ temp }) => {
-    temp.write('hello.txt', 'hello world');
-
-    expect(readFile(join(temp.dir, 'hello.txt'))).toBe('hello world');
+      expect(readFile(join(temp.dir, 'hello.txt'))).toBe('hello world');
+    });
   });
 });
