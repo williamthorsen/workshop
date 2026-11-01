@@ -85,13 +85,21 @@ function findMissingVoicePrerequisite(
   }
   if (platform !== 'darwin') return `the recorder runs on macOS only, not ${platform}`;
 
-  const missing = tools.find((tool) => findOnPath(tool, env['PATH']) === undefined);
-  if (missing === undefined) return undefined;
-  const install =
-    missing === 'swiftc'
-      ? 'install the Xcode Command Line Tools with xcode-select --install'
-      : `install it with brew install ${missing}`;
-  return `${missing} is not on PATH; ${install}`;
+  const missing = tools.filter((tool) => findOnPath(tool, env['PATH']) === undefined);
+  return missing.length === 0 ? undefined : formatMissingTools(missing);
+}
+
+/** Names the tools absent from `PATH` and how to install each: swiftc from the Xcode tools, the rest with brew. */
+function formatMissingTools(missing: readonly string[]): string {
+  const list = new Intl.ListFormat('en', { type: 'conjunction' });
+  const brewed = missing.filter((tool) => tool !== 'swiftc');
+  const installs: string[] = [];
+  if (missing.includes('swiftc')) installs.push('install the Xcode Command Line Tools with xcode-select --install');
+  if (brewed.length > 0) {
+    const object = brewed.length === missing.length ? (brewed.length === 1 ? 'it' : 'them') : list.format(brewed);
+    installs.push(`install ${object} with brew install ${brewed.join(' ')}`);
+  }
+  return `${list.format(missing)} ${missing.length === 1 ? 'is' : 'are'} not on PATH; ${installs.join(', and ')}`;
 }
 
 /** Reads the voice section of the machine configuration, which a voice command other than microphones requires. */

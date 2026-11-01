@@ -358,6 +358,17 @@ describe(run, () => {
       expect(result.stderr).toContain(`${tool} is not on PATH; install it with brew install ${tool}`);
     });
 
+    it('names every missing tool in one message', async () => {
+      using tree = createVoiceMachine({ tools: [] });
+
+      const result = await run(['voice', 'setup'], buildVoiceEffects(tree));
+
+      expect(result.exitCode).toBe(1);
+      expect(result.stderr).toBe(
+        'thor-demo voice setup: uv and ffmpeg are not on PATH; install them with brew install uv ffmpeg\n',
+      );
+    });
+
     it('stops when the machine configuration does not set voice, naming the keys to add', async () => {
       using tree = createVoiceMachine({ config: 'archive:\n  root: /takes\n' });
 
