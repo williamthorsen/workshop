@@ -17,9 +17,12 @@ import { resolveAidemo } from '../aidemo/resolve-aidemo.ts';
 import { planTake, type TakeDisposition } from '../archive/plan-take.ts';
 import type { SourceState } from '../clients/git/read-source-state.ts';
 import { REPO_CONFIG_PATH } from '../config/find-repo-root.ts';
+import { MACHINE_CONFIG_PATH } from '../config/read-machine-config.ts';
 import { readRepoConfig, type RepoConfig } from '../config/read-repo-config.ts';
-import { ARCHIVE_ROOT_VARIABLE, MACHINE_CONFIG_PATH, resolveArchiveRoot } from '../config/resolve-archive-root.ts';
+import { ARCHIVE_ROOT_VARIABLE, resolveArchiveRoot } from '../config/resolve-archive-root.ts';
 import { resolveDemoDir } from '../demos/resolve-demo-dir.ts';
+import type { VoiceRequest } from '../voice/voice-request.ts';
+import { VOICE_GROUP } from './voice-commands.ts';
 
 const EXIT_FAILURE = 1;
 
@@ -46,13 +49,14 @@ const ROOT = defineGroup({
   epilog: `Configuration:
   ${REPO_CONFIG_PATH}, found in the working directory or a parent, marks the root of the
   demo repository and sets demosDir, aidemo.env, and archive.label.
-  ~/${MACHINE_CONFIG_PATH} sets archive.root, where render archives each take;
-  ${ARCHIVE_ROOT_VARIABLE} overrides it.
+  ~/${MACHINE_CONFIG_PATH} sets archive.root, where render archives each take,
+  which ${ARCHIVE_ROOT_VARIABLE} overrides, and the voice section, which the voice
+  commands read.
 
 Exit codes:
-  0  Help or version printed, or aidemo succeeded
-  1  The configuration or the aidemo install is unusable, or a rendered take
-     cannot be archived
+  0  Help or version printed, aidemo succeeded, or a voice command succeeded
+  1  The configuration or the aidemo install is unusable, a rendered take
+     cannot be archived, or a voice command failed
   2  Usage or validation error
   Otherwise, the exit code of aidemo`,
   commands: {
@@ -73,6 +77,7 @@ Exit codes:
     }),
     probe: PROBE,
     render: RENDER,
+    voice: VOICE_GROUP,
   },
 });
 
@@ -85,6 +90,7 @@ export async function run(args: readonly string[], effects: RunEffects): Promise
   const stdout = createTextBuffer();
   const stderr = createTextBuffer();
   let launch: Launch | undefined;
+  let voice: VoiceRequest | undefined;
   const exitCode = await runCli(args.length === 0 ? ['--help'] : args, ROOT, {
     name: 'thor-demo',
     context: {
@@ -92,13 +98,16 @@ export async function run(args: readonly string[], effects: RunEffects): Promise
       launch: (requested) => {
         launch = requested;
       },
+      requestVoice: (requested) => {
+        voice = requested;
+      },
     },
     version: () => resolveVersion(effects),
     stdout,
     stderr,
   });
 
-  return { exitCode, launch, stderr: stderr.text, stdout: stdout.text };
+  return { exitCode, launch, stderr: stderr.text, stdout: stdout.text, voice };
 }
 
 /** An aidemo process for the entry point to start once it has written the result's output. */
@@ -114,25 +123,30 @@ export interface Launch {
 
 /** The effects deferred to the entry point, which keeps the runner free of I/O. */
 export interface RunEffects {
+  readonly arch: string;
   readonly cwd: string;
   readonly env: NodeJS.ProcessEnv;
   readonly homeDir: string;
+  readonly platform: string;
   readonly readSourceState: (dir: string) => SourceState | undefined;
   readonly resolveVersion: () => string;
 }
 
-/** What the caller should write to each stream, launch, and exit with when it launches nothing. */
+/** What the caller should write to each stream, launch or set up, and exit with when it does neither. */
 export interface RunResult {
   readonly exitCode: number;
   readonly launch: Launch | undefined;
+  /** A voice command to perform. A command requests at most one of `launch` and `voice`. */
+  readonly voice: VoiceRequest | undefined;
   readonly stderr: string;
   readonly stdout: string;
 }
 
-/** What each command receives: the effects, and a way to request a launch. */
-interface CommandContext {
+/** What each command receives: the effects, and a way to request a launch or a voice command. */
+export interface CommandContext {
   readonly effects: RunEffects;
   readonly launch: (launch: Launch) => void;
+  readonly requestVoice: (voice: VoiceRequest) => void;
 }
 
 // region | Helpers

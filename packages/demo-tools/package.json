@@ -35,7 +35,8 @@
     ".meta/changelog.json",
     "CHANGELOG.md",
     "bin",
-    "dist"
+    "dist",
+    "native"
   ],
   "scripts": {
     "prepare": "nmr-compile"

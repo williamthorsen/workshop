@@ -4,7 +4,8 @@ import path from 'node:path';
 import { parseEnv } from 'node:util';
 
 import type { SourceState } from '../clients/git/read-source-state.ts';
-import { ARCHIVE_ROOT_VARIABLE, MACHINE_CONFIG_PATH } from '../config/resolve-archive-root.ts';
+import { MACHINE_CONFIG_PATH } from '../config/read-machine-config.ts';
+import { ARCHIVE_ROOT_VARIABLE } from '../config/resolve-archive-root.ts';
 import type { TakeArchivePlan } from './archive-take.ts';
 import { resolveVoice } from './resolve-voice.ts';
 
