@@ -73,7 +73,7 @@ Each render writes `output/final-demo.srt` and `output/final-demo.vtt` beside th
 
 ## Archiving takes
 
-After each successful `render`, `thor-demo` copies the take into an archive, so that the next render does not overwrite it. The archive root is set per machine, in `~/.config/thor-demo/config.yaml`:
+After each successful `render` or `revoice`, `thor-demo` copies the take into an archive, so that the next render does not overwrite it. The archive root is set per machine, in `~/.config/thor-demo/config.yaml`:
 
 ```yaml
 archive:
@@ -94,23 +94,24 @@ The timestamp is the UTC time at which the render started, and `<commit>` is the
 
 `provenance.json` records what produced the take:
 
-| Field           | Content                                                                              |
-| --------------- | ------------------------------------------------------------------------------------ |
-| `schemaVersion` | `1`                                                                                  |
-| `demo`, `label` | The demo's name and `archive.label`                                                  |
-| `renderedAt`    | The render's start, as ISO 8601                                                      |
-| `source`        | The `commit` and `dirty` state before the render, or `null` for each outside git     |
-| `engine`        | The aidemo package and version                                                       |
-| `voice`         | The TTS `provider` and `voiceId`, resolved by aidemo 0.20.0's rules                  |
-| `params`        | The options passed to aidemo after the demo                                          |
-| `storyboard`    | The `sha256` of `generated/storyboard.json`                                          |
-| `files`         | Each archived file's `sha256` and size in `bytes`, which match the file in `output/` |
+| Field           | Content                                                                                                              |
+| --------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `schemaVersion` | `1`                                                                                                                  |
+| `demo`, `label` | The demo's name and `archive.label`                                                                                  |
+| `renderedAt`    | The render's start, as ISO 8601                                                                                      |
+| `source`        | The `commit` and `dirty` state before the render, or `null` for each outside git                                     |
+| `engine`        | The aidemo package and version                                                                                       |
+| `voice`         | The TTS `provider` and `voiceId`, resolved by aidemo 0.20.0's rules; for a `revoice` take, `mlx-audio` and the model |
+| `reference`     | For a `revoice` take only, the `sha256` of the reference recording that it clones                                    |
+| `params`        | The options passed to aidemo after the demo                                                                          |
+| `storyboard`    | The `sha256` of `generated/storyboard.json`                                                                          |
+| `files`         | Each archived file's `sha256` and size in `bytes`, which match the file in `output/`                                 |
 
 The record contains no environment values. Renders with `--lang`, `--langs`, or `--variants` write files named for each language and are not archived. When archiving fails, `render` exits 1 and the take remains in the demo's `output/`.
 
 ## Voice clone
 
-`thor-demo voice setup` installs a voice clone that speaks any text in the voice of a reference recording, so that a demo can be narrated in its presenter's voice without the narration or the recording leaving the machine. [`thor-demo revoice`](https://github.com/williamthorsen/workshop/issues/662), once built, narrates with it.
+`thor-demo voice setup` installs a voice clone that speaks any text in the voice of a reference recording, and `thor-demo revoice` narrates a recorded demo with it, so that a demo is narrated in its presenter's voice without the narration or the recording leaving the machine.
 
 It requires Apple Silicon, [uv](https://docs.astral.sh/uv/), and ffmpeg:
 
@@ -153,3 +154,16 @@ thor-demo voice setup
 Under `voice.home`, setup creates a Python virtual environment with a pinned mlx-audio, downloads the model into `models/` and any repository that it loads besides its own into the Hugging Face cache in `hf/`, and builds a voice profile in `profile/`: the recording converted to mono WAV and the transcript. It then verifies the install by starting mlx-audio's server on 127.0.0.1 with Hugging Face's offline mode on, synthesizing a phrase in the cloned voice to `verify.mp3`, and stopping the server. It prints that file's path; listen to it to judge the clone.
 
 Installing and downloading are the only steps that use the network. A rerun skips each step whose inputs are unchanged and verifies again; a changed recording or transcript rebuilds the profile, and a changed model downloads it and rebuilds the profile.
+
+### Re-voicing a demo
+
+```bash
+thor-demo render quickstart
+thor-demo revoice quickstart
+```
+
+`revoice` keeps the demo's last recording and replaces its narration: It starts the voice-clone server offline on 127.0.0.1, runs aidemo's `voice`, `captions`, and `compose` stages with each speech request sent through a proxy on 127.0.0.1 that adds the voice profile, stops the server, and archives the take as `render` does. Captions are timed from the script, because the clone does not transcribe. Every revoice re-voices every scene.
+
+It refuses to start when the profile does not match the voice section, when the demo has not been rendered, when the demo repository's aidemo predates 0.20.2, or when the repository's `.env` sets a variable that would send the narration elsewhere. `thor-demo revoice --help` names each prerequisite.
+
+The cloned voice ignores the storyboard's `voice.speed` and `voice.instructions`. A later `render` re-voices the demo in its configured voice, because aidemo 0.20.2 keys its voice cache by the TTS server and model.
