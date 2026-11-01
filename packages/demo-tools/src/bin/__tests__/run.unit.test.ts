@@ -11,6 +11,7 @@ const EFFECTS: RunEffects = {
   cwd: '/',
   env: {},
   homeDir: HOME,
+  readSourceState: () => undefined,
   resolveVersion: () => VERSION,
 };
 
@@ -111,6 +112,7 @@ describe(run, () => {
   describe.each([['render'], ['probe']])('%s', (command) => {
     it('launches the aidemo command on the demo from the repository root', async () => {
       using tree = createDemoRepo();
+      const noRootNotice: unknown = expect.stringContaining('no archive root');
 
       const { exitCode, launch, stderr } = await run([command, 'demos/quickstart', '--tts', 'local'], {
         ...EFFECTS,
@@ -124,6 +126,7 @@ describe(run, () => {
         bin: tree.resolve('node_modules/@tandryukha/aidemo/bin/aidemo.mjs'),
         cwd: tree.dir,
         env: {},
+        ...(command === 'render' && { take: { kind: 'notice', message: noRootNotice } }),
       });
     });
 
@@ -164,6 +167,85 @@ describe(run, () => {
       expect(launch).toBeUndefined();
       expect(stderr).toContain('0.15.2 is installed');
       expect(stderr).toContain('pnpm add --save-dev @tandryukha/aidemo');
+    });
+  });
+
+  describe('render archiving', () => {
+    it('attaches an archive plan when an archive root is set', async () => {
+      using tree = createDemoRepo({ config: 'archive:\n  label: product\n' });
+      const source = { commit: 'abc1234def', dirty: true };
+
+      const { exitCode, launch } = await run(['render', 'quickstart', '--tts', 'local'], {
+        ...EFFECTS,
+        cwd: tree.dir,
+        env: { THOR_DEMO_ARCHIVE_ROOT: '/archive' },
+        readSourceState: () => source,
+      });
+
+      expect(exitCode).toBe(0);
+      expect(launch?.take).toMatchObject({
+        kind: 'archive',
+        plan: {
+          aidemoVersion: '0.20.0',
+          archiveRoot: '/archive',
+          demo: 'quickstart',
+          demoDir: tree.resolve('demos/quickstart'),
+          label: 'product',
+          params: ['--tts', 'local'],
+          source,
+          voice: { provider: 'local', voiceId: 'af_heart' },
+        },
+      });
+    });
+
+    it('attaches a notice for a variant render', async () => {
+      using tree = createDemoRepo();
+
+      const { launch } = await run(['render', 'quickstart', '--', '--langs', 'de,fr'], {
+        ...EFFECTS,
+        cwd: tree.dir,
+        env: { THOR_DEMO_ARCHIVE_ROOT: '/archive' },
+      });
+
+      expect(launch?.take).toStrictEqual({
+        kind: 'notice',
+        message: 'take not archived: --langs renders are not archived',
+      });
+    });
+
+    it('reports a malformed machine configuration with exit 1, before launching', async () => {
+      using tree = createDemoRepo({ extra: { 'home/.config/thor-demo/config.yaml': 'archive: [\n' } });
+
+      const { exitCode, launch, stderr } = await run(['render', 'quickstart'], {
+        ...EFFECTS,
+        cwd: tree.dir,
+        homeDir: tree.resolve('home'),
+      });
+
+      expect(exitCode).toBe(1);
+      expect(launch).toBeUndefined();
+      expect(stderr).toMatch(/^thor-demo render: .*config\.yaml: cannot be read as YAML/);
+    });
+
+    it('reports an unknown demo before reading the machine configuration', async () => {
+      using tree = createDemoRepo({ extra: { 'home/.config/thor-demo/config.yaml': 'archive: [\n' } });
+
+      const { exitCode } = await run(['render', 'quick'], { ...EFFECTS, cwd: tree.dir, homeDir: tree.resolve('home') });
+
+      expect(exitCode).toBe(2);
+    });
+
+    it('does not read the machine configuration for probe', async () => {
+      using tree = createDemoRepo({ extra: { 'home/.config/thor-demo/config.yaml': 'archive: [\n' } });
+
+      const { exitCode, launch } = await run(['probe', 'quickstart'], {
+        ...EFFECTS,
+        cwd: tree.dir,
+        homeDir: tree.resolve('home'),
+      });
+
+      expect(exitCode).toBe(0);
+      expect(launch).not.toHaveProperty('take');
     });
   });
 
@@ -222,12 +304,17 @@ describe(run, () => {
 
 // region | Helpers
 
-/** Builds a demo repository with one demo, `quickstart`, and a fake aidemo of the given version, or none for `false`. */
+/**
+ * Builds a demo repository with one demo, `quickstart`, a fake aidemo of the given version, or none for `false`, and
+ * `extra` files.
+ */
 function createDemoRepo({
   aidemoVersion = '0.20.0',
   config = '',
-}: { aidemoVersion?: string | false; config?: string } = {}): TempTree {
+  extra = {},
+}: { aidemoVersion?: string | false; config?: string; extra?: Record<string, string> } = {}): TempTree {
   return createTempTree({
+    ...extra,
     '.config/thor-demo.yaml': config,
     'demos/quickstart/generated/storyboard.json': '{}',
     'package.json': '{}',

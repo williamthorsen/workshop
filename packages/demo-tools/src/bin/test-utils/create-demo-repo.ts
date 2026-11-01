@@ -17,6 +17,8 @@ export interface DemoRepoOptions {
   /** The content of a `.env` at the root, when given. */
   readonly envFile?: string;
   readonly exitCode?: number;
+  /** Files, keyed by name, that the fake writes to the demo's `output/` on `render`. */
+  readonly outputFiles?: Readonly<Record<string, string>>;
   /** Text that the fake writes to stdout. */
   readonly stdout?: string;
   /** Leaves the fake aidemo uninstalled. */
@@ -37,11 +39,11 @@ const AIDEMO_DIR = 'node_modules/@tandryukha/aidemo';
 const CALLS_FILE = 'aidemo-calls.jsonl';
 
 /**
- * Creates a demo repository whose installed aidemo is a fake that appends each call to a log, writes `stdout`, and
- * exits with `exitCode`.
+ * Creates a demo repository whose installed aidemo is a fake that appends each call to a log, writes `stdout` and, on
+ * `render`, `outputFiles`, and exits with `exitCode`.
  */
 export function createDemoRepo(options: DemoRepoOptions = {}): DemoRepo {
-  const { config = '', envFile, exitCode = 0, stdout = '', withoutAidemo = false } = options;
+  const { config = '', envFile, exitCode = 0, outputFiles = {}, stdout = '', withoutAidemo = false } = options;
   const tree = createTempTree({
     '.config/thor-demo.yaml': config,
     'demos/quickstart/generated/storyboard.json': '{}',
@@ -49,7 +51,7 @@ export function createDemoRepo(options: DemoRepoOptions = {}): DemoRepo {
     ...(envFile !== undefined && { '.env': envFile }),
     ...(!withoutAidemo && {
       [`${AIDEMO_DIR}/package.json`]: JSON.stringify({ version: '0.20.0', bin: { aidemo: 'bin/aidemo.mjs' } }),
-      [`${AIDEMO_DIR}/bin/aidemo.mjs`]: buildFakeScript(CALLS_FILE, stdout, exitCode),
+      [`${AIDEMO_DIR}/bin/aidemo.mjs`]: buildFakeScript(CALLS_FILE, stdout, exitCode, outputFiles),
     }),
   });
 
@@ -65,8 +67,13 @@ export function createDemoRepo(options: DemoRepoOptions = {}): DemoRepo {
 // region | Helpers
 
 /** Returns the source of the fake aidemo, which records its call in `callsFile` at the repository root. */
-function buildFakeScript(callsFile: string, stdout: string, exitCode: number): string {
-  return `import { appendFileSync } from 'node:fs';
+function buildFakeScript(
+  callsFile: string,
+  stdout: string,
+  exitCode: number,
+  outputFiles: Readonly<Record<string, string>>,
+): string {
+  return `import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { EOL } from 'node:os';
 import path from 'node:path';
 
@@ -76,6 +83,13 @@ const env = Object.fromEntries(
 );
 const call = { args: process.argv.slice(2), cwd: process.cwd(), env };
 appendFileSync(path.join(import.meta.dirname, '../../../..', ${JSON.stringify(callsFile)}), JSON.stringify(call) + EOL);
+if (call.args[0] === 'render') {
+  const outputDir = path.join(call.args[1], 'output');
+  mkdirSync(outputDir, { recursive: true });
+  for (const [name, content] of Object.entries(${JSON.stringify(outputFiles)})) {
+    writeFileSync(path.join(outputDir, name), content);
+  }
+}
 process.stdout.write(${JSON.stringify(stdout)});
 process.exitCode = ${String(exitCode)};
 `;
