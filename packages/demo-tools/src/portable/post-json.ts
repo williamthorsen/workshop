@@ -8,10 +8,10 @@ export interface HttpResponse {
 }
 
 /**
- * POSTs `body` as JSON to an `http:` URL and reads the whole response, failing after `timeoutMs`. It uses
+ * POSTs `body` as JSON to an `http:` URL and reads the whole response, failing when `signal` aborts. It uses
  * `node:http`, which has no default header timeout, because a server may take minutes before it answers.
  */
-export async function postJson(url: string, body: unknown, timeoutMs: number): Promise<HttpResponse> {
+export async function postJson(url: string, body: unknown, signal: AbortSignal): Promise<HttpResponse> {
   const payload = JSON.stringify(body);
 
   return new Promise((resolve, reject) => {
@@ -20,7 +20,7 @@ export async function postJson(url: string, body: unknown, timeoutMs: number): P
       {
         headers: { 'content-length': Buffer.byteLength(payload), 'content-type': 'application/json' },
         method: 'POST',
-        signal: AbortSignal.timeout(timeoutMs),
+        signal,
       },
       (response) => {
         const chunks: Buffer[] = [];

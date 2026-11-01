@@ -39,6 +39,21 @@ describe(buildProvenance, () => {
     expect(Object.keys(provenance.files)).toStrictEqual(['final-demo.mp4', 'report.json']);
   });
 
+  it('records the reference recording of a cloned voice after the voice', () => {
+    const provenance = buildProvenance({
+      ...INPUT,
+      reference: { sha256: 'ref' },
+      voice: { provider: 'mlx-audio', voiceId: 'mlx-community/model' },
+    });
+
+    expect(provenance.reference).toStrictEqual({ sha256: 'ref' });
+    expect(Object.keys(provenance).indexOf('reference')).toBe(Object.keys(provenance).indexOf('voice') + 1);
+  });
+
+  it('omits the reference for a voice that is not cloned', () => {
+    expect(Object.hasOwn(buildProvenance(INPUT), 'reference')).toBe(false);
+  });
+
   it('records an unknown source state as nulls', () => {
     expect(buildProvenance({ ...INPUT, source: undefined }).source).toStrictEqual({ commit: null, dirty: null });
   });

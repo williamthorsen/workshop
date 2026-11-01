@@ -8,17 +8,27 @@ export interface FakeAidemoCall {
   readonly cwd: string;
   /** The `AIDEMO_*` and `OPENAI_*` variables that were set. */
   readonly env: Record<string, string>;
+  /** On `voice`, the status with which `AIDEMO_OPENAI_BASE_URL` answered one speech request. */
+  readonly speechStatus?: number;
 }
 
 /** How the fake aidemo behaves, and what else the repository contains. */
 export interface DemoRepoOptions {
+  /** The version that the fake declares. Default: `0.20.0`. */
+  readonly aidemoVersion?: string;
   /** The repository configuration file's content. */
   readonly config?: string;
   /** The content of a `.env` at the root, when given. */
   readonly envFile?: string;
   readonly exitCode?: number;
-  /** Files, keyed by name, that the fake writes to the demo's `output/` on `render`. */
+  /** The command on which the fake exits with `exitCode`. Default: every command. */
+  readonly failOn?: string;
+  /** The command on which the fake keeps running until a signal stops it. */
+  readonly holdOn?: string;
+  /** Files, keyed by name, that the fake writes to the demo's `output/` on `render` and `compose`. */
   readonly outputFiles?: Readonly<Record<string, string>>;
+  /** Gives `quickstart` a recorded take and timeline, as aidemo leaves them after `render`. */
+  readonly recorded?: boolean;
   /** Text that the fake writes to stdout. */
   readonly stdout?: string;
   /** Leaves the fake aidemo uninstalled. */
@@ -40,18 +50,34 @@ const CALLS_FILE = 'aidemo-calls.jsonl';
 
 /**
  * Creates a demo repository whose installed aidemo is a fake that appends each call to a log, writes `stdout` and, on
- * `render`, `outputFiles`, and exits with `exitCode`.
+ * `render` and `compose`, `outputFiles`, and exits with `exitCode`. On `voice`, it posts one speech request to
+ * `AIDEMO_OPENAI_BASE_URL` when that is set.
  */
 export function createDemoRepo(options: DemoRepoOptions = {}): DemoRepo {
-  const { config = '', envFile, exitCode = 0, outputFiles = {}, stdout = '', withoutAidemo = false } = options;
+  const {
+    aidemoVersion = '0.20.0',
+    config = '',
+    envFile,
+    exitCode = 0,
+    failOn,
+    holdOn,
+    outputFiles = {},
+    recorded = false,
+    stdout = '',
+    withoutAidemo = false,
+  } = options;
   const tree = createTempTree({
     '.config/thor-demo.yaml': config,
     'demos/quickstart/generated/storyboard.json': '{}',
     'package.json': '{}',
     ...(envFile !== undefined && { '.env': envFile }),
+    ...(recorded && {
+      'demos/quickstart/generated/timeline.json': '{}',
+      'demos/quickstart/recordings/raw.webm': 'webm',
+    }),
     ...(!withoutAidemo && {
-      [`${AIDEMO_DIR}/package.json`]: JSON.stringify({ version: '0.20.0', bin: { aidemo: 'bin/aidemo.mjs' } }),
-      [`${AIDEMO_DIR}/bin/aidemo.mjs`]: buildFakeScript(CALLS_FILE, stdout, exitCode, outputFiles),
+      [`${AIDEMO_DIR}/package.json`]: JSON.stringify({ version: aidemoVersion, bin: { aidemo: 'bin/aidemo.mjs' } }),
+      [`${AIDEMO_DIR}/bin/aidemo.mjs`]: buildFakeScript({ exitCode, failOn, holdOn, outputFiles, stdout }),
     }),
   });
 
@@ -66,13 +92,20 @@ export function createDemoRepo(options: DemoRepoOptions = {}): DemoRepo {
 
 // region | Helpers
 
-/** Returns the source of the fake aidemo, which records its call in `callsFile` at the repository root. */
-function buildFakeScript(
-  callsFile: string,
-  stdout: string,
-  exitCode: number,
-  outputFiles: Readonly<Record<string, string>>,
-): string {
+/** Returns the source of the fake aidemo, which records its call in `CALLS_FILE` at the repository root. */
+function buildFakeScript({
+  exitCode,
+  failOn,
+  holdOn,
+  outputFiles,
+  stdout,
+}: {
+  exitCode: number;
+  failOn: string | undefined;
+  holdOn: string | undefined;
+  outputFiles: Readonly<Record<string, string>>;
+  stdout: string;
+}): string {
   return `import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { EOL } from 'node:os';
 import path from 'node:path';
@@ -82,8 +115,18 @@ const env = Object.fromEntries(
   Object.entries(process.env).filter(([name]) => name.startsWith('AIDEMO_') || name.startsWith('OPENAI_')),
 );
 const call = { args: process.argv.slice(2), cwd: process.cwd(), env };
-appendFileSync(path.join(import.meta.dirname, '../../../..', ${JSON.stringify(callsFile)}), JSON.stringify(call) + EOL);
-if (call.args[0] === 'render') {
+const baseUrl = process.env.AIDEMO_OPENAI_BASE_URL;
+if (call.args[0] === 'voice' && baseUrl !== undefined) {
+  const response = await fetch(baseUrl + '/audio/speech', {
+    body: JSON.stringify({ model: process.env.AIDEMO_TTS_MODEL, voice: 'marin', input: 'Scene one.', instructions: 'Calm.', response_format: 'mp3' }),
+    headers: { 'content-type': 'application/json' },
+    method: 'POST',
+  });
+  call.speechStatus = response.status;
+}
+appendFileSync(path.join(import.meta.dirname, '../../../..', ${JSON.stringify(CALLS_FILE)}), JSON.stringify(call) + EOL);
+if (call.args[0] === ${JSON.stringify(holdOn ?? null)}) setInterval(() => {}, 1000);
+if (call.args[0] === 'render' || call.args[0] === 'compose') {
   const outputDir = path.join(call.args[1], 'output');
   mkdirSync(outputDir, { recursive: true });
   for (const [name, content] of Object.entries(${JSON.stringify(outputFiles)})) {
@@ -91,7 +134,7 @@ if (call.args[0] === 'render') {
   }
 }
 process.stdout.write(${JSON.stringify(stdout)});
-process.exitCode = ${String(exitCode)};
+if (${JSON.stringify(failOn ?? null)} === null || call.args[0] === ${JSON.stringify(failOn ?? null)}) process.exitCode = ${String(exitCode)};
 `;
 }
 

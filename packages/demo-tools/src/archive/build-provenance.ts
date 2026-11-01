@@ -17,6 +17,8 @@ export interface Provenance {
   readonly source: { readonly commit: string | null; readonly dirty: boolean | null };
   readonly engine: { readonly package: '@tandryukha/aidemo'; readonly version: string };
   readonly voice: ResolvedVoice;
+  /** The checksum of the reference recording that a cloned voice copies; absent for any other voice. */
+  readonly reference?: { readonly sha256: string };
   /** The arguments given to aidemo after the demo directory. */
   readonly params: readonly string[];
   readonly storyboard: { readonly sha256: string };
@@ -31,6 +33,7 @@ export interface ProvenanceInput {
   readonly files: Readonly<Record<string, FileDigest>>;
   readonly label: string;
   readonly params: readonly string[];
+  readonly reference?: { readonly sha256: string };
   readonly renderedAt: Date;
   readonly source: SourceState | undefined;
   readonly storyboardSha256: string;
@@ -47,6 +50,7 @@ export function buildProvenance(input: ProvenanceInput): Provenance {
     source: { commit: input.source?.commit ?? null, dirty: input.source?.dirty ?? null },
     engine: { package: '@tandryukha/aidemo', version: input.aidemoVersion },
     voice: { provider: input.voice.provider, voiceId: input.voice.voiceId },
+    ...(input.reference !== undefined && { reference: { sha256: input.reference.sha256 } }),
     params: [...input.params],
     storyboard: { sha256: input.storyboardSha256 },
     files: Object.fromEntries(Object.entries(input.files).toSorted(([left], [right]) => left.localeCompare(right))),

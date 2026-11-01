@@ -11,7 +11,7 @@ import {
 } from '@williamthorsen/toolbelt.cli/candidate';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
-import { buildAidemoEnv } from '../aidemo/build-aidemo-env.ts';
+import { buildAidemoEnv, OPENAI_VARIABLES } from '../aidemo/build-aidemo-env.ts';
 import { findEnvFileOverrides } from '../aidemo/find-env-file-overrides.ts';
 import { resolveAidemo } from '../aidemo/resolve-aidemo.ts';
 import { planTake, type TakeDisposition } from '../archive/plan-take.ts';
@@ -21,7 +21,9 @@ import { MACHINE_CONFIG_PATH } from '../config/read-machine-config.ts';
 import { readRepoConfig, type RepoConfig } from '../config/read-repo-config.ts';
 import { ARCHIVE_ROOT_VARIABLE, resolveArchiveRoot } from '../config/resolve-archive-root.ts';
 import { resolveDemoDir } from '../demos/resolve-demo-dir.ts';
+import type { RevoiceRequest } from '../voice/revoice-request.ts';
 import type { VoiceRequest } from '../voice/voice-request.ts';
+import { REVOICE } from './revoice-command.ts';
 import { VOICE_GROUP } from './voice-commands.ts';
 
 const EXIT_FAILURE = 1;
@@ -49,14 +51,14 @@ const ROOT = defineGroup({
   epilog: `Configuration:
   ${REPO_CONFIG_PATH}, found in the working directory or a parent, marks the root of the
   demo repository and sets demosDir, aidemo.env, and archive.label.
-  ~/${MACHINE_CONFIG_PATH} sets archive.root, where render archives each take,
-  which ${ARCHIVE_ROOT_VARIABLE} overrides, and the voice section, which the voice
-  commands read.
+  ~/${MACHINE_CONFIG_PATH} sets archive.root, where render and revoice
+  archive each take, which ${ARCHIVE_ROOT_VARIABLE} overrides, and the voice
+  section, which the voice commands and revoice read.
 
 Exit codes:
   0  Help or version printed, aidemo succeeded, or a voice command succeeded
-  1  The configuration or the aidemo install is unusable, a rendered take
-     cannot be archived, or a voice command failed
+  1  The configuration, the aidemo install, or the voice clone is unusable, a
+     take cannot be archived, or a voice command failed
   2  Usage or validation error
   Otherwise, the exit code of aidemo`,
   commands: {
@@ -77,6 +79,7 @@ Exit codes:
     }),
     probe: PROBE,
     render: RENDER,
+    revoice: REVOICE,
     voice: VOICE_GROUP,
   },
 });
@@ -90,6 +93,7 @@ export async function run(args: readonly string[], effects: RunEffects): Promise
   const stdout = createTextBuffer();
   const stderr = createTextBuffer();
   let launch: Launch | undefined;
+  let revoice: RevoiceRequest | undefined;
   let voice: VoiceRequest | undefined;
   const exitCode = await runCli(args.length === 0 ? ['--help'] : args, ROOT, {
     name: 'thor-demo',
@@ -97,6 +101,9 @@ export async function run(args: readonly string[], effects: RunEffects): Promise
       effects,
       launch: (requested) => {
         launch = requested;
+      },
+      requestRevoice: (requested) => {
+        revoice = requested;
       },
       requestVoice: (requested) => {
         voice = requested;
@@ -107,7 +114,7 @@ export async function run(args: readonly string[], effects: RunEffects): Promise
     stderr,
   });
 
-  return { exitCode, launch, stderr: stderr.text, stdout: stdout.text, voice };
+  return { exitCode, launch, revoice, stderr: stderr.text, stdout: stdout.text, voice };
 }
 
 /** An aidemo process for the entry point to start once it has written the result's output. */
@@ -132,20 +139,23 @@ export interface RunEffects {
   readonly resolveVersion: () => string;
 }
 
-/** What the caller should write to each stream, launch or set up, and exit with when it does neither. */
+/** What the caller should write to each stream, what to perform, and what to exit with when it performs nothing. */
 export interface RunResult {
   readonly exitCode: number;
   readonly launch: Launch | undefined;
-  /** A voice command to perform. A command requests at most one of `launch` and `voice`. */
+  /** A revoice to perform. */
+  readonly revoice: RevoiceRequest | undefined;
+  /** A voice command to perform. A command requests at most one of `launch`, `revoice`, and `voice`. */
   readonly voice: VoiceRequest | undefined;
   readonly stderr: string;
   readonly stdout: string;
 }
 
-/** What each command receives: the effects, and a way to request a launch or a voice command. */
+/** What each command receives: the effects, and a way to request a launch, a revoice, or a voice command. */
 export interface CommandContext {
   readonly effects: RunEffects;
   readonly launch: (launch: Launch) => void;
+  readonly requestRevoice: (revoice: RevoiceRequest) => void;
   readonly requestVoice: (voice: VoiceRequest) => void;
 }
 
@@ -195,7 +205,7 @@ function prepareLaunch(
     return undefined;
   }
 
-  const overrides = findEnvFileOverrides(config.root, config.aidemoEnv);
+  const overrides = findEnvFileOverrides(config.root, config.aidemoEnv, OPENAI_VARIABLES);
   if (overrides !== undefined) {
     stderr.write(
       `${prefix}: warning: ${overrides.envFilePath} sets ${overrides.names.join(', ')}, which aidemo loads over the environment that thor-demo passes; declare them in aidemo.env or remove them from the file to keep captions offline\n`,

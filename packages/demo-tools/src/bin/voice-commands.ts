@@ -10,13 +10,47 @@ import {
   type VoiceConfig,
 } from '../config/read-machine-config.ts';
 import { findOnPath } from '../portable/find-on-path.ts';
-import { isFile } from '../portable/is-file.ts';
+import { findMissingReference } from '../voice/find-missing-reference.ts';
 import { MLX_AUDIO_VERSION } from '../voice/mlx-audio/plan-install.ts';
 import type { CommandContext, RunEffects } from './run.ts';
 
 const EXIT_FAILURE = 1;
 
 const { defineCommand, defineGroup } = createCli<CommandContext>();
+
+/**
+ * Reports the first prerequisite of a voice command that this machine lacks: macOS, Apple Silicon when
+ * `appleSilicon` is set, or one of `tools` on `PATH`.
+ */
+export function findMissingVoicePrerequisite(
+  { arch, env, platform }: RunEffects,
+  appleSilicon: boolean,
+  tools: readonly string[],
+): string | undefined {
+  if (appleSilicon && (platform !== 'darwin' || arch !== 'arm64')) {
+    return `the voice clone runs on Apple Silicon (darwin on arm64) only, not ${platform} on ${arch}`;
+  }
+  if (platform !== 'darwin') return `the recorder runs on macOS only, not ${platform}`;
+
+  const missing = tools.filter((tool) => findOnPath(tool, env['PATH']) === undefined);
+  return missing.length === 0 ? undefined : formatMissingTools(missing);
+}
+
+/** Reads the voice section of the machine configuration, which a voice command other than microphones requires. */
+export function readRequiredVoice(
+  effects: RunEffects,
+): { ok: true; voice: VoiceConfig } | { ok: false; problem: string } {
+  const config = readMachineConfig(effects);
+  if (!config.ok) return { ok: false, problem: config.message };
+  if (!config.voice.ok) return { ok: false, problem: config.voice.message };
+  if (config.voice.voice === undefined) {
+    return {
+      ok: false,
+      problem: `~/${MACHINE_CONFIG_PATH} does not set voice; add voice.reference.audio and voice.reference.transcript, and optionally voice.home and voice.model`,
+    };
+  }
+  return { ok: true, voice: config.voice.voice };
+}
 
 /** The `voice` command group, which records the reference, lists microphones, and sets up the voice clone. */
 export const VOICE_GROUP = defineGroup({
@@ -71,24 +105,6 @@ function createVoiceFailure(command: string, stderr: Writer): (problem: string) 
   };
 }
 
-/**
- * Reports the first prerequisite of a voice command that this machine lacks: macOS, Apple Silicon when
- * `appleSilicon` is set, or one of `tools` on `PATH`.
- */
-function findMissingVoicePrerequisite(
-  { arch, env, platform }: RunEffects,
-  appleSilicon: boolean,
-  tools: readonly string[],
-): string | undefined {
-  if (appleSilicon && (platform !== 'darwin' || arch !== 'arm64')) {
-    return `the voice clone runs on Apple Silicon (darwin on arm64) only, not ${platform} on ${arch}`;
-  }
-  if (platform !== 'darwin') return `the recorder runs on macOS only, not ${platform}`;
-
-  const missing = tools.filter((tool) => findOnPath(tool, env['PATH']) === undefined);
-  return missing.length === 0 ? undefined : formatMissingTools(missing);
-}
-
 /** Names the tools absent from `PATH` and how to install each: swiftc from the Xcode tools, the rest with brew. */
 function formatMissingTools(missing: readonly string[]): string {
   const list = new Intl.ListFormat('en', { type: 'conjunction' });
@@ -100,20 +116,6 @@ function formatMissingTools(missing: readonly string[]): string {
     installs.push(`install ${object} with brew install ${brewed.join(' ')}`);
   }
   return `${list.format(missing)} ${missing.length === 1 ? 'is' : 'are'} not on PATH; ${installs.join(', and ')}`;
-}
-
-/** Reads the voice section of the machine configuration, which a voice command other than microphones requires. */
-function readRequiredVoice(effects: RunEffects): { ok: true; voice: VoiceConfig } | { ok: false; problem: string } {
-  const config = readMachineConfig(effects);
-  if (!config.ok) return { ok: false, problem: config.message };
-  if (!config.voice.ok) return { ok: false, problem: config.voice.message };
-  if (config.voice.voice === undefined) {
-    return {
-      ok: false,
-      problem: `~/${MACHINE_CONFIG_PATH} does not set voice; add voice.reference.audio and voice.reference.transcript, and optionally voice.home and voice.model`,
-    };
-  }
-  return { ok: true, voice: config.voice.voice };
 }
 
 /** Runs `voice microphones`, which installs under `voice.home`, or its default when the section is absent. */
@@ -156,17 +158,8 @@ function runVoiceSetup(context: CommandContext, stderr: Writer): number | undefi
   const voice = readRequiredVoice(context.effects);
   if (!voice.ok) return fail(voice.problem);
 
-  const { referenceAudio, referenceTranscript } = voice.voice;
-  if (!isFile(referenceAudio)) {
-    return fail(
-      `voice.reference.audio names ${referenceAudio}, which does not exist; record it with thor-demo voice record`,
-    );
-  }
-  if (!isFile(referenceTranscript)) {
-    return fail(
-      `voice.reference.transcript names ${referenceTranscript}, which does not exist; write in it exactly what the recording says`,
-    );
-  }
+  const missingReference = findMissingReference(voice.voice);
+  if (missingReference !== undefined) return fail(missingReference);
 
   context.requestVoice({ kind: 'setup', voice: voice.voice });
   return;

@@ -20,6 +20,8 @@ export interface TakeArchivePlan {
   readonly demoDir: string;
   readonly label: string;
   readonly params: readonly string[];
+  /** The checksum of the reference recording, for a take narrated in a cloned voice. */
+  readonly reference?: { readonly sha256: string };
   readonly renderedAt: Date;
   readonly source: SourceState | undefined;
   readonly storyboardSha256: string;

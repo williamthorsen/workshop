@@ -12,8 +12,10 @@ import { archiveTake } from '../archive/archive-take.ts';
 import type { TakeDisposition } from '../archive/plan-take.ts';
 import { readSourceState } from '../clients/git/read-source-state.ts';
 import { runInvocation } from '../voice/invocation.ts';
+import { performRevoice } from '../voice/perform-revoice.ts';
 import { listMicrophones, performVoiceRecord, type VoiceCommandOutcome } from '../voice/perform-voice-record.ts';
 import { performVoiceSetup } from '../voice/perform-voice-setup.ts';
+import type { RevoiceRequest } from '../voice/revoice-request.ts';
 import type { VoiceRequest } from '../voice/voice-request.ts';
 import { type Launch, run } from './run.ts';
 
@@ -25,7 +27,7 @@ for (const stream of [process.stdout, process.stderr]) {
   });
 }
 
-const { exitCode, launch, stderr, stdout, voice } = await run(process.argv.slice(2), {
+const { exitCode, launch, revoice, stderr, stdout, voice } = await run(process.argv.slice(2), {
   arch: process.arch,
   cwd: process.cwd(),
   env: process.env,
@@ -47,6 +49,7 @@ process.exitCode = await completeRequest();
 /** Performs what the run requested, resolving to the exit code. */
 async function completeRequest(): Promise<number> {
   if (launch !== undefined) return completeLaunch(launch);
+  if (revoice !== undefined) return completeRevoice(revoice);
   if (voice !== undefined) return completeVoice(voice);
   return exitCode;
 }
@@ -56,12 +59,26 @@ async function completeLaunch(launch: Launch): Promise<number> {
   const aidemoExitCode = await runLaunch(launch);
   if (aidemoExitCode !== 0 || launch.take === undefined) return aidemoExitCode;
 
-  return completeTake(launch.take);
+  return completeTake(launch.take, 'thor-demo render');
+}
+
+/** Performs a revoice, reporting its steps on stderr, then archives the take, resolving to the exit code. */
+async function completeRevoice(request: RevoiceRequest): Promise<number> {
+  const prefix = 'thor-demo revoice';
+  const outcome = await performRevoice(request, {
+    report: (line) => process.stderr.write(`${prefix}: ${line}\n`),
+    runStage: runLaunch,
+  });
+  if (!outcome.ok) {
+    await writeFully(process.stderr, `${prefix}: ${outcome.message}\n`);
+    return outcome.exitCode;
+  }
+
+  return completeTake(request.take, prefix);
 }
 
 /** Archives the take or reports why it is not archived, resolving to the exit code. */
-async function completeTake(take: TakeDisposition): Promise<number> {
-  const prefix = 'thor-demo render';
+async function completeTake(take: TakeDisposition, prefix: string): Promise<number> {
   if (take.kind === 'notice') {
     await writeFully(process.stderr, `${prefix}: ${take.message}\n`);
     return 0;
@@ -116,7 +133,7 @@ function getSignalExitCode(signal: NodeJS.Signals | null): number {
 function ignoreInterrupt(): void {}
 
 /** Runs aidemo with inherited stdio, forwarding termination to it, and resolves to its exit code. */
-async function runLaunch({ args, bin, cwd, env }: Launch): Promise<number> {
+async function runLaunch({ args, bin, cwd, env }: Pick<Launch, 'args' | 'bin' | 'cwd' | 'env'>): Promise<number> {
   const child = spawn(process.execPath, [bin, ...args], { cwd, env, stdio: 'inherit' });
 
   // A terminal delivers SIGINT to the whole process group, aidemo included, so this process only outlives it. A

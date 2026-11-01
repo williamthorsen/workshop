@@ -47,6 +47,7 @@ describe(run, () => {
       await expect(run([flag], EFFECTS)).resolves.toStrictEqual({
         exitCode: 0,
         launch: undefined,
+        revoice: undefined,
         stderr: '',
         stdout: `${VERSION}\n`,
         voice: undefined,
@@ -64,6 +65,7 @@ describe(run, () => {
       await expect(run(['--version'], failing)).resolves.toStrictEqual({
         exitCode: 2,
         launch: undefined,
+        revoice: undefined,
         stderr: "Error: The manifest declares no version.\nTry 'thor-demo --help'.\n",
         stdout: '',
         voice: undefined,
@@ -319,6 +321,7 @@ describe(run, () => {
       expect(result).toStrictEqual({
         exitCode: 0,
         launch: undefined,
+        revoice: undefined,
         stderr: '',
         stdout: '',
         voice: {
