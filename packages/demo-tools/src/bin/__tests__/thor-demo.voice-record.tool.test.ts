@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -87,7 +88,7 @@ describe('thor-demo voice record', () => {
     const closed = new Promise<number | null>((resolve) => child.once('close', (code) => resolve(code)));
 
     await waitFor(() => machine.readCalls().some(({ tool }) => tool === 'afplay'));
-    if (child.pid === undefined) throw new Error('thor-demo did not start');
+    assert.ok(child.pid !== undefined, 'thor-demo did not start');
     process.kill(-child.pid, 'SIGINT');
 
     await expect(closed).resolves.toBe(0);
