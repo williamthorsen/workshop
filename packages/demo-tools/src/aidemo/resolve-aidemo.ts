@@ -9,6 +9,9 @@ import { isRecord } from '../portable/is-record.ts';
 /** The oldest aidemo that writes captions timed to the final video, which the package relies on. */
 export const MIN_AIDEMO_VERSION = '0.17.0';
 
+/** The oldest aidemo whose voice cache keys narration by the TTS endpoint and model, which `revoice` relies on. */
+export const MIN_REVOICE_AIDEMO_VERSION = '0.20.2';
+
 /** The command that installs the latest aidemo, which satisfies the minimum. */
 export const AIDEMO_INSTALL_COMMAND = 'pnpm add --save-dev @tandryukha/aidemo';
 
@@ -25,9 +28,9 @@ const PACKAGE_NAME = '@tandryukha/aidemo';
 
 /**
  * Resolves the aidemo installed in the demo repository at `root`, never one beside this package, and refuses one
- * that is missing, older than the minimum, or without an `aidemo` bin.
+ * that is missing, older than `minVersion`, or without an `aidemo` bin.
  */
-export function resolveAidemo(root: string): AidemoResolution {
+export function resolveAidemo(root: string, minVersion: string = MIN_AIDEMO_VERSION): AidemoResolution {
   let manifestPath: string;
   try {
     manifestPath = createRequire(path.join(root, 'package.json')).resolve(`${PACKAGE_NAME}/package.json`);
@@ -48,8 +51,8 @@ export function resolveAidemo(root: string): AidemoResolution {
   if (typeof version !== 'string' || parsed === undefined) {
     return refuse(`${PACKAGE_NAME} in ${root} does not declare a version that can be compared`);
   }
-  if (compareVersions(parsed, parseVersion(MIN_AIDEMO_VERSION) ?? [0, 0, 0]) < 0) {
-    return refuse(`${PACKAGE_NAME} ${version} is installed in ${root}, but ${MIN_AIDEMO_VERSION} or later is required`);
+  if (compareVersions(parsed, parseVersion(minVersion) ?? [0, 0, 0]) < 0) {
+    return refuse(`${PACKAGE_NAME} ${version} is installed in ${root}, but ${minVersion} or later is required`);
   }
 
   const binEntry = readBinEntry(manifest['bin']);

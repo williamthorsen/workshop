@@ -46,4 +46,15 @@ describe(resolveAidemo, () => {
     expect(message).toMatch(expected);
     expect(message.endsWith(AIDEMO_INSTALL_COMMAND)).toBe(true);
   });
+
+  it('refuses a version older than a minimum that the caller passes', () => {
+    using tree = createTempTree({
+      [MANIFEST]: JSON.stringify({ version: '0.20.1', bin: { aidemo: 'bin/aidemo.mjs' } }),
+    });
+
+    const result = resolveAidemo(tree.dir, '0.20.2');
+
+    expect(result.ok ? '' : result.message).toMatch(/0\.20\.1 is installed .* 0\.20\.2 or later/);
+    expect(resolveAidemo(tree.dir).ok).toBe(true);
+  });
 });
