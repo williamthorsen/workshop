@@ -2,7 +2,7 @@
 
 # @williamthorsen/demo-tools
 
-A CLI that runs [aidemo](https://github.com/tandryukha/aidemo) demos with the environment that each demo repository configures, for the CLI and the MCP server alike.
+A CLI that runs [aidemo](https://github.com/tandryukha/aidemo) demos with the environment that each demo repository configures, for the CLI and the MCP server alike, and installs a local voice clone for narrating them.
 
 <!-- section:release-notes --><!-- /section:release-notes -->
 
@@ -107,3 +107,40 @@ The timestamp is the UTC time at which the render started, and `<commit>` is the
 | `files`         | Each archived file's `sha256` and size in `bytes`, which match the file in `output/` |
 
 The record contains no environment values. Renders with `--lang`, `--langs`, or `--variants` write files named for each language and are not archived. When archiving fails, `render` exits 1 and the take remains in the demo's `output/`.
+
+## Voice clone
+
+`thor-demo voice setup` installs a voice clone that speaks any text in the voice of a reference recording, so that a demo can be narrated in its presenter's voice without the narration or the recording leaving the machine. [`thor-demo revoice`](https://github.com/williamthorsen/workshop/issues/662), once built, narrates with it.
+
+It requires Apple Silicon, [uv](https://docs.astral.sh/uv/), and ffmpeg:
+
+```bash
+brew install uv ffmpeg
+```
+
+The voice is set per machine, in `~/.config/thor-demo/config.yaml`, because the recording is personal and a demo repository may be public:
+
+```yaml
+voice:
+  home: ~/.local/share/thor-demo/voice # optional; absolute after expansion
+  model: mlx-community/Qwen3-TTS-12Hz-1.7B-Base-bf16 # optional
+  reference:
+    audio: ~/Voice/reference.m4a # required; absolute after expansion; must exist
+    transcript: ~/Voice/reference.txt # required; a file containing exactly what the recording says
+```
+
+Paths expand `${VAR}` and a leading `~`, like `archive.root`. `voice.model` may name any model in [mlx-audio's model list](https://github.com/Blaizzy/mlx-audio#supported-models) that clones from a reference recording and its transcript.
+
+### Recording the reference
+
+Record 10 to 30 seconds of the presenter reading a paragraph aloud, in a quiet room and in the tone wanted for narration; the default model needs at least 3 seconds. Save it in any format that ffmpeg reads, and save the paragraph, word for word as read, as the transcript.
+
+### Setting up
+
+```bash
+thor-demo voice setup
+```
+
+Under `voice.home`, setup creates a Python virtual environment with a pinned mlx-audio, downloads the model into `models/`, and builds a voice profile in `profile/`: the recording converted to mono WAV and the transcript. It then verifies the install by starting mlx-audio's server on 127.0.0.1 with Hugging Face's offline mode on, synthesizing a phrase in the cloned voice to `verify.mp3`, and stopping the server. It prints that file's path; listen to it to judge the clone.
+
+Installing and downloading are the only steps that use the network. A rerun skips each step whose inputs are unchanged and verifies again; a changed recording or transcript rebuilds the profile, and a changed model downloads it and rebuilds the profile.
