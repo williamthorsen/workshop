@@ -2,11 +2,15 @@
 
 import { spawn } from 'node:child_process';
 import os from 'node:os';
+import path from 'node:path';
 import process from 'node:process';
 
 import { describeError } from '@williamthorsen/toolbelt.errors';
 import { resolveSelfVersion } from '@williamthorsen/toolbelt.packaging/candidate';
 
+import { archiveTake } from '../archive/archive-take.ts';
+import type { TakeDisposition } from '../archive/plan-take.ts';
+import { readSourceState } from '../clients/git/read-source-state.ts';
 import { type Launch, run } from './run.ts';
 
 // A reader that exits first closes the pipe, which node reports as an error event rather than the quiet termination
@@ -21,6 +25,7 @@ const { exitCode, launch, stderr, stdout } = await run(process.argv.slice(2), {
   cwd: process.cwd(),
   env: process.env,
   homeDir: os.homedir(),
+  readSourceState,
   resolveVersion: () => resolveSelfVersion(import.meta.url),
 });
 
@@ -29,9 +34,36 @@ await writeFully(process.stdout, stdout);
 await writeFully(process.stderr, stderr);
 
 // Set rather than exit, so that buffered output reaches a pipe before the process ends.
-process.exitCode = launch === undefined ? exitCode : await runLaunch(launch);
+process.exitCode = launch === undefined ? exitCode : await completeLaunch(launch);
 
 // region | Helpers
+
+/** Runs aidemo, then, when it succeeds, does what the launch says to do with the take, resolving to the exit code. */
+async function completeLaunch(launch: Launch): Promise<number> {
+  const aidemoExitCode = await runLaunch(launch);
+  if (aidemoExitCode !== 0 || launch.take === undefined) return aidemoExitCode;
+
+  return completeTake(launch.take);
+}
+
+/** Archives the take or reports why it is not archived, resolving to the exit code. */
+async function completeTake(take: TakeDisposition): Promise<number> {
+  const prefix = 'thor-demo render';
+  if (take.kind === 'notice') {
+    await writeFully(process.stderr, `${prefix}: ${take.message}\n`);
+    return 0;
+  }
+
+  const outcome = await archiveTake(take.plan);
+  if (outcome.ok) {
+    await writeFully(process.stderr, `${prefix}: archived take to ${outcome.takeDir}\n`);
+    return 0;
+  }
+
+  const outputDir = path.join(take.plan.demoDir, 'output');
+  await writeFully(process.stderr, `${prefix}: ${outcome.message}; the take remains in ${outputDir}\n`);
+  return 1;
+}
 
 /** Returns the exit code of a process killed by `signal`: 128 plus the signal's number, or 1 when it has none. */
 function getSignalExitCode(signal: NodeJS.Signals | null): number {

@@ -4,6 +4,8 @@ import path from 'node:path';
 
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
+import { isRecord } from '../portable/is-record.ts';
+
 /** The oldest aidemo that writes captions timed to the final video, which the package relies on. */
 export const MIN_AIDEMO_VERSION = '0.17.0';
 
@@ -66,11 +68,6 @@ function compareVersions(left: readonly number[], right: readonly number[]): num
   }
 
   return 0;
-}
-
-/** Reports whether a value is a plain mapping. */
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 /** Returns the leading `major.minor.patch` of a version as numbers, ignoring any prerelease or build suffix. */

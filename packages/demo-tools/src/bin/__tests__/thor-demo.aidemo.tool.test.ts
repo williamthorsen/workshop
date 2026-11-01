@@ -1,11 +1,7 @@
-import { spawnSync } from 'node:child_process';
-import path from 'node:path';
-
 import { describe, expect, it } from 'vitest';
 
 import { createDemoRepo, FAKE_AIDEMO_STARTED } from '../test-utils/create-demo-repo.ts';
-
-const ENTRY_POINT = path.join(import.meta.dirname, '../thor-demo.ts');
+import { runThorDemo } from '../test-utils/run-thor-demo.ts';
 
 describe('thor-demo with an installed aidemo', () => {
   it.each([['render'], ['probe']])(
@@ -76,25 +72,3 @@ describe('thor-demo with an installed aidemo', () => {
     expect(repo.readCalls()).toStrictEqual([]);
   });
 });
-
-// region | Helpers
-
-/** Runs the CLI's TypeScript entry point, whose types node strips, in `cwd` with `extraEnv` added. */
-function runThorDemo(
-  args: string[],
-  cwd: string,
-  extraEnv: NodeJS.ProcessEnv = {},
-): { status: number | null; stderr: string; stdout: string } {
-  const env = Object.fromEntries(
-    Object.entries(process.env).filter(([name]) => !name.startsWith('AIDEMO_') && !name.startsWith('OPENAI_')),
-  );
-  const { status, stderr, stdout } = spawnSync(process.execPath, [ENTRY_POINT, ...args], {
-    cwd,
-    encoding: 'utf8',
-    env: { ...env, ...extraEnv },
-  });
-
-  return { status, stderr, stdout };
-}
-
-// endregion | Helpers

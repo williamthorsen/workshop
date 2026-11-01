@@ -16,6 +16,7 @@ describe(readRepoConfig, () => {
       ok: true,
       config: {
         aidemoEnv: {},
+        archiveLabel: path.basename(tree.dir),
         configPath: path.join(tree.dir, REPO_CONFIG_PATH),
         demosDir: 'demos',
         root: tree.dir,
@@ -59,6 +60,14 @@ describe(readRepoConfig, () => {
     expect(result.ok && result.config.demosDir).toBe(expected);
   });
 
+  it('reads archive.label', () => {
+    using tree = createTempTree({ [REPO_CONFIG_PATH]: 'archive:\n  label: product-demos\n' });
+
+    const result = readRepoConfig({ cwd: tree.dir, env: {}, homeDir: HOME });
+
+    expect(result.ok && result.config.archiveLabel).toBe('product-demos');
+  });
+
   it('names the file to create when no root is found', () => {
     using tree = createTempTree({ 'x/.keep': '' });
 
@@ -76,6 +85,11 @@ describe(readRepoConfig, () => {
     ['a non-mapping aidemo.env', 'aidemo:\n  env: [a]\n', /aidemo\.env must be a mapping of strings/],
     ['a non-string env value', 'aidemo:\n  env:\n    PORT: 9\n', /aidemo\.env\.PORT must be a string/],
     ['an unset variable', 'aidemo:\n  env:\n    K: ${UNSET}\n', /aidemo\.env\.K: UNSET is not set/],
+    ['an unknown archive key', 'archive:\n  root: /x\n', /unknown key "archive\.root"; the key is label/],
+    ['a non-mapping archive section', 'archive: x\n', /archive must be a mapping/],
+    ['an empty archive.label', 'archive:\n  label: ""\n', /archive\.label must be a non-empty string/],
+    ['an archive.label with a separator', 'archive:\n  label: a/b\n', /archive\.label must be a single directory name/],
+    ['an archive.label of ..', 'archive:\n  label: ..\n', /archive\.label must be a single directory name/],
     ['an empty demosDir', 'demosDir: ""\n', /demosDir must be a non-empty string/],
     ['an absolute demosDir', 'demosDir: /abs\n', /demosDir must be relative/],
     ['a demosDir naming the root', 'demosDir: .\n', /demosDir must name a directory inside/],

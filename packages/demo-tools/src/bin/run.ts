@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 import {
   type Command,
   createCli,
@@ -12,8 +14,11 @@ import { describeError } from '@williamthorsen/toolbelt.errors';
 import { buildAidemoEnv } from '../aidemo/build-aidemo-env.ts';
 import { findEnvFileOverrides } from '../aidemo/find-env-file-overrides.ts';
 import { resolveAidemo } from '../aidemo/resolve-aidemo.ts';
+import { planTake, type TakeDisposition } from '../archive/plan-take.ts';
+import type { SourceState } from '../clients/git/read-source-state.ts';
 import { REPO_CONFIG_PATH } from '../config/find-repo-root.ts';
 import { readRepoConfig, type RepoConfig } from '../config/read-repo-config.ts';
+import { ARCHIVE_ROOT_VARIABLE, MACHINE_CONFIG_PATH, resolveArchiveRoot } from '../config/resolve-archive-root.ts';
 import { resolveDemoDir } from '../demos/resolve-demo-dir.ts';
 
 const EXIT_FAILURE = 1;
@@ -22,7 +27,7 @@ const { defineCommand, defineGroup } = createCli<CommandContext>();
 
 const RENDER: Command<CommandContext> = defineCommand({
   summary: 'Render a demo with the configured aidemo environment',
-  description: `Run aidemo render on one demo, from the root of the demo repository, with the environment that ${REPO_CONFIG_PATH} declares.`,
+  description: `Run aidemo render on one demo, from the root of the demo repository, with the environment that ${REPO_CONFIG_PATH} declares. When aidemo succeeds, copy the take to <archive root>/<archive.label>/<demo>/<take>/ with a provenance.json that records the commit and dirty state, the aidemo version, the voice, the options, the storyboard's checksum, and each file's checksum, unless the render is a --lang, --langs, or --variants render. ${ARCHIVE_ROOT_VARIABLE}, or archive.root in ~/${MACHINE_CONFIG_PATH}, sets the archive root.`,
   epilog: formatDemoCommandEpilog('render', 'thor-demo render quickstart --tts local'),
   passthrough: true,
   run: (input) => runDemoCommand('render', RENDER, input),
@@ -40,11 +45,14 @@ const ROOT = defineGroup({
   summary: 'Run aidemo demos with the environment that the demo repository configures.',
   epilog: `Configuration:
   ${REPO_CONFIG_PATH}, found in the working directory or a parent, marks the root of the
-  demo repository and sets demosDir and aidemo.env.
+  demo repository and sets demosDir, aidemo.env, and archive.label.
+  ~/${MACHINE_CONFIG_PATH} sets archive.root, where render archives each take;
+  ${ARCHIVE_ROOT_VARIABLE} overrides it.
 
 Exit codes:
   0  Help or version printed, or aidemo succeeded
-  1  The configuration or the aidemo install is unusable
+  1  The configuration or the aidemo install is unusable, or a rendered take
+     cannot be archived
   2  Usage or validation error
   Otherwise, the exit code of aidemo`,
   commands: {
@@ -56,10 +64,10 @@ Exit codes:
         const config = readConfig(context.effects, stderr, prefix);
         if (config === undefined) return EXIT_FAILURE;
 
-        const launch = prepareLaunch(config, ['mcp'], context.effects, stderr, prefix);
-        if (launch === undefined) return EXIT_FAILURE;
+        const prepared = prepareLaunch(config, ['mcp'], context.effects, stderr, prefix);
+        if (prepared === undefined) return EXIT_FAILURE;
 
-        context.launch(launch);
+        context.launch(prepared.launch);
         return;
       },
     }),
@@ -100,6 +108,8 @@ export interface Launch {
   readonly bin: string;
   readonly cwd: string;
   readonly env: NodeJS.ProcessEnv;
+  /** What `render` does with the take once aidemo exits 0. */
+  readonly take?: TakeDisposition;
 }
 
 /** The effects deferred to the entry point, which keeps the runner free of I/O. */
@@ -107,6 +117,7 @@ export interface RunEffects {
   readonly cwd: string;
   readonly env: NodeJS.ProcessEnv;
   readonly homeDir: string;
+  readonly readSourceState: (dir: string) => SourceState | undefined;
   readonly resolveVersion: () => string;
 }
 
@@ -154,8 +165,8 @@ Example:
 }
 
 /**
- * Builds the launch of aidemo with `args` in the demo repository, reporting an unusable aidemo install to `stderr`
- * and warning about a `.env` that would restore an OpenAI variable.
+ * Builds the launch of aidemo with `args` in the demo repository, with the installed aidemo's version, reporting an
+ * unusable aidemo install to `stderr` and warning about a `.env` that would restore an OpenAI variable.
  */
 function prepareLaunch(
   config: RepoConfig,
@@ -163,7 +174,7 @@ function prepareLaunch(
   effects: RunEffects,
   stderr: Writer,
   prefix: string,
-): Launch | undefined {
+): { aidemoVersion: string; launch: Launch } | undefined {
   const resolution = resolveAidemo(config.root);
   if (!resolution.ok) {
     stderr.write(`${prefix}: ${resolution.message}\n`);
@@ -177,7 +188,10 @@ function prepareLaunch(
     );
   }
 
-  return { args, bin: resolution.aidemo.bin, cwd: config.root, env: buildAidemoEnv(effects.env, config.aidemoEnv) };
+  return {
+    aidemoVersion: resolution.aidemo.version,
+    launch: { args, bin: resolution.aidemo.bin, cwd: config.root, env: buildAidemoEnv(effects.env, config.aidemoEnv) },
+  };
 }
 
 /** Reads the repository configuration, reporting a failure to `stderr`. */
@@ -198,7 +212,10 @@ function resolveVersion(effects: RunEffects): string {
   }
 }
 
-/** Runs `render` or `probe`: Parses the demo and the options for aidemo, then requests the launch. */
+/**
+ * Runs `render` or `probe`: Parses the demo and the options for aidemo, then requests the launch. `render` also reads
+ * the archive root and attaches what to do with the take.
+ */
 function runDemoCommand(
   command: 'probe' | 'render',
   node: Command<CommandContext>,
@@ -229,16 +246,35 @@ function runDemoCommand(
     throw new UsageError(`unknown demo "${demoArgument}"; the demos in ${demosDir} are: ${names}`);
   }
 
-  const launch = prepareLaunch(
-    config,
-    [command, demo.demoDir, ...options, ...forwardedArgs],
-    context.effects,
-    stderr,
-    prefix,
-  );
-  if (launch === undefined) return EXIT_FAILURE;
+  const archiveRoot = command === 'render' ? resolveArchiveRoot(context.effects) : undefined;
+  if (archiveRoot?.ok === false) {
+    stderr.write(`${prefix}: ${archiveRoot.message}\n`);
+    return EXIT_FAILURE;
+  }
 
-  context.launch(launch);
+  const params = [...options, ...forwardedArgs];
+  const prepared = prepareLaunch(config, [command, demo.demoDir, ...params], context.effects, stderr, prefix);
+  if (prepared === undefined) return EXIT_FAILURE;
+
+  const { aidemoVersion, launch } = prepared;
+  if (archiveRoot === undefined) {
+    context.launch(launch);
+    return;
+  }
+
+  const take = planTake({
+    aidemoEnv: launch.env,
+    aidemoVersion,
+    archiveLabel: config.archiveLabel,
+    archiveRoot: archiveRoot.archiveRoot,
+    demoDir: demo.demoDir,
+    demosRoot: path.join(root, demosDir),
+    params,
+    readSourceState: context.effects.readSourceState,
+    renderedAt: new Date(),
+    root,
+  });
+  context.launch({ ...launch, take });
   return;
 }
 
