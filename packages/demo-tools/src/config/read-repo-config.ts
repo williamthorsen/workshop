@@ -11,6 +11,8 @@ import { findRepoRoot, REPO_CONFIG_PATH } from './find-repo-root.ts';
 
 /** The demo repository's settings, resolved from its configuration file. */
 export interface RepoConfig {
+  /** The directory under the archive root that keeps this repository's takes apart from other repositories'. */
+  readonly archiveLabel: string;
   /** The environment that the configuration declares for aidemo, expanded. */
   readonly aidemoEnv: Readonly<Record<string, string>>;
   readonly configPath: string;
@@ -58,8 +60,10 @@ export function readRepoConfig({ cwd, env, homeDir }: RepoConfigInput): RepoConf
   const document = parsed ?? {};
   if (!isRecord(document)) return fail('must be a mapping');
 
-  const unknownKey = findUnknownKey(document, ['aidemo', 'demosDir']);
-  if (unknownKey !== undefined) return fail(`unknown key "${unknownKey}"; the keys are aidemo and demosDir`);
+  const unknownKey = findUnknownKey(document, ['aidemo', 'archive', 'demosDir']);
+  if (unknownKey !== undefined) {
+    return fail(`unknown key "${unknownKey}"; the keys are aidemo, archive, and demosDir`);
+  }
 
   const demosDir = readDemosDir(document['demosDir']);
   if (!demosDir.ok) return fail(`demosDir ${demosDir.problem}`);
@@ -67,7 +71,19 @@ export function readRepoConfig({ cwd, env, homeDir }: RepoConfigInput): RepoConf
   const aidemoEnv = readAidemoEnv(document['aidemo'], env, homeDir);
   if (!aidemoEnv.ok) return fail(aidemoEnv.problem);
 
-  return { ok: true, config: { aidemoEnv: aidemoEnv.value, configPath, demosDir: demosDir.value, root } };
+  const archiveLabel = readArchiveLabel(document['archive'], root);
+  if (!archiveLabel.ok) return fail(archiveLabel.problem);
+
+  return {
+    ok: true,
+    config: {
+      aidemoEnv: aidemoEnv.value,
+      archiveLabel: archiveLabel.value,
+      configPath,
+      demosDir: demosDir.value,
+      root,
+    },
+  };
 }
 
 // region | Helpers
@@ -99,6 +115,30 @@ function readAidemoEnv(
   }
 
   return { ok: true, value };
+}
+
+/**
+ * Validates the `archive` section, whose one key is `label`, defaulting the label to the root directory's name. The
+ * label becomes one path segment, so it cannot contain a separator or be `.` or `..`.
+ */
+function readArchiveLabel(
+  section: unknown,
+  root: string,
+): { ok: true; value: string } | { ok: false; problem: string } {
+  if (section === undefined || section === null) return { ok: true, value: path.basename(root) };
+  if (!isRecord(section)) return { ok: false, problem: 'archive must be a mapping' };
+
+  const unknownKey = findUnknownKey(section, ['label']);
+  if (unknownKey !== undefined) return { ok: false, problem: `unknown key "archive.${unknownKey}"; the key is label` };
+
+  const raw = section['label'];
+  if (raw === undefined || raw === null) return { ok: true, value: path.basename(root) };
+  if (typeof raw !== 'string' || raw === '') return { ok: false, problem: 'archive.label must be a non-empty string' };
+  if (/[/\\]/.test(raw) || raw === '.' || raw === '..') {
+    return { ok: false, problem: `archive.label must be a single directory name, not "${raw}"` };
+  }
+
+  return { ok: true, value: raw };
 }
 
 /** Validates `demosDir`, which must name a directory strictly inside the root. */
