@@ -35,11 +35,10 @@ describe(startVoiceServer, () => {
     using tree = createTempTree(FAKES);
     const launch = await buildFake(tree, 'listens.mjs');
 
-    const result = await startVoiceServer(launch);
+    await using server = readServer(await startVoiceServer(launch));
 
-    if (!result.ok) throw new Error(result.message);
-    await expect((await fetch(result.server.baseUrl)).text()).resolves.toBe('ok');
-    await result.server.stop();
+    await expect((await fetch(server.baseUrl)).text()).resolves.toBe('ok');
+    await server.stop();
     expect(isRunning(readPid(tree))).toBe(false);
   });
 
@@ -70,7 +69,7 @@ describe(startVoiceServer, () => {
     using tree = createTempTree(FAKES);
     const launch = await buildFake(tree, 'ignores-sigterm.mjs');
 
-    const server = readServer(await startVoiceServer(launch, { stopGraceMs: 200 }));
+    await using server = readServer(await startVoiceServer(launch, { stopGraceMs: 200 }));
 
     await server.stop();
     expect(isRunning(readPid(tree))).toBe(false);
