@@ -11,7 +11,7 @@ import {
   serializeRegistry,
 } from '../registry/registry.ts';
 import { scanClone } from './runScan.ts';
-import { formatEntryName, parseRemotePath, PROG, reportFailure, type VerbRun } from './verb-run.ts';
+import { formatEntryName, parseRemoteUrl, PROG, reportFailure, type VerbRun } from './verb-run.ts';
 
 /** Runs `add`: prints the entry that registers a clone, and appends it under `--write`. */
 export function runAdd(run: VerbRun, target: string, isWrite: boolean): number {
@@ -21,7 +21,7 @@ export function runAdd(run: VerbRun, target: string, isWrite: boolean): number {
   if (cloneDir === undefined) return reportFailure(run, `${target} is not in a git clone`);
   const origin = run.adapters.readOriginUrl(cloneDir);
   if (origin === undefined) return reportFailure(run, `${cloneDir} has no origin remote`);
-  const repo = parseRemotePath(origin);
+  const repo = parseRemoteUrl(origin)?.path;
   if (repo === undefined) return reportFailure(run, `cannot read an owner and a name from the origin URL ${origin}`);
 
   const entryPath = formatDisplayPath(cloneDir, run.home);
