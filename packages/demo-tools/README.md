@@ -34,6 +34,10 @@ aidemo:
   env:
     AIDEMO_CHROME_PROFILE: ~/.cache/aidemo/chrome-profile
     AIDEMO_TTS_PROVIDER: local
+
+archive:
+  # The directory under the archive root that holds this repository's takes. Default: the root directory's name.
+  label: product-demos
 ```
 
 An unknown key, an unset variable, and any other expansion form, such as `${VAR:-default}`, are errors.
@@ -66,3 +70,40 @@ Each render writes `output/final-demo.srt` and `output/final-demo.vtt` beside th
 ```json
 "captions": { "style": "none", "track": true }
 ```
+
+## Archiving takes
+
+After each successful `render`, `thor-demo` copies the take into an archive, so that the next render does not overwrite it. The archive root is set per machine, in `~/.config/thor-demo/config.yaml`:
+
+```yaml
+archive:
+  # An absolute path. Expands ${VAR} and a leading ~, like aidemo.env.
+  root: ~/Videos/demos
+```
+
+`THOR_DEMO_ARCHIVE_ROOT`, an absolute path, overrides the file. Without either, the render still runs, and `thor-demo` reports that the take was not archived. A malformed file stops `render` before aidemo runs.
+
+Each take is a directory of its own:
+
+```
+<archive root>/<archive.label>/<demo>/<YYYYMMDD-HHMMSSZ>_<commit>[-dirty]/
+  final-demo.mp4  final-demo.srt  final-demo.vtt  report.json  provenance.json
+```
+
+The timestamp is the UTC time at which the render started, and `<commit>` is the demo repository's short commit, with `-dirty` when the work tree had changes or untracked files; outside a git work tree, the suffix is `nogit`. The caption files and `report.json` are archived when the render wrote them. An archive root inside the demo repository, or an `output/` directory that the repository does not ignore, marks every later take `-dirty`.
+
+`provenance.json` records what produced the take:
+
+| Field           | Content                                                                              |
+| --------------- | ------------------------------------------------------------------------------------ |
+| `schemaVersion` | `1`                                                                                  |
+| `demo`, `label` | The demo's name and `archive.label`                                                  |
+| `renderedAt`    | The render's start, as ISO 8601                                                      |
+| `source`        | The `commit` and `dirty` state before the render, or `null` for each outside git     |
+| `engine`        | The aidemo package and version                                                       |
+| `voice`         | The TTS `provider` and `voiceId`, resolved by aidemo 0.20.0's rules                  |
+| `params`        | The options passed to aidemo after the demo                                          |
+| `storyboard`    | The `sha256` of `generated/storyboard.json`                                          |
+| `files`         | Each archived file's `sha256` and size in `bytes`, which match the file in `output/` |
+
+The record contains no environment values. Renders with `--lang`, `--langs`, or `--variants` write files named for each language and are not archived. When archiving fails, `render` exits 1 and the take remains in the demo's `output/`.

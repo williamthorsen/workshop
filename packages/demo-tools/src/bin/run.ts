@@ -18,7 +18,7 @@ import { planTake, type TakeDisposition } from '../archive/plan-take.ts';
 import type { SourceState } from '../clients/git/read-source-state.ts';
 import { REPO_CONFIG_PATH } from '../config/find-repo-root.ts';
 import { readRepoConfig, type RepoConfig } from '../config/read-repo-config.ts';
-import { resolveArchiveRoot } from '../config/resolve-archive-root.ts';
+import { ARCHIVE_ROOT_VARIABLE, MACHINE_CONFIG_PATH, resolveArchiveRoot } from '../config/resolve-archive-root.ts';
 import { resolveDemoDir } from '../demos/resolve-demo-dir.ts';
 
 const EXIT_FAILURE = 1;
@@ -27,7 +27,7 @@ const { defineCommand, defineGroup } = createCli<CommandContext>();
 
 const RENDER: Command<CommandContext> = defineCommand({
   summary: 'Render a demo with the configured aidemo environment',
-  description: `Run aidemo render on one demo, from the root of the demo repository, with the environment that ${REPO_CONFIG_PATH} declares.`,
+  description: `Run aidemo render on one demo, from the root of the demo repository, with the environment that ${REPO_CONFIG_PATH} declares. When aidemo succeeds, copy the take to <archive root>/<archive.label>/<demo>/<take>/ with a provenance.json that records the commit and dirty state, the aidemo version, the voice, the options, the storyboard's checksum, and each file's checksum, unless the render is a --lang, --langs, or --variants render. ${ARCHIVE_ROOT_VARIABLE}, or archive.root in ~/${MACHINE_CONFIG_PATH}, sets the archive root.`,
   epilog: formatDemoCommandEpilog('render', 'thor-demo render quickstart --tts local'),
   passthrough: true,
   run: (input) => runDemoCommand('render', RENDER, input),
@@ -45,7 +45,9 @@ const ROOT = defineGroup({
   summary: 'Run aidemo demos with the environment that the demo repository configures.',
   epilog: `Configuration:
   ${REPO_CONFIG_PATH}, found in the working directory or a parent, marks the root of the
-  demo repository and sets demosDir and aidemo.env.
+  demo repository and sets demosDir, aidemo.env, and archive.label.
+  ~/${MACHINE_CONFIG_PATH} sets archive.root, where render archives each take;
+  ${ARCHIVE_ROOT_VARIABLE} overrides it.
 
 Exit codes:
   0  Help or version printed, or aidemo succeeded
