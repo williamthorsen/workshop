@@ -26,7 +26,7 @@ export interface Registry {
 export interface NewEntry extends Partial<GitHubFields> {
   name: string;
   path: string;
-  repo: string;
+  repo: string | undefined;
   stack: readonly string[];
 }
 
@@ -47,9 +47,10 @@ export interface EntrySelection {
   visibility?: string | undefined;
 }
 
-/** Adds an entry under `repos`, writing `visibility`, `runner`, and `stack` only when each has a value. */
+/** Adds an entry under `repos`, writing `repo`, `visibility`, `runner`, and `stack` only when each has a value. */
 export function appendEntry(registry: Registry, entry: NewEntry): void {
-  const fields: Record<string, unknown> = { name: entry.name, path: entry.path, repo: entry.repo };
+  const fields: Record<string, unknown> = { name: entry.name, path: entry.path };
+  if (entry.repo !== undefined) fields['repo'] = entry.repo;
   if (entry.visibility !== undefined) fields['visibility'] = entry.visibility;
   if (entry.runner !== undefined) fields['runner'] = entry.runner;
   if (entry.stack.length > 0) fields['stack'] = [...entry.stack];
