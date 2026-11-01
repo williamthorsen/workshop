@@ -47,15 +47,15 @@ const it = baseIt.extend(
   makeFixture(() => createTempTree({}, { prefix: 'rdy-ws-cwd-' })),
 );
 
-it.aroundEach(async (runTest, { temp }) => {
-  using _cwd = pointCwdAt(temp.dir);
-
-  await runTest();
-});
-
 // Every ordinary discovery assertion passes whether or not a helper reads through the `cwd` handed to it, because
 // the snapshot and the ambient cwd are the same directory. Moving the ambient one mid-discovery separates them.
 describe(`${discoverWorkspaces.name} cwd reconciliation`, () => {
+  it.aroundEach(async (runTest, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir);
+
+    await runTest();
+  });
+
   it('reads the pattern list at the directory that it snapshotted', ({ temp }) => {
     temp.writeJson('package.json', { name: 'root', private: true, workspaces: ['packages/*'] });
     temp.writeJson('packages/alpha/package.json', { name: 'alpha' });

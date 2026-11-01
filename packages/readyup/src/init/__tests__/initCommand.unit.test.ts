@@ -14,14 +14,14 @@ const it = baseIt.extend(
   makeFixture(() => createTempTree({}, { prefix: 'rdy-init-' })),
 );
 
-it.aroundEach(async (runTest, { temp }) => {
-  // `scaffoldConfig` writes relative paths, which resolve against the real process directory.
-  using _cwd = pointCwdAt(temp.dir, { chdir: true });
-
-  await runTest();
-});
-
 describe(initCommand, () => {
+  it.aroundEach(async (runTest, { temp }) => {
+    // `scaffoldConfig` writes relative paths, which resolve against the real process directory.
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+    await runTest();
+  });
+
   it('scaffolds both config and kit files and returns 0', ({ temp }) => {
     using _silent = silenceConsole(['error', 'info']);
 

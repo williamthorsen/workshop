@@ -50,13 +50,13 @@ const it = baseIt.extend(
   makeFixture(() => createTempTree({}, { prefix: 'rdy-finding-report-' })),
 );
 
-it.aroundEach(async (runTest, { temp }) => {
-  using _cwd = pointCwdAt(temp.dir);
-
-  await runTest();
-});
-
 describe(buildFindingReport, () => {
+  it.aroundEach(async (runTest, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir);
+
+    await runTest();
+  });
+
   it('marks each retained finding with whether the calling check reports it', () => {
     const outcome = buildFindingReport({
       adoptedCount: 3,

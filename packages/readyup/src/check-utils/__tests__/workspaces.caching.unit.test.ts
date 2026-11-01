@@ -30,13 +30,13 @@ const it = baseIt.extend(
   makeFixture(() => createTempTree({}, { prefix: 'rdy-ws-cache-' })),
 );
 
-it.aroundEach(async (runTest, { temp }) => {
-  using _cwd = pointCwdAt(temp.dir);
-
-  await runTest();
-});
-
 describe(`${discoverWorkspaces.name} memoization`, () => {
+  it.aroundEach(async (runTest, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir);
+
+    await runTest();
+  });
+
   beforeEach(() => {
     readDirectories.length = 0;
   });

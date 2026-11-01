@@ -21,13 +21,13 @@ const it = baseIt.extend(
   makeFixture(() => createTempTree({}, { prefix: 'verify-integ-' })),
 );
 
-it.aroundEach(async (runTest, { temp }) => {
-  using _cwd = pointCwdAt(temp.dir, { chdir: true });
-
-  await runTest();
-});
-
 describe('verifyCommand wiring', () => {
+  it.aroundEach(async (runTest, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+    await runTest();
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
   });

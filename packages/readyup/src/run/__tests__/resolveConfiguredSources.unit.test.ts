@@ -27,13 +27,13 @@ const it = baseIt.extend(
   makeFixture(() => createTempTree({}, { prefix: 'resolve-configured-sources-' })),
 );
 
-it.aroundEach(async (runTest, { temp }) => {
-  using _cwd = pointCwdAt(temp.dir, { chdir: true });
-
-  await runTest();
-});
-
 describe(resolveConfiguredSources, () => {
+  it.aroundEach(async (runTest, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+    await runTest();
+  });
+
   afterEach(() => {
     vi.unstubAllGlobals();
   });

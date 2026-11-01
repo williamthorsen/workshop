@@ -26,14 +26,14 @@ const it = baseIt.extend(
   ),
 );
 
-it.aroundEach(async (runTest, { temp }) => {
-  using _cwd = pointCwdAt(temp.dir, { chdir: true });
-
-  await runTest();
-});
-
 /** Exercises a recompile that fails validation against real esbuild and a real import of the bundle. */
 describe('compileCommand after a kit that compiled once fails validation', () => {
+  it.aroundEach(async (runTest, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+    await runTest();
+  });
+
   it.for<[string, string[]]>([
     ['a sweep', []],
     ['a single-file compile', [SOURCE_PATH]],

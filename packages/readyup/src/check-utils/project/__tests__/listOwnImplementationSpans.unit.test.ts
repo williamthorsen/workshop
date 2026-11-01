@@ -14,13 +14,13 @@ const it = baseIt.extend(
   makeFixture(() => createTempTree({}, { prefix: 'rdy-own-impl-' })),
 );
 
-it.aroundEach(async (runTest, { temp }) => {
-  using _cwd = pointCwdAt(temp.dir);
-
-  await runTest();
-});
-
 describe(listOwnImplementationSpans, () => {
+  it.aroundEach(async (runTest, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir);
+
+    await runTest();
+  });
+
   describe('in a monorepo', () => {
     it('exempts the lines of a declaration exported under a recommended name', ({ temp }) => {
       writeMonorepo(temp);

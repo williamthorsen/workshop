@@ -14,13 +14,13 @@ const it = baseIt.extend(
   makeFixture(() => createTempTree({}, { prefix: 'rdy-tracked-' })),
 );
 
-it.aroundEach(async (runTest, { temp }) => {
-  using _cwd = pointCwdAt(temp.dir);
-
-  await runTest();
-});
-
 describe(listTrackedFiles, () => {
+  it.aroundEach(async (runTest, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir);
+
+    await runTest();
+  });
+
   it('returns a path containing a non-ASCII byte intact and unquoted', async ({ temp }) => {
     temp.write('packages/ascii/index.ts', 'export const value = 1;\n');
     temp.write('packages/日本語/index.ts', 'export const value = 2;\n');

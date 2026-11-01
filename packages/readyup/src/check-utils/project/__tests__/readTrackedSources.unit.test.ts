@@ -61,243 +61,245 @@ const it = baseIt.extend(
   makeFixture(() => createTempTree({}, { prefix: 'rdy-sources-' })),
 );
 
-it.aroundEach(async (runTest, { temp }) => {
-  using _cwd = pointCwdAt(temp.dir);
+describe('readTrackedSources.ts', () => {
+  it.aroundEach(async (runTest, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir);
 
-  await runTest();
-});
-
-describe(readTrackedSources, () => {
-  beforeEach(() => {
-    existsProbes.length = 0;
-    foreignPaths.clear();
-    readPaths.length = 0;
+    await runTest();
   });
 
-  it('reads each file once across calls passing different filters', async ({ temp }) => {
-    temp.write('src/shared.ts', 'shared');
-    temp.write('src/first.ts', 'first');
-    temp.write('src/second.ts', 'second');
-    trackPaths('src/first.ts', 'src/second.ts', 'src/shared.ts');
-
-    const first = await readTrackedSources((path) => path !== 'src/second.ts');
-    const second = await readTrackedSources((path) => path !== 'src/first.ts');
-
-    expect(first).toStrictEqual([
-      { path: 'src/first.ts', text: 'first' },
-      { path: 'src/shared.ts', text: 'shared' },
-    ]);
-    expect(second).toStrictEqual([
-      { path: 'src/second.ts', text: 'second' },
-      { path: 'src/shared.ts', text: 'shared' },
-    ]);
-    expect(countReads('src/shared.ts')).toBe(1);
-    expect(countReads('src/first.ts')).toBe(1);
-    expect(countReads('src/second.ts')).toBe(1);
-  });
-
-  it('reads a file once for two sweeps that run concurrently', async ({ temp }) => {
-    temp.write('src/shared.ts', 'shared');
-    temp.write('src/first.ts', 'first');
-    temp.write('src/second.ts', 'second');
-    trackPaths('src/first.ts', 'src/second.ts', 'src/shared.ts');
-
-    // The cache's check-and-set runs without yielding, so whichever sweep reaches a path first is the only one that
-    // reads it, however the two interleave.
-    const [first, second] = await Promise.all([
-      readTrackedSources((path) => path !== 'src/second.ts'),
-      readTrackedSources((path) => path !== 'src/first.ts'),
-    ]);
-
-    expect(first).toStrictEqual([
-      { path: 'src/first.ts', text: 'first' },
-      { path: 'src/shared.ts', text: 'shared' },
-    ]);
-    expect(second).toStrictEqual([
-      { path: 'src/second.ts', text: 'second' },
-      { path: 'src/shared.ts', text: 'shared' },
-    ]);
-    expect(countReads('src/shared.ts')).toBe(1);
-  });
-
-  it('never reads a path rejected by the filter', async ({ temp }) => {
-    temp.write('src/kept.ts', 'kept');
-    temp.write('src/rejected.ts', 'rejected');
-    trackPaths('src/kept.ts', 'src/rejected.ts');
-
-    await readTrackedSources((path) => path === 'src/kept.ts');
-
-    expect(countReads('src/rejected.ts')).toBe(0);
-    expect(countProbes('src/rejected.ts')).toBe(0);
-  });
-
-  it('never reads an excluded path, whatever the filter returns for it', async ({ temp }) => {
-    temp.write('src/kept.ts', 'kept');
-    temp.write('node_modules/dependency/index.js', 'dependency');
-    temp.write('.readyup/kits/default.js', 'bundle');
-    trackPaths('.readyup/kits/default.js', 'node_modules/dependency/index.js', 'src/kept.ts');
-
-    const sources = await readTrackedSources(() => true);
-
-    expect(sources).toStrictEqual([{ path: 'src/kept.ts', text: 'kept' }]);
-    expect(countReads('node_modules/dependency/index.js')).toBe(0);
-    expect(countReads('.readyup/kits/default.js')).toBe(0);
-  });
-
-  it('never reads a path that the project declares generated or vendored, whatever the filter returns for it', async ({
-    temp,
-  }) => {
-    temp.write('src/hand.ts', 'hand-written');
-    temp.write('bundles/skill.mjs', 'bundled');
-    temp.write('vendor/jquery.js', 'vendored');
-    trackPaths('bundles/skill.mjs', 'src/hand.ts', 'vendor/jquery.js');
-    declareForeign('bundles/skill.mjs', 'vendor/jquery.js');
-
-    const sources = await readTrackedSources(() => true);
-
-    expect(sources).toStrictEqual([{ path: 'src/hand.ts', text: 'hand-written' }]);
-    expect(countReads('bundles/skill.mjs')).toBe(0);
-    expect(countReads('vendor/jquery.js')).toBe(0);
-  });
-
-  it('reports a declared path to nobody, that being a file examined by no check', async ({ temp }) => {
-    temp.write('src/hand.ts', 'hand-written');
-    temp.write('bundles/skill.mjs', 'bundled');
-    trackPaths('bundles/skill.mjs', 'src/hand.ts');
-    declareForeign('bundles/skill.mjs');
-    const { recorder, scanned } = createRecorder();
-
-    await withSweepRecorder(recorder, () => readTrackedSources());
-
-    expect(scanned).toStrictEqual([['src/hand.ts']]);
-  });
-
-  it('sweeps a kit source, which only its compiled bundle is excluded from', async ({ temp }) => {
-    temp.write('.readyup/kits/default.ts', 'kit source');
-    trackPaths('.readyup/kits/default.ts');
-
-    await expect(readTrackedSources(() => true)).resolves.toStrictEqual([
-      { path: '.readyup/kits/default.ts', text: 'kit source' },
-    ]);
-  });
-
-  it('omits a tracked path that cannot be read, and probes the filesystem for it once', async ({ temp }) => {
-    temp.write('src/present.ts', 'present');
-    trackPaths('src/deleted.ts', 'src/present.ts');
-
-    const first = await readTrackedSources();
-    await readTrackedSources();
-
-    expect(first).toStrictEqual([{ path: 'src/present.ts', text: 'present' }]);
-    expect(countProbes('src/deleted.ts')).toBe(1);
-  });
-
-  it('omits a tracked path that resolves to a directory', async ({ temp }) => {
-    temp.write('website/docs/page.md', 'page');
-    temp.symlink('docs', 'website/docs');
-    temp.write('src/present.ts', 'present');
-    trackPaths('docs', 'src/present.ts');
-
-    await expect(readTrackedSources()).resolves.toStrictEqual([{ path: 'src/present.ts', text: 'present' }]);
-    // The read tells a directory from a source, so a fixture never listed by git would pass this vacuously.
-    expect(countReads('docs')).toBe(1);
-  });
-
-  it('returns undefined outside a git working tree', async ({ temp }) => {
-    temp.write('src/present.ts', 'present');
-    execFileAsync.mockRejectedValue(Object.assign(new Error('fatal: not a git repository'), { code: 128 }));
-
-    await expect(readTrackedSources()).resolves.toBeUndefined();
-  });
-
-  it('reports the paths that it returns to the recorder in scope', async ({ temp }) => {
-    temp.write('src/kept.ts', 'kept');
-    temp.write('src/rejected.ts', 'rejected');
-    trackPaths('src/kept.ts', 'src/rejected.ts');
-    const { recorder, scanned } = createRecorder();
-
-    await withSweepRecorder(recorder, () => readTrackedSources((path) => path === 'src/kept.ts'));
-
-    expect(scanned).toStrictEqual([['src/kept.ts']]);
-  });
-
-  it('reports a path that it could not read to nobody, that being a file examined by no check', async ({ temp }) => {
-    temp.write('src/present.ts', 'present');
-    trackPaths('src/deleted.ts', 'src/present.ts');
-    const { recorder, scanned } = createRecorder();
-
-    await withSweepRecorder(recorder, () => readTrackedSources());
-
-    expect(scanned).toStrictEqual([['src/present.ts']]);
-  });
-
-  it('reports a second sweep, which a check repeating one has examined the files of again', async ({ temp }) => {
-    temp.write('src/kept.ts', 'kept');
-    trackPaths('src/kept.ts');
-    const { recorder, scanned } = createRecorder();
-
-    await withSweepRecorder(recorder, async () => {
-      await readTrackedSources();
-      await readTrackedSources();
+  describe(readTrackedSources, () => {
+    beforeEach(() => {
+      existsProbes.length = 0;
+      foreignPaths.clear();
+      readPaths.length = 0;
     });
 
-    expect(scanned).toStrictEqual([['src/kept.ts'], ['src/kept.ts']]);
+    it('reads each file once across calls passing different filters', async ({ temp }) => {
+      temp.write('src/shared.ts', 'shared');
+      temp.write('src/first.ts', 'first');
+      temp.write('src/second.ts', 'second');
+      trackPaths('src/first.ts', 'src/second.ts', 'src/shared.ts');
+
+      const first = await readTrackedSources((path) => path !== 'src/second.ts');
+      const second = await readTrackedSources((path) => path !== 'src/first.ts');
+
+      expect(first).toStrictEqual([
+        { path: 'src/first.ts', text: 'first' },
+        { path: 'src/shared.ts', text: 'shared' },
+      ]);
+      expect(second).toStrictEqual([
+        { path: 'src/second.ts', text: 'second' },
+        { path: 'src/shared.ts', text: 'shared' },
+      ]);
+      expect(countReads('src/shared.ts')).toBe(1);
+      expect(countReads('src/first.ts')).toBe(1);
+      expect(countReads('src/second.ts')).toBe(1);
+    });
+
+    it('reads a file once for two sweeps that run concurrently', async ({ temp }) => {
+      temp.write('src/shared.ts', 'shared');
+      temp.write('src/first.ts', 'first');
+      temp.write('src/second.ts', 'second');
+      trackPaths('src/first.ts', 'src/second.ts', 'src/shared.ts');
+
+      // The cache's check-and-set runs without yielding, so whichever sweep reaches a path first is the only one that
+      // reads it, however the two interleave.
+      const [first, second] = await Promise.all([
+        readTrackedSources((path) => path !== 'src/second.ts'),
+        readTrackedSources((path) => path !== 'src/first.ts'),
+      ]);
+
+      expect(first).toStrictEqual([
+        { path: 'src/first.ts', text: 'first' },
+        { path: 'src/shared.ts', text: 'shared' },
+      ]);
+      expect(second).toStrictEqual([
+        { path: 'src/second.ts', text: 'second' },
+        { path: 'src/shared.ts', text: 'shared' },
+      ]);
+      expect(countReads('src/shared.ts')).toBe(1);
+    });
+
+    it('never reads a path rejected by the filter', async ({ temp }) => {
+      temp.write('src/kept.ts', 'kept');
+      temp.write('src/rejected.ts', 'rejected');
+      trackPaths('src/kept.ts', 'src/rejected.ts');
+
+      await readTrackedSources((path) => path === 'src/kept.ts');
+
+      expect(countReads('src/rejected.ts')).toBe(0);
+      expect(countProbes('src/rejected.ts')).toBe(0);
+    });
+
+    it('never reads an excluded path, whatever the filter returns for it', async ({ temp }) => {
+      temp.write('src/kept.ts', 'kept');
+      temp.write('node_modules/dependency/index.js', 'dependency');
+      temp.write('.readyup/kits/default.js', 'bundle');
+      trackPaths('.readyup/kits/default.js', 'node_modules/dependency/index.js', 'src/kept.ts');
+
+      const sources = await readTrackedSources(() => true);
+
+      expect(sources).toStrictEqual([{ path: 'src/kept.ts', text: 'kept' }]);
+      expect(countReads('node_modules/dependency/index.js')).toBe(0);
+      expect(countReads('.readyup/kits/default.js')).toBe(0);
+    });
+
+    it('never reads a path that the project declares generated or vendored, whatever the filter returns for it', async ({
+      temp,
+    }) => {
+      temp.write('src/hand.ts', 'hand-written');
+      temp.write('bundles/skill.mjs', 'bundled');
+      temp.write('vendor/jquery.js', 'vendored');
+      trackPaths('bundles/skill.mjs', 'src/hand.ts', 'vendor/jquery.js');
+      declareForeign('bundles/skill.mjs', 'vendor/jquery.js');
+
+      const sources = await readTrackedSources(() => true);
+
+      expect(sources).toStrictEqual([{ path: 'src/hand.ts', text: 'hand-written' }]);
+      expect(countReads('bundles/skill.mjs')).toBe(0);
+      expect(countReads('vendor/jquery.js')).toBe(0);
+    });
+
+    it('reports a declared path to nobody, that being a file examined by no check', async ({ temp }) => {
+      temp.write('src/hand.ts', 'hand-written');
+      temp.write('bundles/skill.mjs', 'bundled');
+      trackPaths('bundles/skill.mjs', 'src/hand.ts');
+      declareForeign('bundles/skill.mjs');
+      const { recorder, scanned } = createRecorder();
+
+      await withSweepRecorder(recorder, () => readTrackedSources());
+
+      expect(scanned).toStrictEqual([['src/hand.ts']]);
+    });
+
+    it('sweeps a kit source, which only its compiled bundle is excluded from', async ({ temp }) => {
+      temp.write('.readyup/kits/default.ts', 'kit source');
+      trackPaths('.readyup/kits/default.ts');
+
+      await expect(readTrackedSources(() => true)).resolves.toStrictEqual([
+        { path: '.readyup/kits/default.ts', text: 'kit source' },
+      ]);
+    });
+
+    it('omits a tracked path that cannot be read, and probes the filesystem for it once', async ({ temp }) => {
+      temp.write('src/present.ts', 'present');
+      trackPaths('src/deleted.ts', 'src/present.ts');
+
+      const first = await readTrackedSources();
+      await readTrackedSources();
+
+      expect(first).toStrictEqual([{ path: 'src/present.ts', text: 'present' }]);
+      expect(countProbes('src/deleted.ts')).toBe(1);
+    });
+
+    it('omits a tracked path that resolves to a directory', async ({ temp }) => {
+      temp.write('website/docs/page.md', 'page');
+      temp.symlink('docs', 'website/docs');
+      temp.write('src/present.ts', 'present');
+      trackPaths('docs', 'src/present.ts');
+
+      await expect(readTrackedSources()).resolves.toStrictEqual([{ path: 'src/present.ts', text: 'present' }]);
+      // The read tells a directory from a source, so a fixture never listed by git would pass this vacuously.
+      expect(countReads('docs')).toBe(1);
+    });
+
+    it('returns undefined outside a git working tree', async ({ temp }) => {
+      temp.write('src/present.ts', 'present');
+      execFileAsync.mockRejectedValue(Object.assign(new Error('fatal: not a git repository'), { code: 128 }));
+
+      await expect(readTrackedSources()).resolves.toBeUndefined();
+    });
+
+    it('reports the paths that it returns to the recorder in scope', async ({ temp }) => {
+      temp.write('src/kept.ts', 'kept');
+      temp.write('src/rejected.ts', 'rejected');
+      trackPaths('src/kept.ts', 'src/rejected.ts');
+      const { recorder, scanned } = createRecorder();
+
+      await withSweepRecorder(recorder, () => readTrackedSources((path) => path === 'src/kept.ts'));
+
+      expect(scanned).toStrictEqual([['src/kept.ts']]);
+    });
+
+    it('reports a path that it could not read to nobody, that being a file examined by no check', async ({ temp }) => {
+      temp.write('src/present.ts', 'present');
+      trackPaths('src/deleted.ts', 'src/present.ts');
+      const { recorder, scanned } = createRecorder();
+
+      await withSweepRecorder(recorder, () => readTrackedSources());
+
+      expect(scanned).toStrictEqual([['src/present.ts']]);
+    });
+
+    it('reports a second sweep, which a check repeating one has examined the files of again', async ({ temp }) => {
+      temp.write('src/kept.ts', 'kept');
+      trackPaths('src/kept.ts');
+      const { recorder, scanned } = createRecorder();
+
+      await withSweepRecorder(recorder, async () => {
+        await readTrackedSources();
+        await readTrackedSources();
+      });
+
+      expect(scanned).toStrictEqual([['src/kept.ts'], ['src/kept.ts']]);
+    });
+
+    it('reports nothing to the recorder outside a git working tree', async ({ temp }) => {
+      temp.write('src/present.ts', 'present');
+      execFileAsync.mockRejectedValue(Object.assign(new Error('fatal: not a git repository'), { code: 128 }));
+      const { recorder, scanned } = createRecorder();
+
+      await withSweepRecorder(recorder, () => readTrackedSources());
+
+      expect(scanned).toStrictEqual([]);
+    });
   });
 
-  it('reports nothing to the recorder outside a git working tree', async ({ temp }) => {
-    temp.write('src/present.ts', 'present');
-    execFileAsync.mockRejectedValue(Object.assign(new Error('fatal: not a git repository'), { code: 128 }));
-    const { recorder, scanned } = createRecorder();
+  describe(readSourceText, () => {
+    beforeEach(() => {
+      existsProbes.length = 0;
+      foreignPaths.clear();
+      readPaths.length = 0;
+    });
 
-    await withSweepRecorder(recorder, () => readTrackedSources());
+    it('returns the text that a sweep read, reading the file no second time', async ({ temp }) => {
+      temp.write('src/swept.ts', 'swept');
+      trackPaths('src/swept.ts');
+      await readTrackedSources();
 
-    expect(scanned).toStrictEqual([]);
-  });
-});
+      expect(readSourceText('src/swept.ts')).toBe('swept');
+      expect(countReads('src/swept.ts')).toBe(1);
+    });
 
-describe(readSourceText, () => {
-  beforeEach(() => {
-    existsProbes.length = 0;
-    foreignPaths.clear();
-    readPaths.length = 0;
-  });
+    it('reads a path selected by no sweep, and reads it once across calls', ({ temp }) => {
+      temp.write('src/unswept.ts', 'unswept');
 
-  it('returns the text that a sweep read, reading the file no second time', async ({ temp }) => {
-    temp.write('src/swept.ts', 'swept');
-    trackPaths('src/swept.ts');
-    await readTrackedSources();
+      expect(readSourceText('src/unswept.ts')).toBe('unswept');
+      expect(readSourceText('src/unswept.ts')).toBe('unswept');
+      expect(countReads('src/unswept.ts')).toBe(1);
+    });
 
-    expect(readSourceText('src/swept.ts')).toBe('swept');
-    expect(countReads('src/swept.ts')).toBe(1);
-  });
+    it('reads a path excluded by a sweep, since exclusion governs what a sweep goes looking at', ({ temp }) => {
+      temp.write('node_modules/dependency/index.js', 'dependency');
 
-  it('reads a path selected by no sweep, and reads it once across calls', ({ temp }) => {
-    temp.write('src/unswept.ts', 'unswept');
+      expect(readSourceText('node_modules/dependency/index.js')).toBe('dependency');
+    });
 
-    expect(readSourceText('src/unswept.ts')).toBe('unswept');
-    expect(readSourceText('src/unswept.ts')).toBe('unswept');
-    expect(countReads('src/unswept.ts')).toBe(1);
-  });
+    it('returns undefined for a path that has no text, and probes the filesystem for it once', () => {
+      expect(readSourceText('src/absent.ts')).toBeUndefined();
+      expect(readSourceText('src/absent.ts')).toBeUndefined();
+      expect(countProbes('src/absent.ts')).toBe(1);
+    });
 
-  it('reads a path excluded by a sweep, since exclusion governs what a sweep goes looking at', ({ temp }) => {
-    temp.write('node_modules/dependency/index.js', 'dependency');
+    it('reports nothing to the recorder in scope, a single read being no sweep', ({ temp }) => {
+      temp.write('src/read.ts', 'read');
+      const { recorder, scanned } = createRecorder();
 
-    expect(readSourceText('node_modules/dependency/index.js')).toBe('dependency');
-  });
+      withSweepRecorder(recorder, () => readSourceText('src/read.ts'));
 
-  it('returns undefined for a path that has no text, and probes the filesystem for it once', () => {
-    expect(readSourceText('src/absent.ts')).toBeUndefined();
-    expect(readSourceText('src/absent.ts')).toBeUndefined();
-    expect(countProbes('src/absent.ts')).toBe(1);
-  });
-
-  it('reports nothing to the recorder in scope, a single read being no sweep', ({ temp }) => {
-    temp.write('src/read.ts', 'read');
-    const { recorder, scanned } = createRecorder();
-
-    withSweepRecorder(recorder, () => readSourceText('src/read.ts'));
-
-    expect(scanned).toStrictEqual([]);
+      expect(scanned).toStrictEqual([]);
+    });
   });
 });
 

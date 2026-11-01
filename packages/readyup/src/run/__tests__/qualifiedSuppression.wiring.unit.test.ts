@@ -30,13 +30,13 @@ const it = baseIt.extend(
   makeFixture(() => createTempTree({}, { prefix: 'rdy-qualified-suppression-' })),
 );
 
-it.aroundEach(async (runTest, { temp }) => {
-  using _cwd = pointCwdAt(temp.dir);
-
-  await runTest();
-});
-
 describe('a pragma matched against the check ids resolved by the runner', () => {
+  it.aroundEach(async (runTest, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir);
+
+    await runTest();
+  });
+
   it('suppresses the named check and leaves its sibling failing on the same line', async ({ temp }) => {
     temp.write(SOURCE_PATH, 'error instanceof Error; // rdy-ignore toolbelt.errors/no-instanceof-error\n');
 

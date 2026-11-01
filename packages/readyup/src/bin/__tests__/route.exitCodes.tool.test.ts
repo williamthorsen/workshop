@@ -50,204 +50,209 @@ const it = baseIt.extend(
   }),
 );
 
-it.aroundAll(async (runSuite, { temp }) => {
-  using _cwd = pointCwdAt(temp.dir, { chdir: true });
+describe('route.ts', () => {
+  it.aroundAll(async (runSuite, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
 
-  await runSuite();
-});
-
-describe('exit codes', () => {
-  it.for([
-    { label: 'a passing run', args: ['passing'], expected: 0 },
-    { label: 'a failing run', args: ['failing'], expected: 1 },
-    { label: 'verify drift', args: ['verify'], expected: 1 },
-    { label: 'a kit that fails to compile', args: ['compile', 'broken.ts'], expected: 1 },
-    { label: 'a bad flag', args: ['--bogus'], expected: 2 },
-    { label: 'a missing kit', args: ['run', 'absent'], expected: 2 },
-    { label: 'a word that is neither a command nor a kit', args: ['absent'], expected: 2 },
-    { label: 'an unloadable kit', args: ['invalid'], expected: 2 },
-    { label: 'an unreadable config', args: ['--config', 'invalid.config.ts'], expected: 2 },
-    { label: 'a missing config', args: ['--config', 'absent.config.ts'], expected: 2 },
-    { label: 'a missing manifest for verify', args: ['verify', '--manifest', 'absent.json'], expected: 2 },
-    { label: 'listing an absent source', args: ['list', '--from', 'dir:/definitely/absent'], expected: 2 },
-  ])('exits $expected for $label', async ({ args, expected }) => {
-    using _io = captureStdio();
-
-    await expect(routeCommand(args)).resolves.toBe(expected);
+    await runSuite();
   });
 
-  it('reports a pre-dispatch failure through the error envelope', async () => {
-    using io = captureStdio();
+  describe('exit codes', () => {
+    it.for([
+      { label: 'a passing run', args: ['passing'], expected: 0 },
+      { label: 'a failing run', args: ['failing'], expected: 1 },
+      { label: 'verify drift', args: ['verify'], expected: 1 },
+      { label: 'a kit that fails to compile', args: ['compile', 'broken.ts'], expected: 1 },
+      { label: 'a bad flag', args: ['--bogus'], expected: 2 },
+      { label: 'a missing kit', args: ['run', 'absent'], expected: 2 },
+      { label: 'a word that is neither a command nor a kit', args: ['absent'], expected: 2 },
+      { label: 'an unloadable kit', args: ['invalid'], expected: 2 },
+      { label: 'an unreadable config', args: ['--config', 'invalid.config.ts'], expected: 2 },
+      { label: 'a missing config', args: ['--config', 'absent.config.ts'], expected: 2 },
+      { label: 'a missing manifest for verify', args: ['verify', '--manifest', 'absent.json'], expected: 2 },
+      { label: 'listing an absent source', args: ['list', '--from', 'dir:/definitely/absent'], expected: 2 },
+    ])('exits $expected for $label', async ({ args, expected }) => {
+      using _io = captureStdio();
 
-    const exitCode = await routeCommand(['--bogus', '--json']);
+      await expect(routeCommand(args)).resolves.toBe(expected);
+    });
 
-    expect(exitCode).toBe(2);
-    expect(JSON.parse(io.stdout)).toStrictEqual({
-      schemaVersion: 1,
-      error: { code: 'usage', message: expect.any(String) },
+    it('reports a pre-dispatch failure through the error envelope', async () => {
+      using io = captureStdio();
+
+      const exitCode = await routeCommand(['--bogus', '--json']);
+
+      expect(exitCode).toBe(2);
+      expect(JSON.parse(io.stdout)).toStrictEqual({
+        schemaVersion: 1,
+        error: { code: 'usage', message: expect.any(String) },
+      });
+    });
+
+    it.for([
+      { label: 'an unknown checklist', args: ['passing:absent'], kit: 'passing', code: 'usage' },
+      { label: 'a missing kit', args: ['run', 'absent'], kit: 'absent', code: 'kit-load' },
+      { label: 'an unloadable kit', args: ['invalid'], kit: 'invalid', code: 'kit-load' },
+    ])('reports code "$code" as a per-kit error entry for $label', async ({ args, kit, code }) => {
+      using io = captureStdio();
+
+      const exitCode = await routeCommand([...args, '--json']);
+
+      expect(exitCode).toBe(2);
+      expect(JSON.parse(io.stdout)).toMatchObject({
+        kits: [{ name: kit, error: { code, message: expect.any(String) } }],
+      });
+    });
+
+    it.for([
+      { label: 'an unreadable config file', configPath: 'invalid.config.ts' },
+      { label: 'a missing config file', configPath: 'absent.config.ts' },
+    ])('reports code "config" for $label', async ({ configPath }) => {
+      using io = captureStdio();
+
+      const exitCode = await routeCommand(['--config', configPath, '--json']);
+
+      expect(exitCode).toBe(2);
+      expect(JSON.parse(io.stdout)).toStrictEqual({
+        schemaVersion: 1,
+        error: { code: 'config', message: expect.any(String) },
+      });
     });
   });
 
-  it.for([
-    { label: 'an unknown checklist', args: ['passing:absent'], kit: 'passing', code: 'usage' },
-    { label: 'a missing kit', args: ['run', 'absent'], kit: 'absent', code: 'kit-load' },
-    { label: 'an unloadable kit', args: ['invalid'], kit: 'invalid', code: 'kit-load' },
-  ])('reports code "$code" as a per-kit error entry for $label', async ({ args, kit, code }) => {
-    using io = captureStdio();
+  describe('stdout purity under --json', () => {
+    it.for([
+      { label: 'a passing run', args: ['passing', '--json'] },
+      { label: 'a failing run', args: ['failing', '--json'] },
+      { label: 'a bad flag', args: ['--bogus', '--json'] },
+      { label: 'a missing kit', args: ['run', 'absent', '--json'] },
+      { label: 'a word that is neither a command nor a kit', args: ['absent', '--json'] },
+      { label: 'an unknown command', args: ['compil', '--json'] },
+      { label: 'a list failure', args: ['list', '--from', 'dir:/definitely/absent', '--json'] },
+      { label: 'a verify failure', args: ['verify', '--manifest', 'absent.json', '--json'] },
+      { label: 'an init usage error', args: ['init', '--json'] },
+    ])('writes exactly one JSON document to stdout for $label', async ({ args }) => {
+      using io = captureStdio();
 
-    const exitCode = await routeCommand([...args, '--json']);
+      await routeCommand(args);
 
-    expect(exitCode).toBe(2);
-    expect(JSON.parse(io.stdout)).toMatchObject({
-      kits: [{ name: kit, error: { code, message: expect.any(String) } }],
+      const written = io.stdout;
+      expect(() => {
+        JSON.parse(written);
+      }).not.toThrow();
+      expect(written.trimEnd()).not.toContain('\n');
+    });
+
+    it('keeps stderr empty when an error is reported through the envelope', async () => {
+      using io = captureStdio();
+
+      await routeCommand(['--bogus', '--json']);
+
+      expect(io.stderr).toBe('');
+    });
+
+    it('reports errors as prose on stderr when --json is absent', async () => {
+      using io = captureStdio();
+
+      const exitCode = await routeCommand(['--bogus']);
+
+      expect(exitCode).toBe(2);
+      expect(io.stderr).toContain('Error:');
+      expect(io.stdout).toBe('');
+    });
+
+    it.for([
+      { label: 'the retired short flag', flag: '-j' },
+      { label: 'a short cluster containing j', flag: '-jJ' },
+    ])('takes the prose path for a flag-parse failure spelled with $label', async ({ flag }) => {
+      using io = captureStdio();
+
+      const exitCode = await routeCommand([flag]);
+
+      expect(exitCode).toBe(2);
+      expect(io.stdout).toBe('');
+      expect(io.stderr).toContain('Error:');
     });
   });
 
-  it.for([
-    { label: 'an unreadable config file', configPath: 'invalid.config.ts' },
-    { label: 'a missing config file', configPath: 'absent.config.ts' },
-  ])('reports code "config" for $label', async ({ configPath }) => {
-    using io = captureStdio();
+  describe('flag surface', () => {
+    it.for(['-J', '-F', '-R', '-i', '-u', '-j'])(
+      'exits 2 with a usage error for the retired short %s',
+      async (short) => {
+        using io = captureStdio();
 
-    const exitCode = await routeCommand(['--config', configPath, '--json']);
+        const exitCode = await routeCommand(['--json', short]);
 
-    expect(exitCode).toBe(2);
-    expect(JSON.parse(io.stdout)).toStrictEqual({
-      schemaVersion: 1,
-      error: { code: 'config', message: expect.any(String) },
+        expect(exitCode).toBe(2);
+        expect(JSON.parse(io.stdout)).toMatchObject({ error: { code: 'usage' } });
+      },
+    );
+
+    it.for([
+      { long: '--jit', args: ['--jit'] },
+      { long: '--internal', args: ['--internal'] },
+      { long: '--url', args: ['--url', 'file://absent'] },
+      { long: '--fail-on', args: ['passing', '--fail-on', 'warn'] },
+      { long: '--report-on', args: ['passing', '--report-on', 'error'] },
+    ])('leaves $long accepted after its short is retired', async ({ args }) => {
+      using io = captureStdio();
+
+      // The flag may still fail for want of a kit; what matters is that it is not a usage error.
+      await routeCommand([...args, '--json']);
+
+      expect(JSON.parse(io.stdout)).not.toMatchObject({ error: { code: 'usage' } });
+    });
+
+    it('runs the named checklists from a single positional kit', async () => {
+      using io = captureStdio();
+
+      const exitCode = await routeCommand(['deploy', '--checklists', 'build,test', '--json']);
+
+      expect(exitCode).toBe(0);
+      const written = io.stdout;
+      expect(written).toContain('build');
+      expect(written).toContain('test');
+      expect(written).not.toContain('lint');
+    });
+
+    it.for([
+      { label: 'a ":" filter competing with --checklists', args: ['deploy:build', '--checklists', 'test'] },
+      { label: 'more than one positional kit', args: ['deploy', 'passing', '--checklists', 'build'] },
+    ])('exits 2 with a usage error for $label', async ({ args }) => {
+      using io = captureStdio();
+
+      const exitCode = await routeCommand([...args, '--json']);
+
+      expect(exitCode).toBe(2);
+      expect(JSON.parse(io.stdout)).toMatchObject({ error: { code: 'usage' } });
+    });
+
+    // Asserted without `--json`, which `init` does not accept either; adding it would let this pass
+    // on the wrong flag.
+    it('exits 2 for the retired init -f short', async () => {
+      using io = captureStdio();
+
+      const exitCode = await routeCommand(['init', '-f']);
+
+      expect(exitCode).toBe(2);
+      expect(io.stderr).toContain("Unknown option '-f'");
     });
   });
-});
 
-describe('stdout purity under --json', () => {
-  it.for([
-    { label: 'a passing run', args: ['passing', '--json'] },
-    { label: 'a failing run', args: ['failing', '--json'] },
-    { label: 'a bad flag', args: ['--bogus', '--json'] },
-    { label: 'a missing kit', args: ['run', 'absent', '--json'] },
-    { label: 'a word that is neither a command nor a kit', args: ['absent', '--json'] },
-    { label: 'an unknown command', args: ['compil', '--json'] },
-    { label: 'a list failure', args: ['list', '--from', 'dir:/definitely/absent', '--json'] },
-    { label: 'a verify failure', args: ['verify', '--manifest', 'absent.json', '--json'] },
-    { label: 'an init usage error', args: ['init', '--json'] },
-  ])('writes exactly one JSON document to stdout for $label', async ({ args }) => {
-    using io = captureStdio();
+  describe('subcommand error classification', () => {
+    it.for([
+      { command: 'run', args: ['run', '--bogus'] },
+      { command: 'list', args: ['list', '--bogus'] },
+      { command: 'verify', args: ['verify', '--bogus'] },
+      { command: 'compile', args: ['compile', '--bogus'] },
+      { command: 'init', args: ['init', '--bogus'] },
+    ])('exits 2 with a usage error for $command', async ({ args }) => {
+      using io = captureStdio();
 
-    await routeCommand(args);
+      const exitCode = await routeCommand([...args, '--json']);
 
-    const written = io.stdout;
-    expect(() => {
-      JSON.parse(written);
-    }).not.toThrow();
-    expect(written.trimEnd()).not.toContain('\n');
-  });
-
-  it('keeps stderr empty when an error is reported through the envelope', async () => {
-    using io = captureStdio();
-
-    await routeCommand(['--bogus', '--json']);
-
-    expect(io.stderr).toBe('');
-  });
-
-  it('reports errors as prose on stderr when --json is absent', async () => {
-    using io = captureStdio();
-
-    const exitCode = await routeCommand(['--bogus']);
-
-    expect(exitCode).toBe(2);
-    expect(io.stderr).toContain('Error:');
-    expect(io.stdout).toBe('');
-  });
-
-  it.for([
-    { label: 'the retired short flag', flag: '-j' },
-    { label: 'a short cluster containing j', flag: '-jJ' },
-  ])('takes the prose path for a flag-parse failure spelled with $label', async ({ flag }) => {
-    using io = captureStdio();
-
-    const exitCode = await routeCommand([flag]);
-
-    expect(exitCode).toBe(2);
-    expect(io.stdout).toBe('');
-    expect(io.stderr).toContain('Error:');
-  });
-});
-
-describe('flag surface', () => {
-  it.for(['-J', '-F', '-R', '-i', '-u', '-j'])('exits 2 with a usage error for the retired short %s', async (short) => {
-    using io = captureStdio();
-
-    const exitCode = await routeCommand(['--json', short]);
-
-    expect(exitCode).toBe(2);
-    expect(JSON.parse(io.stdout)).toMatchObject({ error: { code: 'usage' } });
-  });
-
-  it.for([
-    { long: '--jit', args: ['--jit'] },
-    { long: '--internal', args: ['--internal'] },
-    { long: '--url', args: ['--url', 'file://absent'] },
-    { long: '--fail-on', args: ['passing', '--fail-on', 'warn'] },
-    { long: '--report-on', args: ['passing', '--report-on', 'error'] },
-  ])('leaves $long accepted after its short is retired', async ({ args }) => {
-    using io = captureStdio();
-
-    // The flag may still fail for want of a kit; what matters is that it is not a usage error.
-    await routeCommand([...args, '--json']);
-
-    expect(JSON.parse(io.stdout)).not.toMatchObject({ error: { code: 'usage' } });
-  });
-
-  it('runs the named checklists from a single positional kit', async () => {
-    using io = captureStdio();
-
-    const exitCode = await routeCommand(['deploy', '--checklists', 'build,test', '--json']);
-
-    expect(exitCode).toBe(0);
-    const written = io.stdout;
-    expect(written).toContain('build');
-    expect(written).toContain('test');
-    expect(written).not.toContain('lint');
-  });
-
-  it.for([
-    { label: 'a ":" filter competing with --checklists', args: ['deploy:build', '--checklists', 'test'] },
-    { label: 'more than one positional kit', args: ['deploy', 'passing', '--checklists', 'build'] },
-  ])('exits 2 with a usage error for $label', async ({ args }) => {
-    using io = captureStdio();
-
-    const exitCode = await routeCommand([...args, '--json']);
-
-    expect(exitCode).toBe(2);
-    expect(JSON.parse(io.stdout)).toMatchObject({ error: { code: 'usage' } });
-  });
-
-  // Asserted without `--json`, which `init` does not accept either; adding it would let this pass
-  // on the wrong flag.
-  it('exits 2 for the retired init -f short', async () => {
-    using io = captureStdio();
-
-    const exitCode = await routeCommand(['init', '-f']);
-
-    expect(exitCode).toBe(2);
-    expect(io.stderr).toContain("Unknown option '-f'");
-  });
-});
-
-describe('subcommand error classification', () => {
-  it.for([
-    { command: 'run', args: ['run', '--bogus'] },
-    { command: 'list', args: ['list', '--bogus'] },
-    { command: 'verify', args: ['verify', '--bogus'] },
-    { command: 'compile', args: ['compile', '--bogus'] },
-    { command: 'init', args: ['init', '--bogus'] },
-  ])('exits 2 with a usage error for $command', async ({ args }) => {
-    using io = captureStdio();
-
-    const exitCode = await routeCommand([...args, '--json']);
-
-    expect(exitCode).toBe(2);
-    expect(JSON.parse(io.stdout)).toMatchObject({ error: { code: 'usage' } });
+      expect(exitCode).toBe(2);
+      expect(JSON.parse(io.stdout)).toMatchObject({ error: { code: 'usage' } });
+    });
   });
 });

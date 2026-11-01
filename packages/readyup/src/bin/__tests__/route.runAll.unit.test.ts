@@ -33,13 +33,13 @@ const it = baseIt.extend(
   ),
 );
 
-it.aroundAll(async (runSuite, { temp }) => {
-  using _cwd = pointCwdAt(temp.dir, { chdir: true });
-
-  await runSuite();
-});
-
 describe('rdy --all', () => {
+  it.aroundAll(async (runSuite, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+    await runSuite();
+  });
+
   it('runs every compiled kit of the project once, with no subcommand named', async () => {
     const { exitCode, stdout } = await route(['--all', '--json']);
 

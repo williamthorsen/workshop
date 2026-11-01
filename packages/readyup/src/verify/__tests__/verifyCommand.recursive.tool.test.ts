@@ -24,14 +24,14 @@ const it = baseIt.extend(
   ),
 );
 
-it.aroundEach(async (runTest, { temp }) => {
-  using _cwd = pointCwdAt(temp.dir, { chdir: true });
-
-  await runTest();
-});
-
 /** Exercises `--recursive --rebuild` against real esbuild, over projects compiled by a real recursive compile. */
 describe('verifyCommand --recursive --rebuild', () => {
+  it.aroundEach(async (runTest, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+    await runTest();
+  });
+
   it('reproduces the bundles of every project from its own package root', async () => {
     await expect(compileQuietly()).resolves.toBe(0);
 
