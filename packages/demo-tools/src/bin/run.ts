@@ -17,8 +17,9 @@ import { resolveAidemo } from '../aidemo/resolve-aidemo.ts';
 import { planTake, type TakeDisposition } from '../archive/plan-take.ts';
 import type { SourceState } from '../clients/git/read-source-state.ts';
 import { REPO_CONFIG_PATH } from '../config/find-repo-root.ts';
+import { MACHINE_CONFIG_PATH } from '../config/read-machine-config.ts';
 import { readRepoConfig, type RepoConfig } from '../config/read-repo-config.ts';
-import { ARCHIVE_ROOT_VARIABLE, MACHINE_CONFIG_PATH, resolveArchiveRoot } from '../config/resolve-archive-root.ts';
+import { ARCHIVE_ROOT_VARIABLE, resolveArchiveRoot } from '../config/resolve-archive-root.ts';
 import { resolveDemoDir } from '../demos/resolve-demo-dir.ts';
 
 const EXIT_FAILURE = 1;

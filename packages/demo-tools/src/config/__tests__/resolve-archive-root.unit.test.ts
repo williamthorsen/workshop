@@ -1,7 +1,8 @@
 import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
-import { type ArchiveRootResult, MACHINE_CONFIG_PATH, resolveArchiveRoot } from '../resolve-archive-root.ts';
+import { MACHINE_CONFIG_PATH } from '../read-machine-config.ts';
+import { type ArchiveRootResult, resolveArchiveRoot } from '../resolve-archive-root.ts';
 
 describe(resolveArchiveRoot, () => {
   it('leaves the root unset when neither the variable nor the file sets it', () => {
@@ -56,7 +57,7 @@ describe(resolveArchiveRoot, () => {
   it.each([
     ['malformed YAML', 'archive: [\n', /cannot be read as YAML/],
     ['a document that is not a mapping', '- a\n', /must be a mapping/],
-    ['an unknown top-level key', 'archiveRoot: /x\n', /unknown key "archiveRoot"; the key is archive/],
+    ['an unknown top-level key', 'archiveRoot: /x\n', /unknown key "archiveRoot"; the keys are archive and voice/],
     ['a non-mapping archive section', 'archive: /x\n', /archive must be a mapping/],
     ['an unknown archive key', 'archive:\n  dir: /x\n', /unknown key "archive\.dir"; the key is root/],
     ['a non-string root', 'archive:\n  root: 9\n', /archive\.root must be a non-empty string/],
