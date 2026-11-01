@@ -4,7 +4,9 @@ import path from 'node:path';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 import { parse } from 'yaml';
 
+import { isRecord } from '../portable/is-record.ts';
 import { expandValue } from './expand-value.ts';
+import { findUnknownKey } from './find-unknown-key.ts';
 import { findRepoRoot, REPO_CONFIG_PATH } from './find-repo-root.ts';
 
 /** The demo repository's settings, resolved from its configuration file. */
@@ -69,16 +71,6 @@ export function readRepoConfig({ cwd, env, homeDir }: RepoConfigInput): RepoConf
 }
 
 // region | Helpers
-
-/** Returns the first key of `record` that `known` does not list. */
-function findUnknownKey(record: Record<string, unknown>, known: readonly string[]): string | undefined {
-  return Object.keys(record).find((key) => !known.includes(key));
-}
-
-/** Reports whether a value is a plain mapping. */
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 /** Validates and expands the `aidemo` section, whose one key is `env`. */
 function readAidemoEnv(
