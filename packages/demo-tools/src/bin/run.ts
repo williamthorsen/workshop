@@ -51,9 +51,9 @@ const ROOT = defineGroup({
   epilog: `Configuration:
   ${REPO_CONFIG_PATH}, found in the working directory or a parent, marks the root of the
   demo repository and sets demosDir, aidemo.env, and archive.label.
-  ~/${MACHINE_CONFIG_PATH} sets archive.root, where render and revoice archive
-  each take, which ${ARCHIVE_ROOT_VARIABLE} overrides, and the voice section, which
-  the voice commands and revoice read.
+  ~/${MACHINE_CONFIG_PATH} sets archive.root, where render and revoice
+  archive each take, which ${ARCHIVE_ROOT_VARIABLE} overrides, and the voice
+  section, which the voice commands and revoice read.
 
 Exit codes:
   0  Help or version printed, aidemo succeeded, or a voice command succeeded
