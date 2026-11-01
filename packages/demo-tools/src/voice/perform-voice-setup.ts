@@ -126,7 +126,7 @@ async function verifyClone({ home, model }: VoiceConfig, report: (line: string) 
 
   let response;
   try {
-    response = await postJson(`${server.baseUrl}${SPEECH_PATH}`, body, VERIFY_TIMEOUT_MS);
+    response = await postJson(`${server.baseUrl}${SPEECH_PATH}`, body, AbortSignal.timeout(VERIFY_TIMEOUT_MS));
   } catch (error) {
     return { ok: false, message: `the speech request failed (${describeError(error)}); see ${launch.logPath}` };
   }
