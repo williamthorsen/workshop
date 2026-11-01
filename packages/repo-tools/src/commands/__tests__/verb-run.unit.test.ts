@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { parseRemoteUrl } from '../verb-run.ts';
 
-describe('parseRemoteUrl', () => {
+describe(parseRemoteUrl, () => {
   it.each([
     ['git@github.com:owner/delta.git', 'github.com', 'owner/delta'],
     ['ssh://git@github.com/owner/delta.git', 'github.com', 'owner/delta'],
@@ -13,7 +13,7 @@ describe('parseRemoteUrl', () => {
     ['git@bitbucket.org:ws/wthorsen-demos.git', 'bitbucket.org', 'ws/wthorsen-demos'],
     ['https://gitlab.example.com/group/subgroup/delta.git', 'gitlab.example.com', 'subgroup/delta'],
   ])('reads %s', (url, host, path) => {
-    expect(parseRemoteUrl(url)).toEqual({ host, path });
+    expect(parseRemoteUrl(url)).toStrictEqual({ host, path });
   });
 
   it.each([['/srv/git/delta.git'], ['delta'], ['']])('returns undefined for %j', (url) => {
