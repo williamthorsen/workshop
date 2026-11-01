@@ -43,12 +43,21 @@
   "dependencies": {
     "@williamthorsen/toolbelt.cli": "catalog:",
     "@williamthorsen/toolbelt.errors": "catalog:",
-    "@williamthorsen/toolbelt.packaging": "catalog:"
+    "@williamthorsen/toolbelt.packaging": "catalog:",
+    "yaml": "catalog:"
   },
   "devDependencies": {
     "@williamthorsen/toolbelt.testing": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "@tandryukha/aidemo": ">=0.17.0"
+  },
+  "peerDependenciesMeta": {
+    "@tandryukha/aidemo": {
+      "optional": true
+    }
   },
   "engines": {
     "node": ">=24"
