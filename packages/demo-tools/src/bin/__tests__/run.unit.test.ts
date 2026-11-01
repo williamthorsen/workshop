@@ -1,12 +1,9 @@
-import { chmodSync, rmSync, writeFileSync } from 'node:fs';
-import path from 'node:path';
+import { chmodSync, rmSync } from 'node:fs';
 
 import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
-import { DEFAULT_VOICE_HOME, DEFAULT_VOICE_MODEL } from '../../config/read-machine-config.ts';
-import { readProfileSources } from '../../voice/build-voice-profile.ts';
-import { formatModelDir } from '../../voice/mlx-audio/format-model-dir.ts';
+import { DEFAULT_VOICE_MODEL } from '../../config/read-machine-config.ts';
 import { run, type RunEffects } from '../run.ts';
 
 const VERSION = '9.9.9';
@@ -315,134 +312,6 @@ describe(run, () => {
     });
   });
 
-  describe('revoice', () => {
-    it('requests the three aidemo stages against the cloned voice, with the take described as cloned', async () => {
-      using tree = createRevoiceMachine();
-      const source = { commit: 'abc1234def', dirty: false };
-
-      const result = await run(['revoice', 'quickstart'], {
-        ...buildRevoiceEffects(tree),
-        env: {
-          OPENAI_API_KEY: 'sk-real',
-          OPENAI_BASE_URL: 'https://api.openai.com/v1',
-          PATH: '/bin',
-          THOR_DEMO_ARCHIVE_ROOT: tree.resolve('archive'),
-        },
-        readSourceState: () => source,
-      });
-
-      expect(result.stderr).toBe('');
-      expect(result.exitCode).toBe(0);
-      expect(result.launch).toBeUndefined();
-      const demoDir = tree.resolve('demos/quickstart');
-      const voiceHome = tree.resolve(`home/${DEFAULT_VOICE_HOME}`);
-      expect(result.revoice).toMatchObject({
-        bin: tree.resolve('node_modules/@tandryukha/aidemo/bin/aidemo.mjs'),
-        cwd: tree.dir,
-        stages: [
-          ['voice', demoDir, '--force'],
-          ['captions', demoDir, '--offline'],
-          ['compose', demoDir],
-        ],
-        voice: { home: voiceHome, model: DEFAULT_VOICE_MODEL },
-        take: {
-          kind: 'archive',
-          plan: {
-            archiveRoot: tree.resolve('archive'),
-            demo: 'quickstart',
-            params: [],
-            reference: { sha256: readProfileSources(readVoiceConfig(tree)).referenceSha256 },
-            source,
-            voice: { provider: 'mlx-audio', voiceId: DEFAULT_VOICE_MODEL },
-          },
-        },
-      });
-      expect(result.revoice?.env).toStrictEqual({
-        AIDEMO_TTS_MODEL: DEFAULT_VOICE_MODEL,
-        AIDEMO_TTS_PROVIDER: 'openai',
-        PATH: '/bin',
-        THOR_DEMO_ARCHIVE_ROOT: tree.resolve('archive'),
-      });
-    });
-
-    it('stops on a machine that is not Apple Silicon', async () => {
-      using tree = createRevoiceMachine();
-
-      const result = await run(['revoice', 'quickstart'], { ...buildRevoiceEffects(tree), arch: 'x64' });
-
-      expectRefused(result, 'the voice clone runs on Apple Silicon');
-    });
-
-    it('lists the demos for an unknown one, as a usage error', async () => {
-      using tree = createRevoiceMachine();
-
-      const result = await run(['revoice', 'quick'], buildRevoiceEffects(tree));
-
-      expect(result.exitCode).toBe(2);
-      expect(result.revoice).toBeUndefined();
-      expect(result.stderr).toContain('unknown demo "quick"; the demos in demos are: quickstart');
-    });
-
-    it('stops when voice setup has not run, naming it', async () => {
-      using tree = createRevoiceMachine({ installed: false });
-
-      expectRefused(await run(['revoice', 'quickstart'], buildRevoiceEffects(tree)), 'run thor-demo voice setup');
-    });
-
-    it('stops when the profile was built from another reference recording', async () => {
-      using tree = createRevoiceMachine();
-      writeFileSync(tree.resolve('home/reference.m4a'), 'another take');
-
-      expectRefused(
-        await run(['revoice', 'quickstart'], buildRevoiceEffects(tree)),
-        'the voice profile was built from another recording than voice.reference.audio; run thor-demo voice setup',
-      );
-    });
-
-    it('stops on an aidemo older than 0.20.2, naming the version required', async () => {
-      using tree = createRevoiceMachine({ aidemoVersion: '0.20.1' });
-
-      expectRefused(await run(['revoice', 'quickstart'], buildRevoiceEffects(tree)), '0.20.2 or later is required');
-    });
-
-    it('stops when the .env sets a variable that would send the narration elsewhere', async () => {
-      using tree = createRevoiceMachine({ extra: { '.env': 'OPENAI_API_KEY=sk-x\nAIDEMO_TTS_PROVIDER=elevenlabs\n' } });
-
-      expectRefused(
-        await run(['revoice', 'quickstart'], buildRevoiceEffects(tree)),
-        `${tree.resolve('.env')} sets AIDEMO_TTS_PROVIDER, which aidemo loads over`,
-      );
-    });
-
-    it('stops on a demo that has not been recorded, saying to render it first', async () => {
-      using tree = createRevoiceMachine({ recorded: false });
-
-      expectRefused(
-        await run(['revoice', 'quickstart'], buildRevoiceEffects(tree)),
-        'quickstart has not been recorded; render it first with thor-demo render quickstart',
-      );
-    });
-
-    it('accepts a demo recorded through native capture', async () => {
-      using tree = createRevoiceMachine({ recorded: 'raw.mp4' });
-
-      const result = await run(['revoice', 'quickstart'], buildRevoiceEffects(tree));
-
-      expect(result.exitCode).toBe(0);
-      expect(result.revoice).toBeDefined();
-    });
-
-    it('lists revoice in the root help and documents its prerequisites', async () => {
-      const root = await run(['--help'], EFFECTS);
-      const own = await run(['revoice', '--help'], EFFECTS);
-
-      expect(root.stdout).toMatch(/revoice +Narrate a recorded demo again/);
-      expect(own.exitCode).toBe(0);
-      expect(own.stdout).toContain('@tandryukha/aidemo 0.20.2 or later');
-      expect(own.stdout).toContain('ignores voice.speed and voice.instructions');
-    });
-  });
-
   describe('voice setup', () => {
     it('requests the setup with the resolved voice configuration, outside any demo repository', async () => {
       using tree = createVoiceMachine();
@@ -622,59 +491,9 @@ describe(run, () => {
 
 // region | Helpers
 
-/** Returns effects for a revoice run from the root of `tree`, with its home and archive root in `tree`. */
-function buildRevoiceEffects(tree: TempTree): RunEffects {
-  return {
-    ...EFFECTS,
-    cwd: tree.dir,
-    env: { THOR_DEMO_ARCHIVE_ROOT: tree.resolve('archive') },
-    homeDir: tree.resolve('home'),
-  };
-}
-
 /** Returns effects whose home and `PATH` are in `tree`. */
 function buildVoiceEffects(tree: TempTree): RunEffects {
   return { ...EFFECTS, env: { PATH: tree.resolve('bin') }, homeDir: tree.resolve('home') };
-}
-
-/**
- * Builds a demo repository whose home has a voice section and, unless `installed` is false, a voice clone installed
- * from it, and whose demo was recorded through the capture that `recorded` names, unless it is false.
- */
-function createRevoiceMachine({
-  aidemoVersion = '0.20.2',
-  extra = {},
-  installed = true,
-  recorded = 'raw.webm',
-}: {
-  aidemoVersion?: string;
-  extra?: Record<string, string>;
-  installed?: boolean;
-  recorded?: string | false;
-} = {}): TempTree {
-  const tree = createDemoRepo({
-    aidemoVersion,
-    extra: {
-      ...extra,
-      'home/.config/thor-demo/config.yaml': VOICE_SECTION,
-      'home/reference.m4a': 'audio',
-      'home/reference.txt': 'Hello.',
-      ...(recorded !== false && {
-        [`demos/quickstart/recordings/${recorded}`]: 'video',
-        'demos/quickstart/generated/timeline.json': '{}',
-      }),
-    },
-  });
-  if (!installed) return tree;
-
-  const voice = readVoiceConfig(tree);
-  tree.write(`home/${DEFAULT_VOICE_HOME}/venv/bin/python`, '');
-  tree.write(path.join(path.relative(tree.dir, formatModelDir(voice.home, voice.model)), 'config.json'), '{}');
-  tree.write(
-    `home/${DEFAULT_VOICE_HOME}/profile/profile.json`,
-    JSON.stringify({ schemaVersion: 1, model: voice.model, ...readProfileSources(voice) }),
-  );
-  return tree;
 }
 
 /**
@@ -715,24 +534,6 @@ function createDemoRepo({
       [AIDEMO_MANIFEST]: JSON.stringify({ version: aidemoVersion, bin: { aidemo: 'bin/aidemo.mjs' } }),
     }),
   });
-}
-
-/** Asserts that a run stopped with exit 1, requested nothing, and reported `problem` under the revoice prefix. */
-function expectRefused(result: Awaited<ReturnType<typeof run>>, problem: string): void {
-  expect(result.exitCode).toBe(1);
-  expect(result.revoice).toBeUndefined();
-  expect(result.stderr).toMatch(/^thor-demo revoice: /);
-  expect(result.stderr).toContain(problem);
-}
-
-/** Returns the voice configuration that the revoice machine's voice section resolves to. */
-function readVoiceConfig(tree: TempTree) {
-  return {
-    home: tree.resolve(`home/${DEFAULT_VOICE_HOME}`),
-    model: DEFAULT_VOICE_MODEL,
-    referenceAudio: tree.resolve('home/reference.m4a'),
-    referenceTranscript: tree.resolve('home/reference.txt'),
-  };
 }
 
 // endregion | Helpers
