@@ -26,7 +26,8 @@ export interface SpeechProxy extends AsyncDisposable {
 
 /**
  * Starts a loopback-only HTTP server that accepts OpenAI-shaped speech requests and forwards each as a request that
- * clones the profile's voice, keeping only the text to speak. Every other request is answered 404.
+ * clones the profile's voice, keeping only the text to speak. A request from a web page is answered 403, and every
+ * other request 404.
  */
 export async function startSpeechProxy(options: SpeechProxyOptions): Promise<SpeechProxy> {
   const referenceText = readFileSync(options.referenceTranscript, 'utf8').trim();
@@ -37,6 +38,11 @@ export async function startSpeechProxy(options: SpeechProxyOptions): Promise<Spe
   });
 
   async function handleRequest(request: http.IncomingMessage, response: http.ServerResponse): Promise<void> {
+    // A browser sends `Origin` on every POST, and aidemo's Node client never does.
+    if (request.headers.origin !== undefined) {
+      sendText(response, 403, 'requests from a web page are refused');
+      return;
+    }
     if (request.method !== 'POST' || request.url !== SPEECH_PATH) {
       sendText(response, 404, `not found: ${request.method ?? ''} ${request.url ?? ''}`);
       return;

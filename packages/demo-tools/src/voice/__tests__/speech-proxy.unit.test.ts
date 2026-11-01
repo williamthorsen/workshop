@@ -81,6 +81,21 @@ describe(startSpeechProxy, () => {
     expect((await fetch(`${proxy.baseUrl}/v1/audio/transcriptions`, { method: 'POST' })).status).toBe(404);
     expect(upstream.requests).toStrictEqual([]);
   });
+
+  it('answers 403 to a request that a web page sent, without forwarding it', async () => {
+    await using upstream = await startUpstream(200, 'audio/mp3', 'MP3');
+    using tree = createTempTree({ 'transcript.txt': 'text' });
+    await using proxy = await startSpeechProxy(buildOptions(tree.resolve('transcript.txt'), upstream.baseUrl));
+
+    const response = await fetch(`${proxy.baseUrl}/v1/audio/speech`, {
+      body: JSON.stringify(OPENAI_REQUEST),
+      headers: { 'content-type': 'text/plain', origin: 'https://example.com' },
+      method: 'POST',
+    });
+
+    expect(response.status).toBe(403);
+    expect(upstream.requests).toStrictEqual([]);
+  });
 });
 
 // region | Helpers
