@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import type { VoiceConfig } from '../config/read-machine-config.ts';
 import { isRecord } from '../portable/is-record.ts';
 import { readProfileSources, resolveVoiceProfilePaths } from './build-voice-profile.ts';
+import { findMissingReference } from './find-missing-reference.ts';
 import { formatModelDir } from './mlx-audio/format-model-dir.ts';
 import { formatVenvPython } from './mlx-audio/plan-install.ts';
 
@@ -11,7 +12,7 @@ export type VoiceInstallCheck = { ok: true; referenceSha256: string } | { ok: fa
 
 /**
  * Checks that `voice setup` installed mlx-audio and the configured model under `voice.home` and built the profile
- * from the configured model, reference recording, and transcript.
+ * from the configured model, reference recording, and transcript, and that both reference files still exist.
  */
 export function checkVoiceInstall(voice: VoiceConfig): VoiceInstallCheck {
   function fail(problem: string): VoiceInstallCheck {
@@ -27,6 +28,9 @@ export function checkVoiceInstall(voice: VoiceConfig): VoiceInstallCheck {
   if (record.model !== voice.model) {
     return fail(`the voice profile was built for ${record.model}, but voice.model is ${voice.model}`);
   }
+
+  const missingReference = findMissingReference(voice);
+  if (missingReference !== undefined) return { ok: false, problem: missingReference };
 
   const sources = readProfileSources(voice);
   if (record.referenceSha256 !== sources.referenceSha256) {

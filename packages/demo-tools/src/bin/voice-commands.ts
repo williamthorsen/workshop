@@ -10,7 +10,7 @@ import {
   type VoiceConfig,
 } from '../config/read-machine-config.ts';
 import { findOnPath } from '../portable/find-on-path.ts';
-import { isFile } from '../portable/is-file.ts';
+import { findMissingReference } from '../voice/find-missing-reference.ts';
 import { MLX_AUDIO_VERSION } from '../voice/mlx-audio/plan-install.ts';
 import type { CommandContext, RunEffects } from './run.ts';
 
@@ -158,17 +158,8 @@ function runVoiceSetup(context: CommandContext, stderr: Writer): number | undefi
   const voice = readRequiredVoice(context.effects);
   if (!voice.ok) return fail(voice.problem);
 
-  const { referenceAudio, referenceTranscript } = voice.voice;
-  if (!isFile(referenceAudio)) {
-    return fail(
-      `voice.reference.audio names ${referenceAudio}, which does not exist; record it with thor-demo voice record`,
-    );
-  }
-  if (!isFile(referenceTranscript)) {
-    return fail(
-      `voice.reference.transcript names ${referenceTranscript}, which does not exist; write in it exactly what the recording says`,
-    );
-  }
+  const missingReference = findMissingReference(voice.voice);
+  if (missingReference !== undefined) return fail(missingReference);
 
   context.requestVoice({ kind: 'setup', voice: voice.voice });
   return;

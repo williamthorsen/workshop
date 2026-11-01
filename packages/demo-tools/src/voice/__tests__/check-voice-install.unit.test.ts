@@ -52,6 +52,18 @@ describe(checkVoiceInstall, () => {
     expect(result.ok ? '' : result.problem).toContain('built for other/model, but voice.model is mlx-community/model');
   });
 
+  it.each([
+    ['recording', 'reference.m4a', 'voice.reference.audio names'],
+    ['transcript', 'reference.txt', 'voice.reference.transcript names'],
+  ])('reports a reference %s that no longer exists, naming it', (_label, entry, expected) => {
+    using tree = createInstall();
+    rmSync(tree.resolve(entry));
+
+    const result = checkVoiceInstall(buildVoice(tree));
+
+    expect(result.ok ? '' : result.problem).toContain(`${expected} ${tree.resolve(entry)}, which does not exist`);
+  });
+
   it('reports a changed transcript', () => {
     using tree = createInstall();
     writeFileSync(tree.resolve('reference.txt'), 'Something else.');
