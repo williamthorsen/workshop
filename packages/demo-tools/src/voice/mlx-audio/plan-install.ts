@@ -31,11 +31,25 @@ export function planInstall(home: string): readonly Invocation[] {
   ];
 }
 
-/** Returns the command that downloads `model` into its directory under `home`, with the virtual environment's `hf`. */
-export function planModelDownload(home: string, model: string): Invocation {
-  return {
-    command: path.join(home, 'venv', 'bin', 'hf'),
-    args: ['download', model, '--local-dir', formatModelDir(home, model)],
-    env: buildHuggingFaceEnv(home),
-  };
+/**
+ * Returns the commands that download `model` into its directory under `home`, then each repository that the model
+ * loads besides its own into the Hugging Face cache, with the virtual environment's `hf`.
+ */
+export function planModelDownload(home: string, model: string): readonly Invocation[] {
+  const hf = path.join(home, 'venv', 'bin', 'hf');
+  const env = buildHuggingFaceEnv(home);
+  const companions = COMPANION_REPOS.filter(({ pattern }) => pattern.test(model)).flatMap(({ repos }) => repos);
+  return [
+    { command: hf, args: ['download', model, '--local-dir', formatModelDir(home, model)], env },
+    ...companions.map((repo) => ({ command: hf, args: ['download', repo], env })),
+  ];
 }
+
+/**
+ * The repositories that a model loads at startup besides its own, keyed by a pattern of model ids. The server runs
+ * offline, so the model finds them only in the cache.
+ */
+const COMPANION_REPOS: readonly { pattern: RegExp; repos: readonly string[] }[] = [
+  // mlx-audio's Higgs Audio v2 loads its codec from this repository rather than from the model's.
+  { pattern: /higgs-audio-v2/i, repos: ['mlx-community/higgs-audio-v2-tokenizer'] },
+];

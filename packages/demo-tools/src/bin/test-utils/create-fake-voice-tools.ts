@@ -154,10 +154,14 @@ fs.writeFileSync(output, fs.readFileSync(__filename, 'utf8').split('\n')[0] + '\
 fs.chmodSync(output, 0o755);
 `;
 
+// A download without `--local-dir` goes to the Hugging Face cache, which the fake server never reads.
 const HF_SOURCE = `log('hf');
-const dir = process.argv[process.argv.indexOf('--local-dir') + 1];
-fs.mkdirSync(dir, { recursive: true });
-fs.writeFileSync(path.join(dir, 'config.json'), '{}');
+const flag = process.argv.indexOf('--local-dir');
+if (flag !== -1) {
+  const dir = process.argv[flag + 1];
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'config.json'), '{}');
+}
 `;
 
 const PYTHON_SOURCE = String.raw`log('python');

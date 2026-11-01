@@ -123,7 +123,7 @@ The voice is set per machine, in `~/.config/thor-demo/config.yaml`, because the 
 ```yaml
 voice:
   home: ~/.local/share/thor-demo/voice # optional; absolute after expansion
-  model: mlx-community/Qwen3-TTS-12Hz-1.7B-Base-bf16 # optional
+  model: mlx-community/higgs-audio-v2-3B-mlx-q8 # optional
   reference:
     audio: ~/Voice/reference.m4a # required; absolute after expansion; voice record writes it
     transcript: ~/Voice/reference.txt # required; a file containing exactly what the recording says
@@ -142,7 +142,7 @@ thor-demo voice record --microphone "MacBook Pro Microphone"
 
 `voice record` prints the transcript, records until Enter is pressed, saves the take to `voice.reference.audio` in the format that its extension names, keeping the previous take beside it, then reports the take's loudness and plays it back. It compiles a small recorder on first use, which needs the Xcode Command Line Tools (`xcode-select --install`); ffmpeg's own capture drops audio on macOS, which leaves clicks in a take.
 
-Aim for 10 to 30 seconds read in a quiet room, in the tone wanted for narration, with the microphone close; the default model needs at least 3 seconds. If a word comes out differently, edit the transcript to match what was said.
+Aim for 10 to 30 seconds read in a quiet room, in the tone wanted for narration, with the microphone close. If a word comes out differently, edit the transcript to match what was said.
 
 ### Setting up
 
@@ -150,6 +150,6 @@ Aim for 10 to 30 seconds read in a quiet room, in the tone wanted for narration,
 thor-demo voice setup
 ```
 
-Under `voice.home`, setup creates a Python virtual environment with a pinned mlx-audio, downloads the model into `models/`, and builds a voice profile in `profile/`: the recording converted to mono WAV and the transcript. It then verifies the install by starting mlx-audio's server on 127.0.0.1 with Hugging Face's offline mode on, synthesizing a phrase in the cloned voice to `verify.mp3`, and stopping the server. It prints that file's path; listen to it to judge the clone.
+Under `voice.home`, setup creates a Python virtual environment with a pinned mlx-audio, downloads the model into `models/` and any repository that it loads besides its own into the Hugging Face cache in `hf/`, and builds a voice profile in `profile/`: the recording converted to mono WAV and the transcript. It then verifies the install by starting mlx-audio's server on 127.0.0.1 with Hugging Face's offline mode on, synthesizing a phrase in the cloned voice to `verify.mp3`, and stopping the server. It prints that file's path; listen to it to judge the clone.
 
 Installing and downloading are the only steps that use the network. A rerun skips each step whose inputs are unchanged and verifies again; a changed recording or transcript rebuilds the profile, and a changed model downloads it and rebuilds the profile.

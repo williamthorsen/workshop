@@ -3,6 +3,7 @@ import { chmodSync, rmSync } from 'node:fs';
 import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
+import { DEFAULT_VOICE_MODEL } from '../../config/read-machine-config.ts';
 import { run, type RunEffects } from '../run.ts';
 
 const VERSION = '9.9.9';
@@ -324,7 +325,7 @@ describe(run, () => {
           kind: 'setup',
           voice: {
             home: tree.resolve('home/.local/share/thor-demo/voice'),
-            model: 'mlx-community/Qwen3-TTS-12Hz-1.7B-Base-bf16',
+            model: DEFAULT_VOICE_MODEL,
             referenceAudio: tree.resolve('home/reference.m4a'),
             referenceTranscript: tree.resolve('home/reference.txt'),
           },

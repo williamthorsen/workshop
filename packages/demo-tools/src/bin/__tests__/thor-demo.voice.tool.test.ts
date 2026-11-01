@@ -15,7 +15,7 @@ import { runThorDemo } from '../test-utils/run-thor-demo.ts';
 
 const ENTRY_POINT = path.join(import.meta.dirname, '../thor-demo.ts');
 
-const DEFAULT_MODEL = 'mlx-community/Qwen3-TTS-12Hz-1.7B-Base-bf16';
+const DEFAULT_MODEL = 'mlx-community/higgs-audio-v2-3B-mlx-q8';
 
 describe('thor-demo voice setup', () => {
   it('installs, downloads, builds the profile, and verifies through a loopback-only, offline server', () => {
@@ -32,6 +32,7 @@ describe('thor-demo voice setup', () => {
       ['uv', 'venv'],
       ['uv', 'pip'],
       ['hf', 'download'],
+      ['hf', 'download'],
       ['ffmpeg', '-nostdin'],
       ['python', '-m'],
     ]);
@@ -43,7 +44,7 @@ describe('thor-demo voice setup', () => {
       {
         body: {
           input: 'This is a test of the cloned voice.',
-          model: `${home}/models/mlx-community--Qwen3-TTS-12Hz-1.7B-Base-bf16`,
+          model: `${home}/models/mlx-community--higgs-audio-v2-3B-mlx-q8`,
           ref_audio: `${home}/profile/reference.wav`,
           ref_text: 'Hello there.',
           response_format: 'mp3',

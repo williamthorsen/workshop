@@ -81,8 +81,10 @@ export async function performVoiceSetup(
 
   if (steps.download) {
     report(`downloading ${model} into ${modelDir}`);
-    const outcome = await run(planModelDownload(home, model));
-    if (!outcome.ok) return outcome;
+    for (const invocation of planModelDownload(home, model)) {
+      const outcome = await run(invocation);
+      if (!outcome.ok) return outcome;
+    }
     // Drop the profile with the old model, so that an interrupted run rebuilds it.
     const { mlxAudio } = state;
     state = save({ schemaVersion: 1, ...(mlxAudio !== undefined && { mlxAudio }), model });

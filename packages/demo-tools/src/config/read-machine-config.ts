@@ -42,7 +42,7 @@ export interface MachineConfigInput {
 export const DEFAULT_VOICE_HOME = '.local/share/thor-demo/voice';
 
 /** The voice-clone model when the configuration does not set one. */
-export const DEFAULT_VOICE_MODEL = 'mlx-community/Qwen3-TTS-12Hz-1.7B-Base-bf16';
+export const DEFAULT_VOICE_MODEL = 'mlx-community/higgs-audio-v2-3B-mlx-q8';
 
 /** The machine configuration file, relative to the home directory. */
 export const MACHINE_CONFIG_PATH = '.config/thor-demo/config.yaml';
