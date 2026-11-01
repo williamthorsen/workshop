@@ -93,13 +93,6 @@ const config = defineConfig([
   defineConfig({
     files: patterns.testFiles,
     extends: [await createConfig.vitest()],
-    rules: {
-      // A suite taking its tree as a fixture registers `it.aroundAll(...)` or `it.aroundEach(...)`, which
-      // @vitest/eslint-plugin 1.6.27 reads as bare top-level code: `require-hook`'s call-chain table lacks both
-      // hooks. Drop the option when the upstream fix lands:
-      // https://github.com/vitest-dev/eslint-plugin-vitest/issues/955
-      'vitest/require-hook': ['warn', { allowedFunctionCalls: ['it.aroundAll', 'it.aroundEach'] }],
-    },
   }),
   {
     files: ['**/scripts/**/*'],
