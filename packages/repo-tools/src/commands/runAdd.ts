@@ -77,7 +77,7 @@ export function runAdd(run: VerbRun, target: string, isWrite: boolean): number {
 
 // region | Helpers
 
-/** Writes the visibility and runner that GitHub reports into the entry, reporting on stderr each value that it omits. */
+/** Writes the visibility and runner that GitHub reports into the entry, reporting each omitted value on stderr. */
 function readGitHubFields(run: VerbRun, repo: string, entry: NewEntry): void {
   const facts = run.github(repo);
   if (typeof facts === 'string') {
