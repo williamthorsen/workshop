@@ -39,6 +39,20 @@ describe(expandValue, () => {
     });
   });
 
+  it.each([
+    ['$HOME/x', 'HOME'],
+    ['${A}/$B', 'B'],
+  ])('reports the bare expansion in %o', (value, name) => {
+    expect(expandValue(value, { A: 'a', B: 'b', HOME }, HOME)).toStrictEqual({
+      ok: false,
+      problem: `unsupported expansion "$${name}"; write \${${name}}`,
+    });
+  });
+
+  it.each([['price$'], ['a$1'], ['$-x']])('leaves a $ that does not start a name in %o literal', (value) => {
+    expect(expandValue(value, {}, HOME)).toStrictEqual({ ok: true, value });
+  });
+
   it('reports an unterminated expansion', () => {
     expect(expandValue('a${B', { B: 'b' }, HOME)).toStrictEqual({ ok: false, problem: 'unterminated "${B"' });
   });
