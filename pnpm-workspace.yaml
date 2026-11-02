@@ -10,7 +10,7 @@ allowBuilds:
   unrs-resolver: true
 
 catalog:
-  '@tandryukha/aidemo': 0.20.0
+  '@tandryukha/aidemo': 0.20.2
   '@vitest/coverage-v8': 5.0.5
   '@williamthorsen/nmr': 0.53.1
   '@williamthorsen/toolbelt.atlassian': 0.8.0
@@ -36,6 +36,7 @@ catalog:
 
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
+  - '@tandryukha/aidemo@0.20.2'
   - '@williamthorsen/*'
   - codeassembly
   - codeassembly-guidance

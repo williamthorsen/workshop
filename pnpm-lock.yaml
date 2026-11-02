@@ -165,8 +165,8 @@ settings:
 catalogs:
   default:
     '@tandryukha/aidemo':
-      specifier: 0.20.0
-      version: 0.20.0
+      specifier: 0.20.2
+      version: 0.20.2
     '@vitest/coverage-v8':
       specifier: 5.0.5
       version: 5.0.5
@@ -409,7 +409,7 @@ importers:
     devDependencies:
       '@tandryukha/aidemo':
         specifier: 'catalog:'
-        version: 0.20.0
+        version: 0.20.2
       '@williamthorsen/toolbelt.testing':
         specifier: 'catalog:'
         version: 0.8.0
@@ -1301,8 +1301,8 @@ packages:
     resolution: {integrity: sha512-t09vSN3MdfsyCHoFcTRCH/iUtG7OJ0CsjzB8cjAmKc/va/kIgeDI/TxsigdncE/4be734m0cvIYwNaV4i2XqAw==}
     engines: {node: '>=10'}
 
-  '@tandryukha/aidemo@0.20.0':
-    resolution: {integrity: sha512-LPoYywfV0mAEzzFaARhz50kte00woORa0OQeKQQ8cNg06Yizw4Cir6wrkH+8sqR+/ZmHeNynVZn/jYQLF1Rzjw==}
+  '@tandryukha/aidemo@0.20.2':
+    resolution: {integrity: sha512-VwQO7zKqJ/yjmlKGkqa5gnPEa2O3dE/FHSdrjXjLqKjgASNLQoQHh/hT2wlu3ljKZyEe3f/t6FWvLiks+5J2bg==}
     engines: {node: '>=22.12'}
     hasBin: true
 
@@ -3900,7 +3900,7 @@ snapshots:
 
   '@sindresorhus/is@4.6.0': {}
 
-  '@tandryukha/aidemo@0.20.0':
+  '@tandryukha/aidemo@0.20.2':
     dependencies:
       '@modelcontextprotocol/server': 2.4.0
       commander: 15.0.0
