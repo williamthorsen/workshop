@@ -26,7 +26,7 @@
     {
       "id": "title",
       "title": "Title",
-      "narration": "A coding agent records a narrated demo with aidemo, from one prompt to a finished video with captions. This video was made the same {{@next}}way.",
+      "narration": "A coding agent records a narrated demo with aidemo, from one prompt to a finished video with captions. This video was made the same way.",
       "voice": {
         "pronounce": {
           "records": "re-cords"
@@ -67,21 +67,28 @@
           "op": "click",
           "target": {
             "selector": "a.next"
-          },
-          "anchor": "next"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 500
         }
       ]
     },
     {
       "id": "prompt",
       "title": "Prompt",
-      "narration": "It starts with one {{@prompt}}prompt to Claude Code: the page, the steps to show, and the length, with the local voice and a caption track. The agent answers with a {{@storyboard}}storyboard, through the record-demo skill or the aidemo MCP {{@next}}server.",
+      "narration": "It starts with one {{@prompt}}prompt to Claude Code: the page, the steps to show, and the length, with the local voice and a caption track. The agent answers with a {{@storyboard}}storyboard, through the record-demo skill or the aidemo MCP server.",
       "actions": [
         {
           "op": "waitFor",
           "target": {
             "selector": "h1"
           }
+        },
+        {
+          "op": "pause",
+          "ms": 1200
         },
         {
           "op": "spotlight",
@@ -111,15 +118,18 @@
           "op": "click",
           "target": {
             "selector": "a.next"
-          },
-          "anchor": "next"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 500
         }
       ]
     },
     {
       "id": "storyboard",
       "title": "Storyboard",
-      "narration": "The storyboard is plain JSON that you can edit. Each scene pairs {{@narration}}narration, what the voice says, with {{@actions}}actions, what the browser does, replayed the same way on every take. The {{@captions}}captions setting asks for a subtitle track, so no text is burned into the {{@next}}frame.",
+      "narration": "The storyboard is plain JSON that you can edit. Each scene pairs {{@narration}}narration, what the voice says, with {{@actions}}actions, what the browser does, replayed the same way on every take. The {{@captions}}captions setting asks for a subtitle track, so no text is burned into the frame.",
       "actions": [
         {
           "op": "waitFor",
@@ -177,15 +187,18 @@
           "op": "click",
           "target": {
             "selector": "a.next"
-          },
-          "anchor": "next"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 500
         }
       ]
     },
     {
       "id": "probe",
       "title": "Probe",
-      "narration": "Before spending a take, the agent runs aidemo probe. It drives the page without a voice and checks every selector. With the {{@golden}}golden flag, a {{@changed}}changed page fails the probe {{@next}}first.",
+      "narration": "Before spending a take, the agent runs aidemo probe. It drives the page without a voice and checks every selector. With the {{@golden}}golden flag, a {{@changed}}changed page fails the probe first.",
       "actions": [
         {
           "op": "waitFor",
@@ -231,15 +244,18 @@
           "op": "click",
           "target": {
             "selector": "a.next"
-          },
-          "anchor": "next"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 500
         }
       ]
     },
     {
       "id": "render",
       "title": "Render",
-      "narration": "Then aidemo render runs the whole pipeline: the local {{@kokoro}}Kokoro voice, a headless take on a fresh profile, {{@captions}}captions derived from the script, and the final video. With the {{@strict}}strict flag, any compose warning fails the {{@next}}run.",
+      "narration": "Then aidemo render runs the whole pipeline: the local {{@kokoro}}Kokoro voice, a headless take on a fresh profile, {{@captions}}captions derived from the script, and the final video. With the {{@strict}}strict flag, any compose warning fails the run.",
       "actions": [
         {
           "op": "waitFor",
@@ -297,15 +313,18 @@
           "op": "click",
           "target": {
             "selector": "a.next"
-          },
-          "anchor": "next"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 500
         }
       ]
     },
     {
       "id": "edit",
       "title": "Narration edit",
-      "narration": "Now the review. One line in the second scene reads {{@awkwardly}}awkwardly, so the agent {{@edits}}edits it. Only the narration changes, and the browser actions stay as they {{@next}}were.",
+      "narration": "Now the review. One line in the second scene reads {{@awkwardly}}awkwardly, so the agent {{@edits}}edits it. Only the narration changes, and the browser actions stay as they were.",
       "actions": [
         {
           "op": "waitFor",
@@ -351,15 +370,18 @@
           "op": "click",
           "target": {
             "selector": "a.next"
-          },
-          "anchor": "next"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 500
         }
       ]
     },
     {
       "id": "revoice",
       "title": "Re-voice",
-      "narration": "So nothing is recorded again. aidemo voice {{@voices}}voices only the edited scene, aidemo captions with the {{@offline}}offline flag rebuilds its timing, and aidemo compose {{@cuts}}cuts the new narration into the existing {{@next}}take.",
+      "narration": "So nothing is recorded again. aidemo voice {{@voices}}voices only the edited scene, aidemo captions with the {{@offline}}offline flag rebuilds its timing, and aidemo compose {{@cuts}}cuts the new narration into the existing take.",
       "actions": [
         {
           "op": "waitFor",
@@ -399,7 +421,13 @@
         },
         {
           "op": "pause",
-          "ms": 2200
+          "ms": 1000
+        },
+        {
+          "op": "scrollBy",
+          "dy": 200,
+          "easing": "glide",
+          "durationMs": 1200
         },
         {
           "op": "highlight",
@@ -417,15 +445,18 @@
           "op": "click",
           "target": {
             "selector": "a.next"
-          },
-          "anchor": "next"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 500
         }
       ]
     },
     {
       "id": "environment",
       "title": "Environment",
-      "narration": "Two settings keep the voice and the captions on the machine. First, {{@remove}}remove the three OpenAI variables and {{@select}}select the local voice. Then {{@check}}check the repository's dot env file, which aidemo loads over the {{@next}}environment.",
+      "narration": "Two settings keep the voice and the captions on the machine. First, {{@remove}}remove the three OpenAI variables and {{@select}}select the local voice. Then {{@check}}check the repository's dot env file, which aidemo loads over the environment.",
       "actions": [
         {
           "op": "waitFor",
@@ -483,15 +514,18 @@
           "op": "click",
           "target": {
             "selector": "a.next"
-          },
-          "anchor": "next"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 500
         }
       ]
     },
     {
       "id": "login",
       "title": "Login",
-      "narration": "Second, for an app behind a login, run aidemo {{@login}}login once to sign in on the recording profile, then {{@quit}}quit Chrome completely before the take. Chrome locks a profile that is {{@next}}open.",
+      "narration": "Second, for an app behind a login, run aidemo {{@login}}login once to sign in on the recording profile, then {{@quit}}quit Chrome completely before the take. Chrome locks a profile that is open.",
       "actions": [
         {
           "op": "waitFor",
@@ -524,11 +558,12 @@
         {
           "op": "callout",
           "target": {
-            "selector": "main > p:first-of-type"
+            "selector": "pre"
           },
           "text": "Quit Chrome before the take",
           "holdMs": 4500,
-          "anchor": "quit"
+          "anchor": "quit",
+          "placement": "bottom"
         },
         {
           "op": "pause",
@@ -538,15 +573,18 @@
           "op": "click",
           "target": {
             "selector": "a.next"
-          },
-          "anchor": "next"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 500
         }
       ]
     },
     {
       "id": "result",
       "title": "Result",
-      "narration": "Here is the {{@result}}result, playing as it was rendered. The file contains a {{@caption}}caption track that viewers can turn on, and the narration was produced on this machine, without any request over the {{@next}}network.",
+      "narration": "Here is the {{@result}}result, playing as it was rendered. The file contains a {{@caption}}caption track that viewers can turn on, and the narration was produced on this machine, without any request over the network.",
       "actions": [
         {
           "op": "waitFor",
@@ -587,8 +625,11 @@
           "op": "click",
           "target": {
             "selector": "a.next"
-          },
-          "anchor": "next"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 500
         }
       ]
     },
@@ -597,6 +638,10 @@
       "title": "Close",
       "narration": "That is the loop: a {{@prompt}}prompt, a {{@storyboard}}storyboard, a {{@probe}}probe, a {{@render}}render, one {{@edited}}edited line, and a new {{@voice}}voice without recording again. The storyboard is committed beside the package, so the next render starts from the same file.",
       "actions": [
+        {
+          "op": "goto",
+          "url": "http://127.0.0.1:8787/deck/11-close.html"
+        },
         {
           "op": "waitFor",
           "target": {

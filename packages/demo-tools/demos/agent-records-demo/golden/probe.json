@@ -48,6 +48,11 @@
           "target": "a.next",
           "ok": true,
           "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 500
         }
       ]
     },
@@ -59,6 +64,11 @@
           "target": "h1",
           "ok": true,
           "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 1200
         },
         {
           "op": "spotlight",
@@ -87,6 +97,11 @@
           "target": "a.next",
           "ok": true,
           "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 500
         }
       ]
     },
@@ -148,6 +163,11 @@
           "target": "a.next",
           "ok": true,
           "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 500
         }
       ]
     },
@@ -198,6 +218,11 @@
           "target": "a.next",
           "ok": true,
           "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 500
         }
       ]
     },
@@ -259,6 +284,11 @@
           "target": "a.next",
           "ok": true,
           "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 500
         }
       ]
     },
@@ -309,6 +339,11 @@
           "target": "a.next",
           "ok": true,
           "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 500
         }
       ]
     },
@@ -352,7 +387,12 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 2200
+          "ms": 1000
+        },
+        {
+          "op": "scrollBy",
+          "ok": true,
+          "dy": 200
         },
         {
           "op": "highlight",
@@ -370,6 +410,11 @@
           "target": "a.next",
           "ok": true,
           "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 500
         }
       ]
     },
@@ -431,6 +476,11 @@
           "target": "a.next",
           "ok": true,
           "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 500
         }
       ]
     },
@@ -467,7 +517,7 @@
         },
         {
           "op": "callout",
-          "target": "main > p:first-of-type",
+          "target": "pre",
           "ok": true,
           "found": true
         },
@@ -481,6 +531,11 @@
           "target": "a.next",
           "ok": true,
           "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 500
         }
       ]
     },
@@ -525,12 +580,23 @@
           "target": "a.next",
           "ok": true,
           "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 500
         }
       ]
     },
     {
       "id": "close",
       "actions": [
+        {
+          "op": "goto",
+          "target": "http://127.0.0.1:8787/deck/11-close.html",
+          "ok": true,
+          "finalUrl": "http://127.0.0.1:8787/deck/11-close.html"
+        },
         {
           "op": "waitFor",
           "target": "h1",
