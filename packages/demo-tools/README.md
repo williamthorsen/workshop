@@ -63,7 +63,9 @@ thor-demo probe demos/quickstart --golden
 
 The options after the demo reach aidemo unchanged. `-h` and `--help` print the command's help, unless they follow a literal `--`: `thor-demo render quickstart -- --help` passes `--help` to aidemo.
 
-## Demo video
+## Demo videos
+
+The published videos are assets of the [demo-tools releases](https://github.com/williamthorsen/workshop/releases?q=demo-tools).
 
 `demos/agent-records-demo` renders a video, about three minutes long, in which a coding agent writes a demo storyboard through aidemo's MCP server and aidemo renders it: the finished output, the prompt and the agent's tool calls, the storyboard, the probe, the render and re-voice stages, and the install lines. The video has a subtitle track that is off by default.
 
@@ -78,6 +80,16 @@ pnpm exec aidemo render demos/agent-records-demo --headless --fresh
 ```
 
 [aidemo's README](https://github.com/tandryukha/aidemo#readme) describes the options. In the outer storyboard, a scene that plays the video leaves its page with two `goto` actions on purpose: Chrome's screencast stalls after one navigation away from a playing video, and the second navigation restarts it.
+
+`demos/what-thor-demo-adds` renders a video, under a minute long, that shows the per-repository configuration, the archived takes, and the voice clone, each as the problem that it solves and then its solution. It is narrated in the [voice clone](#voice-clone). To render and re-voice it from a clone, run these from `packages/demo-tools` after `nmr build`:
+
+```bash
+pnpm run demo:serve &
+node bin/thor-demo.js render what-thor-demo-adds --headless --strict
+node bin/thor-demo.js revoice what-thor-demo-adds
+```
+
+aidemo 0.20.2 counts the end of a headless recording as lead-in, which puts each page about two seconds ahead of its narration. Before `revoice`, set `leadInMs` to `0` in the demo's `generated/timeline.json`.
 
 ## Captions
 
