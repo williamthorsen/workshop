@@ -735,7 +735,7 @@
         },
         {
           "op": "pause",
-          "ms": 32500
+          "ms": 26000
         },
         {
           "op": "goto",
@@ -750,7 +750,7 @@
     {
       "id": "close",
       "title": "Close",
-      "narration": "{{@plugin}}In Claude Code, add the plugin; {{@repoinit}}for another agent, register the server. {{@npx}}From a shell, npx, {{@brew}}or Homebrew. {{@doctor}}aidemo doctor checks Node, Chrome, and ffmpeg. {{@first}}Type the first prompt, {{@commit}}and commit the storyboard: CI keeps the video current.",
+      "narration": "In Claude Code, {{@plugin}}add the plugin; {{@repoinit}}for another agent, register the server. {{@npx}}From a shell, npx, {{@brew}}or Homebrew. {{@doctor}}aidemo doctor checks Node, Chrome, and ffmpeg. {{@first}}Type the first prompt, {{@commit}}and commit the storyboard: CI keeps the video current.",
       "actions": [
         {
           "op": "waitFor",
