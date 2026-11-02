@@ -71,6 +71,7 @@ The storyboards are in [`demos/`](https://github.com/williamthorsen/workshop/tre
 
 ```bash
 pnpm run demo:serve &
+unset OPENAI_API_KEY OPENAI_BASE_URL AIDEMO_OPENAI_BASE_URL
 export AIDEMO_TTS_PROVIDER=local
 pnpm exec aidemo render demos/sample-tour --headless --fresh
 pnpm exec aidemo render demos/agent-records-demo --headless --fresh
