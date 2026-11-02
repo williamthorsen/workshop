@@ -14,8 +14,8 @@
   scene search: unchanged, reusing narration
   scene result: &quot;Three trails match, each with its length, its di…&quot; (marin)
   scene detail: unchanged, reusing narration
-  ✓ narration → audio/narration.mp3 (3 scenes, ~32s; 1 voiced, 2 reused)</code></pre>
-      <pre class="terminal"><code>$ aidemo captions demos/sample-tour --offline
+<span id="revoice-reused">  ✓ narration → audio/narration.mp3 (3 scenes, ~32s; 1 voiced, 2 reused)</span></code></pre>
+      <pre class="terminal"><code>$ aidemo captions demos/sample-tour <span id="revoice-offline">--offline</span>
 ▶ Generating captions (offline, from script + voice.json timings)
   scene search: unchanged, reusing caption timing
   scene result: deriving caption timing
@@ -23,7 +23,7 @@
   ✓ captions → generated/captions.srt (11 cues)</code></pre>
       <pre class="terminal"><code>$ aidemo compose demos/sample-tour --strict
 ▶ Composing final video (ffmpeg)
-  scene result: 6433ms -&gt; 9650ms (x1.50, 1 span(s))
+<span id="revoice-span">  scene result: 6433ms -&gt; 9650ms (x1.50, 1 span(s))</span>
   subtitle track: eng (mov_text, off until the viewer turns it on)
   ✓ final video → output/final-demo.mp4</code></pre>
     </main>

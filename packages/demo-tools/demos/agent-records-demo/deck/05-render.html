@@ -9,14 +9,13 @@
   <body>
     <main>
       <h1>Render</h1>
-      <pre
-        class="terminal"
-      ><code>$ AIDEMO_TTS_PROVIDER=local aidemo render demos/sample-tour --headless --fresh --strict
-▶ Generating narration (local Kokoro-82M, in-process)
+      <pre class="terminal"><code>$ AIDEMO_TTS_PROVIDER=local aidemo render demos/sample-tour \
+    --headless --fresh <span id="render-strict">--strict</span>
+<span id="render-voice">▶ Generating narration (local Kokoro-82M, in-process)</span>
   ✓ narration → audio/narration.mp3 (3 scenes, ~31s; 0 voiced, 3 reused)
 ▶ Recording &quot;A quick tour of the trail finder&quot;
   ✓ recording → recordings/raw.webm
-▶ Generating captions (offline, from script + voice.json timings)
+<span id="render-captions">▶ Generating captions (offline, from script + voice.json timings)</span>
   ✓ captions → generated/captions.srt (10 cues)
 ▶ Composing final video (ffmpeg)
   captions: style none — not burned (the .srt/.vtt beside the video carry them)
