@@ -31,6 +31,12 @@
           "target": "http://127.0.0.1:8787/deck/02-overview.html",
           "ok": true,
           "finalUrl": "http://127.0.0.1:8787/deck/02-overview.html"
+        },
+        {
+          "op": "goto",
+          "target": "http://127.0.0.1:8787/deck/02-overview.html",
+          "ok": true,
+          "finalUrl": "http://127.0.0.1:8787/deck/02-overview.html"
         }
       ]
     },
@@ -46,7 +52,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 300
+          "ms": 900
         },
         {
           "op": "spotlight",
@@ -57,7 +63,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 3200
+          "ms": 2300
         },
         {
           "op": "spotlight",
@@ -68,7 +74,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 1600
+          "ms": 1300
         },
         {
           "op": "spotlight",
@@ -79,7 +85,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 1600
+          "ms": 1300
         },
         {
           "op": "spotlight",
@@ -90,7 +96,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 4800
+          "ms": 4500
         },
         {
           "op": "spotlight",
@@ -101,7 +107,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 400
+          "ms": 300
         },
         {
           "op": "highlight",
@@ -112,7 +118,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 1200
+          "ms": 700
         },
         {
           "op": "highlight",
@@ -123,7 +129,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 2000
+          "ms": 1700
         },
         {
           "op": "highlight",
@@ -134,7 +140,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 1200
+          "ms": 900
         },
         {
           "op": "highlight",
@@ -145,7 +151,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 2000
+          "ms": 1700
         },
         {
           "op": "goto",
@@ -179,7 +185,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 300
+          "ms": 900
         },
         {
           "op": "click",
@@ -298,7 +304,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 400
+          "ms": 300
         },
         {
           "op": "highlight",
@@ -309,7 +315,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 3600
+          "ms": 500
         },
         {
           "op": "goto",
@@ -331,7 +337,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 300
+          "ms": 1100
         },
         {
           "op": "callout",
@@ -342,7 +348,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 3200
+          "ms": 2100
         },
         {
           "op": "highlight",
@@ -353,7 +359,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 4800
+          "ms": 4500
         },
         {
           "op": "callout",
@@ -364,7 +370,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 2800
+          "ms": 2500
         },
         {
           "op": "spotlight",
@@ -375,7 +381,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 2400
+          "ms": 2100
         },
         {
           "op": "goto",
@@ -408,7 +414,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 2800
+          "ms": 2500
         },
         {
           "op": "highlight",
@@ -419,7 +425,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 4000
+          "ms": 3700
         },
         {
           "op": "highlight",
@@ -430,7 +436,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 1600
+          "ms": 1300
         },
         {
           "op": "highlight",
@@ -441,7 +447,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 5200
+          "ms": 4900
         },
         {
           "op": "goto",
@@ -480,7 +486,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 3700
+          "ms": 3100
         },
         {
           "op": "click",
@@ -497,7 +503,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 2500
+          "ms": 1900
         },
         {
           "op": "click",
@@ -514,7 +520,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 900
+          "ms": 300
         },
         {
           "op": "click",
@@ -531,7 +537,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 4500
+          "ms": 3900
         },
         {
           "op": "highlight",
@@ -542,7 +548,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 3200
+          "ms": 2900
         },
         {
           "op": "goto",
@@ -564,7 +570,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 700
+          "ms": 900
         },
         {
           "op": "highlight",
@@ -575,7 +581,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 2400
+          "ms": 1900
         },
         {
           "op": "click",
@@ -592,7 +598,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 2500
+          "ms": 1900
         },
         {
           "op": "spotlight",
@@ -603,7 +609,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 800
+          "ms": 500
         },
         {
           "op": "click",
@@ -637,7 +643,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 2300
+          "ms": 1100
         },
         {
           "op": "highlight",
@@ -648,7 +654,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 3200
+          "ms": 2900
         },
         {
           "op": "goto",
@@ -677,6 +683,12 @@
           "target": "http://127.0.0.1:8787/deck/09-close.html",
           "ok": true,
           "finalUrl": "http://127.0.0.1:8787/deck/09-close.html"
+        },
+        {
+          "op": "goto",
+          "target": "http://127.0.0.1:8787/deck/09-close.html",
+          "ok": true,
+          "finalUrl": "http://127.0.0.1:8787/deck/09-close.html"
         }
       ]
     },
@@ -692,7 +704,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 700
+          "ms": 900
         },
         {
           "op": "highlight",
@@ -703,7 +715,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 1600
+          "ms": 1100
         },
         {
           "op": "highlight",
@@ -714,7 +726,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 1600
+          "ms": 1300
         },
         {
           "op": "highlight",
@@ -725,7 +737,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 800
+          "ms": 500
         },
         {
           "op": "highlight",
@@ -747,7 +759,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 1700
+          "ms": 1100
         },
         {
           "op": "highlight",
@@ -758,7 +770,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 800
+          "ms": 500
         },
         {
           "op": "highlight",
@@ -769,7 +781,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 2800
+          "ms": 2500
         },
         {
           "op": "pause",

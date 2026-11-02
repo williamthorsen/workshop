@@ -77,7 +77,7 @@ pnpm exec aidemo render demos/sample-tour --headless --fresh
 pnpm exec aidemo render demos/agent-records-demo --headless --fresh
 ```
 
-[aidemo's README](https://github.com/tandryukha/aidemo#readme) describes the options.
+[aidemo's README](https://github.com/tandryukha/aidemo#readme) describes the options. In the outer storyboard, a scene that plays the video leaves its page with two `goto` actions on purpose: Chrome's screencast stalls after one navigation away from a playing video, and the second navigation restarts it.
 
 ## Captions
 
