@@ -13,9 +13,11 @@
         Remove the three OpenAI variables, select the local voice, and check the repository's <code>.env</code>, which
         aidemo loads over the environment.
       </p>
-      <pre class="terminal"><code>$ unset OPENAI_API_KEY OPENAI_BASE_URL AIDEMO_OPENAI_BASE_URL
-$ export AIDEMO_TTS_PROVIDER=local
-$ grep --extended-regexp &#x27;^(OPENAI_|AIDEMO_OPENAI_)&#x27; .env</code></pre>
+      <pre
+        class="terminal"
+      ><code><span id="env-unset">$ unset OPENAI_API_KEY OPENAI_BASE_URL AIDEMO_OPENAI_BASE_URL</span>
+<span id="env-export">$ export AIDEMO_TTS_PROVIDER=local</span>
+<span id="env-grep">$ grep --extended-regexp &#x27;^(OPENAI_|AIDEMO_OPENAI_)&#x27; .env</span></code></pre>
       <p class="source">Why: <a href="https://github.com/tandryukha/aidemo#readme">aidemo README</a>, "Setup"</p>
     </main>
     <nav><a class="next" href="09-login.html">Next</a></nav>

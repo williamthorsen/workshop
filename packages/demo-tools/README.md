@@ -65,9 +65,9 @@ The options after the demo reach aidemo unchanged. `-h` and `--help` print the c
 
 ## Demo video
 
-[Watch an agent record a narrated demo with aidemo](https://github.com/williamthorsen/workshop/releases/download/demo-tools-v0.1.0/agent-records-demo.mp4), about two and a half minutes, with a subtitle track that is off by default.
+`demos/agent-records-demo` renders a video of an agent recording a narrated demo with aidemo, about two and a half minutes long, with a subtitle track that is off by default.
 
-The storyboards are in [`demos/`](https://github.com/williamthorsen/workshop/tree/main/packages/demo-tools/demos). To render the video again from a clone, run these from `packages/demo-tools`. The inner demo renders first, because the outer demo plays its video:
+The storyboards are in [`demos/`](https://github.com/williamthorsen/workshop/tree/main/packages/demo-tools/demos). To render the video from a clone, run these from `packages/demo-tools`. The inner demo renders first, because the outer demo plays its video:
 
 ```bash
 pnpm run demo:serve &
