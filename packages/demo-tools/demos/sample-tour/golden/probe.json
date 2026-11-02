@@ -61,6 +61,10 @@
           "found": true
         },
         {
+          "op": "still",
+          "ok": true
+        },
+        {
           "op": "pause",
           "ok": true,
           "ms": 500
@@ -122,6 +126,10 @@
           "found": true
         },
         {
+          "op": "still",
+          "ok": true
+        },
+        {
           "op": "pause",
           "ok": true,
           "ms": 500
@@ -168,6 +176,10 @@
           "op": "scrollBy",
           "ok": true,
           "dy": 250
+        },
+        {
+          "op": "still",
+          "ok": true
         },
         {
           "op": "pause",
