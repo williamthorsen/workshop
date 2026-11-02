@@ -1,5 +1,4 @@
-import { readFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { describeError } from '@williamthorsen/toolbelt.errors';
@@ -31,12 +30,8 @@ const PACKAGE_NAME = '@tandryukha/aidemo';
  * that is missing, older than `minVersion`, or without an `aidemo` bin.
  */
 export function resolveAidemo(root: string, minVersion: string = MIN_AIDEMO_VERSION): AidemoResolution {
-  let manifestPath: string;
-  try {
-    manifestPath = createRequire(path.join(root, 'package.json')).resolve(`${PACKAGE_NAME}/package.json`);
-  } catch {
-    return refuse(`${PACKAGE_NAME} is not installed in ${root}`);
-  }
+  const manifestPath = findManifest(root);
+  if (manifestPath === undefined) return refuse(`${PACKAGE_NAME} is not installed in ${root}`);
 
   let manifest: unknown;
   try {
@@ -71,6 +66,24 @@ function compareVersions(left: readonly number[], right: readonly number[]): num
   }
 
   return 0;
+}
+
+/**
+ * Returns the aidemo manifest in the `node_modules` of `root` or of the nearest ancestor that has one. The search
+ * ignores `NODE_PATH`, which a pnpm bin shim points at the store of the package that it launches.
+ */
+function findManifest(root: string): string | undefined {
+  let dir = path.resolve(root);
+  for (;;) {
+    if (path.basename(dir) !== 'node_modules') {
+      const candidate = path.join(dir, 'node_modules', PACKAGE_NAME, 'package.json');
+      if (existsSync(candidate)) return candidate;
+    }
+
+    const parent = path.dirname(dir);
+    if (parent === dir) return undefined;
+    dir = parent;
+  }
 }
 
 /** Returns the leading `major.minor.patch` of a version as numbers, ignoring any prerelease or build suffix. */

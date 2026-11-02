@@ -71,4 +71,17 @@ describe('thor-demo with an installed aidemo', () => {
     expect(stderr).toContain('pnpm add --save-dev @tandryukha/aidemo');
     expect(repo.readCalls()).toStrictEqual([]);
   });
+
+  it('ignores an aidemo that only NODE_PATH reaches', () => {
+    using installed = createDemoRepo();
+    using repo = createDemoRepo({ withoutAidemo: true });
+
+    const { status, stderr } = runThorDemo(['render', 'quickstart'], repo.tree.dir, {
+      NODE_PATH: installed.tree.resolve('node_modules'),
+    });
+
+    expect(status).toBe(1);
+    expect(stderr).toContain('is not installed in');
+    expect(installed.readCalls()).toStrictEqual([]);
+  });
 });
