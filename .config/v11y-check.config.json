@@ -4,6 +4,27 @@
     "severityThreshold": "moderate",
     "allowlist": [
       {
+        "addedAt": "2026-11-02T06:37:04.553Z",
+        "id": "1124066",
+        "path": "packages__demo-tools>kokoro-js>@huggingface/transformers>sharp",
+        "reason": "Added by v11y sync at 2026-11-02 06:37:04 UTC",
+        "url": "https://github.com/advisories/GHSA-f88m-g3jw-g9cj"
+      },
+      {
+        "addedAt": "2026-11-02T06:37:04.553Z",
+        "id": "1193725",
+        "path": "packages__demo-tools>kokoro-js>@huggingface/transformers>sharp",
+        "reason": "Added by v11y sync at 2026-11-02 06:37:04 UTC",
+        "url": "https://github.com/advisories/GHSA-rgj7-g3m4-5g8c"
+      },
+      {
+        "addedAt": "2026-11-02T06:37:04.553Z",
+        "id": "1241331",
+        "path": "packages__demo-tools>kokoro-js>@huggingface/transformers>sharp",
+        "reason": "Added by v11y sync at 2026-11-02 06:37:04 UTC",
+        "url": "https://github.com/advisories/GHSA-wq5f-xc86-pv6w"
+      },
+      {
         "addedAt": "2026-10-31T22:51:39.872Z",
         "id": "1244012",
         "path": ".>@vitest/eslint-plugin>@typescript-eslint/utils>@eslint-community/eslint-utils>eslint>@eslint/config-array>minimatch",
