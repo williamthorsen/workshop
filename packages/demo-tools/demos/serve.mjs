@@ -2,6 +2,7 @@
 import { createReadStream, statSync } from 'node:fs';
 import { createServer } from 'node:http';
 import path from 'node:path';
+import { pipeline } from 'node:stream';
 
 const HOST = '127.0.0.1';
 const PORT = Number(process.env.PORT ?? 8_787);
@@ -21,13 +22,13 @@ const CONTENT_TYPES = {
 };
 
 const server = createServer((request, response) => {
-  const file = resolveFile(new URL(request.url ?? '/', `http://${HOST}`).pathname);
-  if (file === undefined) {
+  const target = resolveFile(new URL(request.url ?? '/', `http://${HOST}`).pathname);
+  if (target === undefined) {
     response.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' }).end('Not found\n');
     return;
   }
 
-  serveFile(file, request, response);
+  serveFile(target, request, response);
 });
 
 server.listen(PORT, HOST, () => {
@@ -36,14 +37,8 @@ server.listen(PORT, HOST, () => {
 
 // region | Helpers
 
-/** Reports whether a path names a regular file. */
-function isFile(file) {
-  try {
-    return statSync(file).isFile();
-  } catch {
-    return false;
-  }
-}
+/** Discards the error that ends a pipeline, which is the client's abort or a file replaced during the read. */
+function ignoreStreamError() {}
 
 /** Parses a single-range `Range` header against a file size, as Chrome sends it for a `<video>`. */
 function parseRange(header, size) {
@@ -54,11 +49,28 @@ function parseRange(header, size) {
   return isValid ? { end, start } : undefined;
 }
 
-/** Maps a request path to a file under one of the roots, refusing a path that escapes its root or cannot be decoded. */
+/** Returns the size of a regular file, or nothing for a path that is missing, unreadable, or names something else. */
+function readFileSize(file) {
+  let size;
+  try {
+    const stats = statSync(file);
+    size = stats.isFile() ? stats.size : undefined;
+  } catch {
+    // Leave the size unset, so that the request receives a 404.
+  }
+
+  return size;
+}
+
+/**
+ * Maps a request path to a regular file under one of the roots and its size, refusing a path that escapes its root or
+ * cannot be decoded.
+ */
 function resolveFile(pathname) {
   const prefix = Object.keys(ROOTS).find((candidate) => pathname.startsWith(candidate));
   const file = prefix === undefined ? undefined : resolveUnderRoot(ROOTS[prefix], pathname.slice(prefix.length));
-  return file !== undefined && isFile(file) ? file : undefined;
+  const size = file === undefined ? undefined : readFileSize(file);
+  return size === undefined ? undefined : { file, size };
 }
 
 /** Resolves a URL-encoded path against a root, returning nothing for a path outside it or a malformed escape. */
@@ -75,9 +87,11 @@ function resolveUnderRoot(root, encoded) {
   return isInside ? file : undefined;
 }
 
-/** Streams a file, answering a byte-range request with 206 so that a `<video>` can seek. */
-function serveFile(file, request, response) {
-  const { size } = statSync(file);
+/**
+ * Streams a file, answering a byte-range request with 206 so that a `<video>` can seek. A read error or an aborted
+ * request destroys both streams, so that a file replaced mid-request does not stop the server.
+ */
+function serveFile({ file, size }, request, response) {
   const headers = {
     'accept-ranges': 'bytes',
     'cache-control': 'no-store',
@@ -92,7 +106,7 @@ function serveFile(file, request, response) {
 
   if (range === undefined) {
     response.writeHead(200, { ...headers, 'content-length': size });
-    createReadStream(file).pipe(response);
+    pipeline(createReadStream(file), response, ignoreStreamError);
     return;
   }
 
@@ -101,7 +115,7 @@ function serveFile(file, request, response) {
     'content-length': range.end - range.start + 1,
     'content-range': `bytes ${range.start}-${range.end}/${size}`,
   });
-  createReadStream(file, range).pipe(response);
+  pipeline(createReadStream(file, range), response, ignoreStreamError);
 }
 
 // endregion | Helpers
