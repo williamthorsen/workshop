@@ -63,6 +63,21 @@ thor-demo probe demos/quickstart --golden
 
 The options after the demo reach aidemo unchanged. `-h` and `--help` print the command's help, unless they follow a literal `--`: `thor-demo render quickstart -- --help` passes `--help` to aidemo.
 
+## Demo video
+
+[Watch an agent record a narrated demo with aidemo](https://github.com/williamthorsen/workshop/releases/download/demo-tools-v0.1.0/agent-records-demo.mp4), about two and a half minutes, with a subtitle track that is off by default.
+
+The storyboards are in [`demos/`](https://github.com/williamthorsen/workshop/tree/main/packages/demo-tools/demos). To render the video again from a clone, run these from `packages/demo-tools`. The inner demo renders first, because the outer demo plays its video:
+
+```bash
+pnpm run demo:serve &
+export AIDEMO_TTS_PROVIDER=local
+pnpm exec aidemo render demos/sample-tour --headless --fresh
+pnpm exec aidemo render demos/agent-records-demo --headless --fresh
+```
+
+[aidemo's README](https://github.com/tandryukha/aidemo#readme) describes the options.
+
 ## Captions
 
 Each render writes `output/final-demo.srt` and `output/final-demo.vtt` beside the video. To deliver the captions as a subtitle track, off by default, rather than burned into the frames, set this in the demo's storyboard:
