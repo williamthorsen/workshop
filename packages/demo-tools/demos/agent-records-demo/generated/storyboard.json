@@ -82,7 +82,7 @@
           "target": {
             "selector": "#ov-agent"
           },
-          "holdMs": 3000,
+          "holdMs": 4500,
           "anchor": "agent"
         },
         {
@@ -94,7 +94,7 @@
           "target": {
             "selector": "#ov-server"
           },
-          "holdMs": 3000,
+          "holdMs": 2300,
           "anchor": "server"
         },
         {
@@ -106,7 +106,7 @@
           "target": {
             "selector": "#ov-storyboard"
           },
-          "holdMs": 3000,
+          "holdMs": 3200,
           "anchor": "storyboard"
         },
         {
@@ -118,7 +118,7 @@
           "target": {
             "selector": "#ov-engine"
           },
-          "holdMs": 5000,
+          "holdMs": 6200,
           "anchor": "engine"
         },
         {
@@ -130,7 +130,7 @@
           "target": {
             "selector": "#ov-video"
           },
-          "holdMs": 2500,
+          "holdMs": 1100,
           "anchor": "video"
         },
         {
@@ -142,7 +142,7 @@
           "target": {
             "selector": "#chip-local"
           },
-          "holdMs": 2500,
+          "holdMs": 1700,
           "anchor": "local"
         },
         {
@@ -154,7 +154,7 @@
           "target": {
             "selector": "#chip-replay"
           },
-          "holdMs": 3000,
+          "holdMs": 2900,
           "anchor": "replay"
         },
         {
@@ -166,7 +166,7 @@
           "target": {
             "selector": "#chip-json"
           },
-          "holdMs": 2500,
+          "holdMs": 1500,
           "anchor": "json"
         },
         {
@@ -178,7 +178,7 @@
           "target": {
             "selector": "#chip-ci"
           },
-          "holdMs": 1500,
+          "holdMs": 3300,
           "anchor": "ci"
         },
         {
@@ -231,7 +231,7 @@
           "target": {
             "selector": "#t-guide"
           },
-          "holdMs": 2000,
+          "holdMs": 1900,
           "anchor": "guide"
         },
         {
@@ -249,7 +249,7 @@
           "target": {
             "selector": "#t-inspect"
           },
-          "holdMs": 2000,
+          "holdMs": 1200,
           "anchor": "inspect"
         },
         {
@@ -267,7 +267,7 @@
           "target": {
             "selector": "#t-write"
           },
-          "holdMs": 2000,
+          "holdMs": 1400,
           "anchor": "write"
         },
         {
@@ -285,7 +285,7 @@
           "target": {
             "selector": "#t-validate"
           },
-          "holdMs": 2000,
+          "holdMs": 1100,
           "anchor": "validate"
         },
         {
@@ -303,7 +303,7 @@
           "target": {
             "selector": "#t-lint"
           },
-          "holdMs": 2000,
+          "holdMs": 1100,
           "anchor": "lint"
         },
         {
@@ -321,7 +321,7 @@
           "target": {
             "selector": "#t-render"
           },
-          "holdMs": 2500,
+          "holdMs": 1100,
           "anchor": "render"
         },
         {
@@ -339,7 +339,7 @@
           "target": {
             "selector": "#t-status"
           },
-          "holdMs": 3500,
+          "holdMs": 2000,
           "anchor": "status"
         },
         {
@@ -351,7 +351,7 @@
           "target": {
             "selector": "#t-skill"
           },
-          "holdMs": 1500,
+          "holdMs": 4500,
           "anchor": "skill"
         },
         {
@@ -384,7 +384,7 @@
           "target": {
             "selector": "#sb-narration"
           },
-          "holdMs": 3500,
+          "holdMs": 2800,
           "anchor": "narration",
           "text": "One narrated line per scene",
           "placement": "right"
@@ -398,7 +398,7 @@
           "target": {
             "selector": "#sb-actions"
           },
-          "holdMs": 5000,
+          "holdMs": 4900,
           "anchor": "actions"
         },
         {
@@ -410,7 +410,7 @@
           "target": {
             "selector": "#sb-captions"
           },
-          "holdMs": 3500,
+          "holdMs": 3300,
           "anchor": "captions",
           "text": "track: true writes .srt and .vtt beside the video",
           "placement": "right"
@@ -424,7 +424,7 @@
           "target": {
             "selector": "#sb-still"
           },
-          "holdMs": 1500,
+          "holdMs": 2800,
           "anchor": "still"
         },
         {
@@ -457,7 +457,7 @@
           "target": {
             "selector": "#probe-update"
           },
-          "holdMs": 3500,
+          "holdMs": 3600,
           "anchor": "update"
         },
         {
@@ -469,7 +469,7 @@
           "target": {
             "selector": "#probe-golden"
           },
-          "holdMs": 4500,
+          "holdMs": 3700,
           "anchor": "golden"
         },
         {
@@ -481,7 +481,7 @@
           "target": {
             "selector": "#probe-drift"
           },
-          "holdMs": 2500,
+          "holdMs": 2100,
           "anchor": "drift"
         },
         {
@@ -493,7 +493,7 @@
           "target": {
             "selector": "#probe-exit"
           },
-          "holdMs": 1500,
+          "holdMs": 6100,
           "anchor": "exit"
         },
         {
@@ -532,7 +532,7 @@
           "target": {
             "selector": "#render-local"
           },
-          "holdMs": 4000,
+          "holdMs": 5000,
           "anchor": "voice"
         },
         {
@@ -550,7 +550,7 @@
           "target": {
             "selector": "#render-headless"
           },
-          "holdMs": 3500,
+          "holdMs": 4500,
           "anchor": "record"
         },
         {
@@ -568,7 +568,7 @@
           "target": {
             "selector": "#stage-captions"
           },
-          "holdMs": 2000,
+          "holdMs": 2200,
           "anchor": "captions"
         },
         {
@@ -586,7 +586,7 @@
           "target": {
             "selector": "#stage-compose"
           },
-          "holdMs": 5000,
+          "holdMs": 4800,
           "anchor": "compose"
         },
         {
@@ -598,7 +598,7 @@
           "target": {
             "selector": "#render-strict"
           },
-          "holdMs": 1500,
+          "holdMs": 4000,
           "anchor": "strict"
         },
         {
@@ -631,7 +631,7 @@
           "target": {
             "selector": "#revoice-added"
           },
-          "holdMs": 3000,
+          "holdMs": 2700,
           "anchor": "added"
         },
         {
@@ -649,7 +649,7 @@
           "target": {
             "selector": "#re-voice"
           },
-          "holdMs": 3500,
+          "holdMs": 3300,
           "anchor": "voice"
         },
         {
@@ -661,7 +661,7 @@
           "target": {
             "selector": "#re-record"
           },
-          "holdMs": 2000,
+          "holdMs": 1600,
           "anchor": "record"
         },
         {
@@ -679,7 +679,7 @@
           "target": {
             "selector": "#re-captions"
           },
-          "holdMs": 1500,
+          "holdMs": 1400,
           "anchor": "captions"
         },
         {
@@ -697,7 +697,7 @@
           "target": {
             "selector": "#re-compose"
           },
-          "holdMs": 3000,
+          "holdMs": 3400,
           "anchor": "compose"
         },
         {
@@ -709,7 +709,7 @@
           "target": {
             "selector": "#revoice-note"
           },
-          "holdMs": 1500,
+          "holdMs": 2000,
           "anchor": "note"
         },
         {
@@ -767,7 +767,7 @@
           "target": {
             "selector": "#close-plugin"
           },
-          "holdMs": 3000,
+          "holdMs": 1000,
           "anchor": "plugin"
         },
         {
@@ -779,7 +779,7 @@
           "target": {
             "selector": "#close-repo-init"
           },
-          "holdMs": 2500,
+          "holdMs": 2900,
           "anchor": "repoinit"
         },
         {
@@ -803,7 +803,7 @@
           "target": {
             "selector": "#close-npx"
           },
-          "holdMs": 1500,
+          "holdMs": 1200,
           "anchor": "npx"
         },
         {
@@ -815,7 +815,7 @@
           "target": {
             "selector": "#close-brew"
           },
-          "holdMs": 1500,
+          "holdMs": 800,
           "anchor": "brew"
         },
         {
@@ -827,7 +827,7 @@
           "target": {
             "selector": "#close-doctor"
           },
-          "holdMs": 3000,
+          "holdMs": 3300,
           "anchor": "doctor"
         },
         {
@@ -839,7 +839,7 @@
           "target": {
             "selector": "#close-prompt"
           },
-          "holdMs": 2000,
+          "holdMs": 1500,
           "anchor": "first"
         },
         {
@@ -851,7 +851,7 @@
           "target": {
             "selector": "#close-commit"
           },
-          "holdMs": 1500,
+          "holdMs": 4200,
           "anchor": "commit"
         },
         {

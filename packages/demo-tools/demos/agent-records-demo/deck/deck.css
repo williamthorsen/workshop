@@ -97,8 +97,8 @@ a {
   cursor: pointer;
 }
 
-.next:hover,
-[data-beat]:hover {
+/* A beat takes no hover style: The take hides its cursor, so a hover border reads as a stray highlight. */
+.next:hover {
   border-color: var(--text);
 }
 
