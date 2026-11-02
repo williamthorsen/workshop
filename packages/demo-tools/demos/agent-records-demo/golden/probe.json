@@ -151,7 +151,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 5300
+          "ms": 1700
         },
         {
           "op": "goto",
@@ -315,7 +315,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 5300
+          "ms": 500
         },
         {
           "op": "goto",
@@ -381,7 +381,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 5300
+          "ms": 2100
         },
         {
           "op": "goto",
@@ -447,7 +447,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 8500
+          "ms": 4900
         },
         {
           "op": "goto",
@@ -548,7 +548,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 6100
+          "ms": 2900
         },
         {
           "op": "goto",
@@ -654,7 +654,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 6100
+          "ms": 2900
         },
         {
           "op": "goto",
@@ -781,7 +781,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 6900
+          "ms": 2500
         },
         {
           "op": "pause",

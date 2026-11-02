@@ -177,12 +177,12 @@
           "target": {
             "selector": "#chip-ci"
           },
-          "holdMs": 3000,
+          "holdMs": 1500,
           "anchor": "ci"
         },
         {
           "op": "pause",
-          "ms": 5300
+          "ms": 1700
         },
         {
           "op": "goto",
@@ -350,12 +350,12 @@
           "target": {
             "selector": "#t-skill"
           },
-          "holdMs": 3000,
+          "holdMs": 1500,
           "anchor": "skill"
         },
         {
           "op": "pause",
-          "ms": 5300
+          "ms": 500
         },
         {
           "op": "goto",
@@ -423,12 +423,12 @@
           "target": {
             "selector": "#sb-still"
           },
-          "holdMs": 3000,
+          "holdMs": 1500,
           "anchor": "still"
         },
         {
           "op": "pause",
-          "ms": 5300
+          "ms": 2100
         },
         {
           "op": "goto",
@@ -492,12 +492,12 @@
           "target": {
             "selector": "#probe-exit"
           },
-          "holdMs": 5000,
+          "holdMs": 1500,
           "anchor": "exit"
         },
         {
           "op": "pause",
-          "ms": 8500
+          "ms": 4900
         },
         {
           "op": "goto",
@@ -597,12 +597,12 @@
           "target": {
             "selector": "#render-strict"
           },
-          "holdMs": 3500,
+          "holdMs": 1500,
           "anchor": "strict"
         },
         {
           "op": "pause",
-          "ms": 6100
+          "ms": 2900
         },
         {
           "op": "goto",
@@ -708,12 +708,12 @@
           "target": {
             "selector": "#revoice-note"
           },
-          "holdMs": 3500,
+          "holdMs": 1500,
           "anchor": "note"
         },
         {
           "op": "pause",
-          "ms": 6100
+          "ms": 2900
         },
         {
           "op": "goto",
@@ -838,12 +838,12 @@
           "target": {
             "selector": "#close-commit"
           },
-          "holdMs": 4000,
+          "holdMs": 1500,
           "anchor": "commit"
         },
         {
           "op": "pause",
-          "ms": 6900
+          "ms": 2500
         },
         {
           "op": "pause",
