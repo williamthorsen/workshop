@@ -425,7 +425,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 3700
+          "ms": 2500
         },
         {
           "op": "highlight",
@@ -469,7 +469,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 1100
+          "ms": 900
         },
         {
           "op": "click",
@@ -486,7 +486,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 3100
+          "ms": 2500
         },
         {
           "op": "click",
@@ -537,7 +537,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 3900
+          "ms": 2700
         },
         {
           "op": "highlight",
@@ -654,7 +654,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 2900
+          "ms": 1300
         },
         {
           "op": "goto",
@@ -676,7 +676,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 26000
+          "ms": 32500
         },
         {
           "op": "goto",
@@ -715,7 +715,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 1100
+          "ms": 300
         },
         {
           "op": "highlight",
@@ -726,7 +726,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 1300
+          "ms": 900
         },
         {
           "op": "highlight",

@@ -23,6 +23,7 @@
       "CI": "C.I.",
       "ffmpeg": "F.F.M.peg",
       "JSON": "jason",
+      "LLM": "L.L.M.",
       "MCP": "M.C.P.",
       "MP4": "M.P.4",
       "npx": "N.P.X."
@@ -64,7 +65,7 @@
     {
       "id": "overview",
       "title": "Overview",
-      "narration": "A coding {{@agent}}agent, Claude Code here, or Codex, or Gemini, talks to {{@server}}aidemo’s MCP server. It authors a {{@storyboard}}storyboard: plain JSON, narration and actions. {{@engine}}The engine replays the actions in Chrome, voices the narration locally, and composes an {{@video}}MP4 with ffmpeg. {{@local}}Zero dollars, no API key. {{@replay}}Deterministic replay: no model in the loop. {{@json}}A file for any editor, {{@ci}}re-rendered by CI when the product changes.",
+      "narration": "A coding {{@agent}}agent, Claude Code here, or Codex, or Gemini, talks to {{@server}}aidemo’s MCP server. It authors a {{@storyboard}}storyboard: plain JSON, narration and actions. {{@engine}}The engine replays the actions in Chrome, voices the narration locally, and composes an {{@video}}MP4 with ffmpeg. {{@local}}Zero dollars, no API key. {{@replay}}Deterministic replay: no LLM in the loop. {{@json}}A file for any editor, {{@ci}}re-rendered by CI when the product changes.",
       "actions": [
         {
           "op": "waitFor",
@@ -193,7 +194,7 @@
     {
       "id": "prompt",
       "title": "Prompt",
-      "narration": "One prompt to Claude Code. The record-demo skill drives aidemo’s MCP server: {{@guide}}it reads the authoring guide, {{@inspect}}inspects the page, {{@write}}writes the storyboard, {{@validate}}validates it, and {{@lint}}lints the pacing. {{@render}}Render is a job; it returns at once, {{@status}}and job status reports each stage. {{@skill}}The skill calls the server; the command line is the fallback.",
+      "narration": "One prompt to Claude Code. The record-demo skill drives aidemo’s MCP server: {{@guide}}it reads the authoring guide, {{@inspect}}inspects the page, {{@write}}writes the storyboard, {{@validate}}validates it, and {{@lint}}lints the pacing. {{@render}}Render is a job: {{@status}}job status reports each stage. {{@skill}}The skill calls the server; the command line is the fallback.",
       "actions": [
         {
           "op": "waitFor",
@@ -439,7 +440,7 @@
     {
       "id": "probe",
       "title": "Probe",
-      "narration": "Before a take, probe. {{@update}}Update golden records the flow once, as the baseline. {{@golden}}The golden flag replays the flow, without a voice, against that baseline. {{@drift}}When the page changes, the probe {{@exit}}fails with the drifted selectors and a non-zero exit: a CI gate that renders nothing.",
+      "narration": "Before a take, probe. {{@update}}Update golden records the flow once, as the baseline. {{@golden}}The golden flag replays the flow against that baseline. {{@drift}}When the page changes, the probe {{@exit}}fails with the drifted selectors and a non-zero exit: a CI gate that renders nothing.",
       "actions": [
         {
           "op": "waitFor",
@@ -473,7 +474,7 @@
         },
         {
           "op": "pause",
-          "ms": 3700
+          "ms": 2500
         },
         {
           "op": "highlight",
@@ -508,7 +509,7 @@
     {
       "id": "render",
       "title": "Render",
-      "narration": "Render runs four stages. {{@voice}}Voice: Kokoro, a small model in process, selected by the local provider. {{@record}}Record: headless Chrome, no browser window, replays the actions. {{@captions}}Captions, timed from the script. {{@compose}}Compose: ffmpeg trims idle spans, syncs each scene to its narration, muxes the audio. {{@strict}}The strict flag fails the run on any compose warning.",
+      "narration": "Four stages. {{@voice}}Voice: Kokoro, a small model in process, selected by the local provider. {{@record}}Record: headless Chrome, no browser window, replays the actions. {{@captions}}Captions, timed from the script. {{@compose}}Compose: ffmpeg trims idle spans, syncs each scene to its narration. {{@strict}}The strict flag fails the run on any compose warning.",
       "actions": [
         {
           "op": "waitFor",
@@ -518,7 +519,7 @@
         },
         {
           "op": "pause",
-          "ms": 1100
+          "ms": 900
         },
         {
           "op": "click",
@@ -536,7 +537,7 @@
         },
         {
           "op": "pause",
-          "ms": 3100
+          "ms": 2500
         },
         {
           "op": "click",
@@ -590,7 +591,7 @@
         },
         {
           "op": "pause",
-          "ms": 3900
+          "ms": 2700
         },
         {
           "op": "highlight",
@@ -613,7 +614,7 @@
     {
       "id": "revoice",
       "title": "Revoice",
-      "narration": "Change one line, {{@added}}these four words, and run the stages again. {{@voice}}Voice re-voices that scene and reuses the other two. {{@record}}Nothing is recorded again. {{@captions}}Captions are re-timed, {{@compose}}and compose stretches the scene to the new narration, {{@note}}about one and a half times, from the existing take.",
+      "narration": "Change one line, {{@added}}these four words, and run the stages again. {{@voice}}Voice re-voices that scene and reuses the other two. {{@record}}Nothing is recorded again. {{@captions}}Captions are re-timed, {{@compose}}and compose stretches the scene to the new narration, {{@note}}about one and a half times.",
       "actions": [
         {
           "op": "waitFor",
@@ -713,7 +714,7 @@
         },
         {
           "op": "pause",
-          "ms": 2900
+          "ms": 1300
         },
         {
           "op": "goto",
@@ -724,7 +725,7 @@
     {
       "id": "result",
       "title": "Result",
-      "narration": "The result, with its caption track turned on. Everything in it came from the storyboard: the voice from a model on this machine, after a one-time download; the captions timed from the script; the cuts from ffmpeg. Nothing left this machine, and nobody sat at a screen recorder. When the product changes, rendering it again is one command, or one job for the agent.",
+      "narration": "The result, with its caption track on. Everything in it came from the storyboard: the voice from a model on this machine, after a one-time download; the captions timed from the script; the cuts from ffmpeg. Nothing left this machine, and nobody sat at a screen recorder. When the product changes, rendering again is one command, or one job for the agent, and the committed storyboard is the whole source. The captions are a track, so a viewer can turn them off.",
       "actions": [
         {
           "op": "waitFor",
@@ -734,7 +735,7 @@
         },
         {
           "op": "pause",
-          "ms": 26000
+          "ms": 32500
         },
         {
           "op": "goto",
@@ -749,7 +750,7 @@
     {
       "id": "close",
       "title": "Close",
-      "narration": "To try it: {{@plugin}}in Claude Code, add the plugin; {{@repoinit}}for another agent, register the server. {{@npx}}From a shell, npx, {{@brew}}or Homebrew. {{@doctor}}aidemo doctor checks Node, Chrome, and ffmpeg. {{@first}}Type the first prompt, {{@commit}}and commit the storyboard: CI keeps the video current.",
+      "narration": "{{@plugin}}In Claude Code, add the plugin; {{@repoinit}}for another agent, register the server. {{@npx}}From a shell, npx, {{@brew}}or Homebrew. {{@doctor}}aidemo doctor checks Node, Chrome, and ffmpeg. {{@first}}Type the first prompt, {{@commit}}and commit the storyboard: CI keeps the video current.",
       "actions": [
         {
           "op": "waitFor",
@@ -771,7 +772,7 @@
         },
         {
           "op": "pause",
-          "ms": 1100
+          "ms": 300
         },
         {
           "op": "highlight",
@@ -783,7 +784,7 @@
         },
         {
           "op": "pause",
-          "ms": 1300
+          "ms": 900
         },
         {
           "op": "highlight",
