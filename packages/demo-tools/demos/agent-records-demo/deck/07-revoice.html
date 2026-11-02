@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Re-voice without re-recording</title>
+    <link rel="stylesheet" href="deck.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Re-voice without re-recording</h1>
+      <pre class="terminal"><code>$ aidemo voice demos/sample-tour
+▶ Generating narration (local Kokoro-82M, in-process)
+  scene search: unchanged, reusing narration
+  scene result: &quot;Three trails match, each with its length, its di…&quot; (marin)
+  scene detail: unchanged, reusing narration
+  ✓ narration → audio/narration.mp3 (3 scenes, ~32s; 1 voiced, 2 reused)</code></pre>
+      <pre class="terminal"><code>$ aidemo captions demos/sample-tour --offline
+▶ Generating captions (offline, from script + voice.json timings)
+  scene search: unchanged, reusing caption timing
+  scene result: deriving caption timing
+  scene detail: unchanged, reusing caption timing
+  ✓ captions → generated/captions.srt (11 cues)</code></pre>
+      <pre class="terminal"><code>$ aidemo compose demos/sample-tour --strict
+▶ Composing final video (ffmpeg)
+  scene result: 6433ms -&gt; 9650ms (x1.50, 1 span(s))
+  subtitle track: eng (mov_text, off until the viewer turns it on)
+  ✓ final video → output/final-demo.mp4</code></pre>
+    </main>
+    <nav><a class="next" href="08-environment.html">Next</a></nav>
+  </body>
+</html>

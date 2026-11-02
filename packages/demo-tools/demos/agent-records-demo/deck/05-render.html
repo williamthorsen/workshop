@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Render</title>
+    <link rel="stylesheet" href="deck.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Render</h1>
+      <pre
+        class="terminal"
+      ><code>$ AIDEMO_TTS_PROVIDER=local aidemo render demos/sample-tour --headless --fresh --strict
+▶ Generating narration (local Kokoro-82M, in-process)
+  ✓ narration → audio/narration.mp3 (3 scenes, ~31s; 0 voiced, 3 reused)
+▶ Recording &quot;A quick tour of the trail finder&quot;
+  ✓ recording → recordings/raw.webm
+▶ Generating captions (offline, from script + voice.json timings)
+  ✓ captions → generated/captions.srt (10 cues)
+▶ Composing final video (ffmpeg)
+  captions: style none — not burned (the .srt/.vtt beside the video carry them)
+  subtitle track: eng (mov_text, off until the viewer turns it on)
+  ✓ final video → output/final-demo.mp4</code></pre>
+    </main>
+    <nav><a class="next" href="06-edit.html">Next</a></nav>
+  </body>
+</html>
