@@ -65,7 +65,7 @@
     {
       "id": "overview",
       "title": "Overview",
-      "narration": "A coding {{@agent}}agent, Claude Code here, or Codex, or Gemini, talks to {{@server}}aidemo’s MCP server. It authors a {{@storyboard}}storyboard: plain JSON, narration and actions. {{@engine}}The engine replays the actions in Chrome, voices the narration locally, and composes an {{@video}}MP4 with ffmpeg. {{@local}}Zero dollars, no API key. {{@replay}}Deterministic replay: no LLM in the loop. {{@json}}A file for any editor, {{@ci}}re-rendered by CI when the product changes.",
+      "narration": "A coding {{@agent}}agent, Claude Code here, or Codex, Gemini, or Rovo Dev, talks to {{@server}}aidemo’s MCP server. It authors a {{@storyboard}}storyboard: plain JSON, narration and actions. {{@engine}}The engine replays the actions in Chrome, voices the narration locally, and composes an {{@video}}MP4 with ffmpeg. {{@local}}Zero dollars, no API key. {{@replay}}Deterministic replay: no LLM in the loop. {{@json}}A file for any editor, {{@ci}}re-rendered by CI when the product changes.",
       "actions": [
         {
           "op": "waitFor",
@@ -750,7 +750,7 @@
     {
       "id": "close",
       "title": "Close",
-      "narration": "In Claude Code, {{@plugin}}add the plugin; {{@repoinit}}for another agent, register the server. {{@npx}}From a shell, npx, {{@brew}}or Homebrew. {{@doctor}}aidemo doctor checks Node, Chrome, and ffmpeg. {{@first}}Type the first prompt, {{@commit}}and commit the storyboard: CI keeps the video current.",
+      "narration": "In Claude Code, {{@plugin}}add the plugin; {{@repoinit}}for Codex or Gemini, register the server; {{@rovo}}for Rovo Dev, add it to its MCP config. {{@npx}}From a shell, npx, {{@brew}}or Homebrew. {{@doctor}}aidemo doctor checks Node, Chrome, and ffmpeg. {{@first}}Type the first prompt, {{@commit}}and commit the storyboard: CI keeps the video current.",
       "actions": [
         {
           "op": "waitFor",
@@ -781,6 +781,18 @@
           },
           "holdMs": 2500,
           "anchor": "repoinit"
+        },
+        {
+          "op": "pause",
+          "ms": 900
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#close-rovo"
+          },
+          "holdMs": 2800,
+          "anchor": "rovo"
         },
         {
           "op": "pause",

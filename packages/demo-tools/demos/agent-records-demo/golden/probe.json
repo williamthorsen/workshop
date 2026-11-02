@@ -730,6 +730,17 @@
         },
         {
           "op": "highlight",
+          "target": "#close-rovo",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 900
+        },
+        {
+          "op": "highlight",
           "target": "#close-npx",
           "ok": true,
           "found": true
