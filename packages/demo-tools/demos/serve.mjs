@@ -16,7 +16,9 @@ const ROOTS = {
 const CONTENT_TYPES = {
   '.css': 'text/css; charset=utf-8',
   '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
   '.mp4': 'video/mp4',
+  '.png': 'image/png',
   '.srt': 'text/plain; charset=utf-8',
   '.vtt': 'text/vtt; charset=utf-8',
 };

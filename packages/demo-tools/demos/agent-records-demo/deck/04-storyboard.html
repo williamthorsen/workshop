@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Storyboard</title>
+    <link rel="stylesheet" href="deck.css" />
+    <script src="deck.js" defer></script>
+  </head>
+  <body>
+    <main class="storyboard-page">
+      <p class="label"><code>demos/sample-tour/generated/storyboard.json</code></p>
+      <pre><code><span id="sb-captions">"captions": { "style": "none", "track": true },</span>
+"scenes": [ …, {
+    "id": "detail",
+    <span id="sb-narration">"narration": "The detail lists the length, the climb,
+      the typical time, and where to find water. Further
+      down, the route runs from the lakeside lot up to the
+      ridge, then back through the forest.",</span>
+    <span id="sb-actions">"actions": [
+      { "op": "assert",
+        "target": { "selector": "#detail h2" },
+        "textMatches": "Ridge loop" },
+      { "op": "moveTo",
+        "target": { "selector": "#detail dl" } },
+      { "op": "pause", "ms": 1500 },
+      { "op": "scrollBy", "dy": 250, "easing": "glide",
+        "durationMs": 1800 },
+      { "op": "pause", "ms": 1200 },
+      { "op": "scrollBy", "dy": 250, "easing": "glide",
+        "durationMs": 1800 },
+      { "op": "still", "name": "detail" },
+      { "op": "pause", "ms": 1200 }
+    ]</span>
+} ]</code></pre>
+      <figure class="still" id="sb-still">
+        <figcaption>Trail finder</figcaption>
+        <img src="/media/stills/detail.png" alt="The ridge loop detail page that the scene drives" />
+      </figure>
+    </main>
+    <nav><a class="next" href="05-probe.html">Next</a></nav>
+  </body>
+</html>

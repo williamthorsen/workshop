@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Probe</title>
+    <link rel="stylesheet" href="deck.css" />
+    <script src="deck.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <h1>Probe the flow before spending a take</h1>
+      <pre><code><span id="probe-update">$ aidemo probe demos/sample-tour --update-golden</span>
+  ✓ golden → golden/probe.json (3 scenes, 31 actions)
+
+<span id="probe-golden">$ aidemo probe demos/sample-tour --golden</span>
+  ✓ flow unchanged vs golden/probe.json
+
+<span class="comment"># after the page renames #search to #find</span>
+<span id="probe-drift">$ aidemo probe demos/sample-tour --golden</span>
+  ✗ probe: hover failed — 0 match(es) for "#search"
+    nearest: button "Search" → #find
+<span id="probe-exit">✗ golden probe mismatch — 19 field difference(s)
+  $.scenes[0].actions[8].found: expected true, got false
+exit 1</span></code></pre>
+    </main>
+    <nav><a class="next" href="06-render.html">Next</a></nav>
+  </body>
+</html>
