@@ -1,3 +1,4 @@
+/* global document, Element */
 // Advances a deck page one beat at a time: a click or a key press on a `[data-beat]` element adds the class that the
 // attribute names, which shows a transcript line or lights a pipeline stage.
 document.addEventListener('click', (event) => advanceBeat(event.target));
