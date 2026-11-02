@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Prompt</title>
+    <link rel="stylesheet" href="deck.css" />
+    <script src="deck.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <h1>One prompt to Claude Code</h1>
+      <label class="prompt-box">
+        <span aria-hidden="true">›</span>
+        <textarea id="prompt" rows="4" aria-label="Prompt" spellcheck="false"></textarea>
+      </label>
+      <ol class="transcript">
+        <li id="t-guide" data-beat="shown" tabindex="0">
+          <span class="tool">get_authoring_guide</span>
+          <span>the authoring guide, read before writing</span>
+        </li>
+        <li id="t-inspect" data-beat="shown" tabindex="0">
+          <span class="tool">inspect</span>
+          <span
+            >3 interactive elements: <code>a[href="index.html"]</code>, <code>#query</code>, <code>#search</code></span
+          >
+        </li>
+        <li id="t-write" data-beat="shown" tabindex="0">
+          <span class="tool"><em>writes</em></span>
+          <span><code>demos/sample-tour/generated/storyboard.json</code></span>
+        </li>
+        <li id="t-validate" data-beat="shown" tabindex="0">
+          <span class="tool">validate_storyboard</span>
+          <span>valid, 3 scenes</span>
+        </li>
+        <li id="t-lint" data-beat="shown" tabindex="0">
+          <span class="tool">lint_storyboard</span>
+          <span>0 errors, narration forecast ≈37 s</span>
+        </li>
+        <li id="t-render" data-beat="shown" tabindex="0">
+          <span class="tool">render</span>
+          <span>job started: <code>{ jobId, demoDir, logFile }</code></span>
+        </li>
+        <li id="t-status" data-beat="shown" tabindex="0">
+          <span class="tool">job_status</span>
+          <span>voice ✓ record ✓ captions ✓ compose ✓ → <code>output/final-demo.mp4</code></span>
+        </li>
+      </ol>
+      <p class="note" id="t-skill">The record-demo skill calls these tools. The CLI is the fallback.</p>
+    </main>
+    <nav><a class="next" href="04-storyboard.html">Next</a></nav>
+  </body>
+</html>

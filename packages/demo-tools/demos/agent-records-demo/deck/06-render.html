@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Render</title>
+    <link rel="stylesheet" href="deck.css" />
+    <script src="deck.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <h1>Render</h1>
+      <pre><code>$ <span id="render-local">AIDEMO_TTS_PROVIDER=local</span> aidemo render demos/sample-tour <span id="render-headless">--headless</span> <span id="render-strict">--strict</span></code></pre>
+      <ol class="pipeline">
+        <li id="stage-voice" data-beat="lit" tabindex="0">
+          <strong>voice</strong>
+          <span>Kokoro-82M, in process</span>
+        </li>
+        <li id="stage-record" data-beat="lit" tabindex="0">
+          <strong>record</strong>
+          <span>headless Chrome replays the actions</span>
+        </li>
+        <li id="stage-captions" data-beat="lit" tabindex="0">
+          <strong>captions</strong>
+          <span>timed from the script</span>
+        </li>
+        <li id="stage-compose" data-beat="lit" tabindex="0">
+          <strong>compose</strong>
+          <span>ffmpeg trims, syncs, and muxes</span>
+        </li>
+        <li class="product" id="stage-output">
+          <strong>final-demo.mp4</strong>
+          <span>with .srt and .vtt</span>
+        </li>
+      </ol>
+      <p class="note" id="render-flags">
+        <code>local</code>: the voice runs in process. <code>--headless</code>: no browser window.
+        <code>--strict</code>: a compose warning fails the run.
+      </p>
+    </main>
+    <nav><a class="next" href="07-revoice.html">Next</a></nav>
+  </body>
+</html>

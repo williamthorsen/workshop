@@ -1,6 +1,6 @@
 {
-  "title": "An agent records a narrated demo with aidemo",
-  "targetLengthSeconds": 150,
+  "title": "A coding agent writes the storyboard, aidemo renders the demo",
+  "targetLengthSeconds": 170,
   "captions": {
     "style": "none",
     "track": true
@@ -12,11 +12,21 @@
     "color": "#8cc8ff",
     "cursorClear": true
   },
+  "cursor": {
+    "hidden": true
+  },
+  "hide": ["nav"],
   "voice": {
     "pronounce": {
       "aidemo": "A.I. demo",
-      "TTS": "T.T.S.",
-      "JSON": "jason"
+      "aidemo’s": "A.I. demo’s",
+      "CI": "C.I.",
+      "ffmpeg": "F.F.M.peg",
+      "JSON": "jason",
+      "LLM": "L.L.M.",
+      "MCP": "M.C.P.",
+      "MP4": "M.P.4",
+      "npx": "N.P.X."
     }
   },
   "output": {
@@ -24,192 +34,18 @@
   },
   "scenes": [
     {
-      "id": "title",
-      "title": "Title",
-      "narration": "A coding agent records a narrated demo with aidemo, from one prompt to a finished video with captions. This video was made the same way.",
-      "voice": {
-        "pronounce": {
-          "records": "re-cords"
-        }
-      },
+      "id": "open",
+      "title": "Open",
+      "narration": "This demo was not screen-recorded. A coding agent wrote its storyboard, and aidemo rendered the video, voice and captions included.",
       "actions": [
         {
           "op": "goto",
-          "url": "http://127.0.0.1:8787/deck/01-title.html"
+          "url": "http://127.0.0.1:8787/deck/01-open.html"
         },
         {
           "op": "waitFor",
           "target": {
-            "selector": "h1"
-          }
-        },
-        {
-          "op": "moveTo",
-          "target": {
-            "selector": "h1"
-          }
-        },
-        {
-          "op": "pause",
-          "ms": 2000
-        },
-        {
-          "op": "moveTo",
-          "target": {
-            "selector": ".lede"
-          }
-        },
-        {
-          "op": "pause",
-          "ms": 2500
-        },
-        {
-          "op": "click",
-          "target": {
-            "selector": "a.next"
-          }
-        },
-        {
-          "op": "pause",
-          "ms": 500
-        }
-      ]
-    },
-    {
-      "id": "prompt",
-      "title": "Prompt",
-      "narration": "It starts with one {{@prompt}}prompt to Claude Code: the page, the steps to show, and the length, with the local voice and a caption track. The agent answers with a {{@storyboard}}storyboard, through the record-demo skill or the aidemo MCP server.",
-      "actions": [
-        {
-          "op": "waitFor",
-          "target": {
-            "selector": "h1"
-          }
-        },
-        {
-          "op": "pause",
-          "ms": 1200
-        },
-        {
-          "op": "spotlight",
-          "target": {
-            "selector": "pre.prompt"
-          },
-          "holdMs": 7000,
-          "anchor": "prompt"
-        },
-        {
-          "op": "pause",
-          "ms": 9000
-        },
-        {
-          "op": "highlight",
-          "target": {
-            "selector": "#prompt-storyboard"
-          },
-          "holdMs": 3500,
-          "anchor": "storyboard"
-        },
-        {
-          "op": "pause",
-          "ms": 2000
-        },
-        {
-          "op": "click",
-          "target": {
-            "selector": "a.next"
-          }
-        },
-        {
-          "op": "pause",
-          "ms": 500
-        }
-      ]
-    },
-    {
-      "id": "storyboard",
-      "title": "Storyboard",
-      "narration": "The storyboard is plain JSON that you can edit. Each scene pairs {{@narration}}narration, what the voice says, with {{@actions}}actions, what the browser does, replayed the same way on every take. The {{@captions}}captions setting asks for a subtitle track, so no text is burned into the frame.",
-      "actions": [
-        {
-          "op": "waitFor",
-          "target": {
-            "selector": "h1"
-          }
-        },
-        {
-          "op": "moveTo",
-          "target": {
-            "selector": "pre.json"
-          }
-        },
-        {
-          "op": "pause",
-          "ms": 3500
-        },
-        {
-          "op": "highlight",
-          "target": {
-            "selector": "#storyboard-narration"
-          },
-          "holdMs": 2500,
-          "anchor": "narration"
-        },
-        {
-          "op": "pause",
-          "ms": 1400
-        },
-        {
-          "op": "highlight",
-          "target": {
-            "selector": "#storyboard-actions"
-          },
-          "holdMs": 4500,
-          "anchor": "actions"
-        },
-        {
-          "op": "pause",
-          "ms": 4000
-        },
-        {
-          "op": "highlight",
-          "target": {
-            "selector": "#storyboard-captions"
-          },
-          "holdMs": 4500,
-          "anchor": "captions"
-        },
-        {
-          "op": "pause",
-          "ms": 4000
-        },
-        {
-          "op": "click",
-          "target": {
-            "selector": "a.next"
-          }
-        },
-        {
-          "op": "pause",
-          "ms": 500
-        }
-      ]
-    },
-    {
-      "id": "probe",
-      "title": "Probe",
-      "narration": "Before spending a take, the agent runs aidemo probe. It drives the page without a voice and checks every selector. With the {{@golden}}golden flag, a {{@changed}}changed page fails the probe first.",
-      "actions": [
-        {
-          "op": "waitFor",
-          "target": {
-            "selector": "h1"
-          }
-        },
-        {
-          "op": "moveTo",
-          "target": {
-            "selector": "pre"
+            "selector": "#open-video"
           }
         },
         {
@@ -217,57 +53,412 @@
           "ms": 7500
         },
         {
-          "op": "highlight",
-          "target": {
-            "selector": "#probe-golden"
-          },
-          "holdMs": 2500,
-          "anchor": "golden"
+          "op": "goto",
+          "url": "http://127.0.0.1:8787/deck/02-overview.html"
         },
         {
-          "op": "pause",
-          "ms": 400
-        },
-        {
-          "op": "highlight",
-          "target": {
-            "selector": "#probe-unchanged"
-          },
-          "holdMs": 3000,
-          "anchor": "changed"
-        },
-        {
-          "op": "pause",
-          "ms": 400
-        },
-        {
-          "op": "click",
-          "target": {
-            "selector": "a.next"
-          }
-        },
-        {
-          "op": "pause",
-          "ms": 500
+          "op": "goto",
+          "url": "http://127.0.0.1:8787/deck/02-overview.html"
         }
       ]
     },
     {
-      "id": "render",
-      "title": "Render",
-      "narration": "Then aidemo render runs the whole pipeline: the local {{@kokoro}}Kokoro voice, a headless take on a fresh profile, {{@captions}}captions derived from the script, and the final video. With the {{@strict}}strict flag, any compose warning fails the run.",
+      "id": "overview",
+      "title": "Overview",
+      "narration": "A coding {{@agent}}agent, Claude Code here, or Codex, Gemini, or Rovo Dev, talks to {{@server}}aidemo’s MCP server. It authors a {{@storyboard}}storyboard: plain JSON, narration and actions. {{@engine}}The engine replays the actions in Chrome, voices the narration locally, and composes an {{@video}}MP4 with ffmpeg. {{@local}}Zero dollars, no API key. {{@replay}}Deterministic replay: no LLM in the loop. {{@json}}A file for any editor, {{@ci}}re-rendered by CI when the product changes.",
       "actions": [
         {
           "op": "waitFor",
           "target": {
-            "selector": "h1"
+            "selector": ".flow"
           }
         },
         {
-          "op": "moveTo",
+          "op": "pause",
+          "ms": 900
+        },
+        {
+          "op": "spotlight",
           "target": {
-            "selector": "pre"
+            "selector": "#ov-agent"
+          },
+          "holdMs": 4500,
+          "anchor": "agent"
+        },
+        {
+          "op": "pause",
+          "ms": 2300
+        },
+        {
+          "op": "spotlight",
+          "target": {
+            "selector": "#ov-server"
+          },
+          "holdMs": 2300,
+          "anchor": "server"
+        },
+        {
+          "op": "pause",
+          "ms": 1300
+        },
+        {
+          "op": "spotlight",
+          "target": {
+            "selector": "#ov-storyboard"
+          },
+          "holdMs": 3200,
+          "anchor": "storyboard"
+        },
+        {
+          "op": "pause",
+          "ms": 1300
+        },
+        {
+          "op": "spotlight",
+          "target": {
+            "selector": "#ov-engine"
+          },
+          "holdMs": 6200,
+          "anchor": "engine"
+        },
+        {
+          "op": "pause",
+          "ms": 4500
+        },
+        {
+          "op": "spotlight",
+          "target": {
+            "selector": "#ov-video"
+          },
+          "holdMs": 1100,
+          "anchor": "video"
+        },
+        {
+          "op": "pause",
+          "ms": 300
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#chip-local"
+          },
+          "holdMs": 1700,
+          "anchor": "local"
+        },
+        {
+          "op": "pause",
+          "ms": 700
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#chip-replay"
+          },
+          "holdMs": 2900,
+          "anchor": "replay"
+        },
+        {
+          "op": "pause",
+          "ms": 1700
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#chip-json"
+          },
+          "holdMs": 1500,
+          "anchor": "json"
+        },
+        {
+          "op": "pause",
+          "ms": 900
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#chip-ci"
+          },
+          "holdMs": 3300,
+          "anchor": "ci"
+        },
+        {
+          "op": "pause",
+          "ms": 1700
+        },
+        {
+          "op": "goto",
+          "url": "http://127.0.0.1:8787/deck/03-prompt.html"
+        }
+      ]
+    },
+    {
+      "id": "prompt",
+      "title": "Prompt",
+      "narration": "One prompt to Claude Code. The record-demo skill drives aidemo’s MCP server: {{@guide}}it reads the authoring guide, {{@inspect}}inspects the page, {{@write}}writes the storyboard, {{@validate}}validates it, and {{@lint}}lints the pacing. {{@render}}Render is a job: {{@status}}job status reports each stage. {{@skill}}The skill calls the server; the command line is the fallback.",
+      "actions": [
+        {
+          "op": "waitFor",
+          "target": {
+            "selector": "#prompt"
           }
+        },
+        {
+          "op": "click",
+          "target": {
+            "selector": "#prompt"
+          }
+        },
+        {
+          "op": "type",
+          "target": {
+            "selector": "#prompt"
+          },
+          "text": "Record a 30-second narrated demo of the trail finder at http://127.0.0.1:8787/fixture/: search for \"lakeside loop\", open the ridge loop, and scroll its detail. Use the local voice, and give the video a caption track that viewers can turn on.",
+          "humanize": false
+        },
+        {
+          "op": "pause",
+          "ms": 900
+        },
+        {
+          "op": "click",
+          "target": {
+            "selector": "#t-guide"
+          }
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#t-guide"
+          },
+          "holdMs": 1900,
+          "anchor": "guide"
+        },
+        {
+          "op": "pause",
+          "ms": 300
+        },
+        {
+          "op": "click",
+          "target": {
+            "selector": "#t-inspect"
+          }
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#t-inspect"
+          },
+          "holdMs": 1200,
+          "anchor": "inspect"
+        },
+        {
+          "op": "pause",
+          "ms": 300
+        },
+        {
+          "op": "click",
+          "target": {
+            "selector": "#t-write"
+          }
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#t-write"
+          },
+          "holdMs": 1400,
+          "anchor": "write"
+        },
+        {
+          "op": "pause",
+          "ms": 300
+        },
+        {
+          "op": "click",
+          "target": {
+            "selector": "#t-validate"
+          }
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#t-validate"
+          },
+          "holdMs": 1100,
+          "anchor": "validate"
+        },
+        {
+          "op": "pause",
+          "ms": 300
+        },
+        {
+          "op": "click",
+          "target": {
+            "selector": "#t-lint"
+          }
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#t-lint"
+          },
+          "holdMs": 1100,
+          "anchor": "lint"
+        },
+        {
+          "op": "pause",
+          "ms": 300
+        },
+        {
+          "op": "click",
+          "target": {
+            "selector": "#t-render"
+          }
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#t-render"
+          },
+          "holdMs": 1100,
+          "anchor": "render"
+        },
+        {
+          "op": "pause",
+          "ms": 300
+        },
+        {
+          "op": "click",
+          "target": {
+            "selector": "#t-status"
+          }
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#t-status"
+          },
+          "holdMs": 2000,
+          "anchor": "status"
+        },
+        {
+          "op": "pause",
+          "ms": 300
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#t-skill"
+          },
+          "holdMs": 4500,
+          "anchor": "skill"
+        },
+        {
+          "op": "pause",
+          "ms": 500
+        },
+        {
+          "op": "goto",
+          "url": "http://127.0.0.1:8787/deck/04-storyboard.html"
+        }
+      ]
+    },
+    {
+      "id": "storyboard",
+      "title": "Storyboard",
+      "narration": "The agent wrote this {{@narration}}file: one narrated line per scene, over the {{@actions}}actions that play under it: assert, move, scroll, and a still for the docs. {{@captions}}Captions ship as a subtitle track beside the video. {{@still}}This is the page that the scene drives.",
+      "actions": [
+        {
+          "op": "waitFor",
+          "target": {
+            "selector": "#sb-actions"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 1100
+        },
+        {
+          "op": "callout",
+          "target": {
+            "selector": "#sb-narration"
+          },
+          "holdMs": 2800,
+          "anchor": "narration",
+          "text": "One narrated line per scene",
+          "placement": "right"
+        },
+        {
+          "op": "pause",
+          "ms": 2100
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#sb-actions"
+          },
+          "holdMs": 4900,
+          "anchor": "actions"
+        },
+        {
+          "op": "pause",
+          "ms": 4500
+        },
+        {
+          "op": "callout",
+          "target": {
+            "selector": "#sb-captions"
+          },
+          "holdMs": 3300,
+          "anchor": "captions",
+          "text": "track: true writes .srt and .vtt beside the video",
+          "placement": "right"
+        },
+        {
+          "op": "pause",
+          "ms": 2500
+        },
+        {
+          "op": "spotlight",
+          "target": {
+            "selector": "#sb-still"
+          },
+          "holdMs": 2800,
+          "anchor": "still"
+        },
+        {
+          "op": "pause",
+          "ms": 2100
+        },
+        {
+          "op": "goto",
+          "url": "http://127.0.0.1:8787/deck/05-probe.html"
+        }
+      ]
+    },
+    {
+      "id": "probe",
+      "title": "Probe",
+      "narration": "Before a take, probe. {{@update}}Update golden records the flow once, as the baseline. {{@golden}}The golden flag replays the flow against that baseline. {{@drift}}When the page changes, the probe {{@exit}}fails with the drifted selectors and a non-zero exit: a CI gate that renders nothing.",
+      "actions": [
+        {
+          "op": "waitFor",
+          "target": {
+            "selector": "#probe-exit"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 1100
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#probe-update"
+          },
+          "holdMs": 3600,
+          "anchor": "update"
         },
         {
           "op": "pause",
@@ -276,450 +467,72 @@
         {
           "op": "highlight",
           "target": {
-            "selector": "#render-voice"
+            "selector": "#probe-golden"
           },
-          "holdMs": 3000,
-          "anchor": "kokoro"
+          "holdMs": 3700,
+          "anchor": "golden"
         },
         {
           "op": "pause",
-          "ms": 2600
+          "ms": 2500
         },
         {
           "op": "highlight",
           "target": {
-            "selector": "#render-captions"
+            "selector": "#probe-drift"
           },
-          "holdMs": 3500,
-          "anchor": "captions"
+          "holdMs": 2100,
+          "anchor": "drift"
         },
         {
           "op": "pause",
-          "ms": 3400
+          "ms": 1300
         },
         {
           "op": "highlight",
           "target": {
-            "selector": "#render-strict"
+            "selector": "#probe-exit"
           },
-          "holdMs": 3500,
-          "anchor": "strict"
+          "holdMs": 6100,
+          "anchor": "exit"
         },
         {
           "op": "pause",
-          "ms": 1200
+          "ms": 4900
         },
-        {
-          "op": "click",
-          "target": {
-            "selector": "a.next"
-          }
-        },
-        {
-          "op": "pause",
-          "ms": 500
-        }
-      ]
-    },
-    {
-      "id": "edit",
-      "title": "Narration edit",
-      "narration": "Now the review. One line in the second scene reads {{@awkwardly}}awkwardly, so the agent {{@edits}}edits it. Only the narration changes, and the browser actions stay as they were.",
-      "actions": [
-        {
-          "op": "waitFor",
-          "target": {
-            "selector": "h1"
-          }
-        },
-        {
-          "op": "moveTo",
-          "target": {
-            "selector": "pre.removed"
-          }
-        },
-        {
-          "op": "pause",
-          "ms": 3000
-        },
-        {
-          "op": "spotlight",
-          "target": {
-            "selector": "pre.removed"
-          },
-          "holdMs": 2000,
-          "anchor": "awkwardly"
-        },
-        {
-          "op": "pause",
-          "ms": 800
-        },
-        {
-          "op": "spotlight",
-          "target": {
-            "selector": "pre.added"
-          },
-          "holdMs": 5000,
-          "anchor": "edits"
-        },
-        {
-          "op": "pause",
-          "ms": 3600
-        },
-        {
-          "op": "click",
-          "target": {
-            "selector": "a.next"
-          }
-        },
-        {
-          "op": "pause",
-          "ms": 500
-        }
-      ]
-    },
-    {
-      "id": "revoice",
-      "title": "Re-voice",
-      "narration": "So nothing is recorded again. aidemo voice {{@voices}}voices only the edited scene, aidemo captions with the {{@offline}}offline flag rebuilds its timing, and aidemo compose {{@cuts}}cuts the new narration into the existing take.",
-      "actions": [
-        {
-          "op": "waitFor",
-          "target": {
-            "selector": "h1"
-          }
-        },
-        {
-          "op": "moveTo",
-          "target": {
-            "selector": "main > pre:nth-of-type(1)"
-          }
-        },
-        {
-          "op": "pause",
-          "ms": 1800
-        },
-        {
-          "op": "highlight",
-          "target": {
-            "selector": "#revoice-reused"
-          },
-          "holdMs": 3000,
-          "anchor": "voices"
-        },
-        {
-          "op": "pause",
-          "ms": 2600
-        },
-        {
-          "op": "highlight",
-          "target": {
-            "selector": "#revoice-offline"
-          },
-          "holdMs": 3000,
-          "anchor": "offline"
-        },
-        {
-          "op": "pause",
-          "ms": 1000
-        },
-        {
-          "op": "scrollBy",
-          "dy": 200,
-          "easing": "glide",
-          "durationMs": 1200
-        },
-        {
-          "op": "highlight",
-          "target": {
-            "selector": "#revoice-span"
-          },
-          "holdMs": 3500,
-          "anchor": "cuts"
-        },
-        {
-          "op": "pause",
-          "ms": 1200
-        },
-        {
-          "op": "click",
-          "target": {
-            "selector": "a.next"
-          }
-        },
-        {
-          "op": "pause",
-          "ms": 500
-        }
-      ]
-    },
-    {
-      "id": "environment",
-      "title": "Environment",
-      "narration": "Two settings keep the voice and the captions on the machine. First, {{@remove}}remove the three OpenAI variables and {{@select}}select the local voice. Then {{@check}}check the repository's dot env file, which aidemo loads over the environment.",
-      "actions": [
-        {
-          "op": "waitFor",
-          "target": {
-            "selector": "h1"
-          }
-        },
-        {
-          "op": "moveTo",
-          "target": {
-            "selector": "main > p:first-of-type"
-          }
-        },
-        {
-          "op": "pause",
-          "ms": 3800
-        },
-        {
-          "op": "highlight",
-          "target": {
-            "selector": "#env-unset"
-          },
-          "holdMs": 2500,
-          "anchor": "remove"
-        },
-        {
-          "op": "pause",
-          "ms": 1400
-        },
-        {
-          "op": "highlight",
-          "target": {
-            "selector": "#env-export"
-          },
-          "holdMs": 2000,
-          "anchor": "select"
-        },
-        {
-          "op": "pause",
-          "ms": 1000
-        },
-        {
-          "op": "highlight",
-          "target": {
-            "selector": "#env-grep"
-          },
-          "holdMs": 4500,
-          "anchor": "check"
-        },
-        {
-          "op": "pause",
-          "ms": 2800
-        },
-        {
-          "op": "click",
-          "target": {
-            "selector": "a.next"
-          }
-        },
-        {
-          "op": "pause",
-          "ms": 500
-        }
-      ]
-    },
-    {
-      "id": "login",
-      "title": "Login",
-      "narration": "Second, for an app behind a login, run aidemo {{@login}}login once to sign in on the recording profile, then {{@quit}}quit Chrome completely before the take. Chrome locks a profile that is open.",
-      "actions": [
-        {
-          "op": "waitFor",
-          "target": {
-            "selector": "h1"
-          }
-        },
-        {
-          "op": "moveTo",
-          "target": {
-            "selector": "main > p:first-of-type"
-          }
-        },
-        {
-          "op": "pause",
-          "ms": 2600
-        },
-        {
-          "op": "highlight",
-          "target": {
-            "selector": "#login-command"
-          },
-          "holdMs": 3500,
-          "anchor": "login"
-        },
-        {
-          "op": "pause",
-          "ms": 3000
-        },
-        {
-          "op": "callout",
-          "target": {
-            "selector": "pre"
-          },
-          "text": "Quit Chrome before the take",
-          "holdMs": 4500,
-          "anchor": "quit",
-          "placement": "bottom"
-        },
-        {
-          "op": "pause",
-          "ms": 3200
-        },
-        {
-          "op": "click",
-          "target": {
-            "selector": "a.next"
-          }
-        },
-        {
-          "op": "pause",
-          "ms": 500
-        }
-      ]
-    },
-    {
-      "id": "result",
-      "title": "Result",
-      "narration": "Here is the {{@result}}result, playing as it was rendered. The file contains a {{@caption}}caption track that viewers can turn on, and the narration was produced on this machine, without any request over the network.",
-      "actions": [
-        {
-          "op": "waitFor",
-          "target": {
-            "selector": "h1"
-          }
-        },
-        {
-          "op": "pause",
-          "ms": 1000
-        },
-        {
-          "op": "spotlight",
-          "target": {
-            "selector": "#result"
-          },
-          "holdMs": 3500,
-          "anchor": "result"
-        },
-        {
-          "op": "pause",
-          "ms": 3000
-        },
-        {
-          "op": "callout",
-          "target": {
-            "selector": "#result"
-          },
-          "text": "Subtitle track, off until the viewer turns it on",
-          "holdMs": 5000,
-          "anchor": "caption"
-        },
-        {
-          "op": "pause",
-          "ms": 6400
-        },
-        {
-          "op": "click",
-          "target": {
-            "selector": "a.next"
-          }
-        },
-        {
-          "op": "pause",
-          "ms": 500
-        }
-      ]
-    },
-    {
-      "id": "close",
-      "title": "Close",
-      "narration": "That is the loop: a {{@prompt}}prompt, a {{@storyboard}}storyboard, a {{@probe}}probe, a {{@render}}render, one {{@edited}}edited line, and a new {{@voice}}voice without recording again. The storyboard is committed beside the package, so the next render starts from the same file.",
-      "actions": [
         {
           "op": "goto",
-          "url": "http://127.0.0.1:8787/deck/11-close.html"
-        },
+          "url": "http://127.0.0.1:8787/deck/06-render.html"
+        }
+      ]
+    },
+    {
+      "id": "render",
+      "title": "Render",
+      "narration": "Four stages. {{@voice}}Voice: Kokoro, a small model in process, selected by the local provider. {{@record}}Record: headless Chrome, no browser window, replays the actions. {{@captions}}Captions, timed from the script. {{@compose}}Compose: ffmpeg trims idle spans, syncs each scene to its narration. {{@strict}}The strict flag fails the run on any compose warning.",
+      "actions": [
         {
           "op": "waitFor",
           "target": {
-            "selector": "h1"
+            "selector": "#stage-compose"
           }
         },
         {
           "op": "pause",
-          "ms": 1800
+          "ms": 900
+        },
+        {
+          "op": "click",
+          "target": {
+            "selector": "#stage-voice"
+          }
         },
         {
           "op": "highlight",
           "target": {
-            "selector": ".loop li:nth-child(1)"
+            "selector": "#render-local"
           },
-          "holdMs": 700,
-          "style": {
-            "shape": "ring"
-          },
-          "anchor": "prompt"
-        },
-        {
-          "op": "highlight",
-          "target": {
-            "selector": ".loop li:nth-child(2)"
-          },
-          "holdMs": 700,
-          "style": {
-            "shape": "ring"
-          },
-          "anchor": "storyboard"
-        },
-        {
-          "op": "highlight",
-          "target": {
-            "selector": ".loop li:nth-child(3)"
-          },
-          "holdMs": 700,
-          "style": {
-            "shape": "ring"
-          },
-          "anchor": "probe"
-        },
-        {
-          "op": "highlight",
-          "target": {
-            "selector": ".loop li:nth-child(4)"
-          },
-          "holdMs": 700,
-          "style": {
-            "shape": "ring"
-          },
-          "anchor": "render"
-        },
-        {
-          "op": "highlight",
-          "target": {
-            "selector": ".loop li:nth-child(5)"
-          },
-          "holdMs": 1200,
-          "style": {
-            "shape": "ring"
-          },
-          "anchor": "edited"
-        },
-        {
-          "op": "pause",
-          "ms": 1000
-        },
-        {
-          "op": "highlight",
-          "target": {
-            "selector": ".loop li:nth-child(6)"
-          },
-          "holdMs": 2500,
-          "style": {
-            "shape": "ring"
-          },
+          "holdMs": 5000,
           "anchor": "voice"
         },
         {
@@ -727,14 +540,327 @@
           "ms": 2500
         },
         {
-          "op": "moveTo",
+          "op": "click",
           "target": {
-            "selector": "a.next"
+            "selector": "#stage-record"
+          }
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#render-headless"
+          },
+          "holdMs": 4500,
+          "anchor": "record"
+        },
+        {
+          "op": "pause",
+          "ms": 1900
+        },
+        {
+          "op": "click",
+          "target": {
+            "selector": "#stage-captions"
+          }
+        },
+        {
+          "op": "spotlight",
+          "target": {
+            "selector": "#stage-captions"
+          },
+          "holdMs": 2200,
+          "anchor": "captions"
+        },
+        {
+          "op": "pause",
+          "ms": 300
+        },
+        {
+          "op": "click",
+          "target": {
+            "selector": "#stage-compose"
+          }
+        },
+        {
+          "op": "spotlight",
+          "target": {
+            "selector": "#stage-compose"
+          },
+          "holdMs": 4800,
+          "anchor": "compose"
+        },
+        {
+          "op": "pause",
+          "ms": 2700
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#render-strict"
+          },
+          "holdMs": 4000,
+          "anchor": "strict"
+        },
+        {
+          "op": "pause",
+          "ms": 2900
+        },
+        {
+          "op": "goto",
+          "url": "http://127.0.0.1:8787/deck/07-revoice.html"
+        }
+      ]
+    },
+    {
+      "id": "revoice",
+      "title": "Revoice",
+      "narration": "Change one line, {{@added}}these four words, and run the stages again. {{@voice}}Voice re-voices that scene and reuses the other two. {{@record}}Nothing is recorded again. {{@captions}}Captions are re-timed, {{@compose}}and compose stretches the scene to the new narration, {{@note}}about one and a half times.",
+      "actions": [
+        {
+          "op": "waitFor",
+          "target": {
+            "selector": "#re-compose"
           }
         },
         {
           "op": "pause",
-          "ms": 3500
+          "ms": 900
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#revoice-added"
+          },
+          "holdMs": 2700,
+          "anchor": "added"
+        },
+        {
+          "op": "pause",
+          "ms": 1900
+        },
+        {
+          "op": "click",
+          "target": {
+            "selector": "#re-voice"
+          }
+        },
+        {
+          "op": "spotlight",
+          "target": {
+            "selector": "#re-voice"
+          },
+          "holdMs": 3300,
+          "anchor": "voice"
+        },
+        {
+          "op": "pause",
+          "ms": 1900
+        },
+        {
+          "op": "spotlight",
+          "target": {
+            "selector": "#re-record"
+          },
+          "holdMs": 1600,
+          "anchor": "record"
+        },
+        {
+          "op": "pause",
+          "ms": 500
+        },
+        {
+          "op": "click",
+          "target": {
+            "selector": "#re-captions"
+          }
+        },
+        {
+          "op": "spotlight",
+          "target": {
+            "selector": "#re-captions"
+          },
+          "holdMs": 1400,
+          "anchor": "captions"
+        },
+        {
+          "op": "pause",
+          "ms": 300
+        },
+        {
+          "op": "click",
+          "target": {
+            "selector": "#re-compose"
+          }
+        },
+        {
+          "op": "spotlight",
+          "target": {
+            "selector": "#re-compose"
+          },
+          "holdMs": 3400,
+          "anchor": "compose"
+        },
+        {
+          "op": "pause",
+          "ms": 1100
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#revoice-note"
+          },
+          "holdMs": 2000,
+          "anchor": "note"
+        },
+        {
+          "op": "pause",
+          "ms": 1300
+        },
+        {
+          "op": "goto",
+          "url": "http://127.0.0.1:8787/deck/08-result.html"
+        }
+      ]
+    },
+    {
+      "id": "result",
+      "title": "Result",
+      "narration": "The result, with its caption track on. Everything in it came from the storyboard: the voice from a model on this machine, after a one-time download; the captions timed from the script; the cuts from ffmpeg. Nothing left this machine, and nobody sat at a screen recorder. When the product changes, rendering again is one command, or one job for the agent, and the committed storyboard is the whole source. The captions are a track, so a viewer can turn them off.",
+      "actions": [
+        {
+          "op": "waitFor",
+          "target": {
+            "selector": "#result-video"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 26000
+        },
+        {
+          "op": "goto",
+          "url": "http://127.0.0.1:8787/deck/09-close.html"
+        },
+        {
+          "op": "goto",
+          "url": "http://127.0.0.1:8787/deck/09-close.html"
+        }
+      ]
+    },
+    {
+      "id": "close",
+      "title": "Close",
+      "narration": "In Claude Code, {{@plugin}}add the plugin; {{@repoinit}}for Codex or Gemini, register the server; {{@rovo}}for Rovo Dev, add it to its MCP config. {{@npx}}From a shell, npx, {{@brew}}or Homebrew. {{@doctor}}aidemo doctor checks Node, Chrome, and ffmpeg. {{@first}}Type the first prompt, {{@commit}}and commit the storyboard: CI keeps the video current.",
+      "actions": [
+        {
+          "op": "waitFor",
+          "target": {
+            "selector": "#close-commit"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 900
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#close-plugin"
+          },
+          "holdMs": 1000,
+          "anchor": "plugin"
+        },
+        {
+          "op": "pause",
+          "ms": 300
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#close-repo-init"
+          },
+          "holdMs": 2900,
+          "anchor": "repoinit"
+        },
+        {
+          "op": "pause",
+          "ms": 900
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#close-rovo"
+          },
+          "holdMs": 2800,
+          "anchor": "rovo"
+        },
+        {
+          "op": "pause",
+          "ms": 900
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#close-npx"
+          },
+          "holdMs": 1200,
+          "anchor": "npx"
+        },
+        {
+          "op": "pause",
+          "ms": 500
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#close-brew"
+          },
+          "holdMs": 800,
+          "anchor": "brew"
+        },
+        {
+          "op": "pause",
+          "ms": 300
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#close-doctor"
+          },
+          "holdMs": 3300,
+          "anchor": "doctor"
+        },
+        {
+          "op": "pause",
+          "ms": 1100
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#close-prompt"
+          },
+          "holdMs": 1500,
+          "anchor": "first"
+        },
+        {
+          "op": "pause",
+          "ms": 500
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#close-commit"
+          },
+          "holdMs": 4200,
+          "anchor": "commit"
+        },
+        {
+          "op": "pause",
+          "ms": 2500
+        },
+        {
+          "op": "pause",
+          "ms": 2500
         }
       ]
     }

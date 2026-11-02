@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Overview</title>
+    <link rel="stylesheet" href="deck.css" />
+    <script src="deck.js" defer></script>
+  </head>
+  <body>
+    <main>
+      <h1>One sentence in, a narrated MP4 out</h1>
+      <div class="flow">
+        <div class="node" id="ov-agent">
+          <strong>Coding agent</strong>
+          <span>Claude Code, Codex, Gemini, Rovo Dev</span>
+        </div>
+        <span class="arrow" aria-hidden="true">→</span>
+        <div class="node" id="ov-server">
+          <strong>aidemo MCP server</strong>
+          <span>tools and jobs</span>
+        </div>
+        <span class="arrow" aria-hidden="true">→</span>
+        <div class="node" id="ov-storyboard">
+          <strong><code>storyboard.json</code></strong>
+          <span>narration and actions</span>
+        </div>
+        <span class="arrow" aria-hidden="true">→</span>
+        <div class="node" id="ov-engine">
+          <strong>Engine</strong>
+          <span>Chrome replay, Kokoro voice, ffmpeg</span>
+        </div>
+        <span class="arrow" aria-hidden="true">→</span>
+        <div class="node" id="ov-video">
+          <strong>MP4</strong>
+          <span>with .srt and .vtt captions</span>
+        </div>
+      </div>
+      <ul class="chips">
+        <li id="chip-local">Local, $0, no API key</li>
+        <li id="chip-replay">Deterministic replay</li>
+        <li id="chip-json">Plain JSON, any editor</li>
+        <li id="chip-ci">Re-renders in CI</li>
+      </ul>
+    </main>
+    <nav><a class="next" href="03-prompt.html">Next</a></nav>
+  </body>
+</html>

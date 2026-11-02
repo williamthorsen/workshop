@@ -3,6 +3,7 @@
   --added: #9be3a8;
   --added-surface: #16301e;
   --border: #39414c;
+  --border-strong: #626d7b;
   --code-surface: #1c2129;
   --removed: #ffb1a8;
   --removed-surface: #3a1d1b;
@@ -24,64 +25,328 @@ body {
   background: var(--surface);
   color: var(--text);
   font:
-    22px/1.5 system-ui,
+    22px/1.4 system-ui,
     sans-serif;
 }
 
 main {
-  max-width: 1120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 24px;
+  width: 1280px;
+  height: 720px;
   margin: 0 auto;
-  padding: 48px 64px 120px;
+  padding: 48px 40px;
+  overflow: hidden;
 }
 
 h1 {
-  margin: 0 0 28px;
-  font-size: 44px;
+  margin: 0;
+  font-size: 40px;
   line-height: 1.2;
 }
 
 p {
-  max-width: 60ch;
+  margin: 0;
 }
 
 code {
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-  font-size: 0.85em;
+  white-space: nowrap;
 }
 
 pre {
-  margin: 0 0 20px;
+  margin: 0;
   padding: 20px 24px;
-  overflow-x: auto;
   background: var(--code-surface);
   border: 1px solid var(--border);
   border-radius: 12px;
-  font-size: 18px;
-  line-height: 1.45;
+  font-size: 22px;
+  line-height: 1.3;
 }
 
 pre code {
   font-size: inherit;
-  overflow-wrap: anywhere;
-  white-space: pre-wrap;
+  white-space: pre;
+}
+
+mark {
+  background: var(--added-surface);
+  color: var(--added);
+  outline: 2px solid var(--added);
+  outline-offset: 1px;
 }
 
 a {
   color: var(--accent);
 }
 
-.label,
-.source {
-  margin: 0 0 8px;
+.note,
+.label {
   color: var(--text-muted);
 }
 
-.source {
-  margin-top: 8px;
+.comment {
+  color: var(--text-muted);
 }
 
-.prompt {
+/* Interactive states: the nav link, and every beat element that the storyboard clicks. */
+.next,
+[data-beat] {
+  cursor: pointer;
+}
+
+/* A beat takes no hover style: The take hides its cursor, so a hover border reads as a stray highlight. */
+.next:hover {
+  border-color: var(--text);
+}
+
+.next:focus-visible,
+[data-beat]:focus-visible {
+  outline: 3px solid var(--text);
+  outline-offset: 3px;
+}
+
+/* -- Video pages -- */
+
+.video-page {
+  gap: 0;
+  padding: 0;
+}
+
+.video-page video {
+  display: block;
+  flex: 1;
+  min-height: 0;
+  width: 1280px;
+  background: var(--surface);
+  object-fit: contain;
+}
+
+.video-page video::cue {
+  background: rgba(17, 20, 26, 0.85);
+  color: var(--text);
+  font:
+    28px/1.3 system-ui,
+    sans-serif;
+}
+
+.video-page h1 {
+  padding: 20px 48px;
+  font-size: 36px;
+}
+
+/* -- Overview -- */
+
+.flow {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.flow .node {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  min-height: 170px;
+  padding: 16px 10px;
+  border: 2px solid var(--border-strong);
+  border-radius: 12px;
+  background: var(--code-surface);
+  text-align: center;
+}
+
+.flow .node strong {
   font-size: 22px;
+}
+
+/* The node's own width is the limit: fifteen monospace characters do not fit it at 22 px. */
+.flow .node code {
+  font-size: 0.9em;
+}
+
+.flow .node span {
+  color: var(--text-muted);
+  font-size: 18px;
+  line-height: 1.3;
+}
+
+.flow .arrow {
+  align-self: center;
+  color: var(--text-muted);
+  font-size: 32px;
+}
+
+.chips {
+  display: flex;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chips li {
+  padding: 10px 20px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--code-surface);
+}
+
+/* -- Prompt -- */
+
+.prompt-box {
+  display: flex;
+  gap: 12px;
+  padding: 16px 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--code-surface);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+.prompt-box span {
+  color: var(--accent);
+}
+
+.prompt-box textarea {
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  line-height: 1.4;
+  resize: none;
+}
+
+.prompt-box textarea:focus {
+  outline: 0;
+}
+
+.transcript {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.transcript li {
+  display: grid;
+  grid-template-columns: 330px 1fr;
+  gap: 0 24px;
+  padding: 4px 8px;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  opacity: 0;
+  transition: opacity 150ms;
+}
+
+.transcript li.shown {
+  opacity: 1;
+}
+
+.transcript .tool {
+  color: var(--accent);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+.transcript .tool em {
+  color: var(--text-muted);
+  font-style: normal;
+}
+
+/* -- Storyboard -- */
+
+.storyboard-page {
+  position: relative;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 24px 40px;
+}
+
+.storyboard-page pre {
+  line-height: 1.2;
+}
+
+.still {
+  position: absolute;
+  top: 330px;
+  right: 40px;
+  width: 440px;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--code-surface);
+}
+
+.still figcaption {
+  padding: 6px 16px;
+  color: var(--text-muted);
+  font-size: 18px;
+  text-align: center;
+}
+
+.still img {
+  display: block;
+  width: 440px;
+  height: 248px;
+}
+
+/* -- Pipeline -- */
+
+.pipeline {
+  display: flex;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pipeline li {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+  min-height: 130px;
+  padding: 16px;
+  border: 2px solid var(--border-strong);
+  border-radius: 12px;
+  background: var(--code-surface);
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.pipeline li strong {
+  font-size: 24px;
+}
+
+.pipeline li span {
+  font-size: 18px;
+  line-height: 1.3;
+}
+
+.pipeline li.lit,
+.pipeline li.product {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.pipeline li.skipped {
+  border-style: dashed;
+}
+
+/* -- Diff -- */
+
+.diff {
+  display: grid;
+  gap: 8px;
 }
 
 .line.removed {
@@ -94,90 +359,21 @@ a {
   color: var(--added);
 }
 
-.annotated {
+/* -- Close -- */
+
+.install {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 260px;
-  gap: 32px;
-  align-items: start;
-}
-
-.annotated pre {
-  font-size: 16px;
-}
-
-.callouts {
-  display: grid;
-  gap: 20px;
+  grid-template-columns: 220px 1fr;
+  gap: 14px 24px;
   margin: 0;
-  padding: 0;
-  list-style: none;
 }
 
-.callouts li {
-  padding: 16px 20px;
-  border-left: 4px solid var(--accent);
-  background: var(--code-surface);
-}
-
-.callouts code {
-  display: block;
-  color: var(--accent);
-  font-size: 18px;
-}
-
-.callouts span {
-  color: var(--text);
-  font-size: 20px;
-}
-
-.title,
-.close {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-height: 560px;
-}
-
-.title h1 {
-  font-size: 60px;
-}
-
-.lede {
-  margin: 0;
+.install dt {
   color: var(--text-muted);
-  font-size: 28px;
 }
 
-.loop {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 16px;
+.install dd {
   margin: 0;
-  padding: 0;
-  list-style: none;
-  counter-reset: step;
-}
-
-.loop li {
-  padding: 12px 20px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--code-surface);
-  counter-increment: step;
-}
-
-.loop li::before {
-  margin-right: 10px;
-  color: var(--accent);
-  content: counter(step);
-}
-
-video {
-  display: block;
-  width: 100%;
-  max-width: 960px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
 }
 
 nav {
@@ -193,7 +389,6 @@ nav {
   border-radius: 8px;
   background: var(--surface);
   color: var(--accent);
-  cursor: pointer;
   font-weight: 600;
   text-decoration: none;
 }
@@ -201,9 +396,4 @@ nav {
 .next:hover {
   background: var(--accent);
   color: var(--surface);
-}
-
-.next:focus-visible {
-  outline: 3px solid var(--text);
-  outline-offset: 3px;
 }
