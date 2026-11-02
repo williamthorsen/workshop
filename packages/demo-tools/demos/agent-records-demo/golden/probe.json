@@ -30,7 +30,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 1500
+          "ms": 2000
         },
         {
           "op": "moveTo",
@@ -41,18 +41,13 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 1500
+          "ms": 2500
         },
         {
-          "op": "moveTo",
+          "op": "click",
           "target": "a.next",
           "ok": true,
           "found": true
-        },
-        {
-          "op": "pause",
-          "ok": true,
-          "ms": 1500
         }
       ]
     },
@@ -60,30 +55,13 @@
       "id": "prompt",
       "actions": [
         {
-          "op": "goto",
-          "target": "http://127.0.0.1:8787/deck/02-prompt.html",
-          "ok": true,
-          "finalUrl": "http://127.0.0.1:8787/deck/02-prompt.html"
-        },
-        {
           "op": "waitFor",
           "target": "h1",
           "ok": true,
           "found": true
         },
         {
-          "op": "moveTo",
-          "target": ".label",
-          "ok": true,
-          "found": true
-        },
-        {
-          "op": "pause",
-          "ok": true,
-          "ms": 1000
-        },
-        {
-          "op": "moveTo",
+          "op": "spotlight",
           "target": "pre.prompt",
           "ok": true,
           "found": true
@@ -91,11 +69,11 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 2500
+          "ms": 9000
         },
         {
-          "op": "moveTo",
-          "target": "main > p:last-of-type code",
+          "op": "highlight",
+          "target": "#prompt-storyboard",
           "ok": true,
           "found": true
         },
@@ -103,18 +81,18 @@
           "op": "pause",
           "ok": true,
           "ms": 2000
+        },
+        {
+          "op": "click",
+          "target": "a.next",
+          "ok": true,
+          "found": true
         }
       ]
     },
     {
       "id": "storyboard",
       "actions": [
-        {
-          "op": "goto",
-          "target": "http://127.0.0.1:8787/deck/03-storyboard.html",
-          "ok": true,
-          "finalUrl": "http://127.0.0.1:8787/deck/03-storyboard.html"
-        },
         {
           "op": "waitFor",
           "target": "h1",
@@ -130,40 +108,46 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 1500
+          "ms": 3500
         },
         {
-          "op": "moveTo",
-          "target": "#callout-narration",
+          "op": "highlight",
+          "target": "#storyboard-narration",
           "ok": true,
           "found": true
         },
         {
           "op": "pause",
           "ok": true,
-          "ms": 2200
+          "ms": 1400
         },
         {
-          "op": "moveTo",
-          "target": "#callout-actions",
+          "op": "highlight",
+          "target": "#storyboard-actions",
           "ok": true,
           "found": true
         },
         {
           "op": "pause",
           "ok": true,
-          "ms": 2500
+          "ms": 4000
         },
         {
-          "op": "moveTo",
-          "target": "#callout-captions",
+          "op": "highlight",
+          "target": "#storyboard-captions",
           "ok": true,
           "found": true
         },
         {
           "op": "pause",
           "ok": true,
-          "ms": 2500
+          "ms": 4000
+        },
+        {
+          "op": "click",
+          "target": "a.next",
+          "ok": true,
+          "found": true
         }
       ]
     },
@@ -171,12 +155,6 @@
       "id": "probe",
       "actions": [
         {
-          "op": "goto",
-          "target": "http://127.0.0.1:8787/deck/04-probe.html",
-          "ok": true,
-          "finalUrl": "http://127.0.0.1:8787/deck/04-probe.html"
-        },
-        {
           "op": "waitFor",
           "target": "h1",
           "ok": true,
@@ -191,28 +169,35 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 2000
+          "ms": 7500
         },
         {
-          "op": "scrollBy",
-          "ok": true,
-          "dy": 200
-        },
-        {
-          "op": "pause",
-          "ok": true,
-          "ms": 800
-        },
-        {
-          "op": "moveTo",
-          "target": "pre code",
+          "op": "highlight",
+          "target": "#probe-golden",
           "ok": true,
           "found": true
         },
         {
           "op": "pause",
           "ok": true,
-          "ms": 2000
+          "ms": 400
+        },
+        {
+          "op": "highlight",
+          "target": "#probe-unchanged",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 400
+        },
+        {
+          "op": "click",
+          "target": "a.next",
+          "ok": true,
+          "found": true
         }
       ]
     },
@@ -220,12 +205,6 @@
       "id": "render",
       "actions": [
         {
-          "op": "goto",
-          "target": "http://127.0.0.1:8787/deck/05-render.html",
-          "ok": true,
-          "finalUrl": "http://127.0.0.1:8787/deck/05-render.html"
-        },
-        {
           "op": "waitFor",
           "target": "h1",
           "ok": true,
@@ -240,40 +219,52 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 2000
+          "ms": 2500
         },
         {
-          "op": "scrollBy",
-          "ok": true,
-          "dy": 200
-        },
-        {
-          "op": "pause",
-          "ok": true,
-          "ms": 800
-        },
-        {
-          "op": "moveTo",
-          "target": "pre code",
+          "op": "highlight",
+          "target": "#render-voice",
           "ok": true,
           "found": true
         },
         {
           "op": "pause",
           "ok": true,
-          "ms": 2500
+          "ms": 2600
+        },
+        {
+          "op": "highlight",
+          "target": "#render-captions",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 3400
+        },
+        {
+          "op": "highlight",
+          "target": "#render-strict",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 1200
+        },
+        {
+          "op": "click",
+          "target": "a.next",
+          "ok": true,
+          "found": true
         }
       ]
     },
     {
       "id": "edit",
       "actions": [
-        {
-          "op": "goto",
-          "target": "http://127.0.0.1:8787/deck/06-edit.html",
-          "ok": true,
-          "finalUrl": "http://127.0.0.1:8787/deck/06-edit.html"
-        },
         {
           "op": "waitFor",
           "target": "h1",
@@ -289,10 +280,21 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 2500
+          "ms": 3000
         },
         {
-          "op": "moveTo",
+          "op": "spotlight",
+          "target": "pre.removed",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 800
+        },
+        {
+          "op": "spotlight",
           "target": "pre.added",
           "ok": true,
           "found": true
@@ -300,19 +302,19 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 2500
+          "ms": 3600
+        },
+        {
+          "op": "click",
+          "target": "a.next",
+          "ok": true,
+          "found": true
         }
       ]
     },
     {
       "id": "revoice",
       "actions": [
-        {
-          "op": "goto",
-          "target": "http://127.0.0.1:8787/deck/07-revoice.html",
-          "ok": true,
-          "finalUrl": "http://127.0.0.1:8787/deck/07-revoice.html"
-        },
         {
           "op": "waitFor",
           "target": "h1",
@@ -328,61 +330,52 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 2000
+          "ms": 1800
         },
         {
-          "op": "scrollBy",
-          "ok": true,
-          "dy": 220
-        },
-        {
-          "op": "pause",
-          "ok": true,
-          "ms": 800
-        },
-        {
-          "op": "moveTo",
-          "target": "main > pre:nth-of-type(2)",
+          "op": "highlight",
+          "target": "#revoice-reused",
           "ok": true,
           "found": true
         },
         {
           "op": "pause",
           "ok": true,
-          "ms": 2000
+          "ms": 2600
         },
         {
-          "op": "scrollBy",
-          "ok": true,
-          "dy": 220
-        },
-        {
-          "op": "pause",
-          "ok": true,
-          "ms": 800
-        },
-        {
-          "op": "moveTo",
-          "target": "main > pre:nth-of-type(3)",
+          "op": "highlight",
+          "target": "#revoice-offline",
           "ok": true,
           "found": true
         },
         {
           "op": "pause",
           "ok": true,
-          "ms": 2000
+          "ms": 2200
+        },
+        {
+          "op": "highlight",
+          "target": "#revoice-span",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 1200
+        },
+        {
+          "op": "click",
+          "target": "a.next",
+          "ok": true,
+          "found": true
         }
       ]
     },
     {
       "id": "environment",
       "actions": [
-        {
-          "op": "goto",
-          "target": "http://127.0.0.1:8787/deck/08-environment.html",
-          "ok": true,
-          "finalUrl": "http://127.0.0.1:8787/deck/08-environment.html"
-        },
         {
           "op": "waitFor",
           "target": "h1",
@@ -398,11 +391,72 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 2500
+          "ms": 3800
+        },
+        {
+          "op": "highlight",
+          "target": "#env-unset",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 1400
+        },
+        {
+          "op": "highlight",
+          "target": "#env-export",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 1000
+        },
+        {
+          "op": "highlight",
+          "target": "#env-grep",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 2800
+        },
+        {
+          "op": "click",
+          "target": "a.next",
+          "ok": true,
+          "found": true
+        }
+      ]
+    },
+    {
+      "id": "login",
+      "actions": [
+        {
+          "op": "waitFor",
+          "target": "h1",
+          "ok": true,
+          "found": true
         },
         {
           "op": "moveTo",
-          "target": "pre",
+          "target": "main > p:first-of-type",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 2600
+        },
+        {
+          "op": "highlight",
+          "target": "#login-command",
           "ok": true,
           "found": true
         },
@@ -412,35 +466,7 @@
           "ms": 3000
         },
         {
-          "op": "moveTo",
-          "target": ".source a",
-          "ok": true,
-          "found": true
-        },
-        {
-          "op": "pause",
-          "ok": true,
-          "ms": 1500
-        }
-      ]
-    },
-    {
-      "id": "login",
-      "actions": [
-        {
-          "op": "goto",
-          "target": "http://127.0.0.1:8787/deck/09-login.html",
-          "ok": true,
-          "finalUrl": "http://127.0.0.1:8787/deck/09-login.html"
-        },
-        {
-          "op": "waitFor",
-          "target": "h1",
-          "ok": true,
-          "found": true
-        },
-        {
-          "op": "moveTo",
+          "op": "callout",
           "target": "main > p:first-of-type",
           "ok": true,
           "found": true
@@ -448,29 +474,13 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 2500
+          "ms": 3200
         },
         {
-          "op": "moveTo",
-          "target": "pre",
+          "op": "click",
+          "target": "a.next",
           "ok": true,
           "found": true
-        },
-        {
-          "op": "pause",
-          "ok": true,
-          "ms": 2500
-        },
-        {
-          "op": "moveTo",
-          "target": ".source a",
-          "ok": true,
-          "found": true
-        },
-        {
-          "op": "pause",
-          "ok": true,
-          "ms": 1500
         }
       ]
     },
@@ -478,19 +488,18 @@
       "id": "result",
       "actions": [
         {
-          "op": "goto",
-          "target": "http://127.0.0.1:8787/deck/10-result.html",
-          "ok": true,
-          "finalUrl": "http://127.0.0.1:8787/deck/10-result.html"
-        },
-        {
           "op": "waitFor",
           "target": "h1",
           "ok": true,
           "found": true
         },
         {
-          "op": "moveTo",
+          "op": "pause",
+          "ok": true,
+          "ms": 1000
+        },
+        {
+          "op": "spotlight",
           "target": "#result",
           "ok": true,
           "found": true
@@ -498,17 +507,24 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 4000
+          "ms": 3000
         },
         {
-          "op": "moveTo",
-          "target": "1180,120",
-          "ok": true
+          "op": "callout",
+          "target": "#result",
+          "ok": true,
+          "found": true
         },
         {
           "op": "pause",
           "ok": true,
-          "ms": 4000
+          "ms": 6400
+        },
+        {
+          "op": "click",
+          "target": "a.next",
+          "ok": true,
+          "found": true
         }
       ]
     },
@@ -516,63 +532,42 @@
       "id": "close",
       "actions": [
         {
-          "op": "goto",
-          "target": "http://127.0.0.1:8787/deck/11-close.html",
-          "ok": true,
-          "finalUrl": "http://127.0.0.1:8787/deck/11-close.html"
-        },
-        {
           "op": "waitFor",
           "target": "h1",
           "ok": true,
           "found": true
         },
         {
-          "op": "moveTo",
+          "op": "pause",
+          "ok": true,
+          "ms": 1800
+        },
+        {
+          "op": "highlight",
           "target": ".loop li:nth-child(1)",
           "ok": true,
           "found": true
         },
         {
-          "op": "pause",
-          "ok": true,
-          "ms": 900
-        },
-        {
-          "op": "moveTo",
+          "op": "highlight",
           "target": ".loop li:nth-child(2)",
           "ok": true,
           "found": true
         },
         {
-          "op": "pause",
-          "ok": true,
-          "ms": 900
-        },
-        {
-          "op": "moveTo",
+          "op": "highlight",
           "target": ".loop li:nth-child(3)",
           "ok": true,
           "found": true
         },
         {
-          "op": "pause",
-          "ok": true,
-          "ms": 900
-        },
-        {
-          "op": "moveTo",
+          "op": "highlight",
           "target": ".loop li:nth-child(4)",
           "ok": true,
           "found": true
         },
         {
-          "op": "pause",
-          "ok": true,
-          "ms": 900
-        },
-        {
-          "op": "moveTo",
+          "op": "highlight",
           "target": ".loop li:nth-child(5)",
           "ok": true,
           "found": true
@@ -580,10 +575,10 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 900
+          "ms": 1000
         },
         {
-          "op": "moveTo",
+          "op": "highlight",
           "target": ".loop li:nth-child(6)",
           "ok": true,
           "found": true
@@ -591,7 +586,18 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 1500
+          "ms": 2500
+        },
+        {
+          "op": "moveTo",
+          "target": "a.next",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 3500
         }
       ]
     }
