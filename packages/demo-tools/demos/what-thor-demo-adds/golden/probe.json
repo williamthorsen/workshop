@@ -24,7 +24,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 300
+          "ms": 500
         },
         {
           "op": "highlight",
@@ -35,18 +35,13 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 600
+          "ms": 400
         },
         {
           "op": "spotlight",
           "target": "#core",
           "ok": true,
           "found": true
-        },
-        {
-          "op": "pause",
-          "ok": true,
-          "ms": 300
         },
         {
           "op": "click",
@@ -63,19 +58,19 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 900
-        },
-        {
-          "op": "goto",
-          "target": "http://127.0.0.1:8787/adds/02-config.html",
-          "ok": true,
-          "finalUrl": "http://127.0.0.1:8787/adds/02-config.html"
+          "ms": 1600
         }
       ]
     },
     {
       "id": "config",
       "actions": [
+        {
+          "op": "goto",
+          "target": "http://127.0.0.1:8787/adds/02-config.html",
+          "ok": true,
+          "finalUrl": "http://127.0.0.1:8787/adds/02-config.html"
+        },
         {
           "op": "waitFor",
           "target": "#launches",
@@ -85,7 +80,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 1200
+          "ms": 700
         },
         {
           "op": "spotlight",
@@ -96,7 +91,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 400
+          "ms": 2200
         },
         {
           "op": "highlight",
@@ -107,7 +102,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 600
+          "ms": 1800
         },
         {
           "op": "click",
@@ -141,19 +136,19 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 900
-        },
-        {
-          "op": "goto",
-          "target": "http://127.0.0.1:8787/adds/03-archive.html",
-          "ok": true,
-          "finalUrl": "http://127.0.0.1:8787/adds/03-archive.html"
+          "ms": 3200
         }
       ]
     },
     {
       "id": "archive",
       "actions": [
+        {
+          "op": "goto",
+          "target": "http://127.0.0.1:8787/adds/03-archive.html",
+          "ok": true,
+          "finalUrl": "http://127.0.0.1:8787/adds/03-archive.html"
+        },
         {
           "op": "waitFor",
           "target": "#folder",
@@ -163,7 +158,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 1200
+          "ms": 200
         },
         {
           "op": "click",
@@ -238,19 +233,19 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 900
-        },
-        {
-          "op": "goto",
-          "target": "http://127.0.0.1:8787/adds/04-voice.html",
-          "ok": true,
-          "finalUrl": "http://127.0.0.1:8787/adds/04-voice.html"
+          "ms": 2000
         }
       ]
     },
     {
       "id": "voice",
       "actions": [
+        {
+          "op": "goto",
+          "target": "http://127.0.0.1:8787/adds/04-voice.html",
+          "ok": true,
+          "finalUrl": "http://127.0.0.1:8787/adds/04-voice.html"
+        },
         {
           "op": "waitFor",
           "target": "#voice-core",
@@ -260,7 +255,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 1000
+          "ms": 700
         },
         {
           "op": "highlight",
@@ -271,7 +266,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 300
+          "ms": 200
         },
         {
           "op": "click",
@@ -309,14 +304,14 @@
           "found": true
         },
         {
-          "op": "spotlight",
-          "target": "#mlx",
+          "op": "click",
+          "target": "#off-machine",
           "ok": true,
           "found": true
         },
         {
-          "op": "click",
-          "target": "#off-machine",
+          "op": "spotlight",
+          "target": "#mlx",
           "ok": true,
           "found": true
         },
@@ -346,19 +341,19 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 900
-        },
-        {
-          "op": "goto",
-          "target": "http://127.0.0.1:8787/adds/05-close.html",
-          "ok": true,
-          "finalUrl": "http://127.0.0.1:8787/adds/05-close.html"
+          "ms": 2000
         }
       ]
     },
     {
       "id": "close",
       "actions": [
+        {
+          "op": "goto",
+          "target": "http://127.0.0.1:8787/adds/05-close.html",
+          "ok": true,
+          "finalUrl": "http://127.0.0.1:8787/adds/05-close.html"
+        },
         {
           "op": "waitFor",
           "target": "#close-install",
@@ -391,7 +386,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 1200
+          "ms": 1400
         }
       ]
     }

@@ -33,7 +33,7 @@
     {
       "id": "open",
       "title": "What thor-demo adds",
-      "narration": "{{@voice}}You’re hearing my voice, cloned on this laptop. {{@aidemo}}aidemo renders a demo from a storyboard; {{@adds}}thor-demo adds three things.",
+      "narration": "You’re hearing {{@voice}}my voice, cloned on this laptop. {{@aidemo}}aidemo renders demos; {{@adds}}thor-demo adds three things.",
       "actions": [
         {
           "op": "goto",
@@ -47,31 +47,27 @@
         },
         {
           "op": "pause",
-          "ms": 300
+          "ms": 500
         },
         {
           "op": "highlight",
           "target": {
             "selector": "#badge"
           },
-          "holdMs": 2600,
+          "holdMs": 2200,
           "anchor": "voice"
         },
         {
           "op": "pause",
-          "ms": 600
+          "ms": 400
         },
         {
           "op": "spotlight",
           "target": {
             "selector": "#core"
           },
-          "holdMs": 2200,
+          "holdMs": 1450,
           "anchor": "aidemo"
-        },
-        {
-          "op": "pause",
-          "ms": 300
         },
         {
           "op": "click",
@@ -84,24 +80,24 @@
           "target": {
             "selector": "#ring"
           },
-          "holdMs": 2600,
+          "holdMs": 2100,
           "anchor": "adds"
         },
         {
           "op": "pause",
-          "ms": 900
-        },
-        {
-          "op": "goto",
-          "url": "http://127.0.0.1:8787/adds/02-config.html"
+          "ms": 1600
         }
       ]
     },
     {
       "id": "config",
       "title": "Per-repository configuration",
-      "narration": "First, configuration. {{@paths}}A shell and an agent’s MCP server give aidemo different environments, and {{@key}}an inherited OpenAI key sends the captions off this machine. {{@file}}One file per repository sets both; {{@strip}}thor-demo drops the key unless that file allows it.",
+      "narration": "A shell and an agent’s {{@paths}}MCP server see different environments; {{@key}}an inherited OpenAI key sends captions off this machine. {{@file}}One file per repository fixes both: {{@strip}}thor-demo drops the key unless the file allows it.",
       "actions": [
+        {
+          "op": "goto",
+          "url": "http://127.0.0.1:8787/adds/02-config.html"
+        },
         {
           "op": "waitFor",
           "target": {
@@ -110,31 +106,31 @@
         },
         {
           "op": "pause",
-          "ms": 1200
+          "ms": 700
         },
         {
           "op": "spotlight",
           "target": {
             "selector": "#launches"
           },
-          "holdMs": 2600,
+          "holdMs": 2800,
           "anchor": "paths"
         },
         {
           "op": "pause",
-          "ms": 400
+          "ms": 2200
         },
         {
           "op": "highlight",
           "target": {
             "selector": "#mcp-key"
           },
-          "holdMs": 2800,
+          "holdMs": 3000,
           "anchor": "key"
         },
         {
           "op": "pause",
-          "ms": 600
+          "ms": 1800
         },
         {
           "op": "click",
@@ -147,7 +143,7 @@
           "target": {
             "selector": "#gate"
           },
-          "holdMs": 2800,
+          "holdMs": 2550,
           "anchor": "file"
         },
         {
@@ -170,19 +166,19 @@
         },
         {
           "op": "pause",
-          "ms": 900
-        },
-        {
-          "op": "goto",
-          "url": "http://127.0.0.1:8787/adds/03-archive.html"
+          "ms": 3200
         }
       ]
     },
     {
       "id": "archive",
       "title": "Archived takes",
-      "narration": "Second, the archive. {{@overwrite}}Each render overwrites the last. {{@files}}thor-demo files every take by time and commit, {{@provenance}}with a provenance record: {{@engine}}engine, {{@voice}}voice, {{@options}}options, {{@hashes}}and a hash of every file.",
+      "narration": "Each render {{@overwrite}}overwrites the last. thor-demo {{@files}}files every take by time and commit, {{@provenance}}with a provenance record: {{@engine}}engine, {{@voice}}voice, {{@options}}options, {{@hashes}}and a hash of every file.",
       "actions": [
+        {
+          "op": "goto",
+          "url": "http://127.0.0.1:8787/adds/03-archive.html"
+        },
         {
           "op": "waitFor",
           "target": {
@@ -191,7 +187,7 @@
         },
         {
           "op": "pause",
-          "ms": 1200
+          "ms": 200
         },
         {
           "op": "click",
@@ -204,7 +200,7 @@
           "target": {
             "selector": "#folder"
           },
-          "holdMs": 2000,
+          "holdMs": 2050,
           "anchor": "overwrite"
         },
         {
@@ -222,7 +218,7 @@
           "target": {
             "selector": "#shelf"
           },
-          "holdMs": 2400,
+          "holdMs": 2450,
           "anchor": "files"
         },
         {
@@ -240,7 +236,7 @@
           "target": {
             "selector": "#prov"
           },
-          "holdMs": 1400,
+          "holdMs": 1700,
           "anchor": "provenance"
         },
         {
@@ -248,7 +244,7 @@
           "target": {
             "selector": "#prov-engine"
           },
-          "holdMs": 900,
+          "holdMs": 450,
           "anchor": "engine"
         },
         {
@@ -256,7 +252,7 @@
           "target": {
             "selector": "#prov-voice"
           },
-          "holdMs": 900,
+          "holdMs": 400,
           "anchor": "voice"
         },
         {
@@ -264,7 +260,7 @@
           "target": {
             "selector": "#prov-options"
           },
-          "holdMs": 900,
+          "holdMs": 500,
           "anchor": "options"
         },
         {
@@ -272,24 +268,24 @@
           "target": {
             "selector": "#prov-files"
           },
-          "holdMs": 1600,
+          "holdMs": 1850,
           "anchor": "hashes"
         },
         {
           "op": "pause",
-          "ms": 900
-        },
-        {
-          "op": "goto",
-          "url": "http://127.0.0.1:8787/adds/04-voice.html"
+          "ms": 2000
         }
       ]
     },
     {
       "id": "voice",
       "title": "Voice clone",
-      "narration": "Third, the voice. {{@stock}}aidemo’s local voice isn’t mine. {{@clone}}thor-demo clones mine from a short recording, {{@proxy}}and revoice swaps the narration through a proxy {{@mlx}}and mlx-audio, {{@local}}all on this machine. {{@kept}}The recording is kept.",
+      "narration": "aidemo’s local {{@stock}}voice isn’t mine. {{@clone}}thor-demo clones mine from a short recording; {{@proxy}}revoice swaps the narration through a proxy {{@mlx}}and mlx-audio, {{@local}}all on this machine, {{@kept}}and keeps the recording.",
       "actions": [
+        {
+          "op": "goto",
+          "url": "http://127.0.0.1:8787/adds/04-voice.html"
+        },
         {
           "op": "waitFor",
           "target": {
@@ -298,19 +294,19 @@
         },
         {
           "op": "pause",
-          "ms": 1000
+          "ms": 700
         },
         {
           "op": "highlight",
           "target": {
             "selector": "#voice-stock"
           },
-          "holdMs": 1800,
+          "holdMs": 1200,
           "anchor": "stock"
         },
         {
           "op": "pause",
-          "ms": 300
+          "ms": 200
         },
         {
           "op": "click",
@@ -323,7 +319,7 @@
           "target": {
             "selector": "#profile"
           },
-          "holdMs": 2200,
+          "holdMs": 3000,
           "anchor": "clone"
         },
         {
@@ -341,7 +337,7 @@
           "target": {
             "selector": "#proxy"
           },
-          "holdMs": 1800,
+          "holdMs": 3000,
           "anchor": "proxy"
         },
         {
@@ -351,25 +347,25 @@
           }
         },
         {
-          "op": "spotlight",
-          "target": {
-            "selector": "#mlx"
-          },
-          "holdMs": 1200,
-          "anchor": "mlx"
-        },
-        {
           "op": "click",
           "target": {
             "selector": "#off-machine"
           }
         },
         {
+          "op": "spotlight",
+          "target": {
+            "selector": "#mlx"
+          },
+          "holdMs": 950,
+          "anchor": "mlx"
+        },
+        {
           "op": "highlight",
           "target": {
             "selector": "#boundary"
           },
-          "holdMs": 1600,
+          "holdMs": 1400,
           "anchor": "local"
         },
         {
@@ -387,24 +383,24 @@
           "target": {
             "selector": "#stage-record"
           },
-          "holdMs": 2200,
+          "holdMs": 1850,
           "anchor": "kept"
         },
         {
           "op": "pause",
-          "ms": 900
-        },
-        {
-          "op": "goto",
-          "url": "http://127.0.0.1:8787/adds/05-close.html"
+          "ms": 2000
         }
       ]
     },
     {
       "id": "close",
       "title": "Install",
-      "narration": "{{@install}}Add demo-tools beside aidemo, {{@render}}render, {{@revoice}}and revoice.",
+      "narration": "Add {{@install}}demo-tools beside aidemo, {{@render}}render, {{@revoice}}and revoice.",
       "actions": [
+        {
+          "op": "goto",
+          "url": "http://127.0.0.1:8787/adds/05-close.html"
+        },
         {
           "op": "waitFor",
           "target": {
@@ -420,7 +416,7 @@
           "target": {
             "selector": "#close-install"
           },
-          "holdMs": 1500,
+          "holdMs": 1950,
           "anchor": "install"
         },
         {
@@ -428,7 +424,7 @@
           "target": {
             "selector": "#close-render"
           },
-          "holdMs": 900,
+          "holdMs": 550,
           "anchor": "render"
         },
         {
@@ -436,12 +432,12 @@
           "target": {
             "selector": "#close-revoice"
           },
-          "holdMs": 1600,
+          "holdMs": 1100,
           "anchor": "revoice"
         },
         {
           "op": "pause",
-          "ms": 1200
+          "ms": 1400
         }
       ]
     }
