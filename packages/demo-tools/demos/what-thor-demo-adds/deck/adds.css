@@ -1,0 +1,663 @@
+/* Figures of the what-thor-demo-adds deck, layered on the agent-records-demo deck's base styles. */
+
+main.adds {
+  position: relative;
+  justify-content: flex-start;
+  gap: 20px;
+  padding: 28px 40px 80px;
+}
+
+.adds header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 4px 24px;
+}
+
+.kicker {
+  grid-column: 1;
+  color: var(--accent);
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.adds h1 {
+  grid-column: 1;
+}
+
+/* -- Problem and solution tag -- */
+
+.state {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  align-self: center;
+  padding: 8px 18px;
+  border: 2px solid var(--removed);
+  border-radius: 999px;
+  background: var(--removed-surface);
+  color: var(--removed);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.state .after,
+main:has(.solves.shown) .state .before {
+  display: none;
+}
+
+main:has(.solves.shown) .state {
+  border-color: var(--added);
+  background: var(--added-surface);
+  color: var(--added);
+}
+
+main:has(.solves.shown) .state .after {
+  display: inline;
+}
+
+/* -- Figure -- */
+
+.figure {
+  position: relative;
+  flex: none;
+  width: 1200px;
+  height: 480px;
+}
+
+.figure > * {
+  position: absolute;
+}
+
+.wires {
+  inset: 0;
+  width: 1200px;
+  height: 480px;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.wires path,
+.wires line {
+  fill: none;
+  stroke: var(--border-strong);
+  stroke-width: 3;
+}
+
+.wires .arrowhead {
+  fill: var(--border-strong);
+  stroke: none;
+}
+
+.wires text {
+  fill: var(--removed);
+  font:
+    600 18px system-ui,
+    sans-serif;
+}
+
+.card {
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 20px;
+  border: 2px solid var(--border-strong);
+  border-radius: 14px;
+  background: var(--code-surface);
+}
+
+.card h2 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.card .sub {
+  color: var(--text-muted);
+  font-size: 18px;
+  line-height: 1.3;
+}
+
+.mono {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+.vars {
+  display: grid;
+  gap: 6px;
+  margin: 4px 0 0;
+  padding: 0;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 18px;
+  list-style: none;
+}
+
+/* A beat element starts transparent rather than hidden, so that the storyboard's click still lands on it. */
+.beat-in {
+  opacity: 0;
+  transition:
+    opacity 300ms,
+    transform 300ms;
+}
+
+.beat-in.shown {
+  opacity: 1;
+}
+
+/* -- Voice badge -- */
+
+.voice-badge {
+  position: absolute;
+  bottom: 24px;
+  left: 40px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 16px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--code-surface);
+  color: var(--text-muted);
+  font-size: 18px;
+}
+
+.voice-badge svg {
+  width: 26px;
+  height: 20px;
+  stroke: var(--accent);
+  stroke-linecap: round;
+  stroke-width: 2.5;
+}
+
+/* -- Open -- */
+
+.ring {
+  inset: 0;
+  border: 3px dashed var(--accent);
+  border-radius: 24px;
+  opacity: 0;
+  transition: opacity 300ms;
+}
+
+#ring-label {
+  top: 14px;
+  left: 28px;
+  color: var(--accent);
+  font-size: 26px;
+  font-weight: 700;
+}
+
+#core {
+  top: 40px;
+  left: 400px;
+  width: 400px;
+  height: 140px;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+#core h2 {
+  font-size: 30px;
+}
+
+.tile {
+  top: 250px;
+  width: 360px;
+  height: 190px;
+  justify-content: center;
+  border-color: var(--accent);
+  opacity: 0;
+  transition: opacity 300ms;
+}
+
+.tile .number {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--surface);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+#tile-config {
+  left: 30px;
+}
+
+#tile-archive {
+  left: 420px;
+}
+
+#tile-voice {
+  left: 810px;
+}
+
+#open-wires {
+  opacity: 0;
+  transition: opacity 300ms;
+}
+
+.figure:has(#ring-label.shown) :is(.ring, .tile, #open-wires) {
+  opacity: 1;
+}
+
+/* -- Configuration -- */
+
+#launches {
+  top: 0;
+  left: 0;
+  width: 380px;
+  height: 480px;
+}
+
+#launches .card {
+  position: absolute;
+  left: 0;
+  width: 380px;
+}
+
+#shell {
+  top: 10px;
+  height: 200px;
+}
+
+#mcp {
+  top: 250px;
+  height: 220px;
+}
+
+.vars .gained {
+  display: none;
+  color: var(--added);
+}
+
+.figure:has(#gate.shown) .vars .gained {
+  display: list-item;
+}
+
+#mcp-key {
+  color: var(--removed);
+}
+
+#mcp-key.struck {
+  text-decoration: line-through 3px;
+}
+
+#gate {
+  top: 30px;
+  left: 425px;
+  width: 415px;
+  height: 390px;
+  justify-content: center;
+  border-color: var(--added);
+}
+
+#gate pre {
+  padding: 12px 14px;
+  font-size: 18px;
+  line-height: 1.4;
+}
+
+#config-core {
+  top: 90px;
+  left: 880px;
+  width: 320px;
+  height: 130px;
+  justify-content: center;
+}
+
+#cloud {
+  top: 320px;
+  left: 900px;
+  width: 300px;
+  height: 140px;
+  justify-content: center;
+  border-style: dashed;
+  border-color: var(--removed);
+}
+
+#cloud .after,
+.figure:has(#mcp-key.struck) #cloud .before {
+  display: none;
+}
+
+.figure:has(#mcp-key.struck) #cloud {
+  border-color: var(--border-strong);
+}
+
+.figure:has(#mcp-key.struck) #cloud .after {
+  display: inline;
+}
+
+#wire-cloud {
+  stroke: var(--removed);
+  stroke-dasharray: 10 8;
+}
+
+#cut {
+  opacity: 0;
+}
+
+.figure:has(#mcp-key.struck) #cut {
+  opacity: 1;
+}
+
+#cut line {
+  stroke: var(--removed);
+  stroke-width: 5;
+}
+
+/* -- Archive -- */
+
+#folder {
+  top: 0;
+  left: 0;
+  width: 420px;
+  height: 470px;
+}
+
+.take {
+  position: absolute;
+  left: 20px;
+  width: 376px;
+  padding: 14px 18px;
+  border: 2px solid var(--accent);
+  border-radius: 10px;
+  background: var(--surface);
+  transition:
+    opacity 300ms,
+    transform 300ms,
+    border-color 300ms;
+}
+
+.take strong {
+  display: block;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 20px;
+}
+
+.take span {
+  color: var(--text-muted);
+  font-size: 18px;
+}
+
+#out-old {
+  top: 110px;
+}
+
+#out-new {
+  top: 110px;
+  transform: translateY(-24px);
+}
+
+#out-new.shown {
+  transform: none;
+}
+
+.take .overwritten {
+  display: none;
+  margin-left: 8px;
+  color: var(--removed);
+  font-weight: 600;
+}
+
+.figure:has(#out-new.shown) #out-old {
+  border-style: dashed;
+  border-color: var(--removed);
+  transform: translateY(170px);
+}
+
+.figure:has(#out-new.shown) .take .overwritten {
+  display: inline;
+}
+
+.figure:has(#out-new.shown) #out-old strong {
+  text-decoration: line-through 3px var(--removed);
+}
+
+#shelf {
+  top: 0;
+  left: 470px;
+  width: 730px;
+  height: 470px;
+  opacity: 0;
+  transition: opacity 300ms;
+}
+
+.figure:has(#shelf-head.shown) #shelf {
+  opacity: 1;
+}
+
+#shelf-head {
+  font-size: 18px;
+}
+
+.takes {
+  display: grid;
+  gap: 10px;
+  width: 310px;
+  margin: 8px 0 0;
+  padding: 0;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 19px;
+  list-style: none;
+}
+
+.takes li {
+  padding: 10px 14px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+#take-latest.open {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+#prov {
+  position: absolute;
+  top: 70px;
+  right: 20px;
+  width: 360px;
+  padding: 14px 18px;
+  border: 2px solid var(--accent);
+  border-radius: 10px;
+  background: var(--surface);
+  opacity: 0;
+  transform: translateX(-24px);
+  transition:
+    opacity 300ms,
+    transform 300ms;
+}
+
+.figure:has(#take-latest.open) #prov {
+  opacity: 1;
+  transform: none;
+}
+
+#prov h3 {
+  margin: 0 0 8px;
+  color: var(--accent);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 20px;
+}
+
+#prov dl {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 6px 12px;
+  margin: 0;
+  font-size: 18px;
+}
+
+#prov dt {
+  color: var(--text-muted);
+}
+
+#prov dd {
+  margin: 0;
+  white-space: nowrap;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+/* -- Voice -- */
+
+#boundary {
+  top: 0;
+  left: 0;
+  width: 900px;
+  height: 470px;
+  border: 3px dashed var(--accent);
+  border-radius: 20px;
+}
+
+#boundary-label {
+  top: 14px;
+  left: 28px;
+  color: var(--accent);
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.node {
+  top: 64px;
+  height: 130px;
+  justify-content: center;
+}
+
+#voice-core {
+  left: 30px;
+  width: 240px;
+}
+
+#proxy {
+  left: 330px;
+  width: 240px;
+}
+
+#mlx {
+  left: 630px;
+  width: 240px;
+}
+
+#voice-core .after,
+.figure:has(#mlx.shown) #voice-core .before {
+  display: none;
+}
+
+.figure:has(#mlx.shown) #voice-core .after {
+  display: inline;
+}
+
+#profile {
+  top: 222px;
+  left: 330px;
+  width: 240px;
+  height: 126px;
+  gap: 4px;
+  justify-content: center;
+}
+
+#profile svg {
+  flex: none;
+  width: 120px;
+  height: 22px;
+  stroke: var(--accent);
+  stroke-linecap: round;
+  stroke-width: 3;
+}
+
+#wire-proxy,
+#wire-mlx,
+#wire-profile {
+  opacity: 0;
+  transition: opacity 300ms;
+}
+
+.figure:has(#proxy.shown) #wire-proxy,
+.figure:has(#mlx.shown) #wire-mlx,
+.figure:has(#profile.shown) #wire-profile {
+  opacity: 1;
+}
+
+#stages {
+  top: 360px;
+  left: 30px;
+  display: flex;
+  gap: 14px;
+  width: 840px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#stages li {
+  flex: 1 1 0;
+  padding: 10px 14px;
+  border: 2px solid var(--accent);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--accent);
+  text-align: center;
+}
+
+#stages li strong {
+  display: block;
+  font-size: 22px;
+}
+
+#stages li span {
+  font-size: 18px;
+}
+
+#stages #stage-record {
+  border-style: dashed;
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+#off-machine {
+  top: 140px;
+  left: 940px;
+  width: 260px;
+  height: 180px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+#off-machine > svg {
+  width: 120px;
+  height: 70px;
+}
+
+#off-machine .cloud-outline {
+  fill: none;
+  stroke: var(--border-strong);
+  stroke-width: 4;
+}
+
+#off-machine .cross {
+  stroke: var(--removed);
+  stroke-linecap: round;
+  stroke-width: 7;
+}
+
+/* -- Close -- */
+
+main.adds.close-page {
+  justify-content: center;
+  gap: 28px;
+}
+
+.close-page dl {
+  grid-template-columns: 300px 1fr;
+}
+
+.repo {
+  color: var(--text-muted);
+}

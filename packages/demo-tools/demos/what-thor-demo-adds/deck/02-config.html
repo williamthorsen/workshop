@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Per-repository configuration</title>
+    <link rel="stylesheet" href="/deck/deck.css" />
+    <link rel="stylesheet" href="adds.css" />
+    <script src="/deck/deck.js" defer></script>
+  </head>
+  <body>
+    <main class="adds">
+      <header>
+        <p class="kicker">1 · Per-repository configuration</p>
+        <h1>The same environment from a shell or an agent</h1>
+        <p class="state"><span class="before">Without thor-demo</span><span class="after">With thor-demo</span></p>
+      </header>
+      <div class="figure" id="config-figure">
+        <svg class="wires" viewBox="0 0 1200 480" aria-hidden="true">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+              <path class="arrowhead" d="M0 0L10 5L0 10z" />
+            </marker>
+          </defs>
+          <path d="M380 110C620 110 640 140 872 145" marker-end="url(#arrow)" />
+          <path d="M380 330C620 330 640 175 872 170" marker-end="url(#arrow)" />
+          <path id="wire-cloud" d="M380 420C620 420 680 390 892 390" />
+          <text x="590" y="458">captions</text>
+          <g id="cut">
+            <line x1="855" y1="375" x2="885" y2="405" />
+            <line x1="885" y1="375" x2="855" y2="405" />
+          </g>
+        </svg>
+        <div id="launches">
+          <div class="card" id="shell">
+            <h2>Shell</h2>
+            <ul class="vars">
+              <li>AIDEMO_TTS_PROVIDER=local</li>
+              <li>AIDEMO_CHROME_PROFILE=…</li>
+            </ul>
+          </div>
+          <div class="card" id="mcp">
+            <h2>Agent’s MCP server</h2>
+            <ul class="vars">
+              <li class="gained">AIDEMO_TTS_PROVIDER=local</li>
+              <li class="gained">AIDEMO_CHROME_PROFILE=…</li>
+              <li id="mcp-key" data-beat="struck" tabindex="0">OPENAI_API_KEY=…</li>
+            </ul>
+          </div>
+        </div>
+        <div class="card beat-in solves" id="gate" data-beat="shown" tabindex="0">
+          <h2 class="mono">.config/thor-demo.yaml</h2>
+          <span class="sub">Read by every thor-demo command, the MCP server included</span>
+          <pre><code>aidemo:
+  env:
+    AIDEMO_TTS_PROVIDER: local
+    AIDEMO_CHROME_PROFILE: …</code></pre>
+          <span class="sub">OpenAI variables pass only when declared here</span>
+        </div>
+        <div class="card" id="config-core">
+          <h2>aidemo</h2>
+          <span class="sub">Voice, record, captions, compose</span>
+        </div>
+        <div class="card" id="cloud">
+          <h2>Cloud service</h2>
+          <span class="sub"
+            ><span class="before">Receives the captions</span><span class="after">Receives nothing</span></span
+          >
+        </div>
+      </div>
+      <aside class="voice-badge" id="badge">
+        <svg viewBox="0 0 26 20" aria-hidden="true"><path d="M2 10v0M7 6v8M12 2v16M17 5v10M22 8v4" /></svg>
+        Narrated in the presenter’s cloned voice, synthesized on this machine
+      </aside>
+    </main>
+    <nav><a class="next" href="03-archive.html">Next</a></nav>
+  </body>
+</html>
