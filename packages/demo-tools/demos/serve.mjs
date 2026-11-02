@@ -1,4 +1,4 @@
-// Serves the deck, the fixture, and the inner demo's output to the aidemo storyboards in this directory.
+// Serves the decks, the fixture, and the inner demo's output to the aidemo storyboards in this directory.
 import { createReadStream, statSync } from 'node:fs';
 import { createServer } from 'node:http';
 import path from 'node:path';
@@ -8,6 +8,7 @@ const HOST = '127.0.0.1';
 const PORT = Number(process.env.PORT ?? 8_787);
 
 const ROOTS = {
+  '/adds/': path.join(import.meta.dirname, 'what-thor-demo-adds/deck'),
   '/deck/': path.join(import.meta.dirname, 'agent-records-demo/deck'),
   '/fixture/': path.join(import.meta.dirname, 'fixture'),
   '/media/': path.join(import.meta.dirname, 'sample-tour/output'),
