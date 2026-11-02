@@ -1,0 +1,4 @@
+demosDir: demos
+aidemo:
+  env:
+    AIDEMO_TTS_PROVIDER: local

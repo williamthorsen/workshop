@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Results: Trail finder</title>
+    <link rel="stylesheet" href="fixture.css" />
+  </head>
+  <body>
+    <header><a href="index.html">Trail finder</a></header>
+    <main>
+      <h1 id="heading">Trails</h1>
+      <ul class="results">
+        <li class="card">
+          <a id="result-ridge" href="#detail">Ridge loop</a>
+          <p class="meta">8.4 km · moderate · lakeside start</p>
+        </li>
+        <li class="card">
+          <a href="#detail">Cedar valley walk</a>
+          <p class="meta">3.1 km · easy · shaded most of the way</p>
+        </li>
+        <li class="card">
+          <a href="#detail">Summit spur</a>
+          <p class="meta">5.6 km · hard · steep final climb</p>
+        </li>
+      </ul>
+      <section id="detail" class="detail">
+        <h2>Ridge loop</h2>
+        <p class="meta">A loop that climbs from the lake to the ridge and returns through the forest.</p>
+        <dl>
+          <dt>Length</dt>
+          <dd>8.4 km</dd>
+          <dt>Elevation gain</dt>
+          <dd>410 m</dd>
+          <dt>Typical time</dt>
+          <dd>3 hours</dd>
+          <dt>Surface</dt>
+          <dd>Packed earth, with rocky steps near the ridge</dd>
+          <dt>Water</dt>
+          <dd>A spring at the halfway point</dd>
+          <dt>Parking</dt>
+          <dd>The lakeside lot, which fills by mid-morning</dd>
+        </dl>
+        <h2>Route</h2>
+        <p>
+          Leave the lot on the shore path and turn uphill at the first footbridge. The climb is steady for two
+          kilometres, then levels along the ridge, where the lake stays in view on the left.
+        </p>
+        <p>
+          At the stone marker, take the right fork into the forest. The descent is gentler than the climb and ends at
+          the north end of the lot.
+        </p>
+      </section>
+    </main>
+    <script>
+      const query = new URLSearchParams(location.search).get('q');
+      if (query) document.getElementById('heading').textContent = `Trails matching "${query}"`;
+    </script>
+  </body>
+</html>

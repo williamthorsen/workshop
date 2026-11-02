@@ -1,0 +1,9 @@
+# aidemo's per-demo working paths, anchored to the package root. The storyboard and the golden probe
+# stay tracked.
+/demos/*/.chrome-profile-fresh/
+/demos/*/audio/
+/demos/*/generated/captions.*
+/demos/*/generated/timeline*.json
+/demos/*/logs/
+/demos/*/output/
+/demos/*/recordings/

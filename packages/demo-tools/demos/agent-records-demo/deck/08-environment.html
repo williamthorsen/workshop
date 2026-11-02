@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Setting one: the environment</title>
+    <link rel="stylesheet" href="deck.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Setting one: the environment</h1>
+      <p>
+        Remove the three OpenAI variables, select the local voice, and check the repository's <code>.env</code>, which
+        aidemo loads over the environment.
+      </p>
+      <pre class="terminal"><code>$ unset OPENAI_API_KEY OPENAI_BASE_URL AIDEMO_OPENAI_BASE_URL
+$ export AIDEMO_TTS_PROVIDER=local
+$ grep --extended-regexp &#x27;^(OPENAI_|AIDEMO_OPENAI_)&#x27; .env</code></pre>
+      <p class="source">Why: <a href="https://github.com/tandryukha/aidemo#readme">aidemo README</a>, "Setup"</p>
+    </main>
+    <nav><a class="next" href="09-login.html">Next</a></nav>
+  </body>
+</html>

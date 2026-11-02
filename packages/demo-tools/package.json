@@ -39,6 +39,7 @@
     "native"
   ],
   "scripts": {
+    "demo:serve": "node demos/serve.mjs",
     "prepare": "nmr-compile"
   },
   "dependencies": {
@@ -48,7 +49,9 @@
     "yaml": "catalog:"
   },
   "devDependencies": {
+    "@tandryukha/aidemo": "catalog:",
     "@williamthorsen/toolbelt.testing": "catalog:",
+    "kokoro-js": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"
   },

@@ -1,0 +1,180 @@
+{
+  "title": "A quick tour of the trail finder",
+  "targetLengthSeconds": 32,
+  "captions": {
+    "style": "none",
+    "track": true
+  },
+  "hold": {
+    "mode": "drift"
+  },
+  "scenes": [
+    {
+      "id": "search",
+      "title": "Search",
+      "narration": "This is the trail finder, a small site that this demo tours. One search field covers trail names and regions, so type what you are after: a lakeside loop.",
+      "actions": [
+        {
+          "op": "goto",
+          "url": "http://127.0.0.1:8787/fixture/index.html"
+        },
+        {
+          "op": "waitFor",
+          "target": {
+            "selector": "#query"
+          }
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": "h1"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 1500
+        },
+        {
+          "op": "hover",
+          "target": {
+            "selector": "#query"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 800
+        },
+        {
+          "op": "type",
+          "target": {
+            "selector": "#query"
+          },
+          "text": "lakeside loop"
+        },
+        {
+          "op": "pause",
+          "ms": 800
+        },
+        {
+          "op": "hover",
+          "target": {
+            "selector": "#search"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 500
+        },
+        {
+          "op": "click",
+          "target": {
+            "selector": "#search"
+          }
+        }
+      ]
+    },
+    {
+      "id": "result",
+      "title": "Result",
+      "narration": "Three trails match, each with its length, its difficulty, and a note about the start. The ridge loop is the one that begins at the lake, so open it.",
+      "actions": [
+        {
+          "op": "waitFor",
+          "target": {
+            "selector": "#result-ridge"
+          }
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": ".card:nth-child(3) .meta"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 1000
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": ".card:nth-child(2) .meta"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 1000
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": ".card:nth-child(1) .meta"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 1000
+        },
+        {
+          "op": "hover",
+          "target": {
+            "selector": "#result-ridge"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 500
+        },
+        {
+          "op": "click",
+          "target": {
+            "selector": "#result-ridge"
+          }
+        }
+      ]
+    },
+    {
+      "id": "detail",
+      "title": "Detail",
+      "narration": "The detail lists the length, the climb, the typical time, and where to find water. Further down, the route runs from the lakeside lot up to the ridge, then back through the forest.",
+      "actions": [
+        {
+          "op": "assert",
+          "target": {
+            "selector": "#detail h2"
+          },
+          "textMatches": "Ridge loop"
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": "#detail dl"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 1500
+        },
+        {
+          "op": "scrollBy",
+          "dy": 250,
+          "easing": "glide",
+          "durationMs": 1800
+        },
+        {
+          "op": "pause",
+          "ms": 1200
+        },
+        {
+          "op": "scrollBy",
+          "dy": 250,
+          "easing": "glide",
+          "durationMs": 1800
+        },
+        {
+          "op": "pause",
+          "ms": 1200
+        }
+      ]
+    }
+  ]
+}

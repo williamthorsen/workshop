@@ -1,0 +1,579 @@
+{
+  "title": "An agent records a narrated demo with aidemo",
+  "targetLengthSeconds": 150,
+  "captions": {
+    "style": "none",
+    "track": true
+  },
+  "hold": {
+    "mode": "drift"
+  },
+  "voice": {
+    "pronounce": {
+      "aidemo": "A.I. demo",
+      "TTS": "T.T.S.",
+      "JSON": "jason"
+    }
+  },
+  "output": {
+    "chapters": true
+  },
+  "scenes": [
+    {
+      "id": "title",
+      "title": "Title",
+      "narration": "A coding agent records a narrated demo with aidemo, from one prompt to a finished video with captions. This video was made the same way.",
+      "actions": [
+        {
+          "op": "goto",
+          "url": "http://127.0.0.1:8787/deck/01-title.html"
+        },
+        {
+          "op": "waitFor",
+          "target": {
+            "selector": "h1"
+          }
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": "h1"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 1500
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": ".lede"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 1500
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": "a.next"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 1500
+        }
+      ]
+    },
+    {
+      "id": "prompt",
+      "title": "Prompt",
+      "narration": "It starts with one prompt to Claude Code: the page, the steps to show, and the length, with the local voice and a caption track. The agent answers with a storyboard, through the record-demo skill or the aidemo MCP server.",
+      "actions": [
+        {
+          "op": "goto",
+          "url": "http://127.0.0.1:8787/deck/02-prompt.html"
+        },
+        {
+          "op": "waitFor",
+          "target": {
+            "selector": "h1"
+          }
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": ".label"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 1000
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": "pre.prompt"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 2500
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": "main > p:last-of-type code"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 2000
+        }
+      ]
+    },
+    {
+      "id": "storyboard",
+      "title": "Storyboard",
+      "narration": "The storyboard is plain JSON that you can edit. Each scene pairs narration, what the voice says, with actions, what the browser does, replayed the same way on every take. The captions setting asks for a subtitle track, so no text is burned into the frame.",
+      "actions": [
+        {
+          "op": "goto",
+          "url": "http://127.0.0.1:8787/deck/03-storyboard.html"
+        },
+        {
+          "op": "waitFor",
+          "target": {
+            "selector": "h1"
+          }
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": "pre.json"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 1500
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": "#callout-narration"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 2200
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": "#callout-actions"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 2500
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": "#callout-captions"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 2500
+        }
+      ]
+    },
+    {
+      "id": "probe",
+      "title": "Probe",
+      "narration": "Before spending a take, the agent runs aidemo probe. It drives the page without a voice and checks every selector. With the golden flag, a changed page fails the probe first.",
+      "actions": [
+        {
+          "op": "goto",
+          "url": "http://127.0.0.1:8787/deck/04-probe.html"
+        },
+        {
+          "op": "waitFor",
+          "target": {
+            "selector": "h1"
+          }
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": "pre"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 2000
+        },
+        {
+          "op": "scrollBy",
+          "dy": 200,
+          "easing": "glide",
+          "durationMs": 2400
+        },
+        {
+          "op": "pause",
+          "ms": 800
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": "pre code"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 2000
+        }
+      ]
+    },
+    {
+      "id": "render",
+      "title": "Render",
+      "narration": "Then aidemo render runs the whole pipeline: the local Kokoro voice, a headless take on a fresh profile, captions derived from the script, and the final video. With the strict flag, any compose warning fails the run.",
+      "actions": [
+        {
+          "op": "goto",
+          "url": "http://127.0.0.1:8787/deck/05-render.html"
+        },
+        {
+          "op": "waitFor",
+          "target": {
+            "selector": "h1"
+          }
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": "pre"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 2000
+        },
+        {
+          "op": "scrollBy",
+          "dy": 200,
+          "easing": "glide",
+          "durationMs": 2400
+        },
+        {
+          "op": "pause",
+          "ms": 800
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": "pre code"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 2500
+        }
+      ]
+    },
+    {
+      "id": "edit",
+      "title": "Narration edit",
+      "narration": "Now the review. One line in the second scene reads awkwardly, so the agent edits it. Only the narration changes, and the browser actions stay as they were.",
+      "actions": [
+        {
+          "op": "goto",
+          "url": "http://127.0.0.1:8787/deck/06-edit.html"
+        },
+        {
+          "op": "waitFor",
+          "target": {
+            "selector": "h1"
+          }
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": "pre.removed"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 2500
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": "pre.added"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 2500
+        }
+      ]
+    },
+    {
+      "id": "revoice",
+      "title": "Re-voice",
+      "narration": "So nothing is recorded again. aidemo voice voices only the edited scene, aidemo captions with the offline flag rebuilds its timing, and aidemo compose cuts the new narration into the existing take.",
+      "actions": [
+        {
+          "op": "goto",
+          "url": "http://127.0.0.1:8787/deck/07-revoice.html"
+        },
+        {
+          "op": "waitFor",
+          "target": {
+            "selector": "h1"
+          }
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": "main > pre:nth-of-type(1)"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 2000
+        },
+        {
+          "op": "scrollBy",
+          "dy": 220,
+          "easing": "glide",
+          "durationMs": 2400
+        },
+        {
+          "op": "pause",
+          "ms": 800
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": "main > pre:nth-of-type(2)"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 2000
+        },
+        {
+          "op": "scrollBy",
+          "dy": 220,
+          "easing": "glide",
+          "durationMs": 2400
+        },
+        {
+          "op": "pause",
+          "ms": 800
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": "main > pre:nth-of-type(3)"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 2000
+        }
+      ]
+    },
+    {
+      "id": "environment",
+      "title": "Environment",
+      "narration": "Two settings keep the voice and the captions on the machine. First, remove the three OpenAI variables and select the local voice. Then check the repository's dot env file, which aidemo loads over the environment.",
+      "actions": [
+        {
+          "op": "goto",
+          "url": "http://127.0.0.1:8787/deck/08-environment.html"
+        },
+        {
+          "op": "waitFor",
+          "target": {
+            "selector": "h1"
+          }
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": "main > p:first-of-type"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 2500
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": "pre"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 3000
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": ".source a"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 1500
+        }
+      ]
+    },
+    {
+      "id": "login",
+      "title": "Login",
+      "narration": "Second, for an app behind a login, run aidemo login once to sign in on the recording profile, then quit Chrome completely before the take. Chrome locks a profile that is open.",
+      "actions": [
+        {
+          "op": "goto",
+          "url": "http://127.0.0.1:8787/deck/09-login.html"
+        },
+        {
+          "op": "waitFor",
+          "target": {
+            "selector": "h1"
+          }
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": "main > p:first-of-type"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 2500
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": "pre"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 2500
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": ".source a"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 1500
+        }
+      ]
+    },
+    {
+      "id": "result",
+      "title": "Result",
+      "narration": "Here is the result, playing as it was rendered. The file contains a caption track that viewers can turn on, and the narration was produced on this machine, without any request over the network.",
+      "actions": [
+        {
+          "op": "goto",
+          "url": "http://127.0.0.1:8787/deck/10-result.html"
+        },
+        {
+          "op": "waitFor",
+          "target": {
+            "selector": "h1"
+          }
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": "#result"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 4000
+        },
+        {
+          "op": "moveTo",
+          "x": 1180,
+          "y": 120
+        },
+        {
+          "op": "pause",
+          "ms": 4000
+        }
+      ]
+    },
+    {
+      "id": "close",
+      "title": "Close",
+      "narration": "That is the loop: a prompt, a storyboard, a probe, a render, one edited line, and a new voice without recording again. The storyboard is committed beside the package, so the next render starts from the same file.",
+      "actions": [
+        {
+          "op": "goto",
+          "url": "http://127.0.0.1:8787/deck/11-close.html"
+        },
+        {
+          "op": "waitFor",
+          "target": {
+            "selector": "h1"
+          }
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": ".loop li:nth-child(1)"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 900
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": ".loop li:nth-child(2)"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 900
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": ".loop li:nth-child(3)"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 900
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": ".loop li:nth-child(4)"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 900
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": ".loop li:nth-child(5)"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 900
+        },
+        {
+          "op": "moveTo",
+          "target": {
+            "selector": ".loop li:nth-child(6)"
+          }
+        },
+        {
+          "op": "pause",
+          "ms": 1500
+        }
+      ]
+    }
+  ]
+}

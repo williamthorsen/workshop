@@ -1,0 +1,180 @@
+{
+  "version": 1,
+  "title": "A quick tour of the trail finder",
+  "video": {
+    "width": 1280,
+    "height": 720
+  },
+  "scenes": [
+    {
+      "id": "search",
+      "actions": [
+        {
+          "op": "goto",
+          "target": "http://127.0.0.1:8787/fixture/index.html",
+          "ok": true,
+          "finalUrl": "http://127.0.0.1:8787/fixture/index.html"
+        },
+        {
+          "op": "waitFor",
+          "target": "#query",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "moveTo",
+          "target": "h1",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 1500
+        },
+        {
+          "op": "hover",
+          "target": "#query",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 800
+        },
+        {
+          "op": "type",
+          "target": "#query",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 800
+        },
+        {
+          "op": "hover",
+          "target": "#search",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 500
+        },
+        {
+          "op": "click",
+          "target": "#search",
+          "ok": true,
+          "found": false
+        }
+      ]
+    },
+    {
+      "id": "result",
+      "actions": [
+        {
+          "op": "waitFor",
+          "target": "#result-ridge",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "moveTo",
+          "target": ".card:nth-child(3) .meta",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 1000
+        },
+        {
+          "op": "moveTo",
+          "target": ".card:nth-child(2) .meta",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 1000
+        },
+        {
+          "op": "moveTo",
+          "target": ".card:nth-child(1) .meta",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 1000
+        },
+        {
+          "op": "hover",
+          "target": "#result-ridge",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 500
+        },
+        {
+          "op": "click",
+          "target": "#result-ridge",
+          "ok": true,
+          "found": true
+        }
+      ]
+    },
+    {
+      "id": "detail",
+      "actions": [
+        {
+          "op": "assert",
+          "target": "#detail h2",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "moveTo",
+          "target": "#detail dl",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 1500
+        },
+        {
+          "op": "scrollBy",
+          "ok": true,
+          "dy": 250
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 1200
+        },
+        {
+          "op": "scrollBy",
+          "ok": true,
+          "dy": 250
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 1200
+        }
+      ]
+    }
+  ]
+}

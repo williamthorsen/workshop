@@ -4,9 +4,13 @@ autoInstallPeers: false
 allowBuilds:
   esbuild: true
   lefthook: true
+  onnxruntime-node: false
+  protobufjs: false
+  sharp: false
   unrs-resolver: true
 
 catalog:
+  '@tandryukha/aidemo': 0.20.2
   '@vitest/coverage-v8': 5.0.5
   '@williamthorsen/nmr': 0.53.1
   '@williamthorsen/toolbelt.atlassian': 0.8.0
@@ -23,6 +27,7 @@ catalog:
   '@williamthorsen/toolbelt.testing': 0.8.0
   '@williamthorsen/toolbelt.vitest': 0.13.0
   esbuild: 0.28.2
+  kokoro-js: 1.2.1
   typescript: 6.0.3
   vite: 8.3.5
   vitest: 5.0.5
@@ -31,6 +36,7 @@ catalog:
 
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
+  - '@tandryukha/aidemo@0.20.2'
   - '@williamthorsen/*'
   - codeassembly
   - codeassembly-guidance
