@@ -20,7 +20,6 @@
     "pronounce": {
       "aidemo": "A.I. demo",
       "aidemo’s": "A.I. demo’s",
-      "MCP": "M.C.P.",
       "mlx-audio": "M.L.X. audio",
       "OpenAI": "Open A.I.",
       "thor-demo": "thor demo",
@@ -135,7 +134,7 @@
           "target": {
             "selector": "#mcp"
           },
-          "holdMs": 2050,
+          "holdMs": 2000,
           "anchor": "agent"
         },
         {
@@ -167,7 +166,7 @@
           "target": {
             "selector": "#config-with"
           },
-          "holdMs": 2850,
+          "holdMs": 2800,
           "anchor": "with"
         },
         {
@@ -179,7 +178,7 @@
           "target": {
             "selector": "#config-file"
           },
-          "holdMs": 2350,
+          "holdMs": 2300,
           "anchor": "file"
         },
         {
@@ -205,7 +204,7 @@
     {
       "id": "archive",
       "title": "Archived takes",
-      "narration": "aidemo keeps {{@latest}}only the latest render, {{@discard}}discarding earlier takes. thor-demo {{@files}}keeps every take, {{@provenance}}with a provenance record: {{@engine}}engine, {{@voice}}voice, {{@options}}options, {{@hashes}}and a hash of every file.",
+      "narration": "aidemo keeps {{@latest}}only the latest render, {{@discard}}discarding earlier takes. thor-demo {{@files}}keeps every take in a customizable location, {{@provenance}}with a provenance record: {{@engine}}engine, {{@voice}}voice, {{@options}}options, {{@hashes}}and a hash of every file.",
       "actions": [
         {
           "op": "goto",
@@ -222,7 +221,7 @@
           "target": {
             "selector": "#out-new"
           },
-          "holdMs": 1550,
+          "holdMs": 1600,
           "anchor": "latest"
         },
         {
@@ -236,7 +235,7 @@
           "target": {
             "selector": "#out-old"
           },
-          "holdMs": 2400,
+          "holdMs": 2500,
           "anchor": "discard"
         },
         {
@@ -250,7 +249,7 @@
           "target": {
             "selector": "#shelf"
           },
-          "holdMs": 1150,
+          "holdMs": 3000,
           "anchor": "files"
         },
         {
@@ -264,7 +263,7 @@
           "target": {
             "selector": "#prov"
           },
-          "holdMs": 1700,
+          "holdMs": 1750,
           "anchor": "provenance"
         },
         {
@@ -296,7 +295,7 @@
           "target": {
             "selector": "#prov-files"
           },
-          "holdMs": 1850,
+          "holdMs": 1900,
           "anchor": "hashes"
         },
         {
@@ -308,7 +307,7 @@
     {
       "id": "voice",
       "title": "Voice clone",
-      "narration": "aidemo’s local {{@stock}}voice is a stock voice. {{@clone}}thor-demo clones yours from a short recording, {{@proxy}}and revoice narrates with it {{@local}}on this machine, {{@kept}}keeping the recording.",
+      "narration": "aidemo’s local {{@stock}}voice is a stock voice. {{@clone}}thor-demo clones yours from a short recording, {{@proxy}}and revoice narrates with it {{@local}}on this machine.",
       "actions": [
         {
           "op": "goto",
@@ -325,7 +324,7 @@
           "target": {
             "selector": "#voice-stock"
           },
-          "holdMs": 1500,
+          "holdMs": 1550,
           "anchor": "stock"
         },
         {
@@ -357,7 +356,7 @@
           "target": {
             "selector": "#boundary .chain"
           },
-          "holdMs": 1800,
+          "holdMs": 1850,
           "anchor": "proxy"
         },
         {
@@ -371,22 +370,8 @@
           "target": {
             "selector": "#boundary"
           },
-          "holdMs": 1000,
+          "holdMs": 1200,
           "anchor": "local"
-        },
-        {
-          "op": "click",
-          "target": {
-            "selector": "#stages"
-          }
-        },
-        {
-          "op": "highlight",
-          "target": {
-            "selector": "#stage-record"
-          },
-          "holdMs": 1550,
-          "anchor": "kept"
         },
         {
           "op": "pause",

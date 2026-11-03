@@ -415,31 +415,6 @@ main.adds {
   transform: translateY(-50%);
 }
 
-.stages {
-  display: flex;
-  gap: 10px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.stages li {
-  flex: 1 1 0;
-  padding: 8px 10px;
-  border: 2px solid var(--added);
-  border-radius: 10px;
-  background: var(--surface);
-  color: var(--added);
-  font-size: 18px;
-  text-align: center;
-}
-
-.stages li.kept {
-  border-style: dashed;
-  border-color: var(--border-strong);
-  color: var(--text);
-}
-
 /* -- Close -- */
 
 main.adds.close-page {

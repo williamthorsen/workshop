@@ -311,18 +311,6 @@
           "found": true
         },
         {
-          "op": "click",
-          "target": "#stages",
-          "ok": true,
-          "found": true
-        },
-        {
-          "op": "highlight",
-          "target": "#stage-record",
-          "ok": true,
-          "found": true
-        },
-        {
           "op": "pause",
           "ok": true,
           "ms": 1000
