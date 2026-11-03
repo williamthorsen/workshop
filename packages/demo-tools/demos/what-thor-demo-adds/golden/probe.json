@@ -22,22 +22,6 @@
           "found": true
         },
         {
-          "op": "pause",
-          "ok": true,
-          "ms": 500
-        },
-        {
-          "op": "highlight",
-          "target": "#badge",
-          "ok": true,
-          "found": true
-        },
-        {
-          "op": "pause",
-          "ok": true,
-          "ms": 400
-        },
-        {
           "op": "spotlight",
           "target": "#core",
           "ok": true,

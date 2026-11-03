@@ -33,7 +33,7 @@
     {
       "id": "open",
       "title": "What thor-demo adds",
-      "narration": "You’re hearing {{@voice}}my voice, cloned on this laptop. {{@aidemo}}aidemo renders demos; {{@adds}}thor-demo adds three things.",
+      "narration": "aidemo {{@aidemo}}renders a narrated, captioned demo from a storyboard. {{@adds}}thor-demo adds three things around it.",
       "actions": [
         {
           "op": "goto",
@@ -46,27 +46,11 @@
           }
         },
         {
-          "op": "pause",
-          "ms": 500
-        },
-        {
-          "op": "highlight",
-          "target": {
-            "selector": "#badge"
-          },
-          "holdMs": 2200,
-          "anchor": "voice"
-        },
-        {
-          "op": "pause",
-          "ms": 400
-        },
-        {
           "op": "spotlight",
           "target": {
             "selector": "#core"
           },
-          "holdMs": 1450,
+          "holdMs": 3000,
           "anchor": "aidemo"
         },
         {
@@ -80,7 +64,7 @@
           "target": {
             "selector": "#ring"
           },
-          "holdMs": 2100,
+          "holdMs": 2800,
           "anchor": "adds"
         },
         {
@@ -280,7 +264,7 @@
     {
       "id": "voice",
       "title": "Voice clone",
-      "narration": "aidemo’s local {{@stock}}voice isn’t mine. {{@clone}}thor-demo clones mine from a short recording; {{@proxy}}revoice swaps the narration through a proxy {{@mlx}}and mlx-audio, {{@local}}all on this machine, {{@kept}}and keeps the recording.",
+      "narration": "aidemo’s local {{@stock}}voice is a stock voice. {{@clone}}thor-demo clones yours from a short recording; {{@proxy}}revoice swaps the narration through a proxy {{@mlx}}and mlx-audio, {{@local}}all on this machine, {{@kept}}and keeps the recording.",
       "actions": [
         {
           "op": "goto",
@@ -301,7 +285,7 @@
           "target": {
             "selector": "#voice-stock"
           },
-          "holdMs": 1200,
+          "holdMs": 1600,
           "anchor": "stock"
         },
         {
@@ -365,7 +349,7 @@
           "target": {
             "selector": "#boundary"
           },
-          "holdMs": 1400,
+          "holdMs": 1350,
           "anchor": "local"
         },
         {
@@ -383,7 +367,7 @@
           "target": {
             "selector": "#stage-record"
           },
-          "holdMs": 1850,
+          "holdMs": 1800,
           "anchor": "kept"
         },
         {
