@@ -40,9 +40,37 @@
           "found": true
         },
         {
+          "op": "highlight",
+          "target": "#tile-config",
+          "ok": true,
+          "found": true
+        },
+        {
           "op": "pause",
           "ok": true,
-          "ms": 1600
+          "ms": 800
+        },
+        {
+          "op": "highlight",
+          "target": "#tile-archive",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 650
+        },
+        {
+          "op": "highlight",
+          "target": "#tile-voice",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 800
         }
       ]
     },
@@ -57,70 +85,78 @@
         },
         {
           "op": "waitFor",
-          "target": "#launches",
-          "ok": true,
-          "found": true
-        },
-        {
-          "op": "pause",
-          "ok": true,
-          "ms": 700
-        },
-        {
-          "op": "spotlight",
-          "target": "#launches",
-          "ok": true,
-          "found": true
-        },
-        {
-          "op": "pause",
-          "ok": true,
-          "ms": 2200
-        },
-        {
-          "op": "highlight",
-          "target": "#mcp-key",
-          "ok": true,
-          "found": true
-        },
-        {
-          "op": "pause",
-          "ok": true,
-          "ms": 1800
-        },
-        {
-          "op": "click",
-          "target": "#gate",
-          "ok": true,
-          "found": true
-        },
-        {
-          "op": "spotlight",
-          "target": "#gate",
-          "ok": true,
-          "found": true
-        },
-        {
-          "op": "pause",
-          "ok": true,
-          "ms": 400
-        },
-        {
-          "op": "click",
-          "target": "#mcp-key",
+          "target": "#config-without",
           "ok": true,
           "found": true
         },
         {
           "op": "highlight",
-          "target": "#mcp-key",
+          "target": "#shell",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "highlight",
+          "target": "#mcp",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "click",
+          "target": "#leak",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "highlight",
+          "target": "#leak",
           "ok": true,
           "found": true
         },
         {
           "op": "pause",
           "ok": true,
-          "ms": 3200
+          "ms": 1000
+        },
+        {
+          "op": "click",
+          "target": "#config-with .panel-label",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "spotlight",
+          "target": "#config-with",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 1250
+        },
+        {
+          "op": "highlight",
+          "target": "#config-file",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "click",
+          "target": "#strip",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "highlight",
+          "target": "#strip",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 1000
         }
       ]
     },
@@ -140,30 +176,26 @@
           "found": true
         },
         {
-          "op": "pause",
-          "ok": true,
-          "ms": 200
-        },
-        {
-          "op": "click",
+          "op": "highlight",
           "target": "#out-new",
           "ok": true,
           "found": true
         },
         {
-          "op": "spotlight",
-          "target": "#folder",
+          "op": "click",
+          "target": "#out-old",
           "ok": true,
           "found": true
         },
         {
-          "op": "pause",
+          "op": "highlight",
+          "target": "#out-old",
           "ok": true,
-          "ms": 300
+          "found": true
         },
         {
           "op": "click",
-          "target": "#shelf-head",
+          "target": "#archive-with .panel-label",
           "ok": true,
           "found": true
         },
@@ -174,13 +206,8 @@
           "found": true
         },
         {
-          "op": "pause",
-          "ok": true,
-          "ms": 300
-        },
-        {
           "op": "click",
-          "target": "#take-latest",
+          "target": "#prov",
           "ok": true,
           "found": true
         },
@@ -217,7 +244,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 2000
+          "ms": 1000
         }
       ]
     },
@@ -232,14 +259,9 @@
         },
         {
           "op": "waitFor",
-          "target": "#voice-core",
+          "target": "#voice-stock",
           "ok": true,
           "found": true
-        },
-        {
-          "op": "pause",
-          "ok": true,
-          "ms": 700
         },
         {
           "op": "highlight",
@@ -248,13 +270,8 @@
           "found": true
         },
         {
-          "op": "pause",
-          "ok": true,
-          "ms": 200
-        },
-        {
           "op": "click",
-          "target": "#profile",
+          "target": "#voice-with .panel-label",
           "ok": true,
           "found": true
         },
@@ -267,7 +284,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 300
+          "ms": 550
         },
         {
           "op": "click",
@@ -276,25 +293,13 @@
           "found": true
         },
         {
-          "op": "spotlight",
-          "target": "#proxy",
+          "op": "highlight",
+          "target": "#boundary .chain",
           "ok": true,
           "found": true
         },
         {
           "op": "click",
-          "target": "#mlx",
-          "ok": true,
-          "found": true
-        },
-        {
-          "op": "click",
-          "target": "#off-machine",
-          "ok": true,
-          "found": true
-        },
-        {
-          "op": "spotlight",
           "target": "#mlx",
           "ok": true,
           "found": true
@@ -304,11 +309,6 @@
           "target": "#boundary",
           "ok": true,
           "found": true
-        },
-        {
-          "op": "pause",
-          "ok": true,
-          "ms": 300
         },
         {
           "op": "click",
@@ -325,7 +325,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 2000
+          "ms": 1000
         }
       ]
     },
@@ -356,6 +356,11 @@
           "found": true
         },
         {
+          "op": "pause",
+          "ok": true,
+          "ms": 600
+        },
+        {
           "op": "highlight",
           "target": "#close-render",
           "ok": true,
@@ -370,7 +375,7 @@
         {
           "op": "pause",
           "ok": true,
-          "ms": 1400
+          "ms": 600
         }
       ]
     }

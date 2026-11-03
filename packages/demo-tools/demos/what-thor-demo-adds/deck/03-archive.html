@@ -13,35 +13,38 @@
       <header>
         <p class="kicker">2 · Archived takes</p>
         <h1>Every take kept, with what produced it</h1>
-        <p class="state"><span class="before">Without thor-demo</span><span class="after">With thor-demo</span></p>
       </header>
-      <div class="figure" id="archive-figure">
-        <div class="card" id="folder">
-          <h2 class="mono">output/</h2>
-          <span class="sub">One slot per demo</span>
-          <div class="take" id="out-old">
-            <strong>final-demo.mp4</strong>
-            <span>Previous render</span><span class="overwritten">Overwritten</span>
+      <div class="split" id="archive-figure">
+        <section class="panel without" id="archive-without">
+          <h2 class="panel-label">Without thor-demo</h2>
+          <div class="card" id="folder">
+            <h3 class="mono">output/</h3>
+            <span class="sub">Holds only the most recent render</span>
+            <div class="take" id="out-new">
+              <strong>final-demo.mp4</strong>
+              <span>This render</span>
+            </div>
+            <div class="take discarded beat-in" id="out-old" data-beat="shown" tabindex="0">
+              <strong>final-demo.mp4</strong>
+              <span>Previous take: discarded</span>
+            </div>
           </div>
-          <div class="take beat-in" id="out-new" data-beat="shown" tabindex="0">
-            <strong>final-demo.mp4</strong>
-            <span>This render</span>
+        </section>
+        <section class="panel with" id="archive-with">
+          <h2 class="panel-label" data-beat="shown" tabindex="0">With thor-demo</h2>
+          <div class="card" id="shelf">
+            <h3 class="mono">~/Videos/demos/demo-tools/agent-records-demo/</h3>
+            <ul class="takes">
+              <li>20261102-184451Z_b0ebd7a</li>
+              <li>20261102-191148Z_886d5bf</li>
+              <li>20261102-195241Z_7c87a0d</li>
+              <li id="take-latest">20261102-203758Z_436d637</li>
+            </ul>
           </div>
-        </div>
-        <div class="card" id="shelf">
-          <span id="shelf-head" class="mono beat-in solves" data-beat="shown" tabindex="0"
-            >~/Videos/demos/demo-tools/agent-records-demo/</span
-          >
-          <ul class="takes">
-            <li>20261102-184451Z_b0ebd7a</li>
-            <li>20261102-191148Z_886d5bf</li>
-            <li>20261102-195241Z_7c87a0d</li>
-            <li id="take-latest" data-beat="open" tabindex="0">20261102-203758Z_436d637</li>
-          </ul>
-          <section id="prov">
-            <h3>provenance.json</h3>
+          <section class="card beat-in" id="prov" data-beat="shown" tabindex="0">
+            <h3 class="mono">20261102-203758Z_436d637/provenance.json</h3>
             <dl>
-              <dt id="prov-source">Source</dt>
+              <dt>Source</dt>
               <dd>436d637, clean</dd>
               <dt id="prov-engine">Engine</dt>
               <dd>aidemo 0.20.2</dd>
@@ -55,7 +58,7 @@
               <dd>4, each sha256</dd>
             </dl>
           </section>
-        </div>
+        </section>
       </div>
     </main>
     <nav><a class="next" href="04-voice.html">Next</a></nav>

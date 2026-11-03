@@ -13,56 +13,41 @@
       <header>
         <p class="kicker">3 · Voice clone</p>
         <h1>The presenter’s voice, cloned on this machine</h1>
-        <p class="state"><span class="before">Without thor-demo</span><span class="after">With thor-demo</span></p>
       </header>
-      <div class="figure" id="voice-figure">
-        <div id="boundary"></div>
-        <span id="boundary-label">This machine · <span class="mono">127.0.0.1</span></span>
-        <svg class="wires" viewBox="0 0 1200 480" aria-hidden="true">
-          <defs>
-            <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
-              <path class="arrowhead" d="M0 0L10 5L0 10z" />
-            </marker>
-          </defs>
-          <line id="wire-proxy" x1="270" y1="129" x2="322" y2="129" marker-end="url(#arrow)" />
-          <line id="wire-mlx" x1="570" y1="129" x2="622" y2="129" marker-end="url(#arrow)" />
-          <line id="wire-profile" x1="450" y1="222" x2="450" y2="202" marker-end="url(#arrow)" />
-        </svg>
-        <div class="card node" id="voice-core">
-          <h2>aidemo</h2>
-          <span class="sub" id="voice-stock"
-            ><span class="before">Local voice: Kokoro</span><span class="after">Voice: the clone</span></span
-          >
-        </div>
-        <div class="card node beat-in" id="proxy" data-beat="shown" tabindex="0">
-          <h2>Proxy</h2>
-          <span class="sub">Adds the voice profile</span>
-        </div>
-        <div class="card node beat-in solves" id="mlx" data-beat="shown" tabindex="0">
-          <h2 class="mono">mlx-audio</h2>
-          <span class="sub">Speaks in the cloned voice</span>
-        </div>
-        <div class="card beat-in" id="profile" data-beat="shown" tabindex="0">
-          <svg viewBox="0 0 120 22" width="120" height="22" aria-hidden="true">
-            <path d="M4 11v0M14 6v10M24 2v18M34 7v8M44 4v14M54 9v4M64 3v16M74 6v10M84 1v20M94 7v8M104 5v12M114 10v2" />
-          </svg>
-          <h2>Voice profile</h2>
-          <span class="sub">Reference recording and transcript</span>
-        </div>
-        <ul id="stages" class="beat-in" data-beat="shown" tabindex="0">
-          <li><strong>Voice</strong><span>Runs again</span></li>
-          <li id="stage-record"><strong>Record</strong><span>Recording kept</span></li>
-          <li><strong>Captions</strong><span>Runs again</span></li>
-          <li><strong>Compose</strong><span>Runs again</span></li>
-        </ul>
-        <div class="card beat-in" id="off-machine" data-beat="shown" tabindex="0">
-          <svg viewBox="0 0 120 70" aria-hidden="true">
-            <path class="cloud-outline" d="M30 62h62a20 20 0 0 0 0-40a26 26 0 0 0-50-4a22 22 0 0 0-12 44z" />
-            <path class="cross" d="M38 14l44 44M82 14l-44 44" />
-          </svg>
-          <h2>Off the machine</h2>
-          <span class="sub">Nothing sent</span>
-        </div>
+      <div class="split" id="voice-figure">
+        <section class="panel without" id="voice-without">
+          <h2 class="panel-label">Without thor-demo</h2>
+          <div class="machine" id="voice-stock">
+            <span class="machine-label">This machine</span>
+            <ol class="chain">
+              <li class="card">aidemo</li>
+              <li class="card">Kokoro</li>
+            </ol>
+            <span class="sub">A stock voice, not the presenter’s</span>
+          </div>
+        </section>
+        <section class="panel with" id="voice-with">
+          <h2 class="panel-label" data-beat="shown" tabindex="0">With thor-demo</h2>
+          <div class="machine" id="boundary">
+            <span class="machine-label">This machine · <span class="mono">127.0.0.1</span></span>
+            <div class="card" id="profile">
+              <h3>Voice profile</h3>
+              <span class="sub">Cloned from a short reference recording</span>
+            </div>
+            <ol class="chain">
+              <li class="card">aidemo</li>
+              <li class="card beat-in" id="proxy" data-beat="shown" tabindex="0">Proxy</li>
+              <li class="card mono beat-in" id="mlx" data-beat="shown" tabindex="0">mlx-audio</li>
+            </ol>
+            <span class="sub" id="nothing-sent">Nothing leaves the machine</span>
+          </div>
+          <ul class="stages beat-in" id="stages" data-beat="shown" tabindex="0">
+            <li>Voice</li>
+            <li id="stage-record" class="kept">Recording kept</li>
+            <li>Captions</li>
+            <li>Compose</li>
+          </ul>
+        </section>
       </div>
     </main>
     <nav><a class="next" href="05-close.html">Next</a></nav>

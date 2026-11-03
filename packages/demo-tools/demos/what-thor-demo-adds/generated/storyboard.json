@@ -1,6 +1,6 @@
 {
   "title": "What thor-demo adds to an aidemo workflow",
-  "targetLengthSeconds": 55,
+  "targetLengthSeconds": 58,
   "captions": {
     "style": "none",
     "track": true
@@ -23,7 +23,9 @@
       "MCP": "M.C.P.",
       "mlx-audio": "M.L.X. audio",
       "OpenAI": "Open A.I.",
-      "thor-demo": "thor demo"
+      "thor-demo": "thor demo",
+      "revoice": "reevoice",
+      "provenance": "prahvenance"
     }
   },
   "output": {
@@ -33,7 +35,7 @@
     {
       "id": "open",
       "title": "What thor-demo adds",
-      "narration": "aidemo {{@aidemo}}renders a narrated, captioned demo from a storyboard. {{@adds}}thor-demo adds three things around it.",
+      "narration": "aidemo {{@aidemo}}renders narrated demos. {{@adds}}thor-demo adds three things: {{@config}}a configuration per repository, {{@archive}}an archive of every take, {{@voice}}and narration in your own voice.",
       "actions": [
         {
           "op": "goto",
@@ -50,7 +52,7 @@
           "target": {
             "selector": "#core"
           },
-          "holdMs": 3000,
+          "holdMs": 1650,
           "anchor": "aidemo"
         },
         {
@@ -64,19 +66,51 @@
           "target": {
             "selector": "#ring"
           },
-          "holdMs": 2800,
+          "holdMs": 2000,
           "anchor": "adds"
         },
         {
+          "op": "highlight",
+          "target": {
+            "selector": "#tile-config"
+          },
+          "holdMs": 2200,
+          "anchor": "config"
+        },
+        {
           "op": "pause",
-          "ms": 1600
+          "ms": 800
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#tile-archive"
+          },
+          "holdMs": 1800,
+          "anchor": "archive"
+        },
+        {
+          "op": "pause",
+          "ms": 650
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#tile-voice"
+          },
+          "holdMs": 2450,
+          "anchor": "voice"
+        },
+        {
+          "op": "pause",
+          "ms": 800
         }
       ]
     },
     {
       "id": "config",
       "title": "Per-repository configuration",
-      "narration": "A shell and an agent’s {{@paths}}MCP server see different environments; {{@key}}an inherited OpenAI key sends captions off this machine. {{@file}}One file per repository fixes both: {{@strip}}thor-demo drops the key unless the file allows it.",
+      "narration": "aidemo’s CLI {{@shell}}and its MCP server {{@agent}}read different environments, {{@key}}so an inherited OpenAI key can send captions off this machine. {{@with}}thor-demo gives both the environment in {{@file}}the repository’s thor-demo.yaml, {{@strip}}and drops that key unless the file allows it.",
       "actions": [
         {
           "op": "goto",
@@ -85,79 +119,93 @@
         {
           "op": "waitFor",
           "target": {
-            "selector": "#launches"
+            "selector": "#config-without"
           }
-        },
-        {
-          "op": "pause",
-          "ms": 700
-        },
-        {
-          "op": "spotlight",
-          "target": {
-            "selector": "#launches"
-          },
-          "holdMs": 2800,
-          "anchor": "paths"
-        },
-        {
-          "op": "pause",
-          "ms": 2200
         },
         {
           "op": "highlight",
           "target": {
-            "selector": "#mcp-key"
+            "selector": "#shell"
+          },
+          "holdMs": 1300,
+          "anchor": "shell"
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#mcp"
+          },
+          "holdMs": 2050,
+          "anchor": "agent"
+        },
+        {
+          "op": "click",
+          "target": {
+            "selector": "#leak"
+          }
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#leak"
           },
           "holdMs": 3000,
           "anchor": "key"
         },
         {
           "op": "pause",
-          "ms": 1800
+          "ms": 1000
         },
         {
           "op": "click",
           "target": {
-            "selector": "#gate"
+            "selector": "#config-with .panel-label"
           }
         },
         {
           "op": "spotlight",
           "target": {
-            "selector": "#gate"
+            "selector": "#config-with"
           },
-          "holdMs": 2550,
-          "anchor": "file"
+          "holdMs": 2850,
+          "anchor": "with"
         },
         {
           "op": "pause",
-          "ms": 400
+          "ms": 1250
+        },
+        {
+          "op": "highlight",
+          "target": {
+            "selector": "#config-file"
+          },
+          "holdMs": 2350,
+          "anchor": "file"
         },
         {
           "op": "click",
           "target": {
-            "selector": "#mcp-key"
+            "selector": "#strip"
           }
         },
         {
           "op": "highlight",
           "target": {
-            "selector": "#mcp-key"
+            "selector": "#strip"
           },
           "holdMs": 3000,
           "anchor": "strip"
         },
         {
           "op": "pause",
-          "ms": 3200
+          "ms": 1000
         }
       ]
     },
     {
       "id": "archive",
       "title": "Archived takes",
-      "narration": "Each render {{@overwrite}}overwrites the last. thor-demo {{@files}}files every take by time and commit, {{@provenance}}with a provenance record: {{@engine}}engine, {{@voice}}voice, {{@options}}options, {{@hashes}}and a hash of every file.",
+      "narration": "aidemo keeps {{@latest}}only the latest render, {{@discard}}discarding earlier takes. thor-demo {{@files}}keeps every take, {{@provenance}}with a provenance record: {{@engine}}engine, {{@voice}}voice, {{@options}}options, {{@hashes}}and a hash of every file.",
       "actions": [
         {
           "op": "goto",
@@ -170,31 +218,31 @@
           }
         },
         {
-          "op": "pause",
-          "ms": 200
+          "op": "highlight",
+          "target": {
+            "selector": "#out-new"
+          },
+          "holdMs": 1550,
+          "anchor": "latest"
         },
         {
           "op": "click",
           "target": {
-            "selector": "#out-new"
+            "selector": "#out-old"
           }
         },
         {
-          "op": "spotlight",
+          "op": "highlight",
           "target": {
-            "selector": "#folder"
+            "selector": "#out-old"
           },
-          "holdMs": 2050,
-          "anchor": "overwrite"
-        },
-        {
-          "op": "pause",
-          "ms": 300
+          "holdMs": 2400,
+          "anchor": "discard"
         },
         {
           "op": "click",
           "target": {
-            "selector": "#shelf-head"
+            "selector": "#archive-with .panel-label"
           }
         },
         {
@@ -202,17 +250,13 @@
           "target": {
             "selector": "#shelf"
           },
-          "holdMs": 2450,
+          "holdMs": 1150,
           "anchor": "files"
-        },
-        {
-          "op": "pause",
-          "ms": 300
         },
         {
           "op": "click",
           "target": {
-            "selector": "#take-latest"
+            "selector": "#prov"
           }
         },
         {
@@ -244,7 +288,7 @@
           "target": {
             "selector": "#prov-options"
           },
-          "holdMs": 500,
+          "holdMs": 550,
           "anchor": "options"
         },
         {
@@ -257,14 +301,14 @@
         },
         {
           "op": "pause",
-          "ms": 2000
+          "ms": 1000
         }
       ]
     },
     {
       "id": "voice",
       "title": "Voice clone",
-      "narration": "aidemo’s local {{@stock}}voice is a stock voice. {{@clone}}thor-demo clones yours from a short recording; {{@proxy}}revoice swaps the narration through a proxy {{@mlx}}and mlx-audio, {{@local}}all on this machine, {{@kept}}and keeps the recording.",
+      "narration": "aidemo’s local {{@stock}}voice is a stock voice. {{@clone}}thor-demo clones yours from a short recording, {{@proxy}}and revoice narrates with it {{@local}}on this machine, {{@kept}}keeping the recording.",
       "actions": [
         {
           "op": "goto",
@@ -273,29 +317,21 @@
         {
           "op": "waitFor",
           "target": {
-            "selector": "#voice-core"
+            "selector": "#voice-stock"
           }
-        },
-        {
-          "op": "pause",
-          "ms": 700
         },
         {
           "op": "highlight",
           "target": {
             "selector": "#voice-stock"
           },
-          "holdMs": 1600,
+          "holdMs": 1500,
           "anchor": "stock"
-        },
-        {
-          "op": "pause",
-          "ms": 200
         },
         {
           "op": "click",
           "target": {
-            "selector": "#profile"
+            "selector": "#voice-with .panel-label"
           }
         },
         {
@@ -308,7 +344,7 @@
         },
         {
           "op": "pause",
-          "ms": 300
+          "ms": 550
         },
         {
           "op": "click",
@@ -317,11 +353,11 @@
           }
         },
         {
-          "op": "spotlight",
+          "op": "highlight",
           "target": {
-            "selector": "#proxy"
+            "selector": "#boundary .chain"
           },
-          "holdMs": 3000,
+          "holdMs": 1800,
           "anchor": "proxy"
         },
         {
@@ -331,30 +367,12 @@
           }
         },
         {
-          "op": "click",
-          "target": {
-            "selector": "#off-machine"
-          }
-        },
-        {
-          "op": "spotlight",
-          "target": {
-            "selector": "#mlx"
-          },
-          "holdMs": 950,
-          "anchor": "mlx"
-        },
-        {
           "op": "highlight",
           "target": {
             "selector": "#boundary"
           },
-          "holdMs": 1350,
+          "holdMs": 1000,
           "anchor": "local"
-        },
-        {
-          "op": "pause",
-          "ms": 300
         },
         {
           "op": "click",
@@ -367,19 +385,19 @@
           "target": {
             "selector": "#stage-record"
           },
-          "holdMs": 1800,
+          "holdMs": 1550,
           "anchor": "kept"
         },
         {
           "op": "pause",
-          "ms": 2000
+          "ms": 1000
         }
       ]
     },
     {
       "id": "close",
       "title": "Install",
-      "narration": "Add {{@install}}demo-tools beside aidemo, {{@render}}render, {{@revoice}}and revoice.",
+      "narration": "To use demo-tools, {{@install}}install it alongside aidemo; {{@render}}then render, {{@revoice}}and revoice.",
       "actions": [
         {
           "op": "goto",
@@ -400,15 +418,19 @@
           "target": {
             "selector": "#close-install"
           },
-          "holdMs": 1950,
+          "holdMs": 2200,
           "anchor": "install"
+        },
+        {
+          "op": "pause",
+          "ms": 600
         },
         {
           "op": "highlight",
           "target": {
             "selector": "#close-render"
           },
-          "holdMs": 550,
+          "holdMs": 900,
           "anchor": "render"
         },
         {
@@ -416,12 +438,12 @@
           "target": {
             "selector": "#close-revoice"
           },
-          "holdMs": 1100,
+          "holdMs": 1050,
           "anchor": "revoice"
         },
         {
           "op": "pause",
-          "ms": 1400
+          "ms": 600
         }
       ]
     }
