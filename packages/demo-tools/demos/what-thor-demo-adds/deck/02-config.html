@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Per-repository configuration</title>
+    <link rel="stylesheet" href="/deck/deck.css" />
+    <link rel="stylesheet" href="adds.css" />
+    <script src="/deck/deck.js" defer></script>
+  </head>
+  <body>
+    <main class="adds">
+      <header>
+        <p class="kicker">1 · Per-repository configuration</p>
+        <h1>The same environment from a shell or an agent</h1>
+      </header>
+      <div class="split" id="config-figure">
+        <section class="panel without" id="config-without">
+          <h2 class="panel-label">Without thor-demo</h2>
+          <div class="card" id="shell">
+            <h3>aidemo, run from a shell</h3>
+            <span class="sub">Reads the shell’s environment</span>
+            <ul class="vars">
+              <li>AIDEMO_TTS_PROVIDER=local</li>
+            </ul>
+          </div>
+          <div class="card" id="mcp">
+            <h3>aidemo’s MCP server, launched by an agent</h3>
+            <span class="sub">Reads the agent’s environment</span>
+            <ul class="vars">
+              <li class="unset">AIDEMO_TTS_PROVIDER not set</li>
+              <li class="bad">OPENAI_API_KEY=… inherited</li>
+            </ul>
+          </div>
+          <p class="outcome bad beat-in" id="leak" data-beat="shown" tabindex="0">Captions sent to a cloud service</p>
+        </section>
+        <section class="panel with" id="config-with">
+          <h2 class="panel-label" data-beat="shown" tabindex="0">With thor-demo</h2>
+          <div class="card" id="config-file">
+            <h3 class="mono">.config/thor-demo.yaml</h3>
+            <pre><code>aidemo:
+  env:
+    AIDEMO_TTS_PROVIDER: local</code></pre>
+          </div>
+          <div class="pair">
+            <div class="card">
+              <h3 class="mono">thor-demo render</h3>
+              <ul class="vars">
+                <li class="good">AIDEMO_TTS_PROVIDER=local</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3 class="mono">thor-demo mcp</h3>
+              <ul class="vars">
+                <li class="good">AIDEMO_TTS_PROVIDER=local</li>
+              </ul>
+            </div>
+          </div>
+          <p class="outcome good beat-in" id="strip" data-beat="shown" tabindex="0">
+            OPENAI_API_KEY dropped unless the file declares it; captions stay on this machine
+          </p>
+        </section>
+      </div>
+    </main>
+    <nav><a class="next" href="03-archive.html">Next</a></nav>
+  </body>
+</html>

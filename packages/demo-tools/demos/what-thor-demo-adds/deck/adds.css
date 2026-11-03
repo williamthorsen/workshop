@@ -1,0 +1,431 @@
+/* Figures of the what-thor-demo-adds deck, layered on the agent-records-demo deck's base styles. */
+
+main.adds {
+  position: relative;
+  justify-content: flex-start;
+  gap: 20px;
+  padding: 28px 40px 80px;
+}
+
+.adds header {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 4px 24px;
+}
+
+.kicker {
+  grid-column: 1;
+  color: var(--accent);
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.adds h1 {
+  grid-column: 1;
+}
+
+/* -- Figure -- */
+
+.figure {
+  position: relative;
+  flex: none;
+  width: 1200px;
+  height: 480px;
+}
+
+.figure > * {
+  position: absolute;
+}
+
+.wires {
+  inset: 0;
+  width: 1200px;
+  height: 480px;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.wires path,
+.wires line {
+  fill: none;
+  stroke: var(--border-strong);
+  stroke-width: 3;
+}
+
+.wires .arrowhead {
+  fill: var(--border-strong);
+  stroke: none;
+}
+
+.wires text {
+  fill: var(--removed);
+  font:
+    600 18px system-ui,
+    sans-serif;
+}
+
+.card {
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 20px;
+  border: 2px solid var(--border-strong);
+  border-radius: 14px;
+  background: var(--code-surface);
+}
+
+.card h2 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.card .sub {
+  color: var(--text-muted);
+  font-size: 18px;
+  line-height: 1.3;
+}
+
+.mono {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+.vars {
+  display: grid;
+  gap: 6px;
+  margin: 4px 0 0;
+  padding: 0;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 18px;
+  list-style: none;
+}
+
+/* A beat element starts transparent rather than hidden, so that the storyboard's click still lands on it. */
+.beat-in {
+  opacity: 0;
+  transition:
+    opacity 300ms,
+    transform 300ms;
+}
+
+.beat-in.shown {
+  opacity: 1;
+}
+
+/* -- Open -- */
+
+.ring {
+  inset: 0;
+  border: 3px dashed var(--accent);
+  border-radius: 24px;
+  opacity: 0;
+  transition: opacity 300ms;
+}
+
+#ring-label {
+  top: 14px;
+  left: 28px;
+  color: var(--accent);
+  font-size: 26px;
+  font-weight: 700;
+}
+
+#core {
+  top: 40px;
+  left: 400px;
+  width: 400px;
+  height: 140px;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+#core h2 {
+  font-size: 30px;
+}
+
+.tile {
+  top: 250px;
+  width: 360px;
+  height: 190px;
+  justify-content: center;
+  border-color: var(--accent);
+  opacity: 0;
+  transition: opacity 300ms;
+}
+
+.tile .number {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--surface);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+#tile-config {
+  left: 30px;
+}
+
+#tile-archive {
+  left: 420px;
+}
+
+#tile-voice {
+  left: 810px;
+}
+
+#open-wires {
+  opacity: 0;
+  transition: opacity 300ms;
+}
+
+.figure:has(#ring-label.shown) :is(.ring, .tile, #open-wires) {
+  opacity: 1;
+}
+
+/* -- Without and with -- */
+
+.split {
+  display: grid;
+  flex: none;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 40px;
+  width: 1200px;
+  height: 500px;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 20px 20px;
+  border: 3px solid var(--removed);
+  border-radius: 18px;
+  background: var(--removed-surface);
+}
+
+.panel.with {
+  border-color: var(--added);
+  background: var(--added-surface);
+}
+
+.panel-label {
+  margin: 0;
+  color: var(--removed);
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.with .panel-label {
+  color: var(--added);
+}
+
+/* The right panel stays transparent until the storyboard clicks its label. */
+.panel.with {
+  opacity: 0;
+  transition: opacity 300ms;
+}
+
+.panel.with:has(.panel-label.shown) {
+  opacity: 1;
+}
+
+.pair .card {
+  padding: 10px 12px;
+}
+
+.pair .vars {
+  font-size: 15px;
+}
+
+.panel .card {
+  gap: 4px;
+  padding: 12px 16px;
+}
+
+.card h3 {
+  margin: 0;
+  font-size: 21px;
+  line-height: 1.25;
+}
+
+.card pre {
+  margin: 4px 0 0;
+  padding: 8px 12px;
+  font-size: 18px;
+  line-height: 1.4;
+}
+
+.vars .unset,
+.vars .bad,
+.outcome.bad {
+  color: var(--removed);
+}
+
+.vars .good,
+.outcome.good {
+  color: var(--added);
+}
+
+.outcome {
+  margin: 0;
+  padding: 10px 16px;
+  border: 2px solid currentcolor;
+  border-radius: 10px;
+  background: var(--surface);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* -- Archive -- */
+
+.take {
+  margin-top: 8px;
+  padding: 10px 14px;
+  border: 2px solid var(--accent);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.take strong {
+  display: block;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 20px;
+}
+
+.take span {
+  color: var(--text-muted);
+  font-size: 18px;
+}
+
+.take.discarded {
+  border-style: dashed;
+  border-color: var(--removed);
+}
+
+.take.discarded strong {
+  text-decoration: line-through 3px var(--removed);
+}
+
+.take.discarded span {
+  color: var(--removed);
+}
+
+#shelf h3 {
+  font-size: 18px;
+}
+
+.takes {
+  display: grid;
+  gap: 8px;
+  margin: 6px 0 0;
+  padding: 0;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 17px;
+  list-style: none;
+}
+
+.takes li {
+  padding: 6px 10px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+#take-latest {
+  border-color: var(--added);
+}
+
+#prov h3 {
+  color: var(--added);
+  font-size: 18px;
+}
+
+#prov dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 14px;
+  margin: 6px 0 0;
+  font-size: 18px;
+}
+
+#prov dt {
+  color: var(--text-muted);
+}
+
+#prov dd {
+  margin: 0;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+/* -- Voice -- */
+
+.machine {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px 16px 14px;
+  border: 3px dashed var(--accent);
+  border-radius: 14px;
+}
+
+.machine-label {
+  color: var(--accent);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.chain {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chain li {
+  position: relative;
+  flex: 1 1 0;
+  white-space: nowrap;
+  font-size: 21px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.chain li + li::before {
+  position: absolute;
+  top: 50%;
+  left: -30px;
+  color: var(--border-strong);
+  content: '→';
+  font-size: 24px;
+  transform: translateY(-50%);
+}
+
+/* -- Close -- */
+
+main.adds.close-page {
+  justify-content: center;
+  gap: 28px;
+}
+
+.close-page dl {
+  grid-template-columns: 300px 1fr;
+}
+
+.repo {
+  color: var(--text-muted);
+}

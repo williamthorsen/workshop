@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Voice clone</title>
+    <link rel="stylesheet" href="/deck/deck.css" />
+    <link rel="stylesheet" href="adds.css" />
+    <script src="/deck/deck.js" defer></script>
+  </head>
+  <body>
+    <main class="adds">
+      <header>
+        <p class="kicker">3 · Voice clone</p>
+        <h1>The presenter’s voice, cloned on this machine</h1>
+      </header>
+      <div class="split" id="voice-figure">
+        <section class="panel without" id="voice-without">
+          <h2 class="panel-label">Without thor-demo</h2>
+          <div class="machine" id="voice-stock">
+            <span class="machine-label">This machine</span>
+            <ol class="chain">
+              <li class="card">aidemo</li>
+              <li class="card">Kokoro</li>
+            </ol>
+            <span class="sub">A stock voice, not the presenter’s</span>
+          </div>
+        </section>
+        <section class="panel with" id="voice-with">
+          <h2 class="panel-label" data-beat="shown" tabindex="0">With thor-demo</h2>
+          <div class="machine" id="boundary">
+            <span class="machine-label">This machine · <span class="mono">127.0.0.1</span></span>
+            <div class="card" id="profile">
+              <h3>Voice profile</h3>
+              <span class="sub">Cloned from a short reference recording</span>
+            </div>
+            <ol class="chain">
+              <li class="card">aidemo</li>
+              <li class="card beat-in" id="proxy" data-beat="shown" tabindex="0">Proxy</li>
+              <li class="card mono beat-in" id="mlx" data-beat="shown" tabindex="0">mlx-audio</li>
+            </ol>
+            <span class="sub" id="nothing-sent">Nothing leaves the machine</span>
+          </div>
+        </section>
+      </div>
+    </main>
+    <nav><a class="next" href="05-close.html">Next</a></nav>
+  </body>
+</html>

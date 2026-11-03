@@ -1,0 +1,376 @@
+{
+  "version": 1,
+  "title": "What thor-demo adds to an aidemo workflow",
+  "video": {
+    "width": 1280,
+    "height": 720
+  },
+  "scenes": [
+    {
+      "id": "open",
+      "actions": [
+        {
+          "op": "goto",
+          "target": "http://127.0.0.1:8787/adds/01-open.html",
+          "ok": true,
+          "finalUrl": "http://127.0.0.1:8787/adds/01-open.html"
+        },
+        {
+          "op": "waitFor",
+          "target": "#core",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "spotlight",
+          "target": "#core",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "click",
+          "target": "#ring-label",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "spotlight",
+          "target": "#ring",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "highlight",
+          "target": "#tile-config",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 800
+        },
+        {
+          "op": "highlight",
+          "target": "#tile-archive",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 650
+        },
+        {
+          "op": "highlight",
+          "target": "#tile-voice",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 800
+        }
+      ]
+    },
+    {
+      "id": "config",
+      "actions": [
+        {
+          "op": "goto",
+          "target": "http://127.0.0.1:8787/adds/02-config.html",
+          "ok": true,
+          "finalUrl": "http://127.0.0.1:8787/adds/02-config.html"
+        },
+        {
+          "op": "waitFor",
+          "target": "#config-without",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "highlight",
+          "target": "#shell",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "highlight",
+          "target": "#mcp",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "click",
+          "target": "#leak",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "highlight",
+          "target": "#leak",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 1000
+        },
+        {
+          "op": "click",
+          "target": "#config-with .panel-label",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "spotlight",
+          "target": "#config-with",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 1250
+        },
+        {
+          "op": "highlight",
+          "target": "#config-file",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "click",
+          "target": "#strip",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "highlight",
+          "target": "#strip",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 1000
+        }
+      ]
+    },
+    {
+      "id": "archive",
+      "actions": [
+        {
+          "op": "goto",
+          "target": "http://127.0.0.1:8787/adds/03-archive.html",
+          "ok": true,
+          "finalUrl": "http://127.0.0.1:8787/adds/03-archive.html"
+        },
+        {
+          "op": "waitFor",
+          "target": "#folder",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "highlight",
+          "target": "#out-new",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "click",
+          "target": "#out-old",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "highlight",
+          "target": "#out-old",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "click",
+          "target": "#archive-with .panel-label",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "spotlight",
+          "target": "#shelf",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "click",
+          "target": "#prov",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "spotlight",
+          "target": "#prov",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "highlight",
+          "target": "#prov-engine",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "highlight",
+          "target": "#prov-voice",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "highlight",
+          "target": "#prov-options",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "highlight",
+          "target": "#prov-files",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 1000
+        }
+      ]
+    },
+    {
+      "id": "voice",
+      "actions": [
+        {
+          "op": "goto",
+          "target": "http://127.0.0.1:8787/adds/04-voice.html",
+          "ok": true,
+          "finalUrl": "http://127.0.0.1:8787/adds/04-voice.html"
+        },
+        {
+          "op": "waitFor",
+          "target": "#voice-stock",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "highlight",
+          "target": "#voice-stock",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "click",
+          "target": "#voice-with .panel-label",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "spotlight",
+          "target": "#profile",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 550
+        },
+        {
+          "op": "click",
+          "target": "#proxy",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "highlight",
+          "target": "#boundary .chain",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "click",
+          "target": "#mlx",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "highlight",
+          "target": "#boundary",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 1000
+        }
+      ]
+    },
+    {
+      "id": "close",
+      "actions": [
+        {
+          "op": "goto",
+          "target": "http://127.0.0.1:8787/adds/05-close.html",
+          "ok": true,
+          "finalUrl": "http://127.0.0.1:8787/adds/05-close.html"
+        },
+        {
+          "op": "waitFor",
+          "target": "#close-install",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 200
+        },
+        {
+          "op": "highlight",
+          "target": "#close-install",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 600
+        },
+        {
+          "op": "highlight",
+          "target": "#close-render",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 600
+        },
+        {
+          "op": "highlight",
+          "target": "#close-revoice",
+          "ok": true,
+          "found": true
+        },
+        {
+          "op": "pause",
+          "ok": true,
+          "ms": 600
+        }
+      ]
+    }
+  ]
+}
