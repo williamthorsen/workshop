@@ -1,6 +1,6 @@
 {
   "title": "What thor-demo adds to an aidemo workflow",
-  "targetLengthSeconds": 58,
+  "targetLengthSeconds": 61,
   "captions": {
     "style": "none",
     "track": true
@@ -109,7 +109,7 @@
     {
       "id": "config",
       "title": "Per-repository configuration",
-      "narration": "aidemo’s CLI {{@shell}}and its MCP server {{@agent}}read different environments, {{@key}}so an inherited OpenAI key can send captions off this machine. {{@with}}thor-demo gives both the environment in {{@file}}the repository’s thor-demo.yaml, {{@strip}}and drops that key unless the file allows it.",
+      "narration": "aidemo’s CLI {{@shell}}and its MCP server {{@agent}}read different environments, {{@key}}so an inherited OpenAI key can send captions off this machine. {{@with}}thor-demo gives both the environment in {{@file}}the repository’s thor-demo.yaml, {{@strip}}and drops that key unless the file declares it.",
       "actions": [
         {
           "op": "goto",
@@ -134,7 +134,7 @@
           "target": {
             "selector": "#mcp"
           },
-          "holdMs": 2000,
+          "holdMs": 2050,
           "anchor": "agent"
         },
         {
@@ -166,7 +166,7 @@
           "target": {
             "selector": "#config-with"
           },
-          "holdMs": 2800,
+          "holdMs": 2850,
           "anchor": "with"
         },
         {
@@ -178,7 +178,7 @@
           "target": {
             "selector": "#config-file"
           },
-          "holdMs": 2300,
+          "holdMs": 2350,
           "anchor": "file"
         },
         {
@@ -382,7 +382,7 @@
     {
       "id": "close",
       "title": "Install",
-      "narration": "To use demo-tools, {{@install}}install it alongside aidemo; {{@render}}then render, {{@revoice}}and revoice.",
+      "narration": "To use demo-tools, {{@install}}install it alongside aidemo; {{@render}}render with thor-demo instead, {{@revoice}}then revoice.",
       "actions": [
         {
           "op": "goto",
@@ -403,7 +403,7 @@
           "target": {
             "selector": "#close-install"
           },
-          "holdMs": 2200,
+          "holdMs": 2150,
           "anchor": "install"
         },
         {
@@ -415,15 +415,19 @@
           "target": {
             "selector": "#close-render"
           },
-          "holdMs": 900,
+          "holdMs": 1900,
           "anchor": "render"
+        },
+        {
+          "op": "pause",
+          "ms": 600
         },
         {
           "op": "highlight",
           "target": {
             "selector": "#close-revoice"
           },
-          "holdMs": 1050,
+          "holdMs": 1450,
           "anchor": "revoice"
         },
         {

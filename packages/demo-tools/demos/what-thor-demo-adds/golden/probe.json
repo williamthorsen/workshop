@@ -355,6 +355,11 @@
           "found": true
         },
         {
+          "op": "pause",
+          "ok": true,
+          "ms": 600
+        },
+        {
           "op": "highlight",
           "target": "#close-revoice",
           "ok": true,

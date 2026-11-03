@@ -81,7 +81,7 @@ pnpm exec aidemo render demos/agent-records-demo --headless --fresh
 
 [aidemo's README](https://github.com/tandryukha/aidemo#readme) describes the options. In the outer storyboard, a scene that plays the video leaves its page with two `goto` actions on purpose: Chrome's screencast stalls after one navigation away from a playing video, and the second navigation restarts it.
 
-`demos/what-thor-demo-adds` renders a video, under a minute long, that shows the per-repository configuration, the archived takes, and the voice clone, each as the problem that it solves and then its solution. To render it from a clone, run these from `packages/demo-tools` after `nmr build`:
+`demos/what-thor-demo-adds` renders a video, about a minute long, that shows the per-repository configuration, the archived takes, and the voice clone, each as the problem that it solves and then its solution. To render it from a clone, run these from `packages/demo-tools` after `nmr build`:
 
 ```bash
 pnpm run demo:serve &
