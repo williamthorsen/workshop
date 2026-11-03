@@ -88,7 +88,7 @@ pnpm run demo:serve &
 node bin/thor-demo.js render what-thor-demo-adds --headless --strict
 ```
 
-aidemo 0.20.2 counts the end of a headless recording as lead-in, which puts each page about three seconds ahead of its narration. To compose the video again with each page in step, set `leadInMs` to `0` in the demo's `generated/timeline.json`, then run `pnpm exec aidemo compose demos/what-thor-demo-adds`.
+aidemo 0.20.2 counts the end of a headless recording as lead-in, which puts each page about three seconds ahead of its narration. To compose the video again with each page in step, set `leadInMs` to `0` in the demo's `generated/timeline.json`, then run `pnpm exec aidemo compose demos/what-thor-demo-adds`. `thor-demo` does not run that compose, so the archived take keeps each page ahead of its narration; the composed video is written only to the demo's `output/`, which the next render replaces.
 
 ## Captions
 
