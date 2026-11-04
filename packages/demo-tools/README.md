@@ -8,7 +8,7 @@ A CLI that runs [aidemo](https://github.com/tandryukha/aidemo) demos with the en
 
 ## Installation
 
-In the demo repository, install the package beside aidemo, which is a peer dependency at 0.17.0 or later:
+In the demo repository, install the package beside aidemo, which is a peer dependency at 0.20.3 or later:
 
 ```bash
 pnpm add --save-dev @williamthorsen/demo-tools @tandryukha/aidemo
@@ -88,8 +88,6 @@ pnpm run demo:serve &
 node bin/thor-demo.js render what-thor-demo-adds --headless --strict
 ```
 
-aidemo 0.20.2 counts the end of a headless recording as lead-in, which puts each page about three seconds ahead of its narration. To compose the video again with each page in step, set `leadInMs` to `0` in the demo's `generated/timeline.json`, then run `pnpm exec aidemo compose demos/what-thor-demo-adds`. `thor-demo` does not run that compose, so the archived take keeps each page ahead of its narration; the composed video is written only to the demo's `output/`, which the next render replaces.
-
 ## Captions
 
 Each render writes `output/final-demo.srt` and `output/final-demo.vtt` beside the video. To deliver the captions as a subtitle track, off by default, rather than burned into the frames, set this in the demo's storyboard:
@@ -121,20 +119,20 @@ The timestamp is the UTC time at which the render started, and `<commit>` is the
 
 `provenance.json` records what produced the take:
 
-| Field           | Content                                                                                                              |
-| --------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `schemaVersion` | `1`                                                                                                                  |
-| `demo`, `label` | The demo's name and `archive.label`                                                                                  |
-| `renderedAt`    | The render's start, as ISO 8601                                                                                      |
-| `source`        | The `commit` and `dirty` state before the render, or `null` for each outside git                                     |
-| `engine`        | The aidemo package and version                                                                                       |
-| `voice`         | The TTS `provider` and `voiceId`, resolved by aidemo 0.20.0's rules; for a `revoice` take, `mlx-audio` and the model |
-| `reference`     | For a `revoice` take only, the `sha256` of the reference recording that it clones                                    |
-| `params`        | The options passed to aidemo after the demo                                                                          |
-| `storyboard`    | The `sha256` of `generated/storyboard.json`                                                                          |
-| `files`         | Each archived file's `sha256` and size in `bytes`, which match the file in `output/`                                 |
+| Field           | Content                                                                                                                                                                                 |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `schemaVersion` | `2`                                                                                                                                                                                     |
+| `demo`, `label` | The demo's name and `archive.label`                                                                                                                                                     |
+| `renderedAt`    | The render's start, as ISO 8601                                                                                                                                                         |
+| `source`        | The `commit` and `dirty` state before the render, or `null` for each outside git                                                                                                        |
+| `engine`        | The aidemo package and version                                                                                                                                                          |
+| `voice`         | Each scene's `id`, TTS `provider`, and `voiceId` in `scenes`, as aidemo's `audio/voice.json` records them, or `null` where it does not; for a `revoice` take, `mlx-audio` and the model |
+| `reference`     | For a `revoice` take only, the `sha256` of the reference recording that it clones                                                                                                       |
+| `params`        | The options passed to aidemo after the demo                                                                                                                                             |
+| `storyboard`    | The `sha256` of `generated/storyboard.json`                                                                                                                                             |
+| `files`         | Each archived file's `sha256` and size in `bytes`, which match the file in `output/`                                                                                                    |
 
-The record contains no environment values. Renders with `--lang`, `--langs`, or `--variants` write files named for each language and are not archived. When archiving fails, `render` exits 1 and the take remains in the demo's `output/`.
+The record contains no environment values. Renders with `--lang`, `--langs`, or `--variants` write files named for each language and are not archived. When archiving fails, as it does when aidemo wrote no `audio/voice.json`, `render` exits 1 and the take remains in the demo's `output/`.
 
 ## Voice clone
 
@@ -193,6 +191,6 @@ thor-demo revoice quickstart
 
 The proxy measures each clip with ffmpeg before aidemo receives it. It refuses a clip that is silent throughout, one that ends in more than 3 s of silence, and one whose speech is far shorter than its text requires, and it abandons a request that the server does not answer within 9 minutes. `revoice` then stops, naming the scene's text, the reason, and the voice-clone server's log; it does not retry. A clip that has normal levels but sounds wrong passes these checks.
 
-It refuses to start when the profile does not match the voice section, when the demo has not been rendered, when the demo repository's aidemo predates 0.20.2, or when the repository's `.env` sets a variable that would send the narration elsewhere. `thor-demo revoice --help` names each prerequisite.
+It refuses to start when the profile does not match the voice section, when the demo has not been rendered, or when the repository's `.env` sets a variable that would send the narration elsewhere. `thor-demo revoice --help` names each prerequisite.
 
-The cloned voice ignores the storyboard's `voice.speed` and `voice.instructions`. A later `render` re-voices the demo in its configured voice, because aidemo 0.20.2 keys its voice cache by the TTS server and model.
+The cloned voice ignores the storyboard's `voice.speed` and `voice.instructions`. A later `render` re-voices the demo in its configured voice, because aidemo keys its voice cache by the TTS server and model.
