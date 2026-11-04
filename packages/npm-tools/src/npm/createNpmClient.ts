@@ -23,7 +23,6 @@ export function createNpmClient({ cwd, env }: NpmClientOptions): NpmClient {
     publish(dir) {
       // A Ctrl+C at npm's prompt also reaches this process, whose default disposition would exit before the caller
       // cleans up; the listener lets npm alone handle the signal.
-      const ignoreInterrupt = (): void => {};
       process.on('SIGINT', ignoreInterrupt);
       let result: SpawnSyncReturns<Buffer>;
       try {
@@ -93,6 +92,9 @@ function findErrorSummary(stderr: string): string | undefined {
 
   return (summary ?? lines.at(-1))?.replace(/^npm error\s*/, '');
 }
+
+/** Does nothing on SIGINT, which keeps the process alive while the child that shares its terminal handles it. */
+function ignoreInterrupt(): void {}
 
 /** Reports whether a spawn failed because the command was not found. */
 function isMissingCommand(error: Error): boolean {
