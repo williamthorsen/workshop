@@ -1,0 +1,59 @@
+{
+  "name": "@williamthorsen/npm-tools",
+  "version": "0.0.0",
+  "private": false,
+  "description": "Run npm registry chores",
+  "keywords": [
+    "cli",
+    "npm",
+    "npm-tools",
+    "registry",
+    "trusted-publishing"
+  ],
+  "homepage": "https://github.com/williamthorsen/workshop/tree/main/packages/npm-tools#readme",
+  "bugs": {
+    "url": "https://github.com/williamthorsen/workshop/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/williamthorsen/workshop.git",
+    "directory": "packages/npm-tools"
+  },
+  "license": "ISC",
+  "author": "William Thorsen <william@thorsen.dev> (https://github.com/williamthorsen)",
+  "sideEffects": [
+    "./dist/esm/bin/thor-npm.js"
+  ],
+  "type": "module",
+  "exports": {
+    "./package.json": "./package.json"
+  },
+  "bin": {
+    "thor-npm": "bin/thor-npm.js"
+  },
+  "files": [
+    ".meta/changelog.json",
+    "CHANGELOG.md",
+    "bin",
+    "dist"
+  ],
+  "scripts": {
+    "prepare": "nmr-compile"
+  },
+  "dependencies": {
+    "@williamthorsen/toolbelt.cli": "catalog:",
+    "@williamthorsen/toolbelt.errors": "catalog:",
+    "@williamthorsen/toolbelt.packaging": "catalog:"
+  },
+  "devDependencies": {
+    "@williamthorsen/toolbelt.testing": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
