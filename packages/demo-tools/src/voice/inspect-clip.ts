@@ -28,10 +28,15 @@ const MIN_SILENCE_SECONDS = 0.5;
 /** Below this much audible audio, a clip counts as silent throughout. */
 const MIN_SPEECH_SECONDS = 0.3;
 
-/** The longest trailing silence of a good clip: measured good clips end in at most 1 s and pause up to 1.7 s. */
+/**
+ * The longest trailing silence of a good clip: good clips measured on Higgs Audio v2 q8 end in at most 1 s and pause up
+ * to 1.7 s.
+ */
 const MAX_TRAILING_SILENCE_SECONDS = 3;
 
-/** The fewest seconds of speech per character of text: half the 0.067 s that good clips measured. */
+/**
+ * The fewest seconds of speech per character of text: half the 0.067 s that good clips measured on Higgs Audio v2 q8.
+ */
 const MIN_SPEECH_SECONDS_PER_CHARACTER = 0.03;
 
 /** Below this many characters, pauses dominate a clip, so its speech time says nothing about truncation. */

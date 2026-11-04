@@ -21,9 +21,9 @@ describe(startSpeechProxy, () => {
     await using upstream = await startUpstream(CLIP);
     using tree = createTempTree({ 'reference.wav': 'RIFF', 'transcript.txt': '  The reference text.\n' });
     await using proxy = await startSpeechProxy({
+      inspectClip: acceptClip,
       modelDir: '/voice/models/model',
       referenceAudio: tree.resolve('reference.wav'),
-      inspectClip: acceptClip,
       referenceTranscript: tree.resolve('transcript.txt'),
       upstreamUrl: upstream.baseUrl,
     });
