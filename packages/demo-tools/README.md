@@ -191,6 +191,8 @@ thor-demo revoice quickstart
 
 `revoice` keeps the demo's last recording and replaces its narration: It starts the voice-clone server offline on 127.0.0.1, runs aidemo's `voice`, `captions`, and `compose` stages with each speech request sent through a proxy on 127.0.0.1 that adds the voice profile, stops the server, and archives the take as `render` does. Captions are timed from the script, because the clone does not transcribe. Every revoice re-voices every scene.
 
+The proxy measures each clip with ffmpeg before aidemo receives it. It refuses a clip that is silent throughout, one that ends in more than 3 s of silence, and one whose speech is far shorter than its text requires, and it abandons a request that the server does not answer within 9 minutes. `revoice` then stops, naming the scene's text, the reason, and the voice-clone server's log; it does not retry. A clip that has normal levels but sounds wrong passes these checks.
+
 It refuses to start when the profile does not match the voice section, when the demo has not been rendered, when the demo repository's aidemo predates 0.20.2, or when the repository's `.env` sets a variable that would send the narration elsewhere. `thor-demo revoice --help` names each prerequisite.
 
 The cloned voice ignores the storyboard's `voice.speed` and `voice.instructions`. A later `render` re-voices the demo in its configured voice, because aidemo 0.20.2 keys its voice cache by the TTS server and model.

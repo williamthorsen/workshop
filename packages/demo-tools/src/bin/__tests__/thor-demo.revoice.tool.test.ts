@@ -8,7 +8,11 @@ import { describe, expect, it } from 'vitest';
 
 import { isRecord } from '../../portable/is-record.ts';
 import { createDemoRepo, type DemoRepo } from '../test-utils/create-demo-repo.ts';
-import { createFakeVoiceTools, type FakeVoiceMachine } from '../test-utils/create-fake-voice-tools.ts';
+import {
+  createFakeVoiceTools,
+  FAKE_CLIP_SILENT,
+  type FakeVoiceMachine,
+} from '../test-utils/create-fake-voice-tools.ts';
 import { runThorDemo } from '../test-utils/run-thor-demo.ts';
 import { waitFor } from '../test-utils/wait-for.ts';
 
@@ -55,7 +59,7 @@ describe('thor-demo revoice', () => {
         host: '127.0.0.1',
       },
     ]);
-    const server = machine.readCalls().at(-1);
+    const server = machine.readCalls().findLast(({ tool }) => tool === 'python');
     expect(server?.args).toStrictEqual(expect.arrayContaining(['--host', '127.0.0.1']));
     expect(server?.env).toMatchObject({ HF_HUB_OFFLINE: '1', TRANSFORMERS_OFFLINE: '1' });
     expect(isServerRunning(machine)).toBe(false);
@@ -80,6 +84,22 @@ describe('thor-demo revoice', () => {
     expect(status).toBe(4);
     expect(stderr).toContain('thor-demo revoice: aidemo captions exited with code 4');
     expect(repo.readCalls().map(({ args }) => args[0])).toStrictEqual(['voice', 'captions']);
+    expect(readdirSync(archive.dir)).toStrictEqual(['.keep']);
+    expect(isServerRunning(machine)).toBe(false);
+  });
+
+  it('stops naming the scene and the log when the clone answers a scene with silence', () => {
+    using machine = createInstalledMachine();
+    using repo = createDemoRepo({ aidemoVersion: '0.20.2', outputFiles: OUTPUT_FILES, recorded: true });
+    using archive = createTempTree({ '.keep': '' });
+
+    const { status, stderr } = runRevoice(machine, repo, archive.dir, { [FAKE_CLIP_SILENT]: '1' });
+
+    expect(status).toBe(1);
+    expect(stderr).toContain(
+      `thor-demo revoice: the voice clone could not speak "Scene one." (silent throughout); the voice-clone server's log is ${path.join(machine.voiceHome, 'logs/server.log')}`,
+    );
+    expect(repo.readCalls().map(({ args }) => args[0])).toStrictEqual(['voice']);
     expect(readdirSync(archive.dir)).toStrictEqual(['.keep']);
     expect(isServerRunning(machine)).toBe(false);
   });
@@ -151,8 +171,17 @@ function readProvenance(archiveRoot: string): Record<string, unknown> {
 }
 
 /** Runs `thor-demo revoice quickstart` in the repository, on the fake machine, archiving to `archiveRoot`. */
-function runRevoice(machine: FakeVoiceMachine, repo: DemoRepo, archiveRoot: string) {
-  return runThorDemo(['revoice', 'quickstart'], repo.tree.dir, { ...machine.env, THOR_DEMO_ARCHIVE_ROOT: archiveRoot });
+function runRevoice(
+  machine: FakeVoiceMachine,
+  repo: DemoRepo,
+  archiveRoot: string,
+  env: Readonly<Record<string, string>> = {},
+) {
+  return runThorDemo(['revoice', 'quickstart'], repo.tree.dir, {
+    ...machine.env,
+    ...env,
+    THOR_DEMO_ARCHIVE_ROOT: archiveRoot,
+  });
 }
 
 /** Returns the sha256 of `content`. */

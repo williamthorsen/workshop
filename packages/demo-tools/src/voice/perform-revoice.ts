@@ -52,11 +52,12 @@ export async function performRevoice(
     report(`running aidemo ${args.join(' ')}`);
     const exitCode = await runStage({ args, bin: request.bin, cwd: request.cwd, env });
     if (exitCode !== 0) {
-      return {
-        ok: false,
-        exitCode,
-        message: `aidemo ${args[0] ?? ''} exited with code ${exitCode}; the voice-clone server's log is ${launch.logPath}`,
-      };
+      const failure = proxy.readFailure();
+      const cause =
+        failure === undefined
+          ? `aidemo ${args[0] ?? ''} exited with code ${exitCode}`
+          : `the voice clone could not speak "${failure.input}" (${failure.reason})`;
+      return { ok: false, exitCode, message: `${cause}; the voice-clone server's log is ${launch.logPath}` };
     }
   }
 

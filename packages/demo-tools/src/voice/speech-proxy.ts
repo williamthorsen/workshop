@@ -4,34 +4,61 @@ import http from 'node:http';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { isRecord } from '../portable/is-record.ts';
-import { postJson } from '../portable/post-json.ts';
+import { type HttpResponse, postJson } from '../portable/post-json.ts';
+import { type ClipVerdict, judgeClip, measureClip } from './inspect-clip.ts';
 import { SERVER_HOST } from './mlx-audio/build-server-launch.ts';
 import { buildSpeechRequest, SPEECH_PATH } from './mlx-audio/build-speech-request.ts';
 
-/** Where the proxy forwards speech, and the voice profile that it clones. */
+/**
+ * How long a speech request may take upstream. The slowest good clip measured on Higgs Audio v2 q8 took 170 s, and the
+ * budget stays under the 10-minute timeout of aidemo's OpenAI client.
+ */
+export const REQUEST_BUDGET_MS = 540_000;
+
+/** Where the proxy forwards speech, the voice profile that it clones, and how it judges each answer. */
 export interface SpeechProxyOptions {
+  /** Judges a clip of `text`, rejecting when the clip cannot be measured. */
+  readonly inspectClip?: (audio: Buffer, text: string) => Promise<ClipVerdict>;
   readonly modelDir: string;
   readonly referenceAudio: string;
   /** The transcript file of the reference recording. */
   readonly referenceTranscript: string;
+  readonly requestBudgetMs?: number;
   /** The base URL of the voice-clone server. */
   readonly upstreamUrl: string;
+}
+
+/** A speech request that the proxy refused: its text and why. */
+export interface SpeechFailure {
+  readonly input: string;
+  readonly reason: string;
 }
 
 /** A running speech proxy. Disposing of it stops it. */
 export interface SpeechProxy extends AsyncDisposable {
   readonly baseUrl: string;
+  /** Returns the failure of the most recent speech request, or `undefined` when it did not fail. */
+  readonly readFailure: () => SpeechFailure | undefined;
   readonly stop: () => Promise<void>;
 }
 
+/** What a forwarded request came to. */
+type SpeechOutcome =
+  | { readonly kind: 'answer'; readonly answer: HttpResponse }
+  | { readonly kind: 'client-gone' }
+  | { readonly kind: 'refused'; readonly reason: string };
+
 /**
  * Starts a loopback-only HTTP server that accepts OpenAI-shaped speech requests and forwards each as a request that
- * clones the profile's voice, keeping only the text to speak. A request from a web page is answered 403, and every
- * other request 404.
+ * clones the profile's voice, keeping only the text to speak. It passes on a clip that the inspector accepts and a 4xx
+ * answer, and answers 502 to a rejected clip, a 5xx answer, a failed connection, or a request over budget. A request
+ * from a web page is answered 403, and every other request 404.
  */
 export async function startSpeechProxy(options: SpeechProxyOptions): Promise<SpeechProxy> {
+  const { inspectClip = inspectClipWithFfmpeg, requestBudgetMs = REQUEST_BUDGET_MS } = options;
   const referenceText = readFileSync(options.referenceTranscript, 'utf8').trim();
   const upstream = `${options.upstreamUrl}${SPEECH_PATH}`;
+  let failure: SpeechFailure | undefined;
 
   const server = http.createServer((request, response) => {
     void handleRequest(request, response);
@@ -60,22 +87,45 @@ export async function startSpeechProxy(options: SpeechProxyOptions): Promise<Spe
       if (!response.writableFinished) aborter.abort();
     });
 
+    failure = undefined;
     const body = buildSpeechRequest({
       input,
       modelDir: options.modelDir,
       referenceAudio: options.referenceAudio,
       referenceText,
     });
-    try {
-      const answer = await postJson(upstream, body, aborter.signal);
-      response.writeHead(answer.status, {
-        'content-length': answer.body.length,
-        ...(answer.contentType !== undefined && { 'content-type': answer.contentType }),
-      });
-      response.end(answer.body);
-    } catch (error) {
-      if (!aborter.signal.aborted) sendText(response, 502, `the voice-clone server failed: ${describeError(error)}`);
+    const outcome = await requestSpeech(body, input, aborter.signal);
+    if (outcome.kind === 'client-gone') return;
+    if (outcome.kind === 'answer') {
+      relay(response, outcome.answer);
+      return;
     }
+    failure = { input, reason: outcome.reason };
+    sendFailure(response, `the voice clone could not speak the text: ${outcome.reason}`);
+  }
+
+  /** Sends a request upstream within the budget and judges its answer. */
+  async function requestSpeech(body: unknown, input: string, clientSignal: AbortSignal): Promise<SpeechOutcome> {
+    const signal = AbortSignal.any([clientSignal, AbortSignal.timeout(requestBudgetMs)]);
+    let answer: HttpResponse;
+    try {
+      answer = await postJson(upstream, body, signal);
+    } catch (error) {
+      if (clientSignal.aborted) return { kind: 'client-gone' };
+      if (signal.aborted) return { kind: 'refused', reason: `no answer within ${requestBudgetMs / 1_000} s` };
+      return { kind: 'refused', reason: `the voice-clone server failed: ${describeError(error)}` };
+    }
+    if (answer.status >= 500) return { kind: 'refused', reason: `the voice-clone server answered ${answer.status}` };
+    // Pass on a rejection of the request itself for aidemo to report.
+    if (answer.status !== 200) return { kind: 'answer', answer };
+
+    let verdict: ClipVerdict;
+    try {
+      verdict = await inspectClip(answer.body, input);
+    } catch (error) {
+      return { kind: 'refused', reason: `ffmpeg cannot measure the clip: ${describeError(error)}` };
+    }
+    return verdict.ok ? { kind: 'answer', answer } : { kind: 'refused', reason: verdict.reason };
   }
 
   await new Promise<void>((resolve, reject) => {
@@ -99,10 +149,20 @@ export async function startSpeechProxy(options: SpeechProxyOptions): Promise<Spe
     return stopping;
   }
 
-  return { baseUrl: `http://${SERVER_HOST}:${address.port}`, stop, [Symbol.asyncDispose]: stop };
+  return {
+    baseUrl: `http://${SERVER_HOST}:${address.port}`,
+    readFailure: () => failure,
+    stop,
+    [Symbol.asyncDispose]: stop,
+  };
 }
 
 // region | Helpers
+
+/** Measures a clip with ffmpeg and judges it. */
+async function inspectClipWithFfmpeg(audio: Buffer, text: string): Promise<ClipVerdict> {
+  return judgeClip(await measureClip(audio), text);
+}
 
 /** Reads a request's whole body. */
 async function readBody(request: http.IncomingMessage): Promise<Buffer> {
@@ -125,6 +185,21 @@ function readInput(body: Buffer): string | undefined {
 
   const { input } = parsed;
   return typeof input === 'string' ? input : undefined;
+}
+
+/** Answers with an upstream response's status, content type, and body. */
+function relay(response: http.ServerResponse, answer: HttpResponse): void {
+  response.writeHead(answer.status, {
+    'content-length': answer.body.length,
+    ...(answer.contentType !== undefined && { 'content-type': answer.contentType }),
+  });
+  response.end(answer.body);
+}
+
+/** Answers 502 with an OpenAI-shaped error that the OpenAI SDK does not retry. */
+function sendFailure(response: http.ServerResponse, message: string): void {
+  response.writeHead(502, { 'content-type': 'application/json', 'x-should-retry': 'false' });
+  response.end(JSON.stringify({ error: { message } }));
 }
 
 /** Answers with a plain-text body. */
