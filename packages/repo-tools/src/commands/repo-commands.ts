@@ -101,7 +101,7 @@ const scan = defineCommand({
   summary:
     'Report each repo whose stack, visibility, or runner differs from its tracked files and GitHub, and rewrite it under --write',
   description:
-    "Reports, per repo, the stack names that its tracked files signal and its entry lacks (+) and those that its entry declares and its files no longer signal (-), then visibility=<value> and runner=<label> for values that differ from GitHub, and -runner when the repo's CI_RUNS_ON variable is unset. An entry whose clone is absent keeps its stack, and one whose GitHub read fails keeps its visibility and runner. Warns about a public repo whose runner is set.",
+    "Reports, per repo, the stack names that its tracked files signal and its entry lacks (+) and those that its entry declares and its files no longer signal (-), then visibility=<value> and runner=<label> for values that differ from GitHub, and -runner when the repo's CI_RUNS_ON variable is unset. An entry whose clone is absent, or whose tracked files git cannot list, keeps its stack, and one whose GitHub read fails keeps its visibility and runner. Warns about a public repo whose runner is set.",
   flags: { file: FILE_FLAG, write: WRITE_FLAG },
   run: ({ context, flags, stderr, stdout }) => runScan(buildVerbRun(context, flags.file, stdout, stderr), flags.write),
 });

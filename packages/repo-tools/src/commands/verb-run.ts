@@ -49,7 +49,7 @@ export function reportFailure(run: VerbRun, message: string): number {
  */
 export interface CloneAdapters {
   isDirectory: (dir: string) => boolean;
-  listTrackedFiles: (cloneDir: string) => string[] | undefined;
+  listTrackedFiles: (cloneDir: string) => string[] | string;
   readCurrentBranch: (dir: string) => string | undefined;
   readFile: (file: string) => string;
   readOriginUrl: (cloneDir: string) => string | undefined;

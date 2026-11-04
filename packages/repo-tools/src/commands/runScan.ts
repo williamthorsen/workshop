@@ -32,9 +32,12 @@ export function runScan(run: VerbRun, isWrite: boolean): number {
   for (const entry of registry.entries) {
     const label = formatEntryName(entry);
     const changes: string[] = [];
-    const detected = scanClone(run, expandTilde(entry.path ?? '', run.home), label);
+    const cloneDir = expandTilde(entry.path ?? '', run.home);
+    const detected = run.adapters.isDirectory(cloneDir) ? scanClone(run, cloneDir, label) : undefined;
     if (detected === undefined) {
       cloneless.push(label);
+    } else if (typeof detected === 'string') {
+      run.stderr(`${PROG}: ${label}: cannot list the tracked files: ${detected}; the stack is kept`);
     } else {
       changes.push(
         ...detected.filter((name) => !entry.stack.includes(name)).map((name) => `+${name}`),
@@ -64,12 +67,12 @@ export function runScan(run: VerbRun, isWrite: boolean): number {
 }
 
 /**
- * Returns the stack names that a clone's tracked files signal, reporting each unreadable manifest on stderr, or
- * `undefined` when the clone's tracked files cannot be listed.
+ * Returns the stack names that a clone's tracked files signal, reporting each unreadable manifest on stderr, or the
+ * reason that the clone's tracked files cannot be listed.
  */
-export function scanClone(run: VerbRun, cloneDir: string, label: string = cloneDir): string[] | undefined {
+export function scanClone(run: VerbRun, cloneDir: string, label: string = cloneDir): string[] | string {
   const trackedPaths = run.adapters.listTrackedFiles(cloneDir);
-  if (trackedPaths === undefined) return undefined;
+  if (typeof trackedPaths === 'string') return trackedPaths;
   const detection = detectStack(trackedPaths, (trackedPath) => run.adapters.readFile(path.join(cloneDir, trackedPath)));
   for (const problem of detection.problems) run.stderr(`${PROG}: ${label}: ${problem}`);
   return detection.stack;

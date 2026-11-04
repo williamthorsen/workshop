@@ -34,7 +34,7 @@ thor-repo list --stack nmr --json
 thor-repo list --clone absent
 ```
 
-`scan` reports each repo whose declared stack differs from the one that its tracked files signal, as `+name` for a missing name and `-name` for a stale one, and whose `visibility` or `runner` differs from GitHub, as `visibility=<value>`, `runner=<label>`, or `-runner`. It reads GitHub through `gh`, for every entry with a `repo`, whether or not its clone is on this machine. An entry whose clone is absent keeps its stack, and one whose GitHub read fails keeps its visibility and runner; `scan` reports both on stderr. It also warns about a public repo whose `runner` is set, since a self-hosted runner must not run a fork's pull request. `--write` rewrites the changed entries:
+`scan` reports each repo whose declared stack differs from the one that its tracked files signal, as `+name` for a missing name and `-name` for a stale one, and whose `visibility` or `runner` differs from GitHub, as `visibility=<value>`, `runner=<label>`, or `-runner`. It reads GitHub through `gh`, for every entry with a `repo`, whether or not its clone is on this machine. An entry whose clone is absent, or whose tracked files git cannot list, keeps its stack, and one whose GitHub read fails keeps its visibility and runner; `scan` reports each case, with git's or GitHub's reason, on stderr. It also warns about a public repo whose `runner` is set, since a self-hosted runner must not run a fork's pull request. `--write` rewrites the changed entries:
 
 ```bash
 thor-repo scan --write --file path/to/branch-worktree/repos.yaml

@@ -38,7 +38,9 @@ export function runAdd(run: VerbRun, target: string, isWrite: boolean): number {
     return reportFailure(run, `${cloneDir} is already registered as ${formatEntryName(existing)}`);
 
   const detection = scanClone(run, cloneDir);
-  if (detection === undefined) return reportFailure(run, `cannot list the tracked files of ${cloneDir}`);
+  if (typeof detection === 'string') {
+    return reportFailure(run, `cannot list the tracked files of ${cloneDir}: ${detection}`);
+  }
   const entry: NewEntry = {
     name: remote.path.slice(remote.path.indexOf('/') + 1),
     path: entryPath,

@@ -1,10 +1,27 @@
-import { spawnSync } from 'node:child_process';
+import { spawnSync, type SpawnSyncReturns } from 'node:child_process';
 import path from 'node:path';
 
-/** Lists the paths that git tracks in a clone, relative to its root, or returns `undefined` when git cannot. */
-export function listTrackedFiles(cloneDir: string): string[] | undefined {
-  const output = runGit(cloneDir, ['ls-files', '-z']);
-  return output?.split('\0').filter((trackedPath) => trackedPath !== '');
+/** The parts of a git run that decide whether it failed and why. */
+export type GitRun = Pick<SpawnSyncReturns<string>, 'error' | 'signal' | 'status' | 'stderr'>;
+
+/**
+ * Returns the reason that a git run failed, or `undefined` when it succeeded. A run that git did not complete, such
+ * as one whose output overflowed the buffer, is described by its error before its signal, because such a run reports
+ * both.
+ */
+export function describeGitFailure(args: readonly string[], run: GitRun): string | undefined {
+  const subcommand = args[0] ?? '';
+  if (run.error !== undefined) return `cannot run git ${subcommand}: ${run.error.message}`;
+  if (run.signal !== null) return `git ${subcommand} was killed by ${run.signal}`;
+  if (run.status === 0) return undefined;
+  return run.stderr.trim().split('\n', 1)[0] || `git ${subcommand} exited ${run.status ?? 'without a status'}`;
+}
+
+/** Lists the paths that git tracks in a clone, relative to its root, or returns the reason that git cannot. */
+export function listTrackedFiles(cloneDir: string): string[] | string {
+  const outcome = runGitForOutcome(cloneDir, ['ls-files', '-z']);
+  if ('failure' in outcome) return outcome.failure;
+  return outcome.stdout.split('\0').filter((trackedPath) => trackedPath !== '');
 }
 
 /**
@@ -32,10 +49,21 @@ export function readOriginUrl(cloneDir: string): string | undefined {
 
 // region | Helpers
 
-/** Runs git in a directory and returns its stdout, or `undefined` when it exits non-zero. */
+/** Runs git in a directory and returns its stdout, or `undefined` when it fails. */
 function runGit(dir: string, args: readonly string[]): string | undefined {
-  const result = spawnSync('git', ['-C', dir, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
-  return result.status === 0 ? result.stdout : undefined;
+  const outcome = runGitForOutcome(dir, args);
+  return 'stdout' in outcome ? outcome.stdout : undefined;
+}
+
+/** Runs git in a directory, without a cap on its output, and returns its stdout or the reason that it failed. */
+function runGitForOutcome(dir: string, args: readonly string[]): { stdout: string } | { failure: string } {
+  const result = spawnSync('git', ['-C', dir, ...args], {
+    encoding: 'utf8',
+    maxBuffer: Infinity,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  const failure = describeGitFailure(args, result);
+  return failure === undefined ? { stdout: result.stdout } : { failure };
 }
 
 // endregion | Helpers
