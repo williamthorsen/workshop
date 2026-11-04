@@ -1,6 +1,6 @@
 import { createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
-import { describe, expect, it as baseIt, vi } from 'vitest';
+import { describe, expect, it as baseIt, onTestFinished, vi } from 'vitest';
 
 import { plainFormatter, richFormatter } from '../../layout/formatter.ts';
 import { hashBytes } from '../../verify/targetHash.ts';
@@ -254,6 +254,12 @@ describe('route.ts', () => {
     });
 
     it('renders rich output identically with and without a terminal', async () => {
+      // Stop the clock, because the run's output contains its duration.
+      vi.useFakeTimers({ toFake: ['performance'] });
+      onTestFinished(() => {
+        vi.useRealTimers();
+      });
+
       const attached = await route(RUN, { color: true, isTty: true });
       const piped = await route(RUN, { color: true, isTty: false });
 
