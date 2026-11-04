@@ -3,8 +3,8 @@ import { execFileSync } from 'node:child_process';
 import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
-import { listTrackedFiles } from '../git-clone.ts';
 import { buildLargeListingTree, LARGE_LISTING_FILE_COUNT } from '../../test-utils/large-listing.ts';
+import { listTrackedFiles } from '../git-clone.ts';
 
 describe(listTrackedFiles, () => {
   it('lists every tracked path of a clone whose listing exceeds 1 MiB', () => {
@@ -14,7 +14,7 @@ describe(listTrackedFiles, () => {
     execFileSync('git', ['-C', cloneDir, 'add', '.']);
 
     const tracked = listTrackedFiles(cloneDir);
-    expect(Array.isArray(tracked) && tracked.length).toBe(LARGE_LISTING_FILE_COUNT);
+    expect(tracked).toHaveLength(LARGE_LISTING_FILE_COUNT);
   });
 
   it("returns git's reason for a directory that is not in a checkout", () => {
