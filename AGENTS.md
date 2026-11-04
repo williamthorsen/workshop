@@ -2,7 +2,7 @@
 
 ## Overview
 
-A monorepo of open-source utilities. Currently houses `readyup`, a pre-deployment verification CLI; `overlay`, a chezmoi-backed scaffolding tool; `repo-tools`, a CLI for the repositories in a machine-local registry; `git-tools`, a CLI that derives values from git branch names; `launchd-agent`, a library for per-user launchd agents on macOS; `systemd-service`, a library for systemd services on Linux; `secret-tools`, a CLI for secrets in the macOS keychain; `nodejs-tools`, a CLI and library for Node.js runtimes, toolchains, and `node_modules` directories; `atlassian-tools`, a CLI for Jira Cloud projects; `chrome-tools`, a CLI for Chrome debug sessions; `demo-tools`, a CLI that runs aidemo demos; and `compositor`, a private content-composition engine under construction.
+A monorepo of open-source utilities. Currently houses `readyup`, a pre-deployment verification CLI; `overlay`, a chezmoi-backed scaffolding tool; `repo-tools`, a CLI for the repositories in a machine-local registry; `git-tools`, a CLI that derives values from git branch names; `launchd-agent`, a library for per-user launchd agents on macOS; `systemd-service`, a library for systemd services on Linux; `secret-tools`, a CLI for secrets in the macOS keychain; `nodejs-tools`, a CLI and library for Node.js runtimes, toolchains, and `node_modules` directories; `atlassian-tools`, a CLI for Jira Cloud projects; `chrome-tools`, a CLI for Chrome debug sessions; `demo-tools`, a CLI that runs aidemo demos; `npm-tools`, a CLI for npm registry chores, under construction; and `compositor`, a private content-composition engine under construction.
 
 ## Project structure
 
@@ -15,6 +15,7 @@ Packages live under `packages/`:
 - **`git-tools`**: CLI that derives values from git branch names: a stable number per branch, and the ticket that a branch encodes. Binary: `thor-git`.
 - **`launchd-agent`**: Library that installs, replaces, restarts, inspects, and removes per-user launchd agents on macOS. No binary.
 - **`nodejs-tools`**: CLI that inspects Node.js runtimes and toolchains and prunes `node_modules` directories, and a library export, `resolveNodePath`, that returns the node binary that asdf selects for a checkout. Binary: `thor-node`.
+- **`npm-tools`**: CLI that runs npm registry chores. Its commands are not implemented yet; the binary prints only its help and version. Binary: `thor-npm`.
 - **`overlay`**: Idempotent overlay of a canonical scaffolding file set onto a target directory, backed by chezmoi. Binary: `overlay`.
 - **`readyup`**: Pre-deployment verification checks with TypeScript-authored kits, CLI runner, and JSON output. Binary: `rdy` (alias `readyup`). Its reference documentation lives in `docs/`, because npm truncates a registry README at 65,536 code points; `rdy help <topic>` prints those files and `src/__tests__/doc-links.app.unit.test.ts` keeps them linked. Its `agents/` directory is a CodeAssembly content root, published to consumers as the `consult-readyup-kits` skill; `agents/README.md` states the discipline for editing it. Its presentation deck loads `presentation/deck.js`, which `pnpm --filter readyup run build:deck` bundles from `presentation/src/` and commits; a test fails when the committed bundle is stale.
 - **`repo-tools`**: CLI that lists, scans, and registers the repositories indexed by a machine-local repo registry. Binary: `thor-repo`.
@@ -50,7 +51,7 @@ The code-quality workflow does not run `nmr ci`; it runs that command's steps as
 
 ## Commit conventions
 
-The scope values this repo uses are `atlassian-tools`, `chrome-tools`, `compositor`, `demo-tools`, `git-tools`, `launchd-agent`, `nodejs-tools`, `overlay`, `readyup`, `repo-tools`, `root`, `secret-tools`, and `systemd-service`, mirroring the `scope:*` labels in `.config/release-kit.config.ts`.
+The scope values this repo uses are `atlassian-tools`, `chrome-tools`, `compositor`, `demo-tools`, `git-tools`, `launchd-agent`, `nodejs-tools`, `npm-tools`, `overlay`, `readyup`, `repo-tools`, `root`, `secret-tools`, and `systemd-service`, mirroring the `scope:*` labels in `.config/release-kit.config.ts`.
 
 ## Releases
 
