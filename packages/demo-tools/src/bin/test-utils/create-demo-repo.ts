@@ -14,7 +14,7 @@ export interface FakeAidemoCall {
 
 /** How the fake aidemo behaves, and what else the repository contains. */
 export interface DemoRepoOptions {
-  /** The version that the fake declares. Default: `0.20.0`. */
+  /** The version that the fake declares. Default: `0.20.3`. */
   readonly aidemoVersion?: string;
   /** The repository configuration file's content. */
   readonly config?: string;
@@ -55,7 +55,7 @@ const CALLS_FILE = 'aidemo-calls.jsonl';
  */
 export function createDemoRepo(options: DemoRepoOptions = {}): DemoRepo {
   const {
-    aidemoVersion = '0.20.0',
+    aidemoVersion = '0.20.3',
     config = '',
     envFile,
     exitCode = 0,

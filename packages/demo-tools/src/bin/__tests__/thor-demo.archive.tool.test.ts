@@ -40,7 +40,7 @@ describe('thor-demo render archiving', () => {
       demo: 'quickstart',
       label: 'product',
       source: { commit, dirty: false },
-      engine: { package: '@tandryukha/aidemo', version: '0.20.0' },
+      engine: { package: '@tandryukha/aidemo', version: '0.20.3' },
       voice: { provider: 'local', voiceId: 'af_heart' },
       params: ['--tts', 'local'],
     });

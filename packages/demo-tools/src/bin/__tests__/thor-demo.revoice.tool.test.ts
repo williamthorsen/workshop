@@ -25,7 +25,7 @@ const OUTPUT_FILES = { 'final-demo.mp4': 'video bytes', 'final-demo.srt': 'srt',
 describe('thor-demo revoice', () => {
   it('re-voices through the proxy, captions offline, composes, and archives the take as cloned', () => {
     using machine = createInstalledMachine();
-    using repo = createDemoRepo({ aidemoVersion: '0.20.2', outputFiles: OUTPUT_FILES, recorded: true });
+    using repo = createDemoRepo({ aidemoVersion: '0.20.3', outputFiles: OUTPUT_FILES, recorded: true });
     using archive = createTempTree({ '.keep': '' });
 
     const { status, stderr } = runThorDemo(['revoice', 'quickstart'], repo.tree.dir, {
@@ -67,7 +67,7 @@ describe('thor-demo revoice', () => {
     const provenance = readProvenance(archive.dir);
     expect(provenance).toMatchObject({
       demo: 'quickstart',
-      engine: { version: '0.20.2' },
+      engine: { version: '0.20.3' },
       params: [],
       reference: { sha256: sha256(readFileSync(machine.tree.resolve('home/reference.m4a'))) },
       voice: { provider: 'mlx-audio', voiceId: MODEL },
@@ -76,7 +76,7 @@ describe('thor-demo revoice', () => {
 
   it('stops the server and archives nothing when an aidemo stage fails', () => {
     using machine = createInstalledMachine();
-    using repo = createDemoRepo({ aidemoVersion: '0.20.2', exitCode: 4, failOn: 'captions', recorded: true });
+    using repo = createDemoRepo({ aidemoVersion: '0.20.3', exitCode: 4, failOn: 'captions', recorded: true });
     using archive = createTempTree({ '.keep': '' });
 
     const { status, stderr } = runRevoice(machine, repo, archive.dir);
@@ -90,7 +90,7 @@ describe('thor-demo revoice', () => {
 
   it('stops naming the scene and the log when the clone answers a scene with silence', () => {
     using machine = createInstalledMachine();
-    using repo = createDemoRepo({ aidemoVersion: '0.20.2', outputFiles: OUTPUT_FILES, recorded: true });
+    using repo = createDemoRepo({ aidemoVersion: '0.20.3', outputFiles: OUTPUT_FILES, recorded: true });
     using archive = createTempTree({ '.keep': '' });
 
     const { status, stderr } = runRevoice(machine, repo, archive.dir, { [FAKE_CLIP_SILENT]: '1' });
@@ -106,7 +106,7 @@ describe('thor-demo revoice', () => {
 
   it('stops before starting the server on a demo that has not been recorded', () => {
     using machine = createInstalledMachine();
-    using repo = createDemoRepo({ aidemoVersion: '0.20.2' });
+    using repo = createDemoRepo({ aidemoVersion: '0.20.3' });
     const serversBefore = machine.readCalls().filter(({ tool }) => tool === 'python').length;
 
     const { status, stderr } = runRevoice(machine, repo, repo.tree.dir);
@@ -121,7 +121,7 @@ describe('thor-demo revoice', () => {
 
   it('stops the server when thor-demo receives SIGTERM during a stage', async () => {
     using machine = createInstalledMachine();
-    using repo = createDemoRepo({ aidemoVersion: '0.20.2', holdOn: 'captions', recorded: true });
+    using repo = createDemoRepo({ aidemoVersion: '0.20.3', holdOn: 'captions', recorded: true });
     const child = spawn(process.execPath, [ENTRY_POINT, 'revoice', 'quickstart'], {
       cwd: repo.tree.dir,
       env: { ...process.env, ...machine.env },

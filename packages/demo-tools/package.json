@@ -56,7 +56,7 @@
     "vitest": "catalog:"
   },
   "peerDependencies": {
-    "@tandryukha/aidemo": ">=0.17.0"
+    "@tandryukha/aidemo": ">=0.20.3"
   },
   "peerDependenciesMeta": {
     "@tandryukha/aidemo": {

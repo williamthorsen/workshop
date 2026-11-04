@@ -4,7 +4,7 @@ import { type Command, createCli, UsageError, type Writer } from '@williamthorse
 
 import { buildAidemoEnv } from '../aidemo/build-aidemo-env.ts';
 import { findEnvFileOverrides } from '../aidemo/find-env-file-overrides.ts';
-import { MIN_REVOICE_AIDEMO_VERSION, resolveAidemo } from '../aidemo/resolve-aidemo.ts';
+import { MIN_AIDEMO_VERSION, resolveAidemo } from '../aidemo/resolve-aidemo.ts';
 import { planTake, type TakeDisposition } from '../archive/plan-take.ts';
 import { MACHINE_CONFIG_PATH } from '../config/read-machine-config.ts';
 import { readRepoConfig } from '../config/read-repo-config.ts';
@@ -41,7 +41,7 @@ export const REVOICE: Command<CommandContext> = defineCommand({
   Apple Silicon, and a voice clone installed by thor-demo voice setup from the
   current voice section of ~/${MACHINE_CONFIG_PATH}
   A demo already recorded by thor-demo render
-  @tandryukha/aidemo ${MIN_REVOICE_AIDEMO_VERSION} or later in the demo repository
+  @tandryukha/aidemo ${MIN_AIDEMO_VERSION} or later in the demo repository
 
 The cloned voice ignores voice.speed and voice.instructions. A later render
 re-voices the demo in its configured voice.
@@ -98,7 +98,7 @@ function runRevoice(context: CommandContext, demoArgument: string, stderr: Write
   const install = checkVoiceInstall(voice.voice);
   if (!install.ok) return fail(stderr, install.problem);
 
-  const aidemo = resolveAidemo(root, MIN_REVOICE_AIDEMO_VERSION);
+  const aidemo = resolveAidemo(root);
   if (!aidemo.ok) return fail(stderr, aidemo.message);
 
   const redirects = findEnvFileOverrides(root, {}, REDIRECTING_VARIABLES);

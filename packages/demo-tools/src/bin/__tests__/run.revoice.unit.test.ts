@@ -15,7 +15,7 @@ const VOICE_SECTION = 'voice:\n  reference:\n    audio: ~/reference.m4a\n    tra
 describe('run revoice', () => {
   it('requests the three aidemo stages against the cloned voice, with the take described as cloned', async () => {
     using home = createVoiceHome();
-    using repo = createDemoRepo({ aidemoVersion: '0.20.2', recorded: true });
+    using repo = createDemoRepo({ aidemoVersion: '0.20.3', recorded: true });
     const source = { commit: 'abc1234def', dirty: false };
     const archiveRoot = home.resolve('archive');
 
@@ -46,7 +46,7 @@ describe('run revoice', () => {
       take: {
         kind: 'archive',
         plan: {
-          aidemoVersion: '0.20.2',
+          aidemoVersion: '0.20.3',
           archiveRoot,
           demo: 'quickstart',
           params: [],
@@ -66,7 +66,7 @@ describe('run revoice', () => {
 
   it('accepts a demo recorded through native capture', async () => {
     using home = createVoiceHome();
-    using repo = createDemoRepo({ aidemoVersion: '0.20.2' });
+    using repo = createDemoRepo({ aidemoVersion: '0.20.3' });
     repo.tree.write('demos/quickstart/recordings/raw.mp4', 'video');
     repo.tree.write('demos/quickstart/generated/timeline.json', '{}');
 
@@ -78,7 +78,7 @@ describe('run revoice', () => {
 
   it('lists the demos for an unknown one, as a usage error', async () => {
     using home = createVoiceHome();
-    using repo = createDemoRepo({ aidemoVersion: '0.20.2', recorded: true });
+    using repo = createDemoRepo({ aidemoVersion: '0.20.3', recorded: true });
 
     const result = await run(['revoice', 'quick'], buildEffects(home, repo));
 
@@ -89,7 +89,7 @@ describe('run revoice', () => {
 
   it('stops on a machine that is not Apple Silicon', async () => {
     using home = createVoiceHome();
-    using repo = createDemoRepo({ aidemoVersion: '0.20.2', recorded: true });
+    using repo = createDemoRepo({ aidemoVersion: '0.20.3', recorded: true });
 
     const result = await run(['revoice', 'quickstart'], { ...buildEffects(home, repo), arch: 'x64' });
 
@@ -98,7 +98,7 @@ describe('run revoice', () => {
 
   it('stops when voice setup has not run, naming it', async () => {
     using home = createVoiceHome({ installed: false });
-    using repo = createDemoRepo({ aidemoVersion: '0.20.2', recorded: true });
+    using repo = createDemoRepo({ aidemoVersion: '0.20.3', recorded: true });
 
     const result = await run(['revoice', 'quickstart'], buildEffects(home, repo));
 
@@ -107,7 +107,7 @@ describe('run revoice', () => {
 
   it('stops when the profile was built from another reference recording', async () => {
     using home = createVoiceHome();
-    using repo = createDemoRepo({ aidemoVersion: '0.20.2', recorded: true });
+    using repo = createDemoRepo({ aidemoVersion: '0.20.3', recorded: true });
     writeFileSync(home.resolve('home/reference.m4a'), 'another take');
 
     const result = await run(['revoice', 'quickstart'], buildEffects(home, repo));
@@ -117,19 +117,19 @@ describe('run revoice', () => {
     );
   });
 
-  it('stops on an aidemo older than 0.20.2, naming the version required', async () => {
+  it('stops on an aidemo older than 0.20.3, naming the version required', async () => {
     using home = createVoiceHome();
-    using repo = createDemoRepo({ aidemoVersion: '0.20.1', recorded: true });
+    using repo = createDemoRepo({ aidemoVersion: '0.20.2', recorded: true });
 
     const result = await run(['revoice', 'quickstart'], buildEffects(home, repo));
 
-    expect(summarizeRefusal(result)).toStrictEqual(refusal('0.20.1 is installed'));
+    expect(summarizeRefusal(result)).toStrictEqual(refusal('0.20.2 is installed'));
   });
 
   it('stops when the .env sets a variable that would send the narration elsewhere', async () => {
     using home = createVoiceHome();
     using repo = createDemoRepo({
-      aidemoVersion: '0.20.2',
+      aidemoVersion: '0.20.3',
       envFile: 'OPENAI_API_KEY=sk-x\nAIDEMO_TTS_PROVIDER=elevenlabs\n',
       recorded: true,
     });
@@ -143,7 +143,7 @@ describe('run revoice', () => {
 
   it('stops on a demo that has not been recorded, saying to render it first', async () => {
     using home = createVoiceHome();
-    using repo = createDemoRepo({ aidemoVersion: '0.20.2' });
+    using repo = createDemoRepo({ aidemoVersion: '0.20.3' });
 
     const result = await run(['revoice', 'quickstart'], buildEffects(home, repo));
 
@@ -161,7 +161,7 @@ describe('run revoice', () => {
 
     expect(root.stdout).toMatch(/revoice +Narrate a recorded demo again/);
     expect(own.exitCode).toBe(0);
-    expect(own.stdout).toContain('@tandryukha/aidemo 0.20.2 or later');
+    expect(own.stdout).toContain('@tandryukha/aidemo 0.20.3 or later');
     expect(own.stdout).toContain('ignores voice.speed and voice.instructions');
   });
 });

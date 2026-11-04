@@ -197,7 +197,7 @@ describe(run, () => {
       expect(launch?.take).toMatchObject({
         kind: 'archive',
         plan: {
-          aidemoVersion: '0.20.0',
+          aidemoVersion: '0.20.3',
           archiveRoot: '/archive',
           demo: 'quickstart',
           demoDir: tree.resolve('demos/quickstart'),
@@ -521,7 +521,7 @@ function createVoiceMachine({
  * `extra` files.
  */
 function createDemoRepo({
-  aidemoVersion = '0.20.0',
+  aidemoVersion = '0.20.3',
   config = '',
   extra = {},
 }: { aidemoVersion?: string | false; config?: string; extra?: Record<string, string> } = {}): TempTree {
