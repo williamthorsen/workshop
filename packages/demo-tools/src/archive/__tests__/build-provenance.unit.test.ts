@@ -14,21 +14,29 @@ const INPUT: ProvenanceInput = {
   renderedAt: new Date('2026-11-01T03:04:05.678Z'),
   source: { commit: 'abc1234def', dirty: true },
   storyboardSha256: 's',
-  voice: { provider: 'local', voiceId: 'af_heart' },
+  voices: [
+    { id: 'intro', provider: 'local', voiceId: 'af_heart' },
+    { id: 'outro', provider: null, voiceId: null },
+  ],
 };
 
 describe(buildProvenance, () => {
-  it('builds the schema 1 record, with the files ordered by name', () => {
+  it('builds the schema 2 record, with the files ordered by name', () => {
     const provenance = buildProvenance(INPUT);
 
     expect(provenance).toStrictEqual({
-      schemaVersion: 1,
+      schemaVersion: 2,
       demo: 'quickstart',
       label: 'product-demos',
       renderedAt: '2026-11-01T03:04:05.678Z',
       source: { commit: 'abc1234def', dirty: true },
       engine: { package: '@tandryukha/aidemo', version: '0.20.0' },
-      voice: { provider: 'local', voiceId: 'af_heart' },
+      voice: {
+        scenes: [
+          { id: 'intro', provider: 'local', voiceId: 'af_heart' },
+          { id: 'outro', provider: null, voiceId: null },
+        ],
+      },
       params: ['--tts', 'local'],
       storyboard: { sha256: 's' },
       files: {
@@ -43,7 +51,6 @@ describe(buildProvenance, () => {
     const provenance = buildProvenance({
       ...INPUT,
       reference: { sha256: 'ref' },
-      voice: { provider: 'mlx-audio', voiceId: 'mlx-community/model' },
     });
 
     expect(provenance.reference).toStrictEqual({ sha256: 'ref' });

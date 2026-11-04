@@ -1,5 +1,5 @@
 import type { SourceState } from '../clients/git/read-source-state.ts';
-import type { ResolvedVoice } from './resolve-voice.ts';
+import type { SceneVoice } from './read-voice-manifest.ts';
 
 /** A file's checksum and size, as recorded for an archived file. */
 export interface FileDigest {
@@ -9,14 +9,14 @@ export interface FileDigest {
 
 /** The record of what produced a take, written to the take's `provenance.json`. */
 export interface Provenance {
-  readonly schemaVersion: 1;
+  readonly schemaVersion: 2;
   readonly demo: string;
   readonly label: string;
   /** The UTC instant, as ISO 8601, at which `thor-demo` started aidemo. */
   readonly renderedAt: string;
   readonly source: { readonly commit: string | null; readonly dirty: boolean | null };
   readonly engine: { readonly package: '@tandryukha/aidemo'; readonly version: string };
-  readonly voice: ResolvedVoice;
+  readonly voice: { readonly scenes: readonly SceneVoice[] };
   /** The checksum of the reference recording that a cloned voice copies; absent for any other voice. */
   readonly reference?: { readonly sha256: string };
   /** The arguments given to aidemo after the demo directory. */
@@ -37,19 +37,20 @@ export interface ProvenanceInput {
   readonly renderedAt: Date;
   readonly source: SourceState | undefined;
   readonly storyboardSha256: string;
-  readonly voice: ResolvedVoice;
+  /** The voice of each scene, in the order of aidemo's voice manifest. */
+  readonly voices: readonly SceneVoice[];
 }
 
 /** Builds a take's provenance record, ordering `files` by name so that the record is stable. */
 export function buildProvenance(input: ProvenanceInput): Provenance {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     demo: input.demo,
     label: input.label,
     renderedAt: input.renderedAt.toISOString(),
     source: { commit: input.source?.commit ?? null, dirty: input.source?.dirty ?? null },
     engine: { package: '@tandryukha/aidemo', version: input.aidemoVersion },
-    voice: { provider: input.voice.provider, voiceId: input.voice.voiceId },
+    voice: { scenes: input.voices.map(({ id, provider, voiceId }) => ({ id, provider, voiceId })) },
     ...(input.reference !== undefined && { reference: { sha256: input.reference.sha256 } }),
     params: [...input.params],
     storyboard: { sha256: input.storyboardSha256 },

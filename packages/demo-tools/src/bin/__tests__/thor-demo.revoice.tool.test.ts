@@ -70,7 +70,7 @@ describe('thor-demo revoice', () => {
       engine: { version: '0.20.3' },
       params: [],
       reference: { sha256: sha256(readFileSync(machine.tree.resolve('home/reference.m4a'))) },
-      voice: { provider: 'mlx-audio', voiceId: MODEL },
+      voice: { scenes: [{ id: 'scene-1', provider: 'mlx-audio', voiceId: MODEL }] },
     });
   });
 

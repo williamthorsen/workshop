@@ -53,7 +53,7 @@ Example:
 
 // region | Helpers
 
-/** Replaces a take's voice with the cloned voice, and adds the reference recording's checksum. */
+/** Records the cloned voice as the voice of every scene in a take, and adds the reference recording's checksum. */
 function describeClonedTake(take: TakeDisposition, model: string, referenceSha256: string): TakeDisposition {
   if (take.kind === 'notice') return take;
 
@@ -62,7 +62,7 @@ function describeClonedTake(take: TakeDisposition, model: string, referenceSha25
     plan: {
       ...take.plan,
       reference: { sha256: referenceSha256 },
-      voice: { provider: CLONED_VOICE_PROVIDER, voiceId: model },
+      voiceOverride: { provider: CLONED_VOICE_PROVIDER, voiceId: model },
     },
   };
 }
@@ -126,7 +126,6 @@ function runRevoice(context: CommandContext, demoArgument: string, stderr: Write
   delete env['OPENAI_BASE_URL'];
 
   const take = planTake({
-    aidemoEnv: env,
     aidemoVersion: aidemo.aidemo.version,
     archiveLabel,
     archiveRoot: archiveRoot.archiveRoot,

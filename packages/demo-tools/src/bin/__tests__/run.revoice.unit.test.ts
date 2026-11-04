@@ -52,7 +52,7 @@ describe('run revoice', () => {
           params: [],
           reference: { sha256: readProfileSources(readVoiceConfig(home)).referenceSha256 },
           source,
-          voice: { provider: 'mlx-audio', voiceId: DEFAULT_VOICE_MODEL },
+          voiceOverride: { provider: 'mlx-audio', voiceId: DEFAULT_VOICE_MODEL },
         },
       },
     });

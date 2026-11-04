@@ -12,7 +12,18 @@ const RENDERED_AT = new Date('2026-11-01T03:04:05.000Z');
 
 const TAKE_PATH = 'archive/demos/quickstart/20261101-030405Z_abc1234';
 
+const VOICE_MANIFEST = {
+  'repo/demos/quickstart/audio/voice.json': JSON.stringify({
+    gapMs: 0,
+    scenes: [
+      { id: 'intro', provider: 'local', voice: 'af_heart' },
+      { id: 'outro', provider: 'openai', voice: 'marin' },
+    ],
+  }),
+};
+
 const FULL_OUTPUT = {
+  ...VOICE_MANIFEST,
   'repo/demos/quickstart/output/final-demo.mp4': 'video bytes',
   'repo/demos/quickstart/output/final-demo.srt': 'srt',
   'repo/demos/quickstart/output/final-demo.vtt': 'vtt',
@@ -38,8 +49,39 @@ describe(archiveTake, () => {
       demo: 'quickstart',
       label: 'demos',
       source: { commit: 'abc1234def', dirty: false },
+      voice: {
+        scenes: [
+          { id: 'intro', provider: 'local', voiceId: 'af_heart' },
+          { id: 'outro', provider: 'openai', voiceId: 'marin' },
+        ],
+      },
       files: { 'final-demo.mp4': { bytes: 11, sha256: sha256('video bytes') } },
     });
+  });
+
+  it("records the plan's voice override as the voice of every scene in the manifest", async () => {
+    using tree = createTempTree(FULL_OUTPUT);
+
+    await archiveTake({ ...createPlan(tree), voiceOverride: { provider: 'mlx-audio', voiceId: 'model' } });
+
+    expect(readProvenance(tree)['voice']).toStrictEqual({
+      scenes: [
+        { id: 'intro', provider: 'mlx-audio', voiceId: 'model' },
+        { id: 'outro', provider: 'mlx-audio', voiceId: 'model' },
+      ],
+    });
+  });
+
+  it('fails without a voice manifest and leaves the archive untouched', async () => {
+    using tree = createTempTree({ 'repo/demos/quickstart/output/final-demo.mp4': 'video bytes' });
+
+    const outcome = await archiveTake(createPlan(tree));
+
+    expect(outcome).toStrictEqual({
+      ok: false,
+      message: `${tree.resolve('repo/demos/quickstart/audio/voice.json')} not found`,
+    });
+    expect(tree.exists('archive')).toBe(false);
   });
 
   it('records checksums that match both the archived and the rendered files', async () => {
@@ -55,7 +97,7 @@ describe(archiveTake, () => {
   });
 
   it('omits caption files that the render did not write', async () => {
-    using tree = createTempTree({ 'repo/demos/quickstart/output/final-demo.mp4': 'video bytes' });
+    using tree = createTempTree({ ...VOICE_MANIFEST, 'repo/demos/quickstart/output/final-demo.mp4': 'video bytes' });
 
     await archiveTake(createPlan(tree));
 
@@ -86,6 +128,7 @@ describe(archiveTake, () => {
   it('removes the staging directory when a copy fails', async () => {
     // A directory where a file is expected makes the copy fail after staging begins.
     using tree = createTempTree({
+      ...VOICE_MANIFEST,
       'repo/demos/quickstart/output/final-demo.mp4': 'video bytes',
       'repo/demos/quickstart/output/report.json/nested.txt': 'x',
     });
@@ -111,7 +154,6 @@ function createPlan(tree: TempTree): TakeArchivePlan {
     renderedAt: RENDERED_AT,
     source: { commit: 'abc1234def', dirty: false },
     storyboardSha256: 's',
-    voice: { provider: 'openai', voiceId: 'marin' },
   };
 }
 

@@ -36,12 +36,12 @@ describe('thor-demo render archiving', () => {
 
     const provenance = readJson(path.join(takeDir, 'provenance.json'));
     expect(provenance).toMatchObject({
-      schemaVersion: 1,
+      schemaVersion: 2,
       demo: 'quickstart',
       label: 'product',
       source: { commit, dirty: false },
       engine: { package: '@tandryukha/aidemo', version: '0.20.3' },
-      voice: { provider: 'local', voiceId: 'af_heart' },
+      voice: { scenes: [{ id: 'scene-1', provider: 'local', voiceId: 'af_heart' }] },
       params: ['--tts', 'local'],
     });
     for (const [name, content] of Object.entries(OUTPUT_FILES)) {
@@ -72,6 +72,21 @@ describe('thor-demo render archiving', () => {
     expect(stderr).toContain(
       `final-demo.mp4 not found; the take remains in ${repo.tree.resolve('demos/quickstart/output')}`,
     );
+  });
+
+  it('exits 1 when aidemo wrote no voice manifest, naming the manifest and where the take remains', () => {
+    using repo = createDemoRepo({ outputFiles: OUTPUT_FILES, voiceManifest: null });
+    using archive = createTempTree({ '.keep': '' });
+
+    const { status, stderr } = runThorDemo(['render', 'quickstart'], repo.tree.dir, {
+      THOR_DEMO_ARCHIVE_ROOT: archive.dir,
+    });
+
+    expect(status).toBe(1);
+    expect(stderr).toContain(
+      `${repo.tree.resolve('demos/quickstart/audio/voice.json')} not found; the take remains in ${repo.tree.resolve('demos/quickstart/output')}`,
+    );
+    expect(readdirSync(archive.dir)).toStrictEqual(['.keep']);
   });
 
   it('reports that the take is not archived without an archive root, and exits 0', () => {

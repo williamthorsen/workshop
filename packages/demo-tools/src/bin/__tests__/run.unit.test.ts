@@ -204,7 +204,6 @@ describe(run, () => {
           label: 'product',
           params: ['--tts', 'local'],
           source,
-          voice: { provider: 'local', voiceId: 'af_heart' },
         },
       });
     });
