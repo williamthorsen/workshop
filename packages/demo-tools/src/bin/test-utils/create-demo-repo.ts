@@ -8,7 +8,7 @@ export interface FakeAidemoCall {
   readonly cwd: string;
   /** The `AIDEMO_*` and `OPENAI_*` variables that were set. */
   readonly env: Record<string, string>;
-  /** On `voice`, the status with which `AIDEMO_OPENAI_BASE_URL` answered one speech request. */
+  /** On `voice`, the status with which `AIDEMO_OPENAI_BASE_URL` answered one speech request; any but 200 exits 1. */
   readonly speechStatus?: number;
 }
 
@@ -135,6 +135,8 @@ if (call.args[0] === 'render' || call.args[0] === 'compose') {
 }
 process.stdout.write(${JSON.stringify(stdout)});
 if (${JSON.stringify(failOn ?? null)} === null || call.args[0] === ${JSON.stringify(failOn ?? null)}) process.exitCode = ${String(exitCode)};
+// Real aidemo fails its voice stage once the speech client stops retrying an error.
+if (call.speechStatus !== undefined && call.speechStatus !== 200) process.exitCode = 1;
 `;
 }
 
