@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
+import { buildLargeListingTree } from '../../test-utils/large-listing.ts';
 import { runCaptured } from '../test-utils/run-captured.ts';
 
 describe('REPO_COMMANDS with git', () => {
@@ -27,6 +28,26 @@ describe('REPO_COMMANDS with git', () => {
     expect(result.status).toBe(0);
     expect(result.stdout).toBe('app: +react +supabase');
     expect(home.read('registry/repos.yaml')).toContain('stack: [react, supabase]');
+  });
+
+  it('detects the stack of a clone whose tracked-file listing exceeds 1 MiB', async () => {
+    using home = createTempTree(
+      {
+        ...buildLargeListingTree('repos/big'),
+        'repos/big/vercel.json': '{}',
+        'registry/repos.yaml': 'repos:\n  - name: big\n    path: ~/repos/big\n',
+      },
+      { prefix: 'repo-tools-' },
+    );
+    const cloneDir = home.resolve('repos/big');
+    git(cloneDir, 'init', '--quiet');
+    git(cloneDir, 'add', '.');
+
+    const result = await runCaptured(['scan', '--file', home.resolve('registry/repos.yaml')], {
+      env: { HOME: home.dir },
+    });
+    expect(result.status).toBe(0);
+    expect(result.stdout).toBe('big: +vercel');
   });
 
   it('refuses --write to a registry reached through a link into a checkout on the live branch', async () => {

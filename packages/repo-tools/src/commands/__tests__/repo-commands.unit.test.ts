@@ -189,6 +189,19 @@ describe('REPO_COMMANDS', () => {
       expect(registryText).toContain('stack: [nmr]');
     });
 
+    it('reports why a present clone cannot be listed on its own line, keeping its stack', async () => {
+      const clones = {
+        ...CURRENT_CLONES,
+        alpha: { files: {}, tracked: 'cannot run git ls-files: spawnSync git ENOBUFS' },
+      };
+      const { registryText, result } = await run(['scan', '--write'], { clones });
+      expect(result.status).toBe(0);
+      expect(result.stderr).toBe(
+        'thor-repo: alpha: cannot list the tracked files: cannot run git ls-files: spawnSync git ENOBUFS; the stack is kept',
+      );
+      expect(registryText).toBe(REGISTRY);
+    });
+
     it('reports and rewrites visibility and runner values that differ from GitHub', async () => {
       const github = { ...CURRENT_GITHUB, 'owner/alpha': facts('private'), 'owner/beta': facts('public', 'm1') };
       const clones = { ...CURRENT_CLONES, beta: clone({ 'vercel.json': '' }) };
@@ -361,6 +374,18 @@ describe('REPO_COMMANDS', () => {
       expect(result.status).toBe(1);
     });
 
+    it('reports why the tracked files of a clone cannot be listed', async () => {
+      const { registryText, result } = await run(['add', '~/repos/delta', '--write'], {
+        clones: { delta: { files: {}, tracked: 'git ls-files was killed by SIGKILL' } },
+        origins: { delta: 'git@github.com:owner/delta.git' },
+      });
+      expect(result.stderr).toBe(
+        `thor-repo: cannot list the tracked files of ${HOME}/repos/delta: git ls-files was killed by SIGKILL`,
+      );
+      expect(registryText).toBe(REGISTRY);
+      expect(result.status).toBe(1);
+    });
+
     it.each([
       [
         'a registered clone',
@@ -402,10 +427,10 @@ describe('REPO_COMMANDS', () => {
 
 // region | Helpers
 
-/** A fake clone: the paths that git tracks in it, and the content of its files. */
+/** A fake clone: the paths that git tracks in it, or the reason that git cannot list them, and its files' content. */
 interface FakeClone {
   files: Record<string, string>;
-  tracked: string[];
+  tracked: string[] | string;
 }
 
 /** Builds a clone from its files, writing an object as a manifest that declares those dependencies. */
@@ -438,7 +463,7 @@ function fakeAdapters(
   const cloneName = (dir: string): string | undefined => /^\/home\/spec\/repos\/([^/]+)/.exec(dir)?.[1];
   return {
     isDirectory: (dir) => clones[cloneName(dir) ?? ''] !== undefined,
-    listTrackedFiles: (dir) => clones[cloneName(dir) ?? '']?.tracked,
+    listTrackedFiles: (dir) => clones[cloneName(dir) ?? '']?.tracked ?? 'fatal: not a git repository',
     readCurrentBranch: () => branch,
     readFile: (file) => {
       const name = cloneName(file) ?? '';
