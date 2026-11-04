@@ -42,12 +42,6 @@ export interface SpeechProxy extends AsyncDisposable {
   readonly stop: () => Promise<void>;
 }
 
-/** What a forwarded request came to. */
-type SpeechOutcome =
-  | { readonly kind: 'answer'; readonly answer: HttpResponse }
-  | { readonly kind: 'client-gone' }
-  | { readonly kind: 'refused'; readonly reason: string };
-
 /**
  * Starts a loopback-only HTTP server that accepts OpenAI-shaped speech requests and forwards each as a request that
  * clones the profile's voice, keeping only the text to speak. It passes on a clip that the inspector accepts and a 4xx
@@ -103,6 +97,12 @@ export async function startSpeechProxy(options: SpeechProxyOptions): Promise<Spe
     failure = { input, reason: outcome.reason };
     sendFailure(response, `the voice clone could not speak the text: ${outcome.reason}`);
   }
+
+  /** What a forwarded request came to. */
+  type SpeechOutcome =
+    | { readonly kind: 'answer'; readonly answer: HttpResponse }
+    | { readonly kind: 'client-gone' }
+    | { readonly kind: 'refused'; readonly reason: string };
 
   /** Sends a request upstream within the budget and judges its answer. */
   async function requestSpeech(body: unknown, input: string, clientSignal: AbortSignal): Promise<SpeechOutcome> {

@@ -61,7 +61,7 @@ function collectAncestors(filePath: string): Array<string> {
   const ancestors: Array<string> = [];
   let dir = path.posix.dirname(filePath);
 
-  while (dir !== '.' && dir !== '/' && dir !== '') {
+  while (!['.', '/', ''].includes(dir)) {
     ancestors.push(dir);
     dir = path.posix.dirname(dir);
   }
