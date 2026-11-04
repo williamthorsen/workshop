@@ -2,9 +2,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { UsageError, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
-import validatePackageName from 'validate-npm-package-name';
 
 import type { NpmClient } from '../npm/createNpmClient.ts';
+import { assertValidName } from './assertValidName.ts';
+import { isAffirmative } from './isAffirmative.ts';
 
 const EXIT_FAILED = 1;
 const EXIT_NPM_MISSING = 127;
@@ -37,7 +38,7 @@ export async function runPublishPlaceholder(
       'confirming the publish needs a terminal on stdin; pass --force to publish without asking, or --dry-run to check without publishing',
     );
   }
-  assertValidName(name);
+  assertValidName(name, 'new');
 
   const session = npm.whoami();
   if (session.kind === 'missing') {
@@ -109,22 +110,6 @@ export interface PublishPlaceholderOptions {
 }
 
 // region | Helpers
-
-/** Throws a `UsageError` listing npm's reasons when a name is not valid for a new package. */
-function assertValidName(name: string): void {
-  const result = validatePackageName(name);
-  if (result.validForNewPackages) return;
-
-  const reasons = [...(result.errors ?? []), ...(result.warnings ?? [])];
-  throw new UsageError([`invalid package name '${name}':`, ...reasons.map((reason) => `  ${reason}`)].join('\n'));
-}
-
-/** Reports whether an answer confirms: `y` or `yes`, in any case. */
-function isAffirmative(answer: string | undefined): boolean {
-  const normalized = answer?.trim().toLowerCase();
-
-  return normalized === 'y' || normalized === 'yes';
-}
 
 /** Renders the summary of what the run publishes, or would publish under a dry run. */
 function renderSummary(name: string, dryRun: boolean): string {
