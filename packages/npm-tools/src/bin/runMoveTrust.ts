@@ -127,15 +127,16 @@ export interface MoveTrustOptions {
   readonly dryRun: boolean;
   readonly file?: string | undefined;
   readonly force: boolean;
-  readonly from: string;
+  readonly from?: string | undefined;
   readonly name: string;
-  readonly to: string;
+  readonly to?: string | undefined;
 }
 
 // region | Helpers
 
-/** Throws a `UsageError` when a flag's value is not an `owner/repo` name. */
-function assertRepository(flag: string, value: string): void {
+/** Throws a `UsageError` when a flag is absent or its value is not an `owner/repo` name. */
+function assertRepository(flag: string, value: string | undefined): asserts value is string {
+  if (value === undefined) throw new UsageError(`${flag} <owner/repo> is required`);
   if (!REPOSITORY_PATTERN.test(value)) throw new UsageError(`${flag} takes an owner/repo name, not '${value}'`);
 }
 

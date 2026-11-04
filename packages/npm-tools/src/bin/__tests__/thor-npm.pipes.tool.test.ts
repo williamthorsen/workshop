@@ -13,6 +13,15 @@ describe('thor-npm over a pipe', () => {
     expect(stderr).toBe('exit:0\n');
     expect(status).toBe(0);
   });
+
+  it('refuses to move a trust when stdin and stdout are pipes, before running npm', () => {
+    const command = buildCommand(['move-trust', '@scope/pkg', '--from', 'owner/old', '--to', 'owner/new', '--force']);
+    // An empty PATH makes any npm call fail, so a refusal that comes later than the terminal check would show.
+    const { stderr } = runPipeline(`{ echo | PATH= ${command}; echo "exit:$?" >&2; } | cat`);
+
+    expect(stderr).toContain('needs a terminal on stdin and stdout');
+    expect(stderr).toMatch(/exit:2\n$/);
+  });
 });
 
 // region | Helpers

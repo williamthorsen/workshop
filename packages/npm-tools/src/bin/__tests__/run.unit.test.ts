@@ -10,6 +10,7 @@ const EFFECTS: RunEffects = {
     throw new Error('Unexpected createTempDir call');
   },
   isStdinTty: () => true,
+  isStdoutTty: () => true,
   npm: {
     addGithubTrust: () => ({ kind: 'failed', detail: 'unexpected addGithubTrust' }),
     findVersion: () => ({ kind: 'found' }),
@@ -30,6 +31,7 @@ describe(run, () => {
       expect(exitCode).toBe(0);
       expect(stderr).toBe('');
       expect(stdout).toContain('Usage: thor-npm [options] <command>');
+      expect(stdout).toContain('move-trust');
       expect(stdout).toContain('publish-placeholder');
       expect(stdout).toContain('Exit codes:');
     });
@@ -58,6 +60,61 @@ describe(run, () => {
         stderr: "Error: The manifest declares no version.\nTry 'thor-npm --help'.\n",
         stdout: '',
       });
+    });
+  });
+
+  describe('move-trust', () => {
+    const listing: RunEffects = {
+      ...EFFECTS,
+      npm: {
+        ...EFFECTS.npm,
+        listTrust: () => ({
+          kind: 'listed',
+          entries: [{ file: 'release.yaml', id: 'trust-1', permissions: ['createPackage'], repository: 'owner/old' }],
+          otherCount: 0,
+        }),
+      },
+    };
+
+    it('prints its own help, even without the operand', async () => {
+      const { exitCode, stdout } = await runWithBuffers(['move-trust', '--help']);
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toContain('Usage: thor-npm move-trust');
+      for (const flag of ['--dry-run', '--file', '--force', '--from', '--to']) expect(stdout).toContain(flag);
+      expect(stdout).toContain(
+        'thor-npm move-trust @scope/package --from owner/old-repo --to owner/new-repo --dry-run',
+      );
+    });
+
+    it('exits 2 without the operand', async () => {
+      const { exitCode, stderr } = await runWithBuffers(['move-trust', '--from', 'owner/old', '--to', 'owner/new']);
+
+      expect(exitCode).toBe(2);
+      expect(stderr).toContain("Try 'thor-npm move-trust --help'.");
+    });
+
+    it.each([
+      { args: ['--to', 'owner/new'], expected: 'Error: --from <owner/repo> is required' },
+      { args: ['--from', 'owner/old'], expected: 'Error: --to <owner/repo> is required' },
+    ])('exits 2 when a repository flag is absent: $args', async ({ args, expected }) => {
+      const { exitCode, stderr } = await runWithBuffers(['move-trust', '@scope/pkg', ...args], listing);
+
+      expect(exitCode).toBe(2);
+      expect(stderr).toContain(expected);
+      expect(stderr).toContain("Try 'thor-npm move-trust --help'.");
+    });
+
+    it('passes the operand, the repository flags, --file, and the short flags to the command', async () => {
+      const { exitCode, stderr } = await runWithBuffers(
+        ['move-trust', '@scope/pkg', '--from', 'owner/old', '--to', 'owner/new', '--file', 'publish.yml', '-n', '-f'],
+        listing,
+      );
+
+      expect(exitCode).toBe(0);
+      expect(stderr).toContain('  To: owner/new\n');
+      expect(stderr).toContain('  Workflow: release.yaml → publish.yml\n');
+      expect(stderr).toContain('thor-npm move-trust: nothing was changed (dry run)\n');
     });
   });
 

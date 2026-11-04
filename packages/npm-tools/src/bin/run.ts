@@ -1,9 +1,26 @@
 import { createCli, runCli, UsageError, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
+import { type MoveTrustEffects, runMoveTrust } from './runMoveTrust.ts';
 import { type PublishPlaceholderEffects, runPublishPlaceholder } from './runPublishPlaceholder.ts';
 
 const { defineCommand, defineGroup } = createCli<RunEffects>();
+
+const MOVE_TRUST_DESCRIPTION = `Move the trusted publisher of <package-name> from one GitHub repository to another. The new trust keeps the
+old one's workflow file, unless --file names another, its environment, and its permissions.
+
+It lists the current trust and refuses unless the package has exactly one, a GitHub one belonging to --from, then
+prints a summary and asks for confirmation. The registry holds one trusted publisher per package, so the old trust
+is revoked before the new one is added; when adding the new one fails, the old one is added back. Requires npm on
+PATH, and script(1) on macOS or Linux.`;
+
+const MOVE_TRUST_EPILOG = `Every npm call runs attached to the terminal, so that the web login or one-time password that npm asks for can be
+answered there; the command therefore needs a terminal on stdin and stdout, even under --force. If the old trust
+cannot be added back, the command prints the npm command that restores it.
+
+Examples:
+  thor-npm move-trust @scope/package --from owner/old-repo --to owner/new-repo --dry-run
+  thor-npm move-trust @scope/package --from owner/old-repo --to owner/new-repo --file release.yaml`;
 
 const PUBLISH_PLACEHOLDER_DESCRIPTION = `Publish a <package-name>@0.0.0 placeholder, holding only package.json and README.md, with public access. npm
 trust can be configured only for a name that the registry already has, so a new package is published this way
@@ -24,10 +41,33 @@ const ROOT = defineGroup({
   summary: 'Run npm registry chores.',
   epilog: `Exit codes:
   0    The command succeeded, or help or version was printed
-  1    A check failed, the publish failed, or the confirmation was declined
+  1    A check failed, the publish or the move failed, or the confirmation was declined
   2    Usage or validation error
   127  npm is not on PATH`,
   commands: {
+    'move-trust': defineCommand({
+      summary: "Move a package's trusted publisher to another GitHub repository",
+      description: MOVE_TRUST_DESCRIPTION,
+      epilog: MOVE_TRUST_EPILOG,
+      flags: {
+        dryRun: {
+          type: 'boolean',
+          description: 'List the trust and print the summary, but change nothing',
+          short: 'n',
+        },
+        file: {
+          type: 'string',
+          description: "Workflow file name for the new trust (default: the old trust's)",
+          valueHint: 'workflow',
+        },
+        force: { type: 'boolean', description: 'Move without asking for confirmation', short: 'f' },
+        from: { type: 'string', description: 'Repository that holds the trust now', valueHint: 'owner/repo' },
+        to: { type: 'string', description: 'Repository that takes the trust', valueHint: 'owner/repo' },
+      },
+      operands: [{ name: 'package-name', description: 'The package whose trusted publisher moves' }],
+      run: ({ context, flags, operands, stderr }) =>
+        reportFailures(stderr, () => runMoveTrust({ ...flags, name: operands['package-name'] }, context, { stderr })),
+    }),
     'publish-placeholder': defineCommand({
       summary: 'Publish a 0.0.0 placeholder so that npm trust can be configured for a new package',
       description: PUBLISH_PLACEHOLDER_DESCRIPTION,
@@ -65,7 +105,7 @@ export async function run(args: readonly string[], effects: RunEffects, streams:
 }
 
 /** The effects deferred to the entry point, which keeps the runner free of process I/O. */
-export interface RunEffects extends PublishPlaceholderEffects {
+export interface RunEffects extends MoveTrustEffects, PublishPlaceholderEffects {
   readonly resolveVersion: () => string;
 }
 

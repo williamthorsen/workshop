@@ -2,7 +2,7 @@
 
 # @williamthorsen/npm-tools
 
-A CLI that runs npm registry chores. It publishes the placeholder that a new package needs before `npm trust` can be configured for it.
+A CLI that runs npm registry chores. It publishes the placeholder that a new package needs before `npm trust` can be configured for it, and moves a package's trusted publisher to another GitHub repository.
 
 <!-- section:release-notes --><!-- /section:release-notes -->
 
@@ -31,3 +31,17 @@ thor-npm publish-placeholder @scope/new-package
 ```
 
 `thor-npm publish-placeholder --help` lists the options and exit codes.
+
+When a package moves to another repository, its trusted publisher has to move with it. Check the current trust and see the summary, without changing anything:
+
+```bash
+thor-npm move-trust @scope/package --from owner/old-repo --to owner/new-repo --dry-run
+```
+
+Move it, after confirming at the prompt. The new trust keeps the old one's workflow file, environment, and permissions; `--file` names a different workflow file:
+
+```bash
+thor-npm move-trust @scope/package --from owner/old-repo --to owner/new-repo
+```
+
+npm asks for approval at the terminal, so run it from one. `thor-npm move-trust --help` lists the options.

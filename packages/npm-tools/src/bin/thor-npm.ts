@@ -25,7 +25,8 @@ process.exitCode = await run(
   {
     createTempDir: () => fs.mkdtempSync(path.join(os.tmpdir(), 'thor-npm-')),
     isStdinTty: () => process.stdin.isTTY,
-    npm: createNpmClient({ cwd: process.cwd(), env: process.env }),
+    isStdoutTty: () => process.stdout.isTTY,
+    npm: createNpmClient({ cwd: process.cwd(), env: process.env, platform: process.platform }),
     readAnswer,
     resolveVersion: () => resolveSelfVersion(import.meta.url),
   },
