@@ -1,3 +1,5 @@
+/* eslint max-lines: off -- the split is tracked in #694. */
+
 import type { Severity } from '../../src/kits/types.ts';
 import type { JsonKitOrigin } from '../../src/schemas/reportSchema.ts';
 
