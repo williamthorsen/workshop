@@ -1,12 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import type { Writer } from '@williamthorsen/toolbelt.cli/candidate';
 import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import type { FindVersionOutcome, NpmClient, PublishOutcome, WhoamiOutcome } from '../../npm/createNpmClient.ts';
 import { type PublishPlaceholderOptions, runPublishPlaceholder } from '../runPublishPlaceholder.ts';
+import { createTextBuffer } from '../test-utils/createTextBuffer.ts';
 
 const NAME = '@scope/new-pkg';
 
@@ -221,20 +221,6 @@ function createHarness(settings: HarnessSettings = {}): Harness {
     },
     [Symbol.dispose]() {
       tree[Symbol.dispose]();
-    },
-  };
-}
-
-/** Returns a writer that accumulates what is written to it. */
-function createTextBuffer(): Writer & { readonly text: string } {
-  let text = '';
-
-  return {
-    get text() {
-      return text;
-    },
-    write(chunk: string) {
-      text += chunk;
     },
   };
 }
