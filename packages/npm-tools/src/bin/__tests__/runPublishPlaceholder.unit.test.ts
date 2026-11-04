@@ -177,15 +177,18 @@ function createHarness(settings: HarnessSettings = {}): Harness {
   const questions: string[] = [];
 
   const npm: NpmClient = {
+    addGithubTrust: () => ({ kind: 'failed', detail: 'unexpected addGithubTrust' }),
     findVersion: (name) => {
       npmCalls.push(`view ${name}`);
       return settings.npm?.findVersion ?? { kind: 'absent' };
     },
+    listTrust: () => ({ kind: 'failed', detail: 'unexpected listTrust' }),
     publish: (dir) => {
       npmCalls.push('publish');
       published.push({ files: readFiles(dir) });
       return settings.npm?.publish ?? { kind: 'published' };
     },
+    revokeTrust: () => ({ kind: 'failed', detail: 'unexpected revokeTrust' }),
     whoami: () => {
       npmCalls.push('whoami');
       return settings.npm?.whoami ?? { kind: 'logged-in', username: 'someone' };

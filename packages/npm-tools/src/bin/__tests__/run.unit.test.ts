@@ -11,8 +11,11 @@ const EFFECTS: RunEffects = {
   },
   isStdinTty: () => true,
   npm: {
+    addGithubTrust: () => ({ kind: 'failed', detail: 'unexpected addGithubTrust' }),
     findVersion: () => ({ kind: 'found' }),
+    listTrust: () => ({ kind: 'failed', detail: 'unexpected listTrust' }),
     publish: () => ({ kind: 'failed', detail: 'unexpected publish' }),
+    revokeTrust: () => ({ kind: 'failed', detail: 'unexpected revokeTrust' }),
     whoami: () => ({ kind: 'logged-in', username: 'someone' }),
   },
   readAnswer: () => Promise.resolve(undefined),
