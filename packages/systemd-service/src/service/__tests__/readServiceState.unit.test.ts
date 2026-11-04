@@ -20,7 +20,7 @@ describe(readServiceState, () => {
     await expect(readServiceState('dev.example')).resolves.toStrictEqual({
       lastExitCode: undefined,
       loaded: true,
-      pid: 4_242,
+      pid: 4242,
     });
   });
 

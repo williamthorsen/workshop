@@ -8,7 +8,7 @@ export type BundlerSignal = 'density' | 'header';
 export const MEAN_LINE_LENGTH_THRESHOLD = 250;
 
 /** Size below which the density signal is not applied, since one long line dominates a short file's mean. */
-const DENSITY_MIN_LENGTH = 1_000;
+const DENSITY_MIN_LENGTH = 1000;
 
 /** How many opening lines are searched for a bundler's runtime helpers. */
 const HELPER_LINE_COUNT = 20;

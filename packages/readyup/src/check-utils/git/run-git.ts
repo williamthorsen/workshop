@@ -11,7 +11,7 @@ const execFileAsync = promisify(execFile);
  * truncate a repository handled by git itself, and Node reports truncation by throwing
  * `ERR_CHILD_PROCESS_STDIO_MAXBUFFER` rather than by returning a short answer.
  */
-const MAX_OUTPUT_BYTES = 64 * 1_024 * 1_024;
+const MAX_OUTPUT_BYTES = 64 * 1024 * 1024;
 
 /** Returns a git command's stdout, trimmed, from a run in the given directory. */
 export async function runGit(path: string, ...args: string[]): Promise<string> {

@@ -7,7 +7,7 @@ import { parseActiveDays, runPruneModules } from '../runPruneModules.ts';
 import { runWithBuffers } from '../test-utils/runWithBuffers.ts';
 import type { ThorNodeEffects } from '../thor-node-result.ts';
 
-const DAY_MS = 24 * 60 * 60 * 1_000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 const NOW = Date.parse('2026-10-06T00:00:00Z');
 const PROTECT_LIST = '.config/thor-node/protected-node-modules.txt';
 
@@ -225,11 +225,11 @@ function createProjects(): TempTree {
   const tree = createTempTree({
     [PROTECT_LIST]: '# kept\n~/repos/*.live\n',
     'repos/active/.git/index': '',
-    'repos/active/node_modules/pkg/index.js': 'x'.repeat(4_096),
+    'repos/active/node_modules/pkg/index.js': 'x'.repeat(4096),
     'repos/keep.live/.git/index': '',
-    'repos/keep.live/node_modules/pkg/index.js': 'x'.repeat(4_096),
+    'repos/keep.live/node_modules/pkg/index.js': 'x'.repeat(4096),
     'repos/stale/.git/index': '',
-    'repos/stale/node_modules/pkg/index.js': 'x'.repeat(4_096),
+    'repos/stale/node_modules/pkg/index.js': 'x'.repeat(4096),
   });
   setActivity(tree, 'repos/active', NOW - 3 * DAY_MS);
   setActivity(tree, 'repos/keep.live', NOW - 100 * DAY_MS);

@@ -20,7 +20,7 @@ export async function replaceLoadedAgent(label: string, plistPath: string): Prom
   await runLaunchctl(['bootout', serviceTarget]);
   for (let waitedMs = 0; (await runLaunchctl(['print', serviceTarget])).exitCode === 0; waitedMs += BOOTOUT_POLL_MS) {
     if (waitedMs >= BOOTOUT_TIMEOUT_MS) {
-      throw new Error(`launchd still held ${label} ${BOOTOUT_TIMEOUT_MS / 1_000}s after bootout.`);
+      throw new Error(`launchd still held ${label} ${BOOTOUT_TIMEOUT_MS / 1000}s after bootout.`);
     }
     await setTimeout(BOOTOUT_POLL_MS);
   }

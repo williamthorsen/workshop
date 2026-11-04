@@ -101,7 +101,7 @@ export function parseSilenceReport(report: string): ClipMeasures | undefined {
   const duration = /Duration: (\d+):(\d+):(\d+(?:\.\d+)?)/.exec(report);
   if (duration === null) return undefined;
   const [hours = 0, minutes = 0, seconds = 0] = duration.slice(1).map(Number);
-  const durationSeconds = hours * 3_600 + minutes * 60 + seconds;
+  const durationSeconds = hours * 3600 + minutes * 60 + seconds;
 
   const silences: Silence[] = [];
   let startSeconds: number | undefined;

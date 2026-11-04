@@ -239,7 +239,7 @@ function isSearchable(directory: string): boolean {
 /** Returns a path's mtime in epoch seconds, or `undefined` when the path cannot be read. */
 function readMtime(value: string): number | undefined {
   try {
-    return Math.floor(fs.statSync(value).mtimeMs / 1_000);
+    return Math.floor(fs.statSync(value).mtimeMs / 1000);
   } catch {
     return undefined;
   }

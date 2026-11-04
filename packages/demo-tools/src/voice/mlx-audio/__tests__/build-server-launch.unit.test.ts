@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { buildServerLaunch } from '../build-server-launch.ts';
 
 describe(buildServerLaunch, () => {
-  const launch = buildServerLaunch('/voice', 4_321);
+  const launch = buildServerLaunch('/voice', 4321);
 
   it("runs mlx-audio's server from the virtual environment, bound to 127.0.0.1 on the given port", () => {
     expect(launch.command).toBe('/voice/venv/bin/python');

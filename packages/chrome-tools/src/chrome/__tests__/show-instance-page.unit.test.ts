@@ -35,7 +35,7 @@ describe('show-instance-page', () => {
     const pageFile = writeInstancePage(fake, 'thrive');
     await expect(run(fake, ['show-instance-page', 'thrive', '--json'])).resolves.toBe(0);
     expect(fake.readReport()).toMatchObject({
-      profile: { name: 'thrive', state: 'debugging', pid: 4_242, port: 9_333 },
+      profile: { name: 'thrive', state: 'debugging', pid: 4242, port: 9333 },
       page: pageFile,
     });
   });

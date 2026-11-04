@@ -38,7 +38,7 @@ export type VoiceSetupOutcome = { ok: true; verifyPath: string } | { ok: false; 
 export const VERIFY_PHRASE = 'This is a test of the cloned voice.';
 
 /** How long verification waits for speech, which includes loading the model on the first request. */
-const VERIFY_TIMEOUT_MS = 10 * 60 * 1_000;
+const VERIFY_TIMEOUT_MS = 10 * 60 * 1000;
 
 /**
  * Installs mlx-audio, downloads the model, and builds the voice profile, skipping each step whose inputs the state

@@ -20,7 +20,7 @@ describe('spawnDetached', () => {
       `spawnDetached('sh', ['-c', ${JSON.stringify(script)}], { logPath: ${JSON.stringify(log)} });`,
     );
     expect(result.status).toBe(0);
-    expect(Date.now() - started).toBeLessThan(1_000);
+    expect(Date.now() - started).toBeLessThan(1000);
 
     await waitFor(() => fs.readFileSync(log, 'utf8').includes('late'));
     expect(fs.readFileSync(log, 'utf8')).toBe('out\nerr\nlate\n');
@@ -43,12 +43,12 @@ describe('spawnDetached', () => {
 /** Runs a Node process that imports `spawnDetached` and evaluates `body`, and returns its status and output. */
 function runCaller(body: string) {
   const source = `import { spawnDetached } from ${JSON.stringify(MODULE)};\n${body}\n`;
-  return spawnSync(process.execPath, ['--input-type=module', '--eval', source], { encoding: 'utf8', timeout: 5_000 });
+  return spawnSync(process.execPath, ['--input-type=module', '--eval', source], { encoding: 'utf8', timeout: 5000 });
 }
 
 /** Resolves once `condition` holds, polling for up to five seconds. */
 async function waitFor(condition: () => boolean): Promise<void> {
-  const deadline = Date.now() + 5_000;
+  const deadline = Date.now() + 5000;
   while (!condition()) {
     if (Date.now() > deadline) throw new Error('condition did not hold within 5s');
     await new Promise((resolve) => setTimeout(resolve, 50));

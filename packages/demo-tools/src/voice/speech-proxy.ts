@@ -112,7 +112,7 @@ export async function startSpeechProxy(options: SpeechProxyOptions): Promise<Spe
       answer = await postJson(upstream, body, signal);
     } catch (error) {
       if (clientSignal.aborted) return { kind: 'client-gone' };
-      if (signal.aborted) return { kind: 'refused', reason: `no answer within ${requestBudgetMs / 1_000} s` };
+      if (signal.aborted) return { kind: 'refused', reason: `no answer within ${requestBudgetMs / 1000} s` };
       return { kind: 'refused', reason: `the voice-clone server failed: ${describeError(error)}` };
     }
     if (answer.status >= 500) return { kind: 'refused', reason: `the voice-clone server answered ${answer.status}` };

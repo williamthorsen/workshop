@@ -49,7 +49,7 @@ export interface FakeThorChromeOptions {
 }
 
 /** The PID of the first browser that `makeRunningFakeThorChrome` starts; each further profile takes the next. */
-export const FIRST_RUNNING_PID = 4_242;
+export const FIRST_RUNNING_PID = 4242;
 
 /** The commands that thor-chrome requires on PATH before it runs them. */
 const REQUIRED_COMMANDS = ['curl', 'lsof', 'pgrep'];
@@ -186,7 +186,7 @@ export function makeRunningFakeThorChrome(
     run: (program, args) => {
       if (program === 'ps') {
         const pid = Number(args.at(-1) ?? '');
-        const port = options.hasPorts === true ? ` --remote-debugging-port=${9_000 + pid - FIRST_RUNNING_PID}` : '';
+        const port = options.hasPorts === true ? ` --remote-debugging-port=${9000 + pid - FIRST_RUNNING_PID}` : '';
         return { status: 0, stderr: '', stdout: `chrome${port}\n` };
       }
       if (program === 'lsof') {
