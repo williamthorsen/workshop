@@ -60,6 +60,14 @@ describe(createNpmClient, () => {
 
       expect(createClient(npm).publish('/some/dir')).toStrictEqual({ kind: 'failed', detail: 'exit 1' });
     });
+
+    it('survives a SIGINT sent to its own process during the publish, reporting the signal', () => {
+      using npm = createFakeNpm({ publish: 'interrupt' });
+      const listenerCount = process.listenerCount('SIGINT');
+
+      expect(createClient(npm).publish('/some/dir')).toStrictEqual({ kind: 'failed', detail: 'signal SIGINT' });
+      expect(process.listenerCount('SIGINT')).toBe(listenerCount);
+    });
   });
 });
 

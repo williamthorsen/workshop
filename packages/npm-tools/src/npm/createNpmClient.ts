@@ -21,11 +21,17 @@ export function createNpmClient({ cwd, env }: NpmClientOptions): NpmClient {
     },
 
     publish(dir) {
-      const { error, signal, status } = spawnSync('npm', ['publish', dir, '--access', 'public'], {
-        cwd,
-        env,
-        stdio: 'inherit',
-      });
+      // A Ctrl+C at npm's prompt also reaches this process, whose default disposition would exit before the caller
+      // cleans up; the listener lets npm alone handle the signal.
+      const ignoreInterrupt = (): void => {};
+      process.on('SIGINT', ignoreInterrupt);
+      let result: SpawnSyncReturns<Buffer>;
+      try {
+        result = spawnSync('npm', ['publish', dir, '--access', 'public'], { cwd, env, stdio: 'inherit' });
+      } finally {
+        process.removeListener('SIGINT', ignoreInterrupt);
+      }
+      const { error, signal, status } = result;
 
       if (error !== undefined) return { kind: 'failed', detail: error.message };
       if (status === 0) return { kind: 'published' };

@@ -29,7 +29,13 @@ if (command === 'whoami') {
     process.exitCode = 1;
   }
 } else if (command === 'publish') {
-  process.exitCode = process.env.FAKE_NPM_PUBLISH === 'ok' ? 0 : 1;
+  const mode = process.env.FAKE_NPM_PUBLISH;
+  if (mode === 'interrupt') {
+    // A Ctrl+C at a terminal signals the whole foreground process group, the client's process included.
+    process.kill(process.ppid, 'SIGINT');
+    process.kill(process.pid, 'SIGINT');
+  }
+  process.exitCode = mode === 'ok' ? 0 : 1;
 }
 `;
 
@@ -72,7 +78,7 @@ export interface FakeNpm extends Disposable {
 
 /** How the fake answers each subcommand. */
 export interface FakeNpmBehavior {
-  readonly publish?: 'fail' | 'ok';
+  readonly publish?: 'fail' | 'interrupt' | 'ok';
   readonly view?: 'absent' | 'fail' | 'found';
   readonly whoami?: 'fail' | 'ok';
 }
