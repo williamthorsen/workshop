@@ -287,7 +287,6 @@ function runDemoCommand(
   }
 
   const take = planTake({
-    aidemoEnv: launch.env,
     aidemoVersion,
     archiveLabel: config.archiveLabel,
     archiveRoot: archiveRoot.archiveRoot,

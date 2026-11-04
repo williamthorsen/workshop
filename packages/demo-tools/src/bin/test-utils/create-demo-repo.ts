@@ -14,7 +14,7 @@ export interface FakeAidemoCall {
 
 /** How the fake aidemo behaves, and what else the repository contains. */
 export interface DemoRepoOptions {
-  /** The version that the fake declares. Default: `0.20.0`. */
+  /** The version that the fake declares. Default: `0.20.3`. */
   readonly aidemoVersion?: string;
   /** The repository configuration file's content. */
   readonly config?: string;
@@ -31,6 +31,8 @@ export interface DemoRepoOptions {
   readonly recorded?: boolean;
   /** Text that the fake writes to stdout. */
   readonly stdout?: string;
+  /** The manifest that the fake writes to the demo's `audio/voice.json` on `render` and `voice`; `null` writes none. */
+  readonly voiceManifest?: Readonly<Record<string, unknown>> | null;
   /** Leaves the fake aidemo uninstalled. */
   readonly withoutAidemo?: boolean;
 }
@@ -48,14 +50,20 @@ const AIDEMO_DIR = 'node_modules/@tandryukha/aidemo';
 
 const CALLS_FILE = 'aidemo-calls.jsonl';
 
+/** The voice manifest that the fake writes by default: one scene, narrated by the local provider. */
+const DEFAULT_VOICE_MANIFEST = {
+  gapMs: 0,
+  scenes: [{ id: 'scene-1', file: 'scene-1.mp3', durationMs: 1000, provider: 'local', voice: 'af_heart' }],
+};
+
 /**
  * Creates a demo repository whose installed aidemo is a fake that appends each call to a log, writes `stdout` and, on
- * `render` and `compose`, `outputFiles`, and exits with `exitCode`. On `voice`, it posts one speech request to
- * `AIDEMO_OPENAI_BASE_URL` when that is set.
+ * `render` and `compose`, `outputFiles`, writes `voiceManifest` on `render` and `voice`, and exits with `exitCode`. On
+ * `voice`, it posts one speech request to `AIDEMO_OPENAI_BASE_URL` when that is set.
  */
 export function createDemoRepo(options: DemoRepoOptions = {}): DemoRepo {
   const {
-    aidemoVersion = '0.20.0',
+    aidemoVersion = '0.20.3',
     config = '',
     envFile,
     exitCode = 0,
@@ -64,6 +72,7 @@ export function createDemoRepo(options: DemoRepoOptions = {}): DemoRepo {
     outputFiles = {},
     recorded = false,
     stdout = '',
+    voiceManifest = DEFAULT_VOICE_MANIFEST,
     withoutAidemo = false,
   } = options;
   const tree = createTempTree({
@@ -77,7 +86,14 @@ export function createDemoRepo(options: DemoRepoOptions = {}): DemoRepo {
     }),
     ...(!withoutAidemo && {
       [`${AIDEMO_DIR}/package.json`]: JSON.stringify({ version: aidemoVersion, bin: { aidemo: 'bin/aidemo.mjs' } }),
-      [`${AIDEMO_DIR}/bin/aidemo.mjs`]: buildFakeScript({ exitCode, failOn, holdOn, outputFiles, stdout }),
+      [`${AIDEMO_DIR}/bin/aidemo.mjs`]: buildFakeScript({
+        exitCode,
+        failOn,
+        holdOn,
+        outputFiles,
+        stdout,
+        voiceManifest,
+      }),
     }),
   });
 
@@ -99,12 +115,14 @@ function buildFakeScript({
   holdOn,
   outputFiles,
   stdout,
+  voiceManifest,
 }: {
   exitCode: number;
   failOn: string | undefined;
   holdOn: string | undefined;
   outputFiles: Readonly<Record<string, string>>;
   stdout: string;
+  voiceManifest: Readonly<Record<string, unknown>> | null;
 }): string {
   return `import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { EOL } from 'node:os';
@@ -132,6 +150,12 @@ if (call.args[0] === 'render' || call.args[0] === 'compose') {
   for (const [name, content] of Object.entries(${JSON.stringify(outputFiles)})) {
     writeFileSync(path.join(outputDir, name), content);
   }
+}
+const voiceManifest = ${JSON.stringify(voiceManifest)};
+if ((call.args[0] === 'render' || call.args[0] === 'voice') && voiceManifest !== null) {
+  const audioDir = path.join(call.args[1], 'audio');
+  mkdirSync(audioDir, { recursive: true });
+  writeFileSync(path.join(audioDir, 'voice.json'), JSON.stringify(voiceManifest));
 }
 process.stdout.write(${JSON.stringify(stdout)});
 if (${JSON.stringify(failOn ?? null)} === null || call.args[0] === ${JSON.stringify(failOn ?? null)}) process.exitCode = ${String(exitCode)};

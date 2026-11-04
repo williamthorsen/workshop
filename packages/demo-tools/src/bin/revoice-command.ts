@@ -4,7 +4,7 @@ import { type Command, createCli, UsageError, type Writer } from '@williamthorse
 
 import { buildAidemoEnv } from '../aidemo/build-aidemo-env.ts';
 import { findEnvFileOverrides } from '../aidemo/find-env-file-overrides.ts';
-import { MIN_REVOICE_AIDEMO_VERSION, resolveAidemo } from '../aidemo/resolve-aidemo.ts';
+import { MIN_AIDEMO_VERSION, resolveAidemo } from '../aidemo/resolve-aidemo.ts';
 import { planTake, type TakeDisposition } from '../archive/plan-take.ts';
 import { MACHINE_CONFIG_PATH } from '../config/read-machine-config.ts';
 import { readRepoConfig } from '../config/read-repo-config.ts';
@@ -41,7 +41,7 @@ export const REVOICE: Command<CommandContext> = defineCommand({
   Apple Silicon, and a voice clone installed by thor-demo voice setup from the
   current voice section of ~/${MACHINE_CONFIG_PATH}
   A demo already recorded by thor-demo render
-  @tandryukha/aidemo ${MIN_REVOICE_AIDEMO_VERSION} or later in the demo repository
+  @tandryukha/aidemo ${MIN_AIDEMO_VERSION} or later in the demo repository
 
 The cloned voice ignores voice.speed and voice.instructions. A later render
 re-voices the demo in its configured voice.
@@ -53,7 +53,7 @@ Example:
 
 // region | Helpers
 
-/** Replaces a take's voice with the cloned voice, and adds the reference recording's checksum. */
+/** Records the cloned voice as the voice of every scene in a take, and adds the reference recording's checksum. */
 function describeClonedTake(take: TakeDisposition, model: string, referenceSha256: string): TakeDisposition {
   if (take.kind === 'notice') return take;
 
@@ -62,7 +62,7 @@ function describeClonedTake(take: TakeDisposition, model: string, referenceSha25
     plan: {
       ...take.plan,
       reference: { sha256: referenceSha256 },
-      voice: { provider: CLONED_VOICE_PROVIDER, voiceId: model },
+      voiceOverride: { provider: CLONED_VOICE_PROVIDER, voiceId: model },
     },
   };
 }
@@ -98,7 +98,7 @@ function runRevoice(context: CommandContext, demoArgument: string, stderr: Write
   const install = checkVoiceInstall(voice.voice);
   if (!install.ok) return fail(stderr, install.problem);
 
-  const aidemo = resolveAidemo(root, MIN_REVOICE_AIDEMO_VERSION);
+  const aidemo = resolveAidemo(root);
   if (!aidemo.ok) return fail(stderr, aidemo.message);
 
   const redirects = findEnvFileOverrides(root, {}, REDIRECTING_VARIABLES);
@@ -126,7 +126,6 @@ function runRevoice(context: CommandContext, demoArgument: string, stderr: Write
   delete env['OPENAI_BASE_URL'];
 
   const take = planTake({
-    aidemoEnv: env,
     aidemoVersion: aidemo.aidemo.version,
     archiveLabel,
     archiveRoot: archiveRoot.archiveRoot,

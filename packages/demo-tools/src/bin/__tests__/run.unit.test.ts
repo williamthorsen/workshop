@@ -197,14 +197,13 @@ describe(run, () => {
       expect(launch?.take).toMatchObject({
         kind: 'archive',
         plan: {
-          aidemoVersion: '0.20.0',
+          aidemoVersion: '0.20.3',
           archiveRoot: '/archive',
           demo: 'quickstart',
           demoDir: tree.resolve('demos/quickstart'),
           label: 'product',
           params: ['--tts', 'local'],
           source,
-          voice: { provider: 'local', voiceId: 'af_heart' },
         },
       });
     });
@@ -521,7 +520,7 @@ function createVoiceMachine({
  * `extra` files.
  */
 function createDemoRepo({
-  aidemoVersion = '0.20.0',
+  aidemoVersion = '0.20.3',
   config = '',
   extra = {},
 }: { aidemoVersion?: string | false; config?: string; extra?: Record<string, string> } = {}): TempTree {

@@ -27,7 +27,6 @@ describe(planTake, () => {
         renderedAt: RENDERED_AT,
         source: SOURCE,
         storyboardSha256: createHash('sha256').update(STORYBOARD).digest('hex'),
-        voice: { provider: 'local', voiceId: 'af_heart' },
       },
     });
   });
@@ -45,25 +44,6 @@ describe(planTake, () => {
     });
 
     expect(dirs).toStrictEqual([tree.dir]);
-  });
-
-  it("resolves the voice from the root's .env over the environment passed to aidemo", () => {
-    using tree = createRepo({ '.env': 'AIDEMO_TTS_PROVIDER=elevenlabs\n' });
-
-    const disposition = planTake(createInput(tree, { aidemoEnv: { AIDEMO_TTS_PROVIDER: 'local' } }));
-
-    expect(disposition.kind === 'archive' && disposition.plan.voice.provider).toBe('elevenlabs');
-  });
-
-  it('takes the default voice from a storyboard that is not JSON', () => {
-    using tree = createRepo({ 'demos/quickstart/generated/storyboard.json': '{' });
-
-    const disposition = planTake(createInput(tree));
-
-    expect(disposition.kind === 'archive' && disposition.plan.voice).toStrictEqual({
-      provider: 'openai',
-      voiceId: 'marin',
-    });
   });
 
   it.each([
@@ -95,7 +75,6 @@ describe(planTake, () => {
 /** Builds the input for the tree's `quickstart` demo, with `overrides` applied. */
 function createInput(tree: TempTree, overrides: Partial<PlanTakeInput> = {}): PlanTakeInput {
   return {
-    aidemoEnv: {},
     aidemoVersion: '0.20.0',
     archiveLabel: 'demos',
     archiveRoot: '/archive',
@@ -109,9 +88,9 @@ function createInput(tree: TempTree, overrides: Partial<PlanTakeInput> = {}): Pl
   };
 }
 
-/** Creates a repository root with the `quickstart` demo's storyboard, plus `extra` files. */
-function createRepo(extra: Record<string, string> = {}): TempTree {
-  return createTempTree({ 'demos/quickstart/generated/storyboard.json': STORYBOARD, ...extra });
+/** Creates a repository root with the `quickstart` demo's storyboard. */
+function createRepo(): TempTree {
+  return createTempTree({ 'demos/quickstart/generated/storyboard.json': STORYBOARD });
 }
 
 // endregion | Helpers

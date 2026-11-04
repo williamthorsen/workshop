@@ -9,7 +9,7 @@ import { describeError } from '@williamthorsen/toolbelt.errors';
 import type { SourceState } from '../clients/git/read-source-state.ts';
 import { buildProvenance, type FileDigest } from './build-provenance.ts';
 import { formatTakeDirName } from './format-take-dir-name.ts';
-import type { ResolvedVoice } from './resolve-voice.ts';
+import { readVoiceManifest } from './read-voice-manifest.ts';
 
 /** Everything needed to archive a take once aidemo has rendered it, captured before the render started. */
 export interface TakeArchivePlan {
@@ -25,7 +25,8 @@ export interface TakeArchivePlan {
   readonly renderedAt: Date;
   readonly source: SourceState | undefined;
   readonly storyboardSha256: string;
-  readonly voice: ResolvedVoice;
+  /** The provider and voice that narrated every scene, when aidemo's voice manifest does not report them. */
+  readonly voiceOverride?: { readonly provider: string; readonly voiceId: string };
 }
 
 /** The outcome of archiving a take: the take's directory, or what stopped it. */
@@ -41,9 +42,9 @@ export const OPTIONAL_FILES: readonly string[] = ['final-demo.srt', 'final-demo.
 export const PROVENANCE_FILE = 'provenance.json';
 
 /**
- * Copies the take in the demo's `output/` to `<archiveRoot>/<label>/<demo>/<take>/` with its provenance record. The
- * take is assembled in a staging directory beside its final location and renamed into place, so that a failure
- * leaves no partial take. `output/` is only read.
+ * Copies the take in the demo's `output/` to `<archiveRoot>/<label>/<demo>/<take>/` with its provenance record, taking
+ * each scene's voice from the demo's `audio/voice.json`. The take is assembled in a staging directory beside its final
+ * location and renamed into place, so that a failure leaves no partial take. `output/` is only read.
  */
 export async function archiveTake(plan: TakeArchivePlan): Promise<ArchiveOutcome> {
   const parentDir = path.join(plan.archiveRoot, plan.label, plan.demo);
@@ -57,6 +58,11 @@ export async function archiveTake(plan: TakeArchivePlan): Promise<ArchiveOutcome
   }
   const fileNames = [VIDEO_FILE, ...OPTIONAL_FILES.filter((name) => existsSync(path.join(outputDir, name)))];
 
+  const manifest = readVoiceManifest(plan.demoDir);
+  if (!manifest.ok) return manifest;
+  const override = plan.voiceOverride;
+  const voices = override === undefined ? manifest.scenes : manifest.scenes.map(({ id }) => ({ id, ...override }));
+
   const stagingDir = path.join(parentDir, `.${takeName}.partial-${String(process.pid)}`);
   try {
     await mkdir(stagingDir, { recursive: true });
@@ -68,7 +74,7 @@ export async function archiveTake(plan: TakeArchivePlan): Promise<ArchiveOutcome
       files[name] = await digestFile(destination);
     }
 
-    const provenance = buildProvenance({ ...plan, files });
+    const provenance = buildProvenance({ ...plan, files, voices });
     await writeFile(path.join(stagingDir, PROVENANCE_FILE), `${JSON.stringify(provenance, null, 2)}\n`);
     await rename(stagingDir, takeDir);
   } catch (error) {
