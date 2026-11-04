@@ -53,7 +53,7 @@ function pinVersion(): Plugin {
           : undefined,
       );
       pluginBuild.onLoad({ filter: /.*/, namespace }, () => ({
-        contents: "export { CAPTURED_READYUP_VERSION as VERSION } from './presentation/src/kits.ts';",
+        contents: "export { CAPTURED_READYUP_VERSION as VERSION } from './presentation/src/capturedPreflight.ts';",
         loader: 'ts',
         resolveDir: PACKAGE_ROOT,
       }));

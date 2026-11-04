@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { stripEscapes } from '../../../src/layout/test-utils/stripEscapes.ts';
-import type { KitModel } from '../kits.ts';
+import type { KitModel } from '../kitModel.ts';
 import { renderKit, type RenderOptions } from '../renderKit.ts';
 
 const FINDINGS_KIT: KitModel = {

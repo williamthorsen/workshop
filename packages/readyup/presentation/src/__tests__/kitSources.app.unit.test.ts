@@ -3,7 +3,8 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { type CheckModel, KITS } from '../kits.ts';
+import type { CheckModel } from '../kitModel.ts';
+import { KITS } from '../kits.ts';
 
 const deckHtml = readFileSync(path.join(import.meta.dirname, '..', '..', 'index.html'), 'utf8');
 
