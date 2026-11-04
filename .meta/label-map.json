@@ -25,6 +25,7 @@
     "git-tools": "scope:git-tools",
     "launchd-agent": "scope:launchd-agent",
     "nodejs-tools": "scope:nodejs-tools",
+    "npm-tools": "scope:npm-tools",
     "overlay": "scope:overlay",
     "readyup": "scope:readyup",
     "repo-tools": "scope:repo-tools",

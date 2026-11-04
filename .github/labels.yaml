@@ -100,6 +100,9 @@
 - name: scope:nodejs-tools
   color: 00ff96
   description: ''
+- name: scope:npm-tools
+  color: 00ff96
+  description: ''
 - name: scope:overlay
   color: 00ff96
   description: ''
