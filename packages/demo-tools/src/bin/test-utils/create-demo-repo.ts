@@ -29,10 +29,10 @@ export interface DemoRepoOptions {
   readonly outputFiles?: Readonly<Record<string, string>>;
   /** Gives `quickstart` a recorded take and timeline, as aidemo leaves them after `render`. */
   readonly recorded?: boolean;
-  /** The manifest that the fake writes to the demo's `audio/voice.json` on `render` and `voice`; `null` writes none. */
-  readonly voiceManifest?: Readonly<Record<string, unknown>> | null;
   /** Text that the fake writes to stdout. */
   readonly stdout?: string;
+  /** The manifest that the fake writes to the demo's `audio/voice.json` on `render` and `voice`; `null` writes none. */
+  readonly voiceManifest?: Readonly<Record<string, unknown>> | null;
   /** Leaves the fake aidemo uninstalled. */
   readonly withoutAidemo?: boolean;
 }
@@ -51,7 +51,7 @@ const AIDEMO_DIR = 'node_modules/@tandryukha/aidemo';
 const CALLS_FILE = 'aidemo-calls.jsonl';
 
 /** The voice manifest that the fake writes by default: one scene, narrated by the local provider. */
-export const DEFAULT_VOICE_MANIFEST = {
+const DEFAULT_VOICE_MANIFEST = {
   gapMs: 0,
   scenes: [{ id: 'scene-1', file: 'scene-1.mp3', durationMs: 1000, provider: 'local', voice: 'af_heart' }],
 };
