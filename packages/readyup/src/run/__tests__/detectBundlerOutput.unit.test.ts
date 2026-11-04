@@ -80,7 +80,7 @@ describe(detectBundlerOutput, () => {
   });
 
   it('passes a file of blank lines and an empty file', () => {
-    expect(detectBundlerOutput('\n'.repeat(2_000))).toBeUndefined();
+    expect(detectBundlerOutput('\n'.repeat(2000))).toBeUndefined();
     expect(detectBundlerOutput('')).toBeUndefined();
   });
 });

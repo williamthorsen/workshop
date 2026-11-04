@@ -48,10 +48,10 @@ describe(resolveProfileFacts, () => {
       repo: 'widget',
       repo_dir: `${fake.home}/gone`,
     });
-    fs.utimesSync(dir, 1_000, 1_000);
+    fs.utimesSync(dir, 1000, 1000);
     expect(resolveProfileFacts(fake.makeInvocation(), dir)).toStrictEqual({
       branch: '9',
-      lastUsed: 1_000,
+      lastUsed: 1000,
       origin: 'derived',
       repo: 'widget',
       repoDir: `${fake.home}/gone`,

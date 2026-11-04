@@ -11,13 +11,13 @@ import { listNodeModulesDirs } from './listNodeModulesDirs.ts';
 import { measureDiskUsage } from './measureDiskUsage.ts';
 import { readProtectList } from './readProtectList.ts';
 
-const DAY_MS = 24 * 60 * 60 * 1_000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 const DECIMAL_UNITS = ['kB', 'MB', 'GB', 'TB'];
 const DEFAULT_ACTIVE_DAYS = 30;
 const EXIT_FAILED = 1;
 const EXIT_NOT_APPLICABLE = 3;
 const EXIT_OK = 0;
-const KILO = 1_000;
+const KILO = 1000;
 const SKIPPED = 'skipped';
 
 /** The protect-list path under the home directory when `--protect-list` is absent. */

@@ -29,5 +29,5 @@ export function parseRecordingMeasures(report: string): RecordingMeasures | unde
   const [hours = 0, minutes = 0, seconds = 0] = duration.slice(1).map(Number);
   const [meanVolumeDb = NaN] = mean.slice(1).map(Number);
   const [peakVolumeDb = NaN] = peak.slice(1).map(Number);
-  return { durationSeconds: hours * 3_600 + minutes * 60 + seconds, meanVolumeDb, peakVolumeDb };
+  return { durationSeconds: hours * 3600 + minutes * 60 + seconds, meanVolumeDb, peakVolumeDb };
 }

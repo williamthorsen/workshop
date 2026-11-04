@@ -81,7 +81,7 @@ describe('formatCheckLine', () => {
     });
 
     it.each(SKIPPED_TOKENS)('omits the duration on a %s check however long it took', (token) => {
-      expect(engine.formatCheckLine({ token, name: 'skipped', durationMs: 5_000 })).not.toContain('ms');
+      expect(engine.formatCheckLine({ token, name: 'skipped', durationMs: 5000 })).not.toContain('ms');
     });
 
     it('places the duration after detail and progress', () => {
@@ -315,7 +315,7 @@ describe('formatCountLine', () => {
   it('labels the counts, so the line names itself as a tally', () => {
     const counts = makeCounts({ passed: 9, errors: 1, worstSeverity: 'error' });
 
-    expect(engine.formatCountLine(counts, 1_200)).toBe(`${FAILED_ERROR} Total: 1 error, 9 passed (1200ms)`);
+    expect(engine.formatCountLine(counts, 1200)).toBe(`${FAILED_ERROR} Total: 1 error, 9 passed (1200ms)`);
   });
 
   it('leads with the passed token when nothing failed', () => {

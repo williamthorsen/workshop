@@ -24,7 +24,7 @@ describe(uninstallService, () => {
     vi.clearAllMocks();
     unitDir.path = await mkdtemp(path.join(tmpdir(), 'systemd-service-'));
     await writeFile(findTestUnitPath(), '[Unit]\n');
-    vi.mocked(readServiceState).mockResolvedValue({ lastExitCode: undefined, loaded: true, pid: 4_242 });
+    vi.mocked(readServiceState).mockResolvedValue({ lastExitCode: undefined, loaded: true, pid: 4242 });
     vi.mocked(runSystemctl).mockResolvedValue(buildSystemctlRun(0));
   });
 

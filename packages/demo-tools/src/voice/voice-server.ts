@@ -34,7 +34,7 @@ const POLL_INTERVAL_MS = 250;
 
 const READY_TIMEOUT_MS = 60_000;
 
-const STOP_GRACE_MS = 5_000;
+const STOP_GRACE_MS = 5000;
 
 const TERMINATING_SIGNALS: readonly NodeJS.Signals[] = ['SIGHUP', 'SIGINT', 'SIGTERM'];
 
@@ -103,7 +103,7 @@ export async function startVoiceServer(
       await stop();
       return {
         ok: false,
-        message: `the voice-clone server did not answer on ${baseUrl} within ${readyTimeoutMs / 1_000} seconds; see ${logPath}`,
+        message: `the voice-clone server did not answer on ${baseUrl} within ${readyTimeoutMs / 1000} seconds; see ${logPath}`,
       };
     }
     await delay(POLL_INTERVAL_MS);
@@ -115,7 +115,7 @@ export async function startVoiceServer(
 /** Reports whether anything answers HTTP at `url`, whatever the status. */
 async function isAnswering(url: string): Promise<boolean> {
   try {
-    const response = await fetch(url, { signal: AbortSignal.timeout(1_000) });
+    const response = await fetch(url, { signal: AbortSignal.timeout(1000) });
     await response.body?.cancel();
     return true;
   } catch {

@@ -85,19 +85,19 @@ describe('list', () => {
       'a debugging profile with its port and endpoint',
       '9333',
       0,
-      { state: 'debugging', pid: 4_242, port: 9_333, devtools: 'http://127.0.0.1:9333/json/version' },
+      { state: 'debugging', pid: 4242, port: 9333, devtools: 'http://127.0.0.1:9333/json/version' },
     ],
     [
       'a running profile that owns no port',
       undefined,
       0,
-      { state: 'running-without-port', pid: 4_242, port: null, devtools: null },
+      { state: 'running-without-port', pid: 4242, port: null, devtools: null },
     ],
     [
       'a declared port that does not answer, without an endpoint',
       '9321',
       7,
-      { state: 'unresponsive', pid: 4_242, port: 9_321, devtools: null },
+      { state: 'unresponsive', pid: 4242, port: 9321, devtools: null },
     ],
   ])('reports %s under --json', async (_description, port, curlStatus, expected) => {
     const portFlag = port === undefined ? '' : ` --remote-debugging-port=${port}`;

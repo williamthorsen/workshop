@@ -47,9 +47,9 @@ describe(makeFakeThorChrome, () => {
 
   it('records signals and launches, and refuses every signal when asked to', () => {
     const fake = makeFakeThorChrome();
-    fake.deps.kill(4_242);
+    fake.deps.kill(4242);
     fake.deps.spawnDetached('chrome', ['--flag'], { logPath: '/log' });
-    expect(fake.killed).toStrictEqual([4_242]);
+    expect(fake.killed).toStrictEqual([4242]);
     expect(fake.spawned).toStrictEqual([{ args: ['--flag'], options: { logPath: '/log' }, program: 'chrome' }]);
     expect(() => {
       makeFakeThorChrome({ isKillRefused: true }).deps.kill(1);

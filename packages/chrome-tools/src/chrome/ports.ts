@@ -8,8 +8,8 @@ export const DEFAULT_PORT = '9222';
  * The range in which a branch-derived port falls. Because it spans a thousand ports, a ticket numbered under a
  * thousand can be read straight off the port: Branch `321` debugs on 9321.
  */
-export const MAX_DERIVED_PORT = 9_999;
-export const MIN_DERIVED_PORT = 9_000;
+export const MAX_DERIVED_PORT = 9999;
+export const MIN_DERIVED_PORT = 9000;
 
 /** Refuses a port that is not a valid TCP port number. */
 export function assertValidPort(invocation: Invocation, port: string): void {

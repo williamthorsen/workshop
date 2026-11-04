@@ -9,7 +9,7 @@ import { fetchWithCache, type HttpCacheSettings } from '../fetchWithCache.ts';
 
 const KIT_URL = 'https://raw.githubusercontent.com/acme/kits/main/.readyup/kits/default.js';
 const KIT_BODY = 'export default {};';
-const START_MS = Date.UTC(2_026, 8, 13, 12, 0, 0);
+const START_MS = Date.UTC(2026, 8, 13, 12, 0, 0);
 
 describe(fetchWithCache, () => {
   beforeEach(() => {

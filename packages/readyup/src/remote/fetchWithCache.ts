@@ -126,7 +126,7 @@ function isFresh(entry: CacheEntry): boolean {
   const elapsedMs = Date.now() - entry.storedAtMs;
   if (elapsedMs < 0) return false;
 
-  return entry.ageSec + elapsedMs / 1_000 < entry.maxAgeSec;
+  return entry.ageSec + elapsedMs / 1000 < entry.maxAgeSec;
 }
 
 /** Reports whether a URL uses a scheme whose responses the cache stores. */
@@ -171,7 +171,7 @@ async function sendRequest(url: string, headers: Record<string, string>, timeout
     return new Response(body, { status: response.status, statusText: response.statusText, headers: response.headers });
   } catch (error: unknown) {
     if (!signal.aborted) throw error;
-    throw new Error(`Timed out after ${timeoutMs / 1_000}s fetching ${url}`, { cause: error });
+    throw new Error(`Timed out after ${timeoutMs / 1000}s fetching ${url}`, { cause: error });
   }
 }
 

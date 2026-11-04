@@ -95,7 +95,7 @@ export const CAPTURED_KITS = {
     checklists: [
       {
         name: 'adoption',
-        ms: 1_515,
+        ms: 1515,
         checks: [
           {
             name: 'No source defines its own description helper',
@@ -157,7 +157,7 @@ export const CAPTURED_KITS = {
     checklists: [
       {
         name: 'tools',
-        ms: 4_926,
+        ms: 4926,
         checks: [
           {
             name: 'brew is installed',
@@ -167,7 +167,7 @@ export const CAPTURED_KITS = {
                 name: 'Homebrew packages match the Brewfile',
                 severity: 'warn',
                 when: 'brewfile',
-                ms: 4_885,
+                ms: 4885,
                 failDetail:
                   'Formula delta needs to be installed or updated.\nFormula zoxide needs to be installed or updated.',
                 fix: 'brew bundle install --global',
@@ -178,7 +178,7 @@ export const CAPTURED_KITS = {
       },
       {
         name: 'install',
-        ms: 1_034,
+        ms: 1034,
         checks: [
           {
             name: 'live worktree is checked out on branch live',

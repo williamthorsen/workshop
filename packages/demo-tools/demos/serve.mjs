@@ -5,7 +5,7 @@ import path from 'node:path';
 import { pipeline } from 'node:stream';
 
 const HOST = '127.0.0.1';
-const PORT = Number(process.env.PORT ?? 8_787);
+const PORT = Number(process.env.PORT ?? 8787);
 
 const ROOTS = {
   '/adds/': path.join(import.meta.dirname, 'what-thor-demo-adds/deck'),

@@ -45,7 +45,7 @@ export function writeInstancePage(invocation: Invocation, facts: InstancePageFac
   const profileDir = facts.pageFile.slice(0, facts.pageFile.lastIndexOf('/'));
   const devtools = `http://127.0.0.1:${facts.port}/json/version`;
   const createdAt = readBirthTime(profileDir);
-  const launchedAt = formatIsoTimestamp(Math.floor(invocation.deps.now() / 1_000));
+  const launchedAt = formatIsoTimestamp(Math.floor(invocation.deps.now() / 1000));
   const origin = describeOrigin(invocation.origin, { branch, repo, repoDir });
 
   const page = `<!DOCTYPE html>
@@ -105,7 +105,7 @@ function describeOrigin(
 /** Returns a path's creation time in epoch seconds, or `undefined` when its filesystem records none. */
 function readBirthTime(value: string): number | undefined {
   try {
-    const birthTime = Math.floor(fs.statSync(value).birthtimeMs / 1_000);
+    const birthTime = Math.floor(fs.statSync(value).birthtimeMs / 1000);
     return birthTime > 0 ? birthTime : undefined;
   } catch {
     return undefined;

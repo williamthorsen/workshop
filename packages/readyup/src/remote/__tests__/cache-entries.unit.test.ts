@@ -14,7 +14,7 @@ const kitEntry: CacheEntry = {
   etag: '"abc"',
   maxAgeSec: 300,
   noCache: false,
-  storedAtMs: 1_000,
+  storedAtMs: 1000,
   url: KIT_URL,
   version: 1,
 };

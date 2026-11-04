@@ -243,7 +243,7 @@ async function awaitDevtools(invocation: Invocation, port: string, timeoutSecond
   const { deps } = invocation;
   const started = deps.now();
   while (!probeDevtools(invocation, port)) {
-    if (deps.now() - started > timeoutSeconds * 1_000) return false;
+    if (deps.now() - started > timeoutSeconds * 1000) return false;
     await deps.sleep(LAUNCH_POLL_INTERVAL_MILLISECONDS);
   }
   return true;

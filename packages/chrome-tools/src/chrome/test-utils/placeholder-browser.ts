@@ -57,7 +57,7 @@ async function startPlaceholderBrowser(flags: readonly string[]): Promise<number
     await exited;
   });
 
-  const deadline = Date.now() + 5_000;
+  const deadline = Date.now() + 5000;
   while (!readCommandLine(pid).endsWith(flags.join(' '))) {
     if (Date.now() > deadline) throw new Error(`placeholder PID ${pid} never showed its argv`);
     await sleep(20);

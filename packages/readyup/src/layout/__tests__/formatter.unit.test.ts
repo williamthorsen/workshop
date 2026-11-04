@@ -262,7 +262,7 @@ function renderEverything(): string {
         { counts: makeCounts({ passed: 2 }), durationMs: 410, segments: [{ role: 'checklist', text: 'build' }] },
         {
           counts,
-          durationMs: 1_400,
+          durationMs: 1400,
           segments: [
             { role: 'sourcePackage', text: '@acme/release-kit@2.1.0' },
             { role: 'kit', text: 'npm-auto-publish' },
@@ -271,7 +271,7 @@ function renderEverything(): string {
         },
       ],
       totals: counts,
-      totalDurationMs: 1_810,
+      totalDurationMs: 1810,
     }),
     ...TOKEN_NAMES.map((token) => plainEngine.inlineGlyph(token)),
   ].join('\n');

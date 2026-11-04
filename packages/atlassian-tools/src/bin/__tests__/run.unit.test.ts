@@ -159,7 +159,7 @@ describe(run, () => {
       // case not covered by the blank guard above.
       const harness = createRunHarness({
         env: EMAIL_ENV,
-        stdin: 'a'.repeat(4_096),
+        stdin: 'a'.repeat(4096),
         unstorable: 'The secret is too long to store.',
       });
 

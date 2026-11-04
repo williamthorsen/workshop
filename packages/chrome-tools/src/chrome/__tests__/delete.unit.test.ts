@@ -59,7 +59,7 @@ describe('delete', () => {
     const fake = makeRunningFakeThorChrome(['thrive']);
     await expect(run(fake, ['delete', 'thrive', '--force'])).resolves.toBe(0);
     expect(fake.captured.stdout()).toBe(`Quit and deleted profile 'thrive' (PID 4242, ${fake.profilesDir}/thrive).\n`);
-    expect(fake.killed).toStrictEqual([4_242]);
+    expect(fake.killed).toStrictEqual([4242]);
     expect(fs.existsSync(`${fake.profilesDir}/thrive`)).toBe(false);
   });
 
@@ -99,7 +99,7 @@ describe('delete', () => {
     fake.makeProfile('atlas');
     await expect(run(fake, ['delete', 'thrive', 'atlas', '--json'])).resolves.toBe(1);
     expect(fake.readReport()['profiles']).toMatchObject([
-      { name: 'thrive', pid: 4_242, state: 'running-without-port', error: { code: 'profile-running' } },
+      { name: 'thrive', pid: 4242, state: 'running-without-port', error: { code: 'profile-running' } },
       { name: 'atlas', state: 'deleted' },
     ]);
     expect(fake.captured.stderr()).toBe('');
@@ -108,7 +108,7 @@ describe('delete', () => {
   it("reports the browser's PID on the entry of a profile that --force quit and deleted", async () => {
     const fake = makeRunningFakeThorChrome(['thrive']);
     await expect(run(fake, ['delete', 'thrive', '--force', '--json'])).resolves.toBe(0);
-    expect(fake.readReport()).toStrictEqual({ profiles: [expect.objectContaining({ pid: 4_242, state: 'deleted' })] });
+    expect(fake.readReport()).toStrictEqual({ profiles: [expect.objectContaining({ pid: 4242, state: 'deleted' })] });
   });
 
   it('refuses a missing profile with profile-missing', async () => {
@@ -200,7 +200,7 @@ describe('delete', () => {
       await expect(run(fake, ['delete', '--stale', '--force', '--dry-run', '--json'])).resolves.toBe(0);
       expect(fake.readReport()).toMatchObject({
         dryRun: true,
-        profiles: [{ name: 'widget-9', pid: 4_242, port: 9_321, stale: true, state: 'deleted' }],
+        profiles: [{ name: 'widget-9', pid: 4242, port: 9321, stale: true, state: 'deleted' }],
       });
       expect(fs.existsSync(`${fake.profilesDir}/widget-9`)).toBe(true);
     });
@@ -276,7 +276,7 @@ describe('delete --derived', () => {
     const fake = makeRunningFakeThorChrome(['widget-321']);
     fake.makeProfile('widget-321', derivedRecord(fake));
     await expect(run(fake, ['delete', '--derived', '--force'])).resolves.toBe(0);
-    expect(fake.killed).toStrictEqual([4_242]);
+    expect(fake.killed).toStrictEqual([4242]);
     expect(fs.existsSync(`${fake.profilesDir}/widget-321`)).toBe(false);
   });
 

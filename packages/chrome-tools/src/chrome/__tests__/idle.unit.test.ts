@@ -22,7 +22,7 @@ describe('quit --idle', () => {
 
     fake.advance(HOUR_MILLISECONDS);
     await run(fake, ['quit', '--idle', '2h']);
-    expect(fake.killed).toStrictEqual([4_242]);
+    expect(fake.killed).toStrictEqual([4242]);
     expect(fake.captured.stdout()).toBe(
       "No idle profiles.\nNo idle profiles.\nQuit idle profile 'thrive' (PID 4242).\n",
     );
@@ -32,9 +32,9 @@ describe('quit --idle', () => {
     const fake = makeRunningFakeThorChrome(['thrive'], { hasPorts: true });
     fake.makeProfile('hq', { origin: 'named' });
     await run(fake, ['quit', '--idle', '1s']);
-    fake.advance(1_000);
+    fake.advance(1000);
     await run(fake, ['quit', '--idle', '1s']);
-    expect(fake.killed).toStrictEqual([4_242]);
+    expect(fake.killed).toStrictEqual([4242]);
     expect(fs.readdirSync(fake.profilesDir).filter((name) => !name.startsWith('.'))).toStrictEqual(['hq', 'thrive']);
     expect(readRecord(fake)).toStrictEqual({});
   });
@@ -43,11 +43,11 @@ describe('quit --idle', () => {
     const fake = makeRunningFakeThorChrome(['thrive'], { hasPorts: true });
     await run(fake, ['quit', '--idle', '2h']);
     fake.advance(HOUR_MILLISECONDS);
-    fake.lsof.set(4_242, CONNECTED);
+    fake.lsof.set(4242, CONNECTED);
     await run(fake, ['quit', '--idle', '2h']);
     expect(readRecord(fake)).toStrictEqual({});
 
-    fake.lsof.delete(4_242);
+    fake.lsof.delete(4242);
     fake.advance(HOUR_MILLISECONDS);
     await run(fake, ['quit', '--idle', '2h']);
     fake.advance(HOUR_MILLISECONDS);
@@ -61,7 +61,7 @@ describe('quit --idle', () => {
     ['an lsof that succeeds without output', { status: 0 }],
   ])('treats %s as a connected client', async (_case, answer) => {
     const fake = makeRunningFakeThorChrome(['thrive'], { hasPorts: true });
-    fake.lsof.set(4_242, answer);
+    fake.lsof.set(4242, answer);
     await run(fake, ['quit', '--idle', '1s']);
     fake.advance(HOUR_MILLISECONDS);
     await run(fake, ['quit', '--idle', '1s']);
@@ -109,17 +109,17 @@ describe('quit --idle', () => {
   it('reports only what it quit under --json', async () => {
     const fake = makeRunningFakeThorChrome(['thrive'], { hasPorts: true });
     await expect(run(fake, ['quit', '--idle', '1s', '--json'])).resolves.toBe(0);
-    fake.advance(1_000);
+    fake.advance(1000);
     await expect(run(fake, ['quit', '--idle', '1s', '--json'])).resolves.toBe(0);
     const [first, second] = fake.captured.stdout().trimEnd().split('\n', 2);
     expect(first).toBe('{"profiles":[]}');
-    expect(JSON.parse(second ?? '')).toMatchObject({ profiles: [{ name: 'thrive', pid: 4_242, state: 'stopped' }] });
+    expect(JSON.parse(second ?? '')).toMatchObject({ profiles: [{ name: 'thrive', pid: 4242, state: 'stopped' }] });
   });
 
   it('exits 1 when an idle browser cannot be quit, keeping it in the record', async () => {
     const fake = makeRunningFakeThorChrome(['thrive'], { hasPorts: true, isKillRefused: true });
     await run(fake, ['quit', '--idle', '1s']);
-    fake.advance(1_000);
+    fake.advance(1000);
     await expect(run(fake, ['quit', '--idle', '1s'])).resolves.toBe(1);
     expect(fake.captured.stderr()).toBe("thor-chrome: could not signal PID 4242 for profile 'thrive'\n");
     expect(Object.keys(readRecord(fake))).toStrictEqual(['thrive']);

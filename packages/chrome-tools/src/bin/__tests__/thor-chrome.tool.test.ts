@@ -134,7 +134,7 @@ describe('thor-chrome', () => {
     expect(result.status).toBe(0);
     expect(JSON.parse(result.stdout)).toMatchObject({
       endpoint: 'http://127.0.0.1:9333',
-      profile: { pid, port: 9_333, state: 'debugging' },
+      profile: { pid, port: 9333, state: 'debugging' },
     });
   });
 

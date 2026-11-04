@@ -44,9 +44,6 @@ describe(runProcess, () => {
 
 // region | Helpers
 
-/** The callback through which `execFile` reports a run. */
-type ExecFileCallback = (error: ExecFileException | null, stdout: string, stderr: string) => void;
-
 /** Builds the error that `execFile` passes to its callback. */
 function buildError({
   code,
@@ -66,6 +63,9 @@ function buildError({
 
 /** Makes `execFile` call back with the given error and output. */
 function mockExecFile(error: ExecFileException | null, stdout: string, stderr: string): void {
+  /** The callback through which `execFile` reports a run. */
+  type ExecFileCallback = (error: ExecFileException | null, stdout: string, stderr: string) => void;
+
   execFileMock.mockImplementation(
     (_command: string, _args: string[], _options: unknown, callback: ExecFileCallback) => {
       callback(error, stdout, stderr);

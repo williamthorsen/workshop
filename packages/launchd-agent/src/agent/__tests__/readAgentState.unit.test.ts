@@ -19,7 +19,7 @@ describe(readAgentState, () => {
     const output = `${label} = {\n\tstate = running\n\tpid = 4242\n\tlast exit code = 0\n}\n`;
     vi.mocked(runLaunchctl).mockResolvedValue(buildLaunchctlRun(0, output));
 
-    await expect(readAgentState(label)).resolves.toStrictEqual({ lastExitCode: 0, loaded: true, pid: 4_242 });
+    await expect(readAgentState(label)).resolves.toStrictEqual({ lastExitCode: 0, loaded: true, pid: 4242 });
   });
 
   it('reports a loaded agent without a running process as having no pid', async () => {

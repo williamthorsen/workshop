@@ -122,7 +122,7 @@ describe('launch', () => {
       await expect(run(fake, ['--json', '--dry-run', '--profile', 'thrive'])).resolves.toBe(1);
       expect(fake.readReport()).toMatchObject({
         error: { code: 'port-mismatch', message: "profile 'thrive' is already debugging on port 9333, not 9321" },
-        profile: { name: 'thrive', pid: 4_242, port: 9_333, state: 'debugging' },
+        profile: { name: 'thrive', pid: 4242, port: 9333, state: 'debugging' },
       });
     });
 

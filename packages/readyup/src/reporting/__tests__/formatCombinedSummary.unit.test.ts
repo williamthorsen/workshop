@@ -137,7 +137,7 @@ describe(formatCombinedSummary, () => {
   });
 
   it('left-aligns names and right-aligns durations across rows', () => {
-    const lines = renderLines([makeRow({ name: 'ab', durationMs: 5 }), makeRow({ name: 'cdef', durationMs: 1_200 })]);
+    const lines = renderLines([makeRow({ name: 'ab', durationMs: 5 }), makeRow({ name: 'cdef', durationMs: 1200 })]);
 
     expect(lines[2]).toContain(`${PASSED} ab       5ms`);
     expect(lines[3]).toContain(`${PASSED} cdef  1200ms`);

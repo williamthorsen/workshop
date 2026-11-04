@@ -21,11 +21,11 @@ describe('formatSummaryTable', () => {
       makeRow({
         name: 'integration',
         counts: makeCounts({ passed: 1, errors: 1, worstSeverity: 'error' }),
-        durationMs: 1_400,
+        durationMs: 1400,
       }),
     ],
     totals: makeCounts({ passed: 3, errors: 1, worstSeverity: 'error' }),
-    totalDurationMs: 1_810,
+    totalDurationMs: 1810,
   };
 
   /** Returns a rendered table line's width in display columns, its leading token counted as one gutter. */
@@ -210,11 +210,11 @@ describe('formatSummaryTable', () => {
             { role: 'kit', text: 'default' },
           ],
           counts: makeCounts({ passed: 7, recommendations: 1, worstSeverity: 'recommend' }),
-          durationMs: 1_363,
+          durationMs: 1363,
         }),
       ],
       totals: makeCounts({ passed: 9, recommendations: 1, worstSeverity: 'recommend' }),
-      totalDurationMs: 1_388,
+      totalDurationMs: 1388,
     };
 
     it('keeps one line per row when every row fits', () => {

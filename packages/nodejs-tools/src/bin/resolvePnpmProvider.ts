@@ -13,7 +13,7 @@ import {
 
 const COMMAND = 'pnpm';
 const COREPACK = 'corepack';
-const HEADER_BYTES = 4_096;
+const HEADER_BYTES = 4096;
 const NODE_PLUGIN = 'nodejs';
 const PNPM_PLUGIN = 'pnpm';
 

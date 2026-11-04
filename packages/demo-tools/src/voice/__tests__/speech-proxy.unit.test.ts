@@ -95,7 +95,7 @@ describe(startSpeechProxy, () => {
   });
 
   it('abandons a request over budget', async () => {
-    await using upstream = await startUpstream({ ...CLIP, delayMs: 2_000 });
+    await using upstream = await startUpstream({ ...CLIP, delayMs: 2000 });
     using tree = createTempTree({ 'transcript.txt': 'text' });
     await using proxy = await startSpeechProxy({
       ...buildOptions(tree.resolve('transcript.txt'), upstream.baseUrl),
@@ -139,7 +139,7 @@ describe(startSpeechProxy, () => {
   });
 
   it('abandons the upstream request without recording a failure when the client disconnects', async () => {
-    await using upstream = await startUpstream({ ...CLIP, delayMs: 2_000 });
+    await using upstream = await startUpstream({ ...CLIP, delayMs: 2000 });
     using tree = createTempTree({ 'transcript.txt': 'text' });
     await using proxy = await startSpeechProxy(buildOptions(tree.resolve('transcript.txt'), upstream.baseUrl));
 

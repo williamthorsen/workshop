@@ -17,7 +17,7 @@ interface IdleEntry {
 /** Whether a CDP client is connected to a browser: `unknown` when that cannot be read. */
 type ClientState = 'connected' | 'idle' | 'unknown';
 
-const UNIT_SECONDS: Record<string, number> = { d: 86_400, h: 3_600, m: 60, s: 1 };
+const UNIT_SECONDS: Record<string, number> = { d: 86_400, h: 3600, m: 60, s: 1 };
 
 /**
  * Quits each running browser that no CDP client has been connected to for at least the duration, keeping its profile.
@@ -36,7 +36,7 @@ export async function quitIdleProfiles(invocation: Invocation, durationText: str
   const recordFile = `${invocation.profilesDir}/${IDLE_RECORD_FILE}`;
   const previous = readIdleRecord(recordFile);
   const next = new Map<string, IdleEntry>();
-  const now = Math.floor(invocation.deps.now() / 1_000);
+  const now = Math.floor(invocation.deps.now() / 1000);
   let quitCount = 0;
 
   for (const profile of listRunningProfiles(invocation)) {

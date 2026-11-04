@@ -16,7 +16,7 @@ describe('quit', () => {
     const fake = makeRunningFakeThorChrome(['thrive']);
     await expect(run(fake, ['quit', 'thrive'])).resolves.toBe(0);
     expect(fake.captured.stdout()).toBe("Quit profile 'thrive' (PID 4242).\n");
-    expect(fake.killed).toStrictEqual([4_242]);
+    expect(fake.killed).toStrictEqual([4242]);
   });
 
   it("leaves another profile's browser running", async () => {
@@ -51,7 +51,7 @@ describe('quit', () => {
     const fake = makeRunningFakeThorChrome(['thrive']);
     await expect(run(fake, ['quit', 'thrive', '--json'])).resolves.toBe(0);
     expect(fake.readReport()).toMatchObject({
-      profiles: [{ name: 'thrive', pid: 4_242, state: 'stopped' }],
+      profiles: [{ name: 'thrive', pid: 4242, state: 'stopped' }],
     });
   });
 
