@@ -25,10 +25,10 @@
         "url": "https://github.com/advisories/GHSA-wq5f-xc86-pv6w"
       },
       {
-        "addedAt": "2026-10-31T22:51:39.872Z",
-        "id": "1244012",
-        "path": ".>@vitest/eslint-plugin>@typescript-eslint/utils>@eslint-community/eslint-utils>eslint>@eslint/config-array>minimatch",
-        "reason": "Added by v11y sync at 2026-10-31 22:51:39 UTC",
+        "addedAt": "2026-11-04T18:55:03.861Z",
+        "id": "1244623",
+        "path": ".>@williamthorsen/strict-lint>eslint>minimatch",
+        "reason": "Added by v11y sync at 2026-11-04 18:55:03 UTC",
         "url": "https://github.com/advisories/GHSA-g3hv-75wg-m249"
       }
     ]

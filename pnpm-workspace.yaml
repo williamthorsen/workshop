@@ -10,7 +10,7 @@ allowBuilds:
   unrs-resolver: true
 
 catalog:
-  '@tandryukha/aidemo': 0.20.2
+  '@tandryukha/aidemo': 0.20.3
   '@vitest/coverage-v8': 5.1.0
   '@williamthorsen/nmr': 0.54.0
   '@williamthorsen/toolbelt.atlassian': 0.8.0
