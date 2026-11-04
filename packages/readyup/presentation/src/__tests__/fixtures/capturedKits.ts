@@ -1,4 +1,4 @@
-import type { KitModel } from '../../kits.ts';
+import type { KitModel } from '../../kitModel.ts';
 
 const TOOLBELT_README = 'https://github.com/williamthorsen/toolbelt/tree/main/packages/errors#readme';
 

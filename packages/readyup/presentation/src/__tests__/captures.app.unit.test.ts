@@ -4,12 +4,13 @@ import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 
 import { stripEscapes } from '../../../src/layout/test-utils/stripEscapes.ts';
-import { CAPTURED_PREFLIGHT, type KitModel } from '../kits.ts';
+import { CAPTURED_PREFLIGHT } from '../capturedPreflight.ts';
+import type { KitModel } from '../kitModel.ts';
 import { type Environment, type RenderedKit, renderKit } from '../renderKit.ts';
 import { CAPTURED_KITS } from './fixtures/capturedKits.ts';
 
 vi.mock('../../../src/version.ts', async () => ({
-  VERSION: (await import('../kits.ts')).CAPTURED_READYUP_VERSION,
+  VERSION: (await import('../capturedPreflight.ts')).CAPTURED_READYUP_VERSION,
 }));
 
 const capturesDir = path.join(import.meta.dirname, '..', '..', 'captures');

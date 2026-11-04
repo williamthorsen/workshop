@@ -6,8 +6,9 @@ import { formatJsonReport } from '../../src/reporting/formatJsonReport.ts';
 import { formatRunVerdict } from '../../src/reporting/formatRunVerdict.ts';
 import { countResults, renderReportSections } from '../../src/reporting/reportRdy.ts';
 import { meetsThreshold } from '../../src/severity/meetsThreshold.ts';
+import { CAPTURED_PREFLIGHT } from './capturedPreflight.ts';
 import { DEPLOY_KIT } from './deployKit.ts';
-import { CAPTURED_PREFLIGHT, type ChecklistModel, type CheckModel, type KitModel } from './kits.ts';
+import type { ChecklistModel, CheckModel, KitModel } from './kitModel.ts';
 
 /** readyup's default failure threshold, at which a run's command omits `--fail-on`. */
 const FAIL_ON: Severity = 'error';

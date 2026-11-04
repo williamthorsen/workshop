@@ -29,39 +29,6 @@ var ReadyupDeck = (() => {
   });
 
   // presentation/src/kits.ts
-  var CAPTURED_READYUP_VERSION = "0.42.0";
-  var CAPTURED_PREFLIGHT = {
-    name: "preflight",
-    command: "rdy run preflight",
-    compiledWith: "0.42.0",
-    conditions: [
-      { id: "docker", label: "Docker is running", on: true },
-      { id: "api", label: "API is listening on port 3000", on: true }
-    ],
-    checklists: [
-      {
-        name: "preflight",
-        ms: 546,
-        checks: [
-          {
-            name: "Docker daemon is running",
-            severity: "error",
-            when: "docker",
-            ms: 544,
-            fix: "Start Docker, then run the checks again"
-          },
-          {
-            name: "API is listening on port 3000",
-            severity: "warn",
-            when: "api",
-            ms: 45,
-            failDetail: "Nothing is listening on port 3000",
-            fix: "Start the API with pnpm dev before the smoke test"
-          }
-        ]
-      }
-    ]
-  };
   var KITS = {
     onboarding: {
       name: "onboarding",
@@ -1327,6 +1294,41 @@ ${violations.map((violation) => `- ${violation}`).join("\n")}`);
 
   // src/schemas/reportSchemaVersion.ts
   var SCHEMA_VERSION = 2;
+
+  // presentation/src/capturedPreflight.ts
+  var CAPTURED_PREFLIGHT = {
+    name: "preflight",
+    command: "rdy run preflight",
+    compiledWith: "0.42.0",
+    conditions: [
+      { id: "docker", label: "Docker is running", on: true },
+      { id: "api", label: "API is listening on port 3000", on: true }
+    ],
+    checklists: [
+      {
+        name: "preflight",
+        ms: 546,
+        checks: [
+          {
+            name: "Docker daemon is running",
+            severity: "error",
+            when: "docker",
+            ms: 544,
+            fix: "Start Docker, then run the checks again"
+          },
+          {
+            name: "API is listening on port 3000",
+            severity: "warn",
+            when: "api",
+            ms: 45,
+            failDetail: "Nothing is listening on port 3000",
+            fix: "Start the API with pnpm dev before the smoke test"
+          }
+        ]
+      }
+    ]
+  };
+  var CAPTURED_READYUP_VERSION = "0.42.0";
 
   // src/reporting/formatJsonReport.ts
   function formatJsonReport(kitInputs, options) {

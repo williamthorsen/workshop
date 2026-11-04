@@ -1,4 +1,4 @@
-import type { KitModel } from './kits.ts';
+import type { KitModel } from './kitModel.ts';
 
 /** The deploy checklist that "A run, step by step" walks through, with its build and environment broken. */
 export const DEPLOY_KIT: KitModel = {
