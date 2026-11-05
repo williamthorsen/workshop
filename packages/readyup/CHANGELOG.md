@@ -2,6 +2,43 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.45.0 — 2026-11-05
+
+### 🎉 Features
+
+- Add a publish-placeholder command to thor-npm (#695)
+
+  Adds the `thor-npm publish-placeholder` command, which publishes the `0.0.0` placeholder that npm requires for a new package name before `npm trust` can be configured for it, after checking the name against npm's rules, the npm login, and the registry, and after asking for confirmation unless `--force` or `--dry-run` is passed.
+
+### ♻️ Refactoring
+
+- Splits the presentation deck's `kits.ts` into `kitModel.ts`, `capturedPreflight.ts`, and one module per slide kit, which leaves `kits.ts` only to assemble `KITS` and removes its `max-lines` suppression. (#697)
+
+### 🧪 Tests
+
+- Adds `kitSources.app.unit.test.ts`, which fails when a kit page's source viewer and the kit's model in `kits.ts` name different checks or name them in a different order. (#647)
+- Adds `steppedSlides.app.unit.test.ts`, which fails when a stepped slide in the deck contains a different number of step fragments than its highest `data-at` step. (#648)
+- Moves each top-level `it.aroundEach` and `it.aroundAll` hook in readyup's test files into a `describe` block, as `vitest/require-top-level-describe` requires as of 1.6.28, and wraps a file's several top-level blocks in one outer `describe` titled for the module file, such as `filesystem.ts`, so that each hook still wraps the same tests the same number of times. (#660)
+- Fakes `performance` in the `route.styleSelection.unit.test.ts` test that compares rich output with and without a terminal, so that the duration reported by each run can no longer make the two outputs differ. (#687)
+
+### 📦 Dependencies
+
+- Upgrade eslint-config-typescript to 20.2.0 (#692)
+
+  Upgrades `@williamthorsen/eslint-config-typescript` from 20.1.3 to 20.2.0, which brings `eslint-plugin-unicorn` 79 and `typescript-eslint` 8.72.1, and edits the code across the packages to satisfy the rules that the new versions add. The most widespread of those rules is `unicorn/numeric-separators-style`, which now rejects a separator in a number of fewer than 5 digits, such as `1_000`.
+
+### 📚 Documentation
+
+- Replaces the deck's arrows and position pills with a presenter bar that has separate controls for moving between slides and between the steps within a slide. (#645)
+- Adds a grid of slide thumbnails, a speaker-notes panel that marks the paragraph for the current step, and an overlay that lists the deck's key bindings, each opened from the presenter bar or by a key. (#645)
+- Replaces the slides in `packages/readyup/presentation/index.html` with the refined prototype's thirteen, whose five kit pages show each run from `renderKit` in a terminal beside the environment panel, and whose run and anatomy slides show only their final state. (#646)
+- Extends the deck's kit model in `presentation/src/kits.ts` with the `command` that `renderKit` prints as a run's first line, the `examined` count and `sites` from which it derives a findings check's progress and failure detail, and a repository origin that it prints as a remote breadcrumb, and removes the unused captions and tree rows. (#646)
+- Replaces the `rdy run` and `rdy run --json` tabs on the deck's kit demo pages in `presentation/index.html` with a terminal header row whose `--json` switch and `--fail-on` selector set the flags of the run that the page plays, so that the command line, the verdict, the exit badge, and the JSON `failOn` match what `rdy` prints at the chosen threshold. (#647)
+- Adds a source viewer to each kit demo page, which shows the kit's source, marks and scrolls to the check that the current step evaluates, and enlarges over the kit area through a zoom control. (#647)
+- Makes the run slide and the anatomy slide in `packages/readyup/presentation/index.html` step through the prototype's eight and six steps, and removes the `is-final` class, which showed both slides only in their last state. (#648)
+- Replaces the 2 × 2 tile grid on the solution slide of `packages/readyup/presentation/index.html` with four claim rows, each beside its code or terminal sample, and rewrites the headline and the claim copy. (#649)
+- Restacks the deck's closing slide as a two-column grid of the solution slide's claims, a full-width box listing the four setup commands, and a single row of links, under the headline "Start with four commands". (#649)
+
 ## 0.44.0 — 2026-10-26
 
 ### 🎉 Features

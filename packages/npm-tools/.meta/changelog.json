@@ -1,0 +1,29 @@
+[
+  {
+    "version": "0.1.0",
+    "date": "2026-11-05",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Adds the `@williamthorsen/npm-tools` package, whose `thor-npm` binary initially prints only its help and version and exits 2 on any other argument, because its commands are not implemented yet. (#693)",
+            "hash": "f26f7685f1c9f0f1a0b0ff9e886b646708ce3857",
+            "entry": 1
+          },
+          {
+            "description": "Adds the `thor-npm publish-placeholder <package-name>` command, which publishes a `<package-name>@0.0.0` placeholder that contains only `package.json` and `README.md`, so that `npm trust` can then be configured for a name that the registry did not have before. (#695)",
+            "hash": "a93f2fdfb65f712547d1a273facadb4cb9a428c8",
+            "entry": 1
+          },
+          {
+            "description": "Adds the `thor-npm move-trust` command, which moves a package's trusted publisher (the GitHub repository whose workflow may publish the package) to another repository, keeping its workflow file unless `--file` names another, its environment, and its permissions, and restoring the old trust when adding the new one fails. (#696)",
+            "hash": "826bbed2a071d42187890cb0e85c5304e155b16a",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  }
+]

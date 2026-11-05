@@ -1,6 +1,6 @@
 {
   "name": "@williamthorsen/npm-tools",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "Run npm registry chores",
   "keywords": [

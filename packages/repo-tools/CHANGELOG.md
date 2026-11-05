@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.3 — 2026-11-05
+
+### 🐛 Bug fixes
+
+- Fixes the issue that `thor-repo add` recorded the owner and name of an origin hosted outside `github.com` as `repo` and queried GitHub for it, so that such a clone now registers without `repo`, `visibility`, or `runner`. (#661)
+- Fixes the issue that `thor-repo add` and `thor-repo scan` failed on a clone whose `git ls-files` output exceeds 1 MiB: `add` refused the clone with `cannot list the tracked files`, and `scan` listed it under `no clone on this machine`. (#686)
+- Fixes the issue that `thor-repo add` and `thor-repo scan` hid the cause when git could not list a clone's tracked files: `add` now includes git's reason in its error, and `scan` reports the reason on stderr and keeps the entry's stack rather than listing the clone as absent. (#686)
+
+### 📦 Dependencies
+
+- Upgrade eslint-config-typescript to 20.2.0 (#692)
+
+  Upgrades `@williamthorsen/eslint-config-typescript` from 20.1.3 to 20.2.0, which brings `eslint-plugin-unicorn` 79 and `typescript-eslint` 8.72.1, and edits the code across the packages to satisfy the rules that the new versions add. The most widespread of those rules is `unicorn/numeric-separators-style`, which now rejects a separator in a number of fewer than 5 digits, such as `1_000`.
+
 ## 0.2.2 — 2026-10-26
 
 ### 📦 Dependencies

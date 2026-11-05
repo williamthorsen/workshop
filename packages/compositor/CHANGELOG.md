@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.5.6 — 2026-11-05
+
+### 📦 Dependencies
+
+- Upgrade eslint-config-typescript to 20.2.0 (#692)
+
+  Upgrades `@williamthorsen/eslint-config-typescript` from 20.1.3 to 20.2.0, which brings `eslint-plugin-unicorn` 79 and `typescript-eslint` 8.72.1, and edits the code across the packages to satisfy the rules that the new versions add. The most widespread of those rules is `unicorn/numeric-separators-style`, which now rejects a separator in a number of fewer than 5 digits, such as `1_000`.
+
 ## 0.5.5 — 2026-10-26
 
 ### 📦 Dependencies
