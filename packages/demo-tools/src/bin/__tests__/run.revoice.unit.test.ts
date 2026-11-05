@@ -4,6 +4,7 @@ import path from 'node:path';
 import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
+import { resolveDefaultProfileDir } from '../../aidemo/build-aidemo-env.ts';
 import { DEFAULT_VOICE_HOME, DEFAULT_VOICE_MODEL, type VoiceConfig } from '../../config/read-machine-config.ts';
 import { readProfileSources } from '../../voice/build-voice-profile.ts';
 import { formatModelDir } from '../../voice/mlx-audio/format-model-dir.ts';
@@ -57,6 +58,7 @@ describe('run revoice', () => {
       },
     });
     expect(result.revoice?.env).toStrictEqual({
+      AIDEMO_CHROME_PROFILE: resolveDefaultProfileDir(home.resolve('home'), path.basename(repo.tree.dir)),
       AIDEMO_TTS_MODEL: DEFAULT_VOICE_MODEL,
       AIDEMO_TTS_PROVIDER: 'openai',
       PATH: '/bin',

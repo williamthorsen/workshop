@@ -11,7 +11,12 @@ import {
 } from '@williamthorsen/toolbelt.cli/candidate';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
-import { buildAidemoEnv, OPENAI_VARIABLES } from '../aidemo/build-aidemo-env.ts';
+import {
+  buildAidemoEnv,
+  CHROME_PROFILE_VARIABLE,
+  OPENAI_VARIABLES,
+  resolveDefaultProfileDir,
+} from '../aidemo/build-aidemo-env.ts';
 import { findEnvFileOverrides } from '../aidemo/find-env-file-overrides.ts';
 import { resolveAidemo } from '../aidemo/resolve-aidemo.ts';
 import { planTake, type TakeDisposition } from '../archive/plan-take.ts';
@@ -124,6 +129,8 @@ export interface Launch {
   readonly bin: string;
   readonly cwd: string;
   readonly env: NodeJS.ProcessEnv;
+  /** The default recording profile, which the entry point creates before it starts aidemo, when `env` names it. */
+  readonly profileDir?: string;
   /** What `render` does with the take once aidemo exits 0. */
   readonly take?: TakeDisposition;
 }
@@ -212,9 +219,13 @@ function prepareLaunch(
     );
   }
 
+  const defaultProfileDir = resolveDefaultProfileDir(effects.homeDir, config.archiveLabel);
+  const env = buildAidemoEnv(effects.env, config.aidemoEnv, defaultProfileDir);
+  const launch: Launch = { args, bin: resolution.aidemo.bin, cwd: config.root, env };
+
   return {
     aidemoVersion: resolution.aidemo.version,
-    launch: { args, bin: resolution.aidemo.bin, cwd: config.root, env: buildAidemoEnv(effects.env, config.aidemoEnv) },
+    launch: env[CHROME_PROFILE_VARIABLE] === defaultProfileDir ? { ...launch, profileDir: defaultProfileDir } : launch,
   };
 }
 

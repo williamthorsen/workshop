@@ -1,6 +1,7 @@
 /* eslint n/hashbang: off -- this is the CLI entrypoint; the build prepends the hashbang. */
 
 import { spawn } from 'node:child_process';
+import { mkdir } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
@@ -54,8 +55,20 @@ async function completeRequest(): Promise<number> {
   return exitCode;
 }
 
-/** Runs aidemo, then, when it succeeds, does what the launch says to do with the take, resolving to the exit code. */
+/**
+ * Creates the default recording profile, runs aidemo, then, when it succeeds, does what the launch says to do with the
+ * take, resolving to the exit code.
+ */
 async function completeLaunch(launch: Launch): Promise<number> {
+  if (launch.profileDir !== undefined) {
+    try {
+      await mkdir(launch.profileDir, { recursive: true });
+    } catch (error) {
+      await writeFully(process.stderr, `thor-demo: cannot create ${launch.profileDir}: ${describeError(error)}\n`);
+      return 1;
+    }
+  }
+
   const aidemoExitCode = await runLaunch(launch);
   if (aidemoExitCode !== 0 || launch.take === undefined) return aidemoExitCode;
 

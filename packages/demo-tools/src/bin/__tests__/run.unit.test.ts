@@ -1,8 +1,10 @@
 import { chmodSync, rmSync } from 'node:fs';
+import path from 'node:path';
 
 import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
+import { resolveDefaultProfileDir } from '../../aidemo/build-aidemo-env.ts';
 import { DEFAULT_VOICE_MODEL } from '../../config/read-machine-config.ts';
 import { run, type RunEffects } from '../run.ts';
 
@@ -132,11 +134,13 @@ describe(run, () => {
 
       expect(exitCode).toBe(0);
       expect(stderr).toBe('');
+      const profileDir = resolveDefaultProfileDir(HOME, path.basename(tree.dir));
       expect(launch).toStrictEqual({
         args: [command, tree.resolve('demos/quickstart'), '--tts', 'local'],
         bin: tree.resolve('node_modules/@tandryukha/aidemo/bin/aidemo.mjs'),
         cwd: tree.dir,
-        env: {},
+        env: { AIDEMO_CHROME_PROFILE: profileDir },
+        profileDir,
         ...(command === 'render' && { take: { kind: 'notice', message: noRootNotice } }),
       });
     });
@@ -299,6 +303,24 @@ describe(run, () => {
         OPENAI_BASE_URL: 'http://local',
         PATH: '/bin',
       });
+    });
+
+    it('defaults the recording profile to one keyed by the archive label, for the entry point to create', async () => {
+      using tree = createDemoRepo({ config: 'archive:\n  label: product\n' });
+
+      const { launch } = await run(['mcp'], { ...EFFECTS, cwd: tree.dir, env: { AIDEMO_CHROME_PROFILE: '' } });
+
+      const profileDir = `${HOME}/.local/share/thor-demo/chrome-profiles/product`;
+      expect(launch).toMatchObject({ env: { AIDEMO_CHROME_PROFILE: profileDir }, profileDir });
+    });
+
+    it('leaves an inherited profile to aidemo without asking the entry point to create one', async () => {
+      using tree = createDemoRepo();
+
+      const { launch } = await run(['mcp'], { ...EFFECTS, cwd: tree.dir, env: { AIDEMO_CHROME_PROFILE: '/profile' } });
+
+      expect(launch?.env).toStrictEqual({ AIDEMO_CHROME_PROFILE: '/profile' });
+      expect(launch?.profileDir).toBeUndefined();
     });
 
     it('reports an invalid configuration with exit 1', async () => {

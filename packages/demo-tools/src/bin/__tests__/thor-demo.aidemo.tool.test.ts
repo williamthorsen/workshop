@@ -1,6 +1,11 @@
+import { statSync } from 'node:fs';
+import path from 'node:path';
+
 import { describe, expect, it } from 'vitest';
 
-import { createDemoRepo, FAKE_AIDEMO_STARTED } from '../test-utils/create-demo-repo.ts';
+import { resolveDefaultProfileDir } from '../../aidemo/build-aidemo-env.ts';
+
+import { createDemoRepo, type DemoRepo, FAKE_AIDEMO_STARTED } from '../test-utils/create-demo-repo.ts';
 import { runThorDemo } from '../test-utils/run-thor-demo.ts';
 
 describe('thor-demo with an installed aidemo', () => {
@@ -16,7 +21,7 @@ describe('thor-demo with an installed aidemo', () => {
         {
           args: [command, repo.tree.resolve('demos/quickstart'), '--tts', 'local'],
           cwd: repo.tree.dir,
-          env: {},
+          env: { AIDEMO_CHROME_PROFILE: resolveProfileDir(repo, repo.tree.resolve('demos')) },
         },
       ]);
     },
@@ -30,9 +35,18 @@ describe('thor-demo with an installed aidemo', () => {
     runThorDemo(['probe', 'quickstart'], repo.tree.dir, { OPENAI_API_KEY: 'sk-x', OPENAI_BASE_URL: 'http://remote' });
 
     expect(repo.readCalls()[0]?.env).toStrictEqual({
+      AIDEMO_CHROME_PROFILE: resolveProfileDir(repo, repo.tree.dir),
       AIDEMO_TTS_PROVIDER: 'local',
       OPENAI_BASE_URL: 'http://local',
     });
+  });
+
+  it('creates the default recording profile before aidemo starts', () => {
+    using repo = createDemoRepo();
+
+    runThorDemo(['probe', 'quickstart'], repo.tree.dir);
+
+    expect(statSync(resolveProfileDir(repo, repo.tree.dir)).isDirectory()).toBe(true);
   });
 
   it("exits with aidemo's exit code", () => {
@@ -85,3 +99,12 @@ describe('thor-demo with an installed aidemo', () => {
     expect(installed.readCalls()).toStrictEqual([]);
   });
 });
+
+// region | Helpers
+
+/** Returns the default recording profile of `repo` for a run whose home is `homeDir`. */
+function resolveProfileDir(repo: DemoRepo, homeDir: string): string {
+  return resolveDefaultProfileDir(homeDir, path.basename(repo.tree.dir));
+}
+
+// endregion | Helpers
