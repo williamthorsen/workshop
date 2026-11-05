@@ -165,8 +165,8 @@ settings:
 catalogs:
   default:
     '@tandryukha/aidemo':
-      specifier: 0.20.3
-      version: 0.20.3
+      specifier: 0.20.4
+      version: 0.20.4
     '@vitest/coverage-v8':
       specifier: 5.1.0
       version: 5.1.0
@@ -409,7 +409,7 @@ importers:
     devDependencies:
       '@tandryukha/aidemo':
         specifier: 'catalog:'
-        version: 0.20.3
+        version: 0.20.4
       '@williamthorsen/toolbelt.testing':
         specifier: 'catalog:'
         version: 0.8.0
@@ -1316,8 +1316,8 @@ packages:
     resolution: {integrity: sha512-t09vSN3MdfsyCHoFcTRCH/iUtG7OJ0CsjzB8cjAmKc/va/kIgeDI/TxsigdncE/4be734m0cvIYwNaV4i2XqAw==}
     engines: {node: '>=10'}
 
-  '@tandryukha/aidemo@0.20.3':
-    resolution: {integrity: sha512-Z48OjzNOuF+relJ8xiiPz6lh2R9CHzzf/H1vSIQXQo6lpskRjbk9AcVofC4ybLHj/wEcHPfQ+G8AKbTl2qkx3w==}
+  '@tandryukha/aidemo@0.20.4':
+    resolution: {integrity: sha512-J4XkosH2a7b0PQ4EyKkYqAqvhg3A3YtfdB6nyPYc9YBIHtQdBk9FUm7hCOtJC7d13eps+aFpGbWiLBHQ334p1A==}
     engines: {node: '>=22.12'}
     hasBin: true
 
@@ -2032,8 +2032,8 @@ packages:
   duplexer@0.1.2:
     resolution: {integrity: sha512-jtD6YG370ZCIi/9GTaJKQxWTZD045+4R4hTk/x1UyoqadyJ9x9CgSi1RlVDQF8U2sxLLSnFkCaMihqljHIWgMg==}
 
-  electron-to-chromium@1.5.473:
-    resolution: {integrity: sha512-9njcRQK+6FOXNAWw5g+h2RPiyazqo5RFMVJ39ZMHjDHUNnnFlhnOGV7O0WmJetODDx19ES5p+FLi+KCVFQGugw==}
+  electron-to-chromium@1.5.475:
+    resolution: {integrity: sha512-S9tceHJbIsHH8VRwh9x+8lJO50SYwTdwVGdEjdz2FERyP59j1N6rdXOSklIusrhxt9GG/WN4V/kRgmDHl9MM5w==}
 
   emoji-regex@8.0.0:
     resolution: {integrity: sha512-MSjYzcWNOA0ewAHpz0MxpYFvwg6yjy1NG3xteoqz644VCo/RPgnr1/GGt+ic3iJTzQ8Eu3TdM14SawnVUmGE6A==}
@@ -2808,8 +2808,8 @@ packages:
   onnxruntime-web@1.22.0-dev.20250409-89f8206ba4:
     resolution: {integrity: sha512-0uS76OPgH0hWCPrFKlL8kYVV7ckM7t/36HfbgoFw6Nd0CZVVbQC4PkrR8mBX8LtNUFZO25IQBqV2Hx2ho3FlbQ==}
 
-  openai@7.48.0:
-    resolution: {integrity: sha512-DR05mxmk3gl5v8GIZTYBMmygJZY2qWwMALOU7NAiQDQ21OYZDFGfAsKnHOMC8AImoITEgPhwLgA9G3wIE/xujA==}
+  openai@7.50.0:
+    resolution: {integrity: sha512-VFBqvO4pL3sXY1y3L1qo+9yUkE+sHOov044/mWAHThG+XUgUrMmQsigwY0ONfYBzLE7Rx4222mM6I+CTNw+Gsw==}
     engines: {node: '>=22.0.0'}
     peerDependencies:
       '@aws-sdk/credential-provider-node': '>=3.972.0 <4'
@@ -3862,11 +3862,11 @@ snapshots:
 
   '@sindresorhus/is@4.6.0': {}
 
-  '@tandryukha/aidemo@0.20.3':
+  '@tandryukha/aidemo@0.20.4':
     dependencies:
       '@modelcontextprotocol/server': 2.4.0
       commander: 15.0.0
-      openai: 7.48.0(zod@4.6.7)
+      openai: 7.50.0(zod@4.6.7)
       playwright: 1.64.1
       re2js: 2.9.1
       tsx: 4.23.15
@@ -4369,7 +4369,7 @@ snapshots:
     dependencies:
       baseline-browser-mapping: 2.11.35
       caniuse-lite: 1.0.30001820
-      electron-to-chromium: 1.5.473
+      electron-to-chromium: 1.5.475
       node-releases: 2.0.63
       update-browserslist-db: 1.3.4(browserslist@4.29.5)
 
@@ -4521,7 +4521,7 @@ snapshots:
 
   duplexer@0.1.2: {}
 
-  electron-to-chromium@1.5.473: {}
+  electron-to-chromium@1.5.475: {}
 
   emoji-regex@8.0.0: {}
 
@@ -5349,7 +5349,7 @@ snapshots:
       platform: 1.3.6
       protobufjs: 7.6.6
 
-  openai@7.48.0(zod@4.6.7):
+  openai@7.50.0(zod@4.6.7):
     optionalDependencies:
       zod: 4.6.7
 
