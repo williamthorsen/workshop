@@ -11,8 +11,9 @@ export const OPENAI_VARIABLES: readonly string[] = ['AIDEMO_OPENAI_BASE_URL', 'O
 
 /**
  * Returns `baseEnv` without the OpenAI variables, overlaid with `declaredEnv`, so that only an OpenAI variable that
- * the configuration declares reaches aidemo. When neither sets a non-empty recording profile, the result sets it to
- * `defaultProfileDir`, because aidemo treats an empty value as unset and falls back to a profile inside its install.
+ * the configuration declares reaches aidemo. The recording profile is the first non-empty one of `declaredEnv`,
+ * `baseEnv`, and `defaultProfileDir`, because aidemo treats an empty value as unset and falls back to a profile inside
+ * its install.
  */
 export function buildAidemoEnv(
   baseEnv: NodeJS.ProcessEnv,
@@ -20,15 +21,22 @@ export function buildAidemoEnv(
   defaultProfileDir: string,
 ): NodeJS.ProcessEnv {
   const inherited = Object.entries(baseEnv).filter(([name]) => !OPENAI_VARIABLES.includes(name));
-  const env: NodeJS.ProcessEnv = { ...Object.fromEntries(inherited), ...declaredEnv };
+  const profile =
+    nonEmpty(declaredEnv[CHROME_PROFILE_VARIABLE]) ?? nonEmpty(baseEnv[CHROME_PROFILE_VARIABLE]) ?? defaultProfileDir;
 
-  const profile = env[CHROME_PROFILE_VARIABLE];
-  if (profile === undefined || profile === '') env[CHROME_PROFILE_VARIABLE] = defaultProfileDir;
-
-  return env;
+  return { ...Object.fromEntries(inherited), ...declaredEnv, [CHROME_PROFILE_VARIABLE]: profile };
 }
 
 /** Returns the default recording profile of the repository whose takes are archived under `archiveLabel`. */
 export function resolveDefaultProfileDir(homeDir: string, archiveLabel: string): string {
   return path.join(homeDir, DEFAULT_CHROME_PROFILES_DIR, archiveLabel);
 }
+
+// region | Helpers
+
+/** Returns `value` unless it is empty. */
+function nonEmpty(value: string | undefined): string | undefined {
+  return value === '' ? undefined : value;
+}
+
+// endregion | Helpers

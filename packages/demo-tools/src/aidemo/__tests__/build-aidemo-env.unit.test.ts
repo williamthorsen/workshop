@@ -34,6 +34,14 @@ describe(buildAidemoEnv, () => {
     expect(buildAidemoEnv(inherited, {}, PROFILE)).toStrictEqual(inherited);
   });
 
+  it('falls back to an inherited profile when the declared one is empty', () => {
+    expect(
+      buildAidemoEnv({ AIDEMO_CHROME_PROFILE: '/inherited' }, { AIDEMO_CHROME_PROFILE: '' }, PROFILE),
+    ).toStrictEqual({
+      AIDEMO_CHROME_PROFILE: '/inherited',
+    });
+  });
+
   it('replaces an empty profile with the default', () => {
     expect(buildAidemoEnv({ AIDEMO_CHROME_PROFILE: '' }, {}, PROFILE)).toStrictEqual({
       AIDEMO_CHROME_PROFILE: PROFILE,
