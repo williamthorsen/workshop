@@ -11,6 +11,7 @@ import { resolveSelfVersion } from '@williamthorsen/toolbelt.packaging/candidate
 
 import { archiveTake } from '../archive/archive-take.ts';
 import type { TakeDisposition } from '../archive/plan-take.ts';
+import { findUnignoredPaths } from '../clients/git/find-unignored-paths.ts';
 import { readSourceState } from '../clients/git/read-source-state.ts';
 import { runInvocation } from '../voice/invocation.ts';
 import { performRevoice } from '../voice/perform-revoice.ts';
@@ -32,6 +33,7 @@ const { exitCode, launch, revoice, stderr, stdout, voice } = await run(process.a
   arch: process.arch,
   cwd: process.cwd(),
   env: process.env,
+  findUnignoredPaths,
   homeDir: os.homedir(),
   platform: process.platform,
   readSourceState,

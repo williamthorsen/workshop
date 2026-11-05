@@ -26,6 +26,7 @@ import { REPO_CONFIG_PATH } from '../config/find-repo-root.ts';
 import { MACHINE_CONFIG_PATH } from '../config/read-machine-config.ts';
 import { readRepoConfig, type RepoConfig } from '../config/read-repo-config.ts';
 import { ARCHIVE_ROOT_VARIABLE, resolveArchiveRoot } from '../config/resolve-archive-root.ts';
+import { AIDEMO_WORKING_PATHS } from '../demos/aidemo-working-paths.ts';
 import { resolveDemoDir } from '../demos/resolve-demo-dir.ts';
 import type { RevoiceRequest } from '../voice/revoice-request.ts';
 import type { VoiceRequest } from '../voice/voice-request.ts';
@@ -162,6 +163,7 @@ export interface RunEffects {
   readonly arch: string;
   readonly cwd: string;
   readonly env: NodeJS.ProcessEnv;
+  readonly findUnignoredPaths: (dir: string, paths: readonly string[]) => readonly string[] | undefined;
   readonly homeDir: string;
   readonly platform: string;
   readonly readSourceState: (dir: string) => SourceState | undefined;
@@ -272,31 +274,6 @@ function readConfig(effects: RunEffects, stderr: Writer, prefix: string): RepoCo
   return undefined;
 }
 
-/** Runs `login` or `profile`: Requests the launch of the aidemo command with the arguments that follow it. */
-function runPassthroughCommand(
-  command: 'login' | 'profile',
-  node: Command<CommandContext>,
-  { args, context, stderr, stdout }: PassthroughInput<CommandContext>,
-): number | undefined {
-  const separatorIndex = args.indexOf('--');
-  const ownArgs = separatorIndex === -1 ? args : args.slice(0, separatorIndex);
-  if (ownArgs.some((arg) => arg === '--help' || arg === '-h')) {
-    stdout.write(`${renderHelp(node, `thor-demo ${command}`)}\n`);
-    return;
-  }
-
-  const prefix = `thor-demo ${command}`;
-  const config = readConfig(context.effects, stderr, prefix);
-  if (config === undefined) return EXIT_FAILURE;
-
-  const forwardedArgs = separatorIndex === -1 ? [] : args.slice(separatorIndex + 1);
-  const prepared = prepareLaunch(config, [command, ...ownArgs, ...forwardedArgs], context.effects, stderr, prefix);
-  if (prepared === undefined) return EXIT_FAILURE;
-
-  context.launch(prepared.launch);
-  return;
-}
-
 /** Resolves the installed version, reporting a failure as a usage error, which exits 2. */
 function resolveVersion(effects: RunEffects): string {
   try {
@@ -350,6 +327,8 @@ function runDemoCommand(
   const prepared = prepareLaunch(config, [command, demo.demoDir, ...params], context.effects, stderr, prefix);
   if (prepared === undefined) return EXIT_FAILURE;
 
+  warnAboutUnignoredPaths(root, demo.demoDir, context.effects, stderr, prefix);
+
   const { aidemoVersion, launch } = prepared;
   if (archiveRoot === undefined) {
     context.launch(launch);
@@ -369,6 +348,50 @@ function runDemoCommand(
   });
   context.launch({ ...launch, take });
   return;
+}
+
+/** Runs `login` or `profile`: Requests the launch of the aidemo command with the arguments that follow it. */
+function runPassthroughCommand(
+  command: 'login' | 'profile',
+  node: Command<CommandContext>,
+  { args, context, stderr, stdout }: PassthroughInput<CommandContext>,
+): number | undefined {
+  const separatorIndex = args.indexOf('--');
+  const ownArgs = separatorIndex === -1 ? args : args.slice(0, separatorIndex);
+  if (ownArgs.some((arg) => arg === '--help' || arg === '-h')) {
+    stdout.write(`${renderHelp(node, `thor-demo ${command}`)}\n`);
+    return;
+  }
+
+  const prefix = `thor-demo ${command}`;
+  const config = readConfig(context.effects, stderr, prefix);
+  if (config === undefined) return EXIT_FAILURE;
+
+  const forwardedArgs = separatorIndex === -1 ? [] : args.slice(separatorIndex + 1);
+  const prepared = prepareLaunch(config, [command, ...ownArgs, ...forwardedArgs], context.effects, stderr, prefix);
+  if (prepared === undefined) return EXIT_FAILURE;
+
+  context.launch(prepared.launch);
+  return;
+}
+
+/** Warns about each of aidemo's working paths in `demoDir` that the repository's ignore rules leave uncovered. */
+function warnAboutUnignoredPaths(
+  root: string,
+  demoDir: string,
+  effects: RunEffects,
+  stderr: Writer,
+  prefix: string,
+): void {
+  const demoPath = path.relative(root, demoDir).split(path.sep).join('/');
+  const samples = AIDEMO_WORKING_PATHS.map(({ sample }) => `${demoPath}/${sample}`);
+  const unignored = new Set(effects.findUnignoredPaths(root, samples));
+
+  AIDEMO_WORKING_PATHS.forEach(({ label }, index) => {
+    if (unignored.has(samples[index] ?? '')) {
+      stderr.write(`${prefix}: warning: ${demoPath}/${label} is not ignored by git; aidemo writes it on every run\n`);
+    }
+  });
 }
 
 // endregion | Helpers

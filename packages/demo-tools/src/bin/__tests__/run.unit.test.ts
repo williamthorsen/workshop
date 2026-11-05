@@ -16,6 +16,7 @@ const EFFECTS: RunEffects = {
   arch: 'arm64',
   cwd: '/',
   env: {},
+  findUnignoredPaths: () => undefined,
   homeDir: HOME,
   platform: 'darwin',
   readSourceState: () => undefined,
@@ -152,6 +153,41 @@ describe(run, () => {
       const { launch } = await run([command, 'quickstart', '--golden', '--', '--help'], { ...EFFECTS, cwd: tree.dir });
 
       expect(launch?.args).toStrictEqual([command, tree.resolve('demos/quickstart'), '--golden', '--help']);
+    });
+
+    it('warns about each working path that git does not ignore, before the launch', async () => {
+      using tree = createDemoRepo();
+      const checked: string[][] = [];
+
+      const { launch, stderr } = await run([command, 'quickstart'], {
+        ...EFFECTS,
+        cwd: tree.dir,
+        findUnignoredPaths: (dir, paths) => {
+          expect(dir).toBe(tree.dir);
+          checked.push([...paths]);
+          return paths.filter((candidate) => candidate.includes('/output/') || candidate.endsWith('params.json'));
+        },
+      });
+
+      expect(launch).toBeDefined();
+      expect(checked[0]).toContain('demos/quickstart/audio/voice.json');
+      expect(stderr).toContain(
+        `thor-demo ${command}: warning: demos/quickstart/generated/params.json is not ignored by git; aidemo writes it on every run\n` +
+          `thor-demo ${command}: warning: demos/quickstart/output/ is not ignored by git; aidemo writes it on every run\n`,
+      );
+      expect(stderr.match(/warning:/g)).toHaveLength(2);
+    });
+
+    it('does not warn when git covers every working path', async () => {
+      using tree = createDemoRepo();
+
+      const { stderr } = await run([command, 'quickstart'], {
+        ...EFFECTS,
+        cwd: tree.dir,
+        findUnignoredPaths: () => [],
+      });
+
+      expect(stderr).not.toContain('warning:');
     });
 
     it('lists the demos for an unknown one, as a usage error', async () => {
@@ -293,6 +329,14 @@ describe(run, () => {
       expect(launch?.args).toStrictEqual([command, '--help']);
     });
 
+    it('does not check the ignore rules', async () => {
+      using tree = createDemoRepo();
+
+      const { stderr } = await run(args, { ...EFFECTS, cwd: tree.dir, findUnignoredPaths: (_dir, paths) => paths });
+
+      expect(stderr).toBe('');
+    });
+
     it('prints its own help on --help', async () => {
       const { exitCode, launch, stdout } = await run([command, '--help'], EFFECTS);
 
@@ -314,10 +358,15 @@ describe(run, () => {
     it('launches aidemo mcp from the repository root and writes nothing to stdout', async () => {
       using tree = createDemoRepo();
 
-      const { exitCode, launch, stdout } = await run(['mcp'], { ...EFFECTS, cwd: tree.dir });
+      const { exitCode, launch, stderr, stdout } = await run(['mcp'], {
+        ...EFFECTS,
+        cwd: tree.dir,
+        findUnignoredPaths: (_dir, paths) => paths,
+      });
 
       expect(exitCode).toBe(0);
       expect(stdout).toBe('');
+      expect(stderr).toBe('');
       expect(launch).toMatchObject({ args: ['mcp'], cwd: tree.dir });
     });
 
