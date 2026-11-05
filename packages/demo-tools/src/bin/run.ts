@@ -11,25 +11,18 @@ import {
 } from '@williamthorsen/toolbelt.cli/candidate';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
-import {
-  buildAidemoEnv,
-  CHROME_PROFILE_VARIABLE,
-  DEFAULT_CHROME_PROFILES_DIR,
-  OPENAI_VARIABLES,
-  resolveDefaultProfileDir,
-} from '../aidemo/build-aidemo-env.ts';
-import { findEnvFileOverrides } from '../aidemo/find-env-file-overrides.ts';
-import { resolveAidemo } from '../aidemo/resolve-aidemo.ts';
+import { CHROME_PROFILE_VARIABLE, DEFAULT_CHROME_PROFILES_DIR } from '../aidemo/build-aidemo-env.ts';
 import { planTake, type TakeDisposition } from '../archive/plan-take.ts';
 import type { SourceState } from '../clients/git/read-source-state.ts';
 import { REPO_CONFIG_PATH } from '../config/find-repo-root.ts';
 import { MACHINE_CONFIG_PATH } from '../config/read-machine-config.ts';
-import { readRepoConfig, type RepoConfig } from '../config/read-repo-config.ts';
 import { ARCHIVE_ROOT_VARIABLE, resolveArchiveRoot } from '../config/resolve-archive-root.ts';
 import { AIDEMO_WORKING_PATHS } from '../demos/aidemo-working-paths.ts';
 import { resolveDemoDir } from '../demos/resolve-demo-dir.ts';
 import type { RevoiceRequest } from '../voice/revoice-request.ts';
 import type { VoiceRequest } from '../voice/voice-request.ts';
+import { prepareLaunch, readConfig } from './prepare-launch.ts';
+import { LOGIN, PROFILE } from './profile-commands.ts';
 import { REVOICE } from './revoice-command.ts';
 import { VOICE_GROUP } from './voice-commands.ts';
 
@@ -51,22 +44,6 @@ const PROBE: Command<CommandContext> = defineCommand({
   epilog: formatDemoCommandEpilog('probe', 'thor-demo probe quickstart --golden'),
   passthrough: true,
   run: (input) => runDemoCommand('probe', PROBE, input),
-});
-
-const LOGIN: Command<CommandContext> = defineCommand({
-  summary: 'Sign in on the recording profile through aidemo login',
-  description: `Run aidemo login from the root of the demo repository, with the environment that ${REPO_CONFIG_PATH} declares, so that the manual login lands on the recording profile that render and probe use.`,
-  epilog: formatPassthroughCommandEpilog('login', 'thor-demo login --url https://app.example.com/'),
-  passthrough: true,
-  run: (input) => runPassthroughCommand('login', LOGIN, input),
-});
-
-const PROFILE: Command<CommandContext> = defineCommand({
-  summary: 'Show or reset the recording profile through aidemo profile',
-  description: `Run aidemo profile from the root of the demo repository, with the environment that ${REPO_CONFIG_PATH} declares: path prints the recording profile that render and probe use, and reset wipes it.`,
-  epilog: formatPassthroughCommandEpilog('profile', 'thor-demo profile reset'),
-  passthrough: true,
-  run: (input) => runPassthroughCommand('profile', PROFILE, input),
 });
 
 const ROOT = defineGroup({
@@ -219,61 +196,6 @@ Example:
   ${example}`;
 }
 
-/** Describes the arguments of `login` and `profile`, which the help page of a passthrough command omits. */
-function formatPassthroughCommandEpilog(command: string, example: string): string {
-  return `Arguments:
-  <args>    Arguments for aidemo ${command}
-
-The arguments reach aidemo unchanged, except -h and --help, which print this
-help unless they follow a literal --.
-
-Example:
-  ${example}`;
-}
-
-/**
- * Builds the launch of aidemo with `args` in the demo repository, with the installed aidemo's version, reporting an
- * unusable aidemo install to `stderr` and warning about a `.env` that would restore an OpenAI variable.
- */
-function prepareLaunch(
-  config: RepoConfig,
-  args: readonly string[],
-  effects: RunEffects,
-  stderr: Writer,
-  prefix: string,
-): { aidemoVersion: string; launch: Launch } | undefined {
-  const resolution = resolveAidemo(config.root);
-  if (!resolution.ok) {
-    stderr.write(`${prefix}: ${resolution.message}\n`);
-    return undefined;
-  }
-
-  const overrides = findEnvFileOverrides(config.root, config.aidemoEnv, OPENAI_VARIABLES);
-  if (overrides !== undefined) {
-    stderr.write(
-      `${prefix}: warning: ${overrides.envFilePath} sets ${overrides.names.join(', ')}, which aidemo loads over the environment that thor-demo passes; declare them in aidemo.env or remove them from the file to keep captions offline\n`,
-    );
-  }
-
-  const defaultProfileDir = resolveDefaultProfileDir(effects.homeDir, config.archiveLabel);
-  const env = buildAidemoEnv(effects.env, config.aidemoEnv, defaultProfileDir);
-  const launch: Launch = { args, bin: resolution.aidemo.bin, cwd: config.root, env };
-
-  return {
-    aidemoVersion: resolution.aidemo.version,
-    launch: env[CHROME_PROFILE_VARIABLE] === defaultProfileDir ? { ...launch, profileDir: defaultProfileDir } : launch,
-  };
-}
-
-/** Reads the repository configuration, reporting a failure to `stderr`. */
-function readConfig(effects: RunEffects, stderr: Writer, prefix: string): RepoConfig | undefined {
-  const result = readRepoConfig(effects);
-  if (result.ok) return result.config;
-
-  stderr.write(`${prefix}: ${result.message}\n`);
-  return undefined;
-}
-
 /** Resolves the installed version, reporting a failure as a usage error, which exits 2. */
 function resolveVersion(effects: RunEffects): string {
   try {
@@ -347,31 +269,6 @@ function runDemoCommand(
     root,
   });
   context.launch({ ...launch, take });
-  return;
-}
-
-/** Runs `login` or `profile`: Requests the launch of the aidemo command with the arguments that follow it. */
-function runPassthroughCommand(
-  command: 'login' | 'profile',
-  node: Command<CommandContext>,
-  { args, context, stderr, stdout }: PassthroughInput<CommandContext>,
-): number | undefined {
-  const separatorIndex = args.indexOf('--');
-  const ownArgs = separatorIndex === -1 ? args : args.slice(0, separatorIndex);
-  if (ownArgs.some((arg) => arg === '--help' || arg === '-h')) {
-    stdout.write(`${renderHelp(node, `thor-demo ${command}`)}\n`);
-    return;
-  }
-
-  const prefix = `thor-demo ${command}`;
-  const config = readConfig(context.effects, stderr, prefix);
-  if (config === undefined) return EXIT_FAILURE;
-
-  const forwardedArgs = separatorIndex === -1 ? [] : args.slice(separatorIndex + 1);
-  const prepared = prepareLaunch(config, [command, ...ownArgs, ...forwardedArgs], context.effects, stderr, prefix);
-  if (prepared === undefined) return EXIT_FAILURE;
-
-  context.launch(prepared.launch);
   return;
 }
 

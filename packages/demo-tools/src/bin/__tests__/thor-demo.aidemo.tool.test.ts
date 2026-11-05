@@ -4,7 +4,6 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { resolveDefaultProfileDir } from '../../aidemo/build-aidemo-env.ts';
-
 import { createDemoRepo, type DemoRepo, FAKE_AIDEMO_STARTED } from '../test-utils/create-demo-repo.ts';
 import { runThorDemo } from '../test-utils/run-thor-demo.ts';
 
