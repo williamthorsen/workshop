@@ -3,6 +3,7 @@
 /demos/*/.chrome-profile-fresh/
 /demos/*/audio/
 /demos/*/generated/captions.*
+/demos/*/generated/params.json
 /demos/*/generated/timeline*.json
 /demos/*/logs/
 /demos/*/output/

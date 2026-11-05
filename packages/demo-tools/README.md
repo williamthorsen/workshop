@@ -32,7 +32,6 @@ demosDir: demos
 aidemo:
   # Variables to set for aidemo. Each value expands ${VAR} from the environment and a leading ~. Default: none.
   env:
-    AIDEMO_CHROME_PROFILE: ~/.cache/aidemo/chrome-profile
     AIDEMO_TTS_PROVIDER: local
 
 archive:
@@ -52,6 +51,41 @@ To give aidemo's MCP server the same environment, launch it through `thor-demo` 
     "aidemo": { "command": "thor-demo", "args": ["mcp"] }
   }
 }
+```
+
+## Recording profile
+
+aidemo records in a Chrome profile, which holds any login that a demo needs. `thor-demo` gives each repository its own profile, outside `node_modules`, so that an aidemo upgrade or reinstall keeps it:
+
+```
+~/.local/share/thor-demo/chrome-profiles/<archive.label>/
+```
+
+`archive.label` defaults to the root directory's name, so worktrees of a repository whose `.config/thor-demo.yaml` is in a package directory share one profile. When the file is at the git root, each worktree has a profile of its own unless `archive.label` is set. A non-empty `AIDEMO_CHROME_PROFILE` in `aidemo.env` takes precedence, and one in the environment comes next.
+
+Sign in on the profile, then check or wipe it:
+
+```bash
+thor-demo login --url https://app.example.com/
+thor-demo profile
+thor-demo profile reset
+```
+
+A login made on aidemo's own profile before this default existed does not carry over; sign in once with `thor-demo login`.
+
+## Ignoring aidemo's working files
+
+Before each `render` and `probe`, `thor-demo` warns about each of aidemo's working paths in the demo that git does not ignore or that git tracks. [`src/demos/aidemo-working-paths.ts`](https://github.com/williamthorsen/workshop/blob/main/packages/demo-tools/src/demos/aidemo-working-paths.ts) lists them. With demos in `demos/`, these rules cover them:
+
+```gitignore
+/demos/*/.chrome-profile-fresh/
+/demos/*/audio/
+/demos/*/generated/captions.*
+/demos/*/generated/params.json
+/demos/*/generated/timeline*.json
+/demos/*/logs/
+/demos/*/output/
+/demos/*/recordings/
 ```
 
 ## Rendering and probing

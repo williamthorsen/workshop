@@ -11,18 +11,18 @@ import {
 } from '@williamthorsen/toolbelt.cli/candidate';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
-import { buildAidemoEnv, OPENAI_VARIABLES } from '../aidemo/build-aidemo-env.ts';
-import { findEnvFileOverrides } from '../aidemo/find-env-file-overrides.ts';
-import { resolveAidemo } from '../aidemo/resolve-aidemo.ts';
+import { CHROME_PROFILE_VARIABLE, DEFAULT_CHROME_PROFILES_DIR } from '../aidemo/build-aidemo-env.ts';
 import { planTake, type TakeDisposition } from '../archive/plan-take.ts';
 import type { SourceState } from '../clients/git/read-source-state.ts';
 import { REPO_CONFIG_PATH } from '../config/find-repo-root.ts';
 import { MACHINE_CONFIG_PATH } from '../config/read-machine-config.ts';
-import { readRepoConfig, type RepoConfig } from '../config/read-repo-config.ts';
 import { ARCHIVE_ROOT_VARIABLE, resolveArchiveRoot } from '../config/resolve-archive-root.ts';
+import { AIDEMO_WORKING_PATHS } from '../demos/aidemo-working-paths.ts';
 import { resolveDemoDir } from '../demos/resolve-demo-dir.ts';
 import type { RevoiceRequest } from '../voice/revoice-request.ts';
 import type { VoiceRequest } from '../voice/voice-request.ts';
+import { prepareLaunch, readConfig } from './prepare-launch.ts';
+import { LOGIN, PROFILE } from './profile-commands.ts';
 import { REVOICE } from './revoice-command.ts';
 import { VOICE_GROUP } from './voice-commands.ts';
 
@@ -32,7 +32,7 @@ const { defineCommand, defineGroup } = createCli<CommandContext>();
 
 const RENDER: Command<CommandContext> = defineCommand({
   summary: 'Render a demo with the configured aidemo environment',
-  description: `Run aidemo render on one demo, from the root of the demo repository, with the environment that ${REPO_CONFIG_PATH} declares. When aidemo succeeds, copy the take to <archive root>/<archive.label>/<demo>/<take>/ with a provenance.json that records the commit and dirty state, the aidemo version, the voice, the options, the storyboard's checksum, and each file's checksum, unless the render is a --lang, --langs, or --variants render. ${ARCHIVE_ROOT_VARIABLE}, or archive.root in ~/${MACHINE_CONFIG_PATH}, sets the archive root.`,
+  description: `Run aidemo render on one demo, from the root of the demo repository, with the environment that ${REPO_CONFIG_PATH} declares, after a warning about each of aidemo's working paths in the demo that git does not ignore or that git tracks. When aidemo succeeds, copy the take to <archive root>/<archive.label>/<demo>/<take>/ with a provenance.json that records the commit and dirty state, the aidemo version, the voice, the options, the storyboard's checksum, and each file's checksum, unless the render is a --lang, --langs, or --variants render. ${ARCHIVE_ROOT_VARIABLE}, or archive.root in ~/${MACHINE_CONFIG_PATH}, sets the archive root.`,
   epilog: formatDemoCommandEpilog('render', 'thor-demo render quickstart --tts local'),
   passthrough: true,
   run: (input) => runDemoCommand('render', RENDER, input),
@@ -40,7 +40,7 @@ const RENDER: Command<CommandContext> = defineCommand({
 
 const PROBE: Command<CommandContext> = defineCommand({
   summary: 'Probe a demo with the configured aidemo environment',
-  description: `Run aidemo probe on one demo, from the root of the demo repository, with the environment that ${REPO_CONFIG_PATH} declares.`,
+  description: `Run aidemo probe on one demo, from the root of the demo repository, with the environment that ${REPO_CONFIG_PATH} declares, after a warning about each of aidemo's working paths in the demo that git does not ignore or that git tracks.`,
   epilog: formatDemoCommandEpilog('probe', 'thor-demo probe quickstart --golden'),
   passthrough: true,
   run: (input) => runDemoCommand('probe', PROBE, input),
@@ -51,6 +51,9 @@ const ROOT = defineGroup({
   epilog: `Configuration:
   ${REPO_CONFIG_PATH}, found in the working directory or a parent, marks the root of the
   demo repository and sets demosDir, aidemo.env, and archive.label.
+  aidemo records on the ${CHROME_PROFILE_VARIABLE} that aidemo.env or the
+  environment sets, and otherwise on
+  ~/${DEFAULT_CHROME_PROFILES_DIR}/<archive.label>, which login and profile reach.
   ~/${MACHINE_CONFIG_PATH} sets archive.root, where render and revoice
   archive each take, which ${ARCHIVE_ROOT_VARIABLE} overrides, and the voice
   section, which the voice commands and revoice read.
@@ -62,6 +65,7 @@ Exit codes:
   2  Usage or validation error
   Otherwise, the exit code of aidemo`,
   commands: {
+    login: LOGIN,
     mcp: defineCommand({
       summary: "Run aidemo's MCP server with the configured aidemo environment",
       description: `Run aidemo mcp from the root of the demo repository, with the environment that ${REPO_CONFIG_PATH} declares and stdio inherited. A demo repository's .mcp.json launches it as {"command": "thor-demo", "args": ["mcp"]}.`,
@@ -78,6 +82,7 @@ Exit codes:
       },
     }),
     probe: PROBE,
+    profile: PROFILE,
     render: RENDER,
     revoice: REVOICE,
     voice: VOICE_GROUP,
@@ -124,6 +129,8 @@ export interface Launch {
   readonly bin: string;
   readonly cwd: string;
   readonly env: NodeJS.ProcessEnv;
+  /** The default recording profile, which the entry point creates before it starts aidemo, when `env` names it. */
+  readonly profileDir?: string;
   /** What `render` does with the take once aidemo exits 0. */
   readonly take?: TakeDisposition;
 }
@@ -133,6 +140,8 @@ export interface RunEffects {
   readonly arch: string;
   readonly cwd: string;
   readonly env: NodeJS.ProcessEnv;
+  readonly findTrackedPaths: (dir: string, pathspecs: readonly string[]) => readonly string[] | undefined;
+  readonly findUnignoredPaths: (dir: string, paths: readonly string[]) => readonly string[] | undefined;
   readonly homeDir: string;
   readonly platform: string;
   readonly readSourceState: (dir: string) => SourceState | undefined;
@@ -188,45 +197,6 @@ Example:
   ${example}`;
 }
 
-/**
- * Builds the launch of aidemo with `args` in the demo repository, with the installed aidemo's version, reporting an
- * unusable aidemo install to `stderr` and warning about a `.env` that would restore an OpenAI variable.
- */
-function prepareLaunch(
-  config: RepoConfig,
-  args: readonly string[],
-  effects: RunEffects,
-  stderr: Writer,
-  prefix: string,
-): { aidemoVersion: string; launch: Launch } | undefined {
-  const resolution = resolveAidemo(config.root);
-  if (!resolution.ok) {
-    stderr.write(`${prefix}: ${resolution.message}\n`);
-    return undefined;
-  }
-
-  const overrides = findEnvFileOverrides(config.root, config.aidemoEnv, OPENAI_VARIABLES);
-  if (overrides !== undefined) {
-    stderr.write(
-      `${prefix}: warning: ${overrides.envFilePath} sets ${overrides.names.join(', ')}, which aidemo loads over the environment that thor-demo passes; declare them in aidemo.env or remove them from the file to keep captions offline\n`,
-    );
-  }
-
-  return {
-    aidemoVersion: resolution.aidemo.version,
-    launch: { args, bin: resolution.aidemo.bin, cwd: config.root, env: buildAidemoEnv(effects.env, config.aidemoEnv) },
-  };
-}
-
-/** Reads the repository configuration, reporting a failure to `stderr`. */
-function readConfig(effects: RunEffects, stderr: Writer, prefix: string): RepoConfig | undefined {
-  const result = readRepoConfig(effects);
-  if (result.ok) return result.config;
-
-  stderr.write(`${prefix}: ${result.message}\n`);
-  return undefined;
-}
-
 /** Resolves the installed version, reporting a failure as a usage error, which exits 2. */
 function resolveVersion(effects: RunEffects): string {
   try {
@@ -280,6 +250,8 @@ function runDemoCommand(
   const prepared = prepareLaunch(config, [command, demo.demoDir, ...params], context.effects, stderr, prefix);
   if (prepared === undefined) return EXIT_FAILURE;
 
+  warnAboutUncoveredWorkingPaths(root, demo.demoDir, context.effects, stderr, prefix);
+
   const { aidemoVersion, launch } = prepared;
   if (archiveRoot === undefined) {
     context.launch(launch);
@@ -299,6 +271,35 @@ function runDemoCommand(
   });
   context.launch({ ...launch, take });
   return;
+}
+
+/**
+ * Warns about each of aidemo's working paths in `demoDir` that the repository's ignore rules leave uncovered or that
+ * contains a tracked file.
+ */
+function warnAboutUncoveredWorkingPaths(
+  root: string,
+  demoDir: string,
+  effects: RunEffects,
+  stderr: Writer,
+  prefix: string,
+): void {
+  const demoPath = path.relative(root, demoDir).split(path.sep).join('/');
+  const samples = AIDEMO_WORKING_PATHS.map(({ sample }) => `${demoPath}/${sample}`);
+  const pathspecs = AIDEMO_WORKING_PATHS.map(({ label }) => `${demoPath}/${label}`);
+  const unignored = new Set(effects.findUnignoredPaths(root, samples));
+  const tracked = new Set(effects.findTrackedPaths(root, pathspecs));
+
+  AIDEMO_WORKING_PATHS.forEach((_workingPath, index) => {
+    const pathspec = pathspecs[index] ?? '';
+    if (unignored.has(samples[index] ?? '')) {
+      stderr.write(`${prefix}: warning: ${pathspec} is not ignored by git; aidemo writes it on every run\n`);
+    } else if (tracked.has(pathspec)) {
+      stderr.write(
+        `${prefix}: warning: ${pathspec} contains files tracked by git; aidemo rewrites them on every run\n`,
+      );
+    }
+  });
 }
 
 // endregion | Helpers

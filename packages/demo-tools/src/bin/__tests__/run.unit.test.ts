@@ -1,8 +1,10 @@
 import { chmodSync, rmSync } from 'node:fs';
+import path from 'node:path';
 
 import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
+import { resolveDefaultProfileDir } from '../../aidemo/build-aidemo-env.ts';
 import { DEFAULT_VOICE_MODEL } from '../../config/read-machine-config.ts';
 import { run, type RunEffects } from '../run.ts';
 
@@ -14,6 +16,8 @@ const EFFECTS: RunEffects = {
   arch: 'arm64',
   cwd: '/',
   env: {},
+  findTrackedPaths: () => undefined,
+  findUnignoredPaths: () => undefined,
   homeDir: HOME,
   platform: 'darwin',
   readSourceState: () => undefined,
@@ -32,7 +36,8 @@ describe(run, () => {
       expect(exitCode).toBe(0);
       expect(stderr).toBe('');
       expect(stdout).toContain('Usage: thor-demo [options] <command>');
-      expect(stdout).toMatch(/mcp .*\n.*probe .*\n.*render /);
+      expect(stdout).toMatch(/login .*\n.*mcp .*\n.*probe .*\n.*profile .*\n.*render /);
+      expect(stdout).toContain('.local/share/thor-demo/chrome-profiles/<archive.label>');
       expect(stdout).toContain('Otherwise, the exit code of aidemo');
     });
 
@@ -132,11 +137,13 @@ describe(run, () => {
 
       expect(exitCode).toBe(0);
       expect(stderr).toBe('');
+      const profileDir = resolveDefaultProfileDir(HOME, path.basename(tree.dir));
       expect(launch).toStrictEqual({
         args: [command, tree.resolve('demos/quickstart'), '--tts', 'local'],
         bin: tree.resolve('node_modules/@tandryukha/aidemo/bin/aidemo.mjs'),
         cwd: tree.dir,
-        env: {},
+        env: { AIDEMO_CHROME_PROFILE: profileDir },
+        profileDir,
         ...(command === 'render' && { take: { kind: 'notice', message: noRootNotice } }),
       });
     });
@@ -147,6 +154,64 @@ describe(run, () => {
       const { launch } = await run([command, 'quickstart', '--golden', '--', '--help'], { ...EFFECTS, cwd: tree.dir });
 
       expect(launch?.args).toStrictEqual([command, tree.resolve('demos/quickstart'), '--golden', '--help']);
+    });
+
+    it('warns about each working path that git does not ignore, before the launch', async () => {
+      using tree = createDemoRepo();
+      const checked: string[][] = [];
+
+      const { launch, stderr } = await run([command, 'quickstart'], {
+        ...EFFECTS,
+        cwd: tree.dir,
+        findUnignoredPaths: (dir, paths) => {
+          expect(dir).toBe(tree.dir);
+          checked.push([...paths]);
+          return paths.filter((candidate) => candidate.includes('/output/') || candidate.endsWith('params.json'));
+        },
+      });
+
+      expect(launch).toBeDefined();
+      expect(checked[0]).toContain('demos/quickstart/audio/voice.json');
+      expect(stderr).toContain(
+        `thor-demo ${command}: warning: demos/quickstart/generated/params.json is not ignored by git; aidemo writes it on every run\n` +
+          `thor-demo ${command}: warning: demos/quickstart/output/ is not ignored by git; aidemo writes it on every run\n`,
+      );
+      expect(stderr.match(/warning:/g)).toHaveLength(2);
+    });
+
+    it('warns about a working path that contains a tracked file, unless its rule is already missing', async () => {
+      using tree = createDemoRepo();
+
+      const { stderr } = await run([command, 'quickstart'], {
+        ...EFFECTS,
+        cwd: tree.dir,
+        findTrackedPaths: () => ['demos/quickstart/audio/', 'demos/quickstart/generated/captions.*'],
+        findUnignoredPaths: () => ['demos/quickstart/audio/voice.json'],
+      });
+
+      expect(stderr).toBe(
+        `thor-demo ${command}: warning: demos/quickstart/audio/ is not ignored by git; aidemo writes it on every run\n` +
+          `thor-demo ${command}: warning: demos/quickstart/generated/captions.* contains files tracked by git; aidemo rewrites them on every run\n`,
+      );
+    });
+
+    it('describes the warning in its help', async () => {
+      const { stdout } = await run([command, '--help'], EFFECTS);
+
+      expect(stdout).toContain("warning about each of aidemo's working paths");
+    });
+
+    it('does not warn when git covers every working path', async () => {
+      using tree = createDemoRepo();
+
+      const { stderr } = await run([command, 'quickstart'], {
+        ...EFFECTS,
+        cwd: tree.dir,
+        findTrackedPaths: () => [],
+        findUnignoredPaths: () => [],
+      });
+
+      expect(stderr).not.toContain('warning:');
     });
 
     it('lists the demos for an unknown one, as a usage error', async () => {
@@ -263,10 +328,15 @@ describe(run, () => {
     it('launches aidemo mcp from the repository root and writes nothing to stdout', async () => {
       using tree = createDemoRepo();
 
-      const { exitCode, launch, stdout } = await run(['mcp'], { ...EFFECTS, cwd: tree.dir });
+      const { exitCode, launch, stderr, stdout } = await run(['mcp'], {
+        ...EFFECTS,
+        cwd: tree.dir,
+        findUnignoredPaths: (_dir, paths) => paths,
+      });
 
       expect(exitCode).toBe(0);
       expect(stdout).toBe('');
+      expect(stderr).toBe('');
       expect(launch).toMatchObject({ args: ['mcp'], cwd: tree.dir });
     });
 
@@ -299,6 +369,24 @@ describe(run, () => {
         OPENAI_BASE_URL: 'http://local',
         PATH: '/bin',
       });
+    });
+
+    it('defaults the recording profile to one keyed by the archive label, for the entry point to create', async () => {
+      using tree = createDemoRepo({ config: 'archive:\n  label: product\n' });
+
+      const { launch } = await run(['mcp'], { ...EFFECTS, cwd: tree.dir, env: { AIDEMO_CHROME_PROFILE: '' } });
+
+      const profileDir = `${HOME}/.local/share/thor-demo/chrome-profiles/product`;
+      expect(launch).toMatchObject({ env: { AIDEMO_CHROME_PROFILE: profileDir }, profileDir });
+    });
+
+    it('leaves an inherited profile to aidemo without asking the entry point to create one', async () => {
+      using tree = createDemoRepo();
+
+      const { launch } = await run(['mcp'], { ...EFFECTS, cwd: tree.dir, env: { AIDEMO_CHROME_PROFILE: '/profile' } });
+
+      expect(launch?.env).toStrictEqual({ AIDEMO_CHROME_PROFILE: '/profile' });
+      expect(launch?.profileDir).toBeUndefined();
     });
 
     it('reports an invalid configuration with exit 1', async () => {

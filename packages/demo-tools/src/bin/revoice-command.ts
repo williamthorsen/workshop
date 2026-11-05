@@ -2,7 +2,7 @@ import path from 'node:path';
 
 import { type Command, createCli, UsageError, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
 
-import { buildAidemoEnv } from '../aidemo/build-aidemo-env.ts';
+import { buildAidemoEnv, resolveDefaultProfileDir } from '../aidemo/build-aidemo-env.ts';
 import { findEnvFileOverrides } from '../aidemo/find-env-file-overrides.ts';
 import { MIN_AIDEMO_VERSION, resolveAidemo } from '../aidemo/resolve-aidemo.ts';
 import { planTake, type TakeDisposition } from '../archive/plan-take.ts';
@@ -118,7 +118,7 @@ function runRevoice(context: CommandContext, demoArgument: string, stderr: Write
 
   const { model } = voice.voice;
   const env: NodeJS.ProcessEnv = {
-    ...buildAidemoEnv(effects.env, aidemoEnv),
+    ...buildAidemoEnv(effects.env, aidemoEnv, resolveDefaultProfileDir(effects.homeDir, archiveLabel)),
     AIDEMO_TTS_MODEL: model,
     AIDEMO_TTS_PROVIDER: 'openai',
   };
