@@ -14,6 +14,7 @@ import { describeError } from '@williamthorsen/toolbelt.errors';
 import {
   buildAidemoEnv,
   CHROME_PROFILE_VARIABLE,
+  DEFAULT_CHROME_PROFILES_DIR,
   OPENAI_VARIABLES,
   resolveDefaultProfileDir,
 } from '../aidemo/build-aidemo-env.ts';
@@ -51,11 +52,30 @@ const PROBE: Command<CommandContext> = defineCommand({
   run: (input) => runDemoCommand('probe', PROBE, input),
 });
 
+const LOGIN: Command<CommandContext> = defineCommand({
+  summary: 'Sign in on the recording profile through aidemo login',
+  description: `Run aidemo login from the root of the demo repository, with the environment that ${REPO_CONFIG_PATH} declares, so that the manual login lands on the recording profile that render and probe use.`,
+  epilog: formatPassthroughCommandEpilog('login', 'thor-demo login --url https://app.example.com/'),
+  passthrough: true,
+  run: (input) => runPassthroughCommand('login', LOGIN, input),
+});
+
+const PROFILE: Command<CommandContext> = defineCommand({
+  summary: 'Show or reset the recording profile through aidemo profile',
+  description: `Run aidemo profile from the root of the demo repository, with the environment that ${REPO_CONFIG_PATH} declares: path prints the recording profile that render and probe use, and reset wipes it.`,
+  epilog: formatPassthroughCommandEpilog('profile', 'thor-demo profile reset'),
+  passthrough: true,
+  run: (input) => runPassthroughCommand('profile', PROFILE, input),
+});
+
 const ROOT = defineGroup({
   summary: 'Run aidemo demos with the environment that the demo repository configures.',
   epilog: `Configuration:
   ${REPO_CONFIG_PATH}, found in the working directory or a parent, marks the root of the
   demo repository and sets demosDir, aidemo.env, and archive.label.
+  aidemo records on the ${CHROME_PROFILE_VARIABLE} that aidemo.env or the
+  environment sets, and otherwise on
+  ~/${DEFAULT_CHROME_PROFILES_DIR}/<archive.label>, which login and profile reach.
   ~/${MACHINE_CONFIG_PATH} sets archive.root, where render and revoice
   archive each take, which ${ARCHIVE_ROOT_VARIABLE} overrides, and the voice
   section, which the voice commands and revoice read.
@@ -67,6 +87,7 @@ Exit codes:
   2  Usage or validation error
   Otherwise, the exit code of aidemo`,
   commands: {
+    login: LOGIN,
     mcp: defineCommand({
       summary: "Run aidemo's MCP server with the configured aidemo environment",
       description: `Run aidemo mcp from the root of the demo repository, with the environment that ${REPO_CONFIG_PATH} declares and stdio inherited. A demo repository's .mcp.json launches it as {"command": "thor-demo", "args": ["mcp"]}.`,
@@ -83,6 +104,7 @@ Exit codes:
       },
     }),
     probe: PROBE,
+    profile: PROFILE,
     render: RENDER,
     revoice: REVOICE,
     voice: VOICE_GROUP,
@@ -195,6 +217,18 @@ Example:
   ${example}`;
 }
 
+/** Describes the arguments of `login` and `profile`, which the help page of a passthrough command omits. */
+function formatPassthroughCommandEpilog(command: string, example: string): string {
+  return `Arguments:
+  <args>    Arguments for aidemo ${command}
+
+The arguments reach aidemo unchanged, except -h and --help, which print this
+help unless they follow a literal --.
+
+Example:
+  ${example}`;
+}
+
 /**
  * Builds the launch of aidemo with `args` in the demo repository, with the installed aidemo's version, reporting an
  * unusable aidemo install to `stderr` and warning about a `.env` that would restore an OpenAI variable.
@@ -236,6 +270,31 @@ function readConfig(effects: RunEffects, stderr: Writer, prefix: string): RepoCo
 
   stderr.write(`${prefix}: ${result.message}\n`);
   return undefined;
+}
+
+/** Runs `login` or `profile`: Requests the launch of the aidemo command with the arguments that follow it. */
+function runPassthroughCommand(
+  command: 'login' | 'profile',
+  node: Command<CommandContext>,
+  { args, context, stderr, stdout }: PassthroughInput<CommandContext>,
+): number | undefined {
+  const separatorIndex = args.indexOf('--');
+  const ownArgs = separatorIndex === -1 ? args : args.slice(0, separatorIndex);
+  if (ownArgs.some((arg) => arg === '--help' || arg === '-h')) {
+    stdout.write(`${renderHelp(node, `thor-demo ${command}`)}\n`);
+    return;
+  }
+
+  const prefix = `thor-demo ${command}`;
+  const config = readConfig(context.effects, stderr, prefix);
+  if (config === undefined) return EXIT_FAILURE;
+
+  const forwardedArgs = separatorIndex === -1 ? [] : args.slice(separatorIndex + 1);
+  const prepared = prepareLaunch(config, [command, ...ownArgs, ...forwardedArgs], context.effects, stderr, prefix);
+  if (prepared === undefined) return EXIT_FAILURE;
+
+  context.launch(prepared.launch);
+  return;
 }
 
 /** Resolves the installed version, reporting a failure as a usage error, which exits 2. */

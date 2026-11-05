@@ -49,6 +49,21 @@ describe('thor-demo with an installed aidemo', () => {
     expect(statSync(resolveProfileDir(repo, repo.tree.dir)).isDirectory()).toBe(true);
   });
 
+  it('runs aidemo login on the profile that render records on', () => {
+    using repo = createDemoRepo();
+
+    const { status } = runThorDemo(['login', '--no-wait'], repo.tree.dir);
+
+    expect(status).toBe(0);
+    expect(repo.readCalls()).toStrictEqual([
+      {
+        args: ['login', '--no-wait'],
+        cwd: repo.tree.dir,
+        env: { AIDEMO_CHROME_PROFILE: resolveProfileDir(repo, repo.tree.dir) },
+      },
+    ]);
+  });
+
   it("exits with aidemo's exit code", () => {
     using repo = createDemoRepo({ exitCode: 3 });
 

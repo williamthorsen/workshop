@@ -34,7 +34,8 @@ describe(run, () => {
       expect(exitCode).toBe(0);
       expect(stderr).toBe('');
       expect(stdout).toContain('Usage: thor-demo [options] <command>');
-      expect(stdout).toMatch(/mcp .*\n.*probe .*\n.*render /);
+      expect(stdout).toMatch(/login .*\n.*mcp .*\n.*probe .*\n.*profile .*\n.*render /);
+      expect(stdout).toContain('.local/share/thor-demo/chrome-profiles/<archive.label>');
       expect(stdout).toContain('Otherwise, the exit code of aidemo');
     });
 
@@ -260,6 +261,52 @@ describe(run, () => {
 
       expect(exitCode).toBe(0);
       expect(launch).not.toHaveProperty('take');
+    });
+  });
+
+  describe.each([
+    { args: ['login', '--url', 'https://app.example.com/'], command: 'login' },
+    { args: ['profile', 'reset'], command: 'profile' },
+  ])('$command', ({ args, command }) => {
+    it('launches the aidemo command from the repository root on the default profile', async () => {
+      using tree = createDemoRepo();
+
+      const { exitCode, launch, stderr } = await run(args, { ...EFFECTS, cwd: tree.resolve('demos') });
+
+      const profileDir = resolveDefaultProfileDir(HOME, path.basename(tree.dir));
+      expect(exitCode).toBe(0);
+      expect(stderr).toBe('');
+      expect(launch).toStrictEqual({
+        args,
+        bin: tree.resolve('node_modules/@tandryukha/aidemo/bin/aidemo.mjs'),
+        cwd: tree.dir,
+        env: { AIDEMO_CHROME_PROFILE: profileDir },
+        profileDir,
+      });
+    });
+
+    it('forwards the arguments after a literal --, help flags included', async () => {
+      using tree = createDemoRepo();
+
+      const { launch } = await run([command, '--', '--help'], { ...EFFECTS, cwd: tree.dir });
+
+      expect(launch?.args).toStrictEqual([command, '--help']);
+    });
+
+    it('prints its own help on --help', async () => {
+      const { exitCode, launch, stdout } = await run([command, '--help'], EFFECTS);
+
+      expect(exitCode).toBe(0);
+      expect(launch).toBeUndefined();
+      expect(stdout).toContain(`Arguments for aidemo ${command}`);
+    });
+
+    it('reports a missing configuration with exit 1', async () => {
+      const { exitCode, launch, stderr } = await run(args, EFFECTS);
+
+      expect(exitCode).toBe(1);
+      expect(launch).toBeUndefined();
+      expect(stderr).toMatch(new RegExp(`^thor-demo ${command}: .config/thor-demo.yaml not found`));
     });
   });
 
