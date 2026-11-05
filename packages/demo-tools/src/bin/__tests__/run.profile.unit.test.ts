@@ -12,6 +12,7 @@ const EFFECTS: RunEffects = {
   arch: 'arm64',
   cwd: '/',
   env: {},
+  findTrackedPaths: () => undefined,
   findUnignoredPaths: () => undefined,
   homeDir: HOME,
   platform: 'darwin',

@@ -32,7 +32,7 @@ const { defineCommand, defineGroup } = createCli<CommandContext>();
 
 const RENDER: Command<CommandContext> = defineCommand({
   summary: 'Render a demo with the configured aidemo environment',
-  description: `Run aidemo render on one demo, from the root of the demo repository, with the environment that ${REPO_CONFIG_PATH} declares. When aidemo succeeds, copy the take to <archive root>/<archive.label>/<demo>/<take>/ with a provenance.json that records the commit and dirty state, the aidemo version, the voice, the options, the storyboard's checksum, and each file's checksum, unless the render is a --lang, --langs, or --variants render. ${ARCHIVE_ROOT_VARIABLE}, or archive.root in ~/${MACHINE_CONFIG_PATH}, sets the archive root.`,
+  description: `Run aidemo render on one demo, from the root of the demo repository, with the environment that ${REPO_CONFIG_PATH} declares, after a warning about each of aidemo's working paths in the demo that git does not ignore or that git tracks. When aidemo succeeds, copy the take to <archive root>/<archive.label>/<demo>/<take>/ with a provenance.json that records the commit and dirty state, the aidemo version, the voice, the options, the storyboard's checksum, and each file's checksum, unless the render is a --lang, --langs, or --variants render. ${ARCHIVE_ROOT_VARIABLE}, or archive.root in ~/${MACHINE_CONFIG_PATH}, sets the archive root.`,
   epilog: formatDemoCommandEpilog('render', 'thor-demo render quickstart --tts local'),
   passthrough: true,
   run: (input) => runDemoCommand('render', RENDER, input),
@@ -40,7 +40,7 @@ const RENDER: Command<CommandContext> = defineCommand({
 
 const PROBE: Command<CommandContext> = defineCommand({
   summary: 'Probe a demo with the configured aidemo environment',
-  description: `Run aidemo probe on one demo, from the root of the demo repository, with the environment that ${REPO_CONFIG_PATH} declares.`,
+  description: `Run aidemo probe on one demo, from the root of the demo repository, with the environment that ${REPO_CONFIG_PATH} declares, after a warning about each of aidemo's working paths in the demo that git does not ignore or that git tracks.`,
   epilog: formatDemoCommandEpilog('probe', 'thor-demo probe quickstart --golden'),
   passthrough: true,
   run: (input) => runDemoCommand('probe', PROBE, input),
@@ -140,6 +140,7 @@ export interface RunEffects {
   readonly arch: string;
   readonly cwd: string;
   readonly env: NodeJS.ProcessEnv;
+  readonly findTrackedPaths: (dir: string, pathspecs: readonly string[]) => readonly string[] | undefined;
   readonly findUnignoredPaths: (dir: string, paths: readonly string[]) => readonly string[] | undefined;
   readonly homeDir: string;
   readonly platform: string;
@@ -249,7 +250,7 @@ function runDemoCommand(
   const prepared = prepareLaunch(config, [command, demo.demoDir, ...params], context.effects, stderr, prefix);
   if (prepared === undefined) return EXIT_FAILURE;
 
-  warnAboutUnignoredPaths(root, demo.demoDir, context.effects, stderr, prefix);
+  warnAboutUncoveredWorkingPaths(root, demo.demoDir, context.effects, stderr, prefix);
 
   const { aidemoVersion, launch } = prepared;
   if (archiveRoot === undefined) {
@@ -272,8 +273,11 @@ function runDemoCommand(
   return;
 }
 
-/** Warns about each of aidemo's working paths in `demoDir` that the repository's ignore rules leave uncovered. */
-function warnAboutUnignoredPaths(
+/**
+ * Warns about each of aidemo's working paths in `demoDir` that the repository's ignore rules leave uncovered or that
+ * contains a tracked file.
+ */
+function warnAboutUncoveredWorkingPaths(
   root: string,
   demoDir: string,
   effects: RunEffects,
@@ -282,11 +286,18 @@ function warnAboutUnignoredPaths(
 ): void {
   const demoPath = path.relative(root, demoDir).split(path.sep).join('/');
   const samples = AIDEMO_WORKING_PATHS.map(({ sample }) => `${demoPath}/${sample}`);
+  const pathspecs = AIDEMO_WORKING_PATHS.map(({ label }) => `${demoPath}/${label}`);
   const unignored = new Set(effects.findUnignoredPaths(root, samples));
+  const tracked = new Set(effects.findTrackedPaths(root, pathspecs));
 
-  AIDEMO_WORKING_PATHS.forEach(({ label }, index) => {
+  AIDEMO_WORKING_PATHS.forEach((_workingPath, index) => {
+    const pathspec = pathspecs[index] ?? '';
     if (unignored.has(samples[index] ?? '')) {
-      stderr.write(`${prefix}: warning: ${demoPath}/${label} is not ignored by git; aidemo writes it on every run\n`);
+      stderr.write(`${prefix}: warning: ${pathspec} is not ignored by git; aidemo writes it on every run\n`);
+    } else if (tracked.has(pathspec)) {
+      stderr.write(
+        `${prefix}: warning: ${pathspec} contains files tracked by git; aidemo rewrites them on every run\n`,
+      );
     }
   });
 }

@@ -176,6 +176,7 @@ function buildEffects(home: TempTree, repo: DemoRepo): RunEffects {
     arch: 'arm64',
     cwd: repo.tree.dir,
     env: { THOR_DEMO_ARCHIVE_ROOT: home.resolve('archive') },
+    findTrackedPaths: () => undefined,
     findUnignoredPaths: () => undefined,
     homeDir: home.resolve('home'),
     platform: 'darwin',

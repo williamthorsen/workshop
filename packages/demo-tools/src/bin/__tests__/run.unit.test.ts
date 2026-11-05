@@ -16,6 +16,7 @@ const EFFECTS: RunEffects = {
   arch: 'arm64',
   cwd: '/',
   env: {},
+  findTrackedPaths: () => undefined,
   findUnignoredPaths: () => undefined,
   homeDir: HOME,
   platform: 'darwin',
@@ -178,12 +179,35 @@ describe(run, () => {
       expect(stderr.match(/warning:/g)).toHaveLength(2);
     });
 
+    it('warns about a working path that contains a tracked file, unless its rule is already missing', async () => {
+      using tree = createDemoRepo();
+
+      const { stderr } = await run([command, 'quickstart'], {
+        ...EFFECTS,
+        cwd: tree.dir,
+        findTrackedPaths: () => ['demos/quickstart/audio/', 'demos/quickstart/generated/captions.*'],
+        findUnignoredPaths: () => ['demos/quickstart/audio/voice.json'],
+      });
+
+      expect(stderr).toBe(
+        `thor-demo ${command}: warning: demos/quickstart/audio/ is not ignored by git; aidemo writes it on every run\n` +
+          `thor-demo ${command}: warning: demos/quickstart/generated/captions.* contains files tracked by git; aidemo rewrites them on every run\n`,
+      );
+    });
+
+    it('describes the warning in its help', async () => {
+      const { stdout } = await run([command, '--help'], EFFECTS);
+
+      expect(stdout).toContain("warning about each of aidemo's working paths");
+    });
+
     it('does not warn when git covers every working path', async () => {
       using tree = createDemoRepo();
 
       const { stderr } = await run([command, 'quickstart'], {
         ...EFFECTS,
         cwd: tree.dir,
+        findTrackedPaths: () => [],
         findUnignoredPaths: () => [],
       });
 
