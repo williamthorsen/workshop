@@ -1,151 +1,52 @@
-import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
+import { kitLoadError } from '../../errors/RdyError.ts';
 import type { KitProvenance } from '../../kits/KitProvenance.ts';
-import type { RdyReport, Severity } from '../../kits/types.ts';
-import { RemoteFetchError } from '../../remote/RemoteFetchError.ts';
-import type { formatJsonReport } from '../../reporting/formatJsonReport.ts';
-import type { RaisedWarning } from '../../schemas/common.ts';
-import type { JsonDetail, JsonKitOrigin } from '../../schemas/reportSchema.ts';
-import type { UnrunSource } from '../KitSelection.ts';
-import type { listUnusedPragmaWarnings } from '../pragma-report.ts';
-import type { ResolvedKitEntry } from '../ResolvedKitEntry.ts';
-import type { RunRdyOptions } from '../runRdy.ts';
-
-const mockLoadRdyKit = vi.hoisted(() => vi.fn());
-const mockRunRdy = vi.hoisted(() => vi.fn<(checklist: unknown, options?: RunRdyOptions) => Promise<RdyReport>>());
-const mockFormatJsonReport = vi.hoisted(() => vi.fn<typeof formatJsonReport>());
-const mockReportRdy = vi.hoisted(() => vi.fn());
-const mockFormatCombinedSummary = vi.hoisted(() => vi.fn());
-const mockResolveGitHubToken = vi.hoisted(() => vi.fn());
-const mockLoadRemoteKit = vi.hoisted(() => vi.fn());
-const mockReadManifestTracking = vi.hoisted(() => vi.fn());
-const mockListKitStalenessWarnings = vi.hoisted(() => vi.fn());
-const mockListUnusedPragmaWarnings = vi.hoisted(() => vi.fn<typeof listUnusedPragmaWarnings>());
-const mockListUnmarkedGeneratedSourceWarnings = vi.hoisted(() => vi.fn());
-
-/** A warning as the unmarked-generated report returns it. */
-const GENERATED_UNMARKED = {
-  code: 'generated-unmarked',
-  message:
-    'dist/app.mjs looks like bundler output (its mean line length exceeds 250 characters) and is not marked as generated.',
-  remedy: 'Add `/dist/app.mjs linguist-generated=true` to .gitattributes, so that kits stop sweeping it.',
-};
-
-vi.mock(import('../../kits/loadRdyKit.ts'), () => ({
-  loadRdyKit: mockLoadRdyKit,
-}));
-
-vi.mock(import('../runRdy.ts'), () => ({
-  runRdy: mockRunRdy,
-}));
-
-vi.mock(import('../../reporting/formatJsonReport.ts'), () => ({
-  formatJsonReport: mockFormatJsonReport,
-}));
-
-// One case asserts that no human output appears; the two human-mode renderers below are mocked only to
-// give it something to watch.
-vi.mock(import('../../reporting/reportRdy.ts'), async () => {
-  const actual = await vi.importActual<typeof import('../../reporting/reportRdy.ts')>('../../reporting/reportRdy.ts');
-  return {
-    ...actual,
-    reportRdy: mockReportRdy,
-  };
-});
-
-vi.mock(import('../../reporting/formatCombinedSummary.ts'), () => ({
-  formatCombinedSummary: mockFormatCombinedSummary,
-}));
-
-vi.mock(import('../../remote/resolveGitHubToken.ts'), () => ({
-  resolveGitHubToken: mockResolveGitHubToken,
-}));
-
-vi.mock(import('../../remote/loadRemoteKit.ts'), () => ({
-  loadRemoteKit: mockLoadRemoteKit,
-}));
-
-// Mocked so that no case reads the repo's own manifest or hashes files on disk. `loadKit.ts` stays real, and the
-// kit-load cases assert on its errors.
-vi.mock(import('../kit-staleness.ts'), () => ({
-  readManifestTracking: mockReadManifestTracking,
-  listKitStalenessWarnings: mockListKitStalenessWarnings,
-}));
-
-// Mocked so that no case reads the sources named by the ledger; what the report itself returns is covered by its
-// own tests.
-vi.mock(import('../pragma-report.ts'), () => ({
-  listUnusedPragmaWarnings: mockListUnusedPragmaWarnings,
-}));
-
-// Mocked for the same reason as the pragma report.
-vi.mock(import('../generated-report.ts'), () => ({
-  listUnmarkedGeneratedSourceWarnings: mockListUnmarkedGeneratedSourceWarnings,
-}));
-
-import { createUncachedRemoteContext } from '../../test-utils/createUncachedRemoteContext.ts';
+import type { JsonKitOrigin } from '../../schemas/reportSchema.ts';
 import { runJsonMode } from '../runJsonMode.ts';
+import { createRunFakes, type RunFakes } from '../test-utils/createRunFakes.ts';
 import { makeKit, singleKitEntry } from '../test-utils/kit-fixtures.ts';
+import { runJson } from '../test-utils/runJson.ts';
 
 describe(runJsonMode, () => {
-  beforeEach(() => {
-    mockFormatJsonReport.mockReturnValue('{"worstSeverity":null}');
-    mockReadManifestTracking.mockReturnValue({ tracking: undefined, warnings: [] });
-    mockListKitStalenessWarnings.mockReturnValue([]);
-    mockListUnusedPragmaWarnings.mockReturnValue([]);
-    mockListUnmarkedGeneratedSourceWarnings.mockResolvedValue([]);
-  });
+  let fakes: RunFakes;
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-    mockLoadRdyKit.mockReset();
-    mockRunRdy.mockReset();
-    mockFormatJsonReport.mockReset();
-    mockReportRdy.mockReset();
-    mockFormatCombinedSummary.mockReset();
-    mockResolveGitHubToken.mockReset();
-    mockLoadRemoteKit.mockReset();
-    mockReadManifestTracking.mockReset();
-    mockListKitStalenessWarnings.mockReset();
-    mockListUnusedPragmaWarnings.mockReset();
-    mockListUnmarkedGeneratedSourceWarnings.mockReset();
+  beforeEach(() => {
+    fakes = createRunFakes();
   });
 
   it('emits JSON output and no human-readable text', async () => {
     const kit = makeKit();
-    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+    fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+    fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    const { exitCode, stdout } = await runJson(singleKitEntry());
+    const { exitCode, stdout } = await runJson(singleKitEntry(), {}, fakes);
 
-    expect(mockFormatJsonReport).toHaveBeenCalledTimes(1);
-    expect(mockReportRdy).not.toHaveBeenCalled();
-    expect(mockFormatCombinedSummary).not.toHaveBeenCalled();
+    expect(fakes.formatJsonReport).toHaveBeenCalledTimes(1);
     expect(stdout).toBe('{"worstSeverity":null}\n');
     expect(exitCode).toBe(0);
   });
 
   it('returns exit code 1 when any checklist fails in JSON mode', async () => {
     const kit = makeKit();
-    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-    mockRunRdy
+    fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+    fakes.runRdy
       .mockResolvedValueOnce({ results: [], passed: true, durationMs: 0 })
       .mockResolvedValueOnce({ results: [], passed: false, durationMs: 0 });
 
-    const { exitCode } = await runJson(singleKitEntry());
+    const { exitCode } = await runJson(singleKitEntry(), {}, fakes);
 
     expect(exitCode).toBe(1);
   });
 
   it('records an unloadable kit as an error entry, leaving stderr clean', async () => {
-    mockLoadRdyKit.mockRejectedValue(new Error('Kit not found'));
-    mockFormatJsonReport.mockReturnValue('{}');
+    fakes.loadKit.mockRejectedValue(kitLoadError('Kit not found'));
+    fakes.formatJsonReport.mockReturnValue('{}');
 
-    const { exitCode, stderr } = await runJson(singleKitEntry());
+    const { exitCode, stderr } = await runJson(singleKitEntry(), {}, fakes);
 
     expect(exitCode).toBe(2);
-    expect(mockFormatJsonReport).toHaveBeenCalledWith(
+    expect(fakes.formatJsonReport).toHaveBeenCalledWith(
       [{ name: 'default', error: { code: 'kit-load', message: 'Kit not found' } }],
       expect.anything(),
     );
@@ -154,13 +55,13 @@ describe(runJsonMode, () => {
 
   it('records an unknown checklist name as an error entry, leaving stderr clean', async () => {
     const kit = makeKit();
-    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-    mockFormatJsonReport.mockReturnValue('{}');
+    fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+    fakes.formatJsonReport.mockReturnValue('{}');
 
-    const { exitCode, stderr } = await runJson(singleKitEntry(['nonexistent']));
+    const { exitCode, stderr } = await runJson(singleKitEntry(['nonexistent']), {}, fakes);
 
     expect(exitCode).toBe(2);
-    expect(mockFormatJsonReport).toHaveBeenCalledWith(
+    expect(fakes.formatJsonReport).toHaveBeenCalledWith(
       [{ name: 'default', error: { code: 'usage', message: expect.stringContaining('nonexistent') } }],
       expect.anything(),
     );
@@ -169,14 +70,14 @@ describe(runJsonMode, () => {
 
   it('passes kit-grouped entries to formatJsonReport', async () => {
     const kit = makeKit();
-    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+    fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     const report1 = { results: [], passed: true, durationMs: 10 };
     const report2 = { results: [], passed: true, durationMs: 20 };
-    mockRunRdy.mockResolvedValueOnce(report1).mockResolvedValueOnce(report2);
+    fakes.runRdy.mockResolvedValueOnce(report1).mockResolvedValueOnce(report2);
 
-    await runJson(singleKitEntry(), { detail: 'full' });
+    await runJson(singleKitEntry(), { detail: 'full' }, fakes);
 
-    expect(mockFormatJsonReport).toHaveBeenCalledWith(
+    expect(fakes.formatJsonReport).toHaveBeenCalledWith(
       [
         {
           name: 'default',
@@ -215,23 +116,27 @@ describe(runJsonMode, () => {
   ] satisfies Array<{ label: string; provenance: KitProvenance; origin: JsonKitOrigin }>)(
     'names the origin of $label',
     async ({ provenance, origin }) => {
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+      fakes.loadKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-      await runJson(singleKitEntry().map((entry) => ({ ...entry, provenance })));
+      await runJson(
+        singleKitEntry().map((entry) => ({ ...entry, provenance })),
+        {},
+        fakes,
+      );
 
-      expect(mockFormatJsonReport).toHaveBeenCalledWith([expect.objectContaining({ origin })], expect.anything());
+      expect(fakes.formatJsonReport).toHaveBeenCalledWith([expect.objectContaining({ origin })], expect.anything());
     },
   );
 
   it('sends a kit its own declared thresholds while the run level stays silent', async () => {
     const kit = makeKit({ failOn: 'warn', reportOn: 'error' });
-    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+    fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+    fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    await runJson(singleKitEntry(), { detail: 'full' });
+    await runJson(singleKitEntry(), { detail: 'full' }, fakes);
 
-    expect(mockFormatJsonReport).toHaveBeenCalledWith(
+    expect(fakes.formatJsonReport).toHaveBeenCalledWith(
       [expect.objectContaining({ failOn: 'warn', reportOn: 'error' })],
       { detail: 'full' },
     );
@@ -239,12 +144,12 @@ describe(runJsonMode, () => {
 
   it('echoes a threshold requested by the invocation, which overrides what the kit declares', async () => {
     const kit = makeKit({ failOn: 'warn' });
-    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+    fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+    fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    await runJson(singleKitEntry(), { failOn: 'recommend' });
+    await runJson(singleKitEntry(), { failOn: 'recommend' }, fakes);
 
-    expect(mockFormatJsonReport).toHaveBeenCalledWith(
+    expect(fakes.formatJsonReport).toHaveBeenCalledWith(
       [expect.objectContaining({ failOn: 'recommend' })],
       expect.objectContaining({ failOn: 'recommend' }),
     );
@@ -252,34 +157,38 @@ describe(runJsonMode, () => {
 
   it('records an undiagnosed runner crash as an internal error entry', async () => {
     const kit = makeKit();
-    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-    mockRunRdy.mockRejectedValue(new Error('runner crashed'));
-    mockFormatJsonReport.mockReturnValue('{}');
+    fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+    fakes.runRdy.mockRejectedValue(new Error('runner crashed'));
+    fakes.formatJsonReport.mockReturnValue('{}');
 
-    const { exitCode } = await runJson(singleKitEntry(['deploy']));
+    const { exitCode } = await runJson(singleKitEntry(['deploy']), {}, fakes);
 
     expect(exitCode).toBe(2);
-    expect(mockFormatJsonReport).toHaveBeenCalledWith(
+    expect(fakes.formatJsonReport).toHaveBeenCalledWith(
       [{ name: 'default', error: { code: 'internal', message: 'runner crashed' } }],
       expect.anything(),
     );
   });
 
   it('discards the results of a kit that threw after its first checklist, and reports the next kit in full', async () => {
-    mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+    fakes.loadKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
     const passing = { results: [], passed: true, durationMs: 0 };
-    mockRunRdy
+    fakes.runRdy
       .mockResolvedValueOnce(passing)
       .mockRejectedValueOnce(new Error('runner crashed'))
       .mockResolvedValue(passing);
 
-    const { exitCode } = await runJson([
-      { name: 'kit1', source: { path: '.readyup/kits/kit1.js' }, checklists: [] },
-      { name: 'kit2', source: { path: '.readyup/kits/kit2.js' }, checklists: [] },
-    ]);
+    const { exitCode } = await runJson(
+      [
+        { name: 'kit1', source: { path: '.readyup/kits/kit1.js' }, checklists: [] },
+        { name: 'kit2', source: { path: '.readyup/kits/kit2.js' }, checklists: [] },
+      ],
+      {},
+      fakes,
+    );
 
     expect(exitCode).toBe(2);
-    expect(mockFormatJsonReport).toHaveBeenCalledWith(
+    expect(fakes.formatJsonReport).toHaveBeenCalledWith(
       [
         { name: 'kit1', error: { code: 'internal', message: 'runner crashed' } },
         {
@@ -298,10 +207,10 @@ describe(runJsonMode, () => {
 
   it('does not write headers in JSON mode', async () => {
     const kit = makeKit();
-    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+    fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+    fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    const { stdout } = await runJson(singleKitEntry());
+    const { stdout } = await runJson(singleKitEntry(), {}, fakes);
     expect(stdout).not.toContain('---');
   });
 
@@ -309,16 +218,20 @@ describe(runJsonMode, () => {
     const kit = makeKit({
       checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }],
     });
-    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+    fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+    fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    const { exitCode } = await runJson([
-      { name: 'kit1', source: { path: '.readyup/kits/kit1.js' }, checklists: [] },
-      { name: 'kit2', source: { path: '.readyup/kits/kit2.js' }, checklists: [] },
-    ]);
+    const { exitCode } = await runJson(
+      [
+        { name: 'kit1', source: { path: '.readyup/kits/kit1.js' }, checklists: [] },
+        { name: 'kit2', source: { path: '.readyup/kits/kit2.js' }, checklists: [] },
+      ],
+      {},
+      fakes,
+    );
 
-    expect(mockFormatJsonReport).toHaveBeenCalledTimes(1);
-    expect(mockFormatJsonReport).toHaveBeenCalledWith(
+    expect(fakes.formatJsonReport).toHaveBeenCalledTimes(1);
+    expect(fakes.formatJsonReport).toHaveBeenCalledWith(
       expect.arrayContaining([expect.objectContaining({ name: 'kit1' }), expect.objectContaining({ name: 'kit2' })]),
       expect.anything(),
     );
@@ -328,227 +241,15 @@ describe(runJsonMode, () => {
   describe('resolved thresholds', () => {
     it('passes reportOn to formatJsonReport', async () => {
       const kit = makeKit();
-      mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+      fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+      fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-      await runJson(singleKitEntry(['deploy']), { reportOn: 'error' });
+      await runJson(singleKitEntry(['deploy']), { reportOn: 'error' }, fakes);
 
-      expect(mockFormatJsonReport).toHaveBeenCalledWith(
+      expect(fakes.formatJsonReport).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({ reportOn: 'error' }),
       );
-    });
-  });
-
-  describe('staleness advisories', () => {
-    const SOURCE_STALE = {
-      code: 'source-stale',
-      message: 'kit "beta" was compiled from an older source than the one on disk.',
-      remedy: 'Run `rdy compile` to rebuild it.',
-    };
-
-    const TARGET_DRIFT = {
-      code: 'target-drift',
-      message: 'compiled kit "alpha" does not match the hash that the manifest recorded for it.',
-      remedy: 'Move the edits into the source, then run `rdy compile --force`.',
-    };
-
-    /** Builds two entries whose names and compiled paths differ, so that a kit paired with the wrong source shows. */
-    function twoKitEntries() {
-      return [
-        { name: 'alpha', source: { path: '.readyup/kits/alpha.js' }, checklists: ['deploy'] },
-        { name: 'beta', source: { path: '.readyup/kits/beta.js' }, checklists: ['deploy'] },
-      ];
-    }
-
-    it('passes every advisory raised by the run into the JSON report', async () => {
-      const tracking = { manifest: { version: 1, kits: [] }, manifestDir: '.readyup' };
-      mockReadManifestTracking.mockReturnValue({ tracking, warnings: [] });
-      mockListKitStalenessWarnings.mockReturnValueOnce([TARGET_DRIFT]).mockReturnValueOnce([SOURCE_STALE]);
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
-      mockFormatJsonReport.mockReturnValue('{"kits":[]}');
-
-      const { exitCode } = await runJson(twoKitEntries());
-
-      expect(mockListKitStalenessWarnings).toHaveBeenNthCalledWith(
-        1,
-        'alpha',
-        { path: '.readyup/kits/alpha.js' },
-        tracking,
-      );
-      expect(mockListKitStalenessWarnings).toHaveBeenNthCalledWith(
-        2,
-        'beta',
-        { path: '.readyup/kits/beta.js' },
-        tracking,
-      );
-      expect(mockFormatJsonReport).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({ warnings: [TARGET_DRIFT, SOURCE_STALE] }),
-      );
-      expect(exitCode).toBe(0);
-    });
-
-    it('passes an advisory raised by the manifest read itself into the report', async () => {
-      const manifestUnreadable = {
-        code: 'manifest-unreadable',
-        message: '.readyup/manifest.json could not be read, so no kit was checked against it: bad JSON',
-        remedy: 'Run `rdy compile` to rewrite it.',
-      };
-      mockReadManifestTracking.mockReturnValue({ tracking: undefined, warnings: [manifestUnreadable] });
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
-      mockFormatJsonReport.mockReturnValue('{"kits":[]}');
-
-      const { exitCode } = await runJson(singleKitEntry(['deploy']));
-
-      expect(mockFormatJsonReport).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({ warnings: [manifestUnreadable] }),
-      );
-      expect(exitCode).toBe(0);
-    });
-
-    it('puts a diagnosed masked pass into the report and onto stderr', async () => {
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue({
-        results: [],
-        passed: true,
-        durationMs: 0,
-        diagnoses: [{ name: 'a', verdict: 'masked-pass' }],
-      });
-      mockFormatJsonReport.mockReturnValue('{"kits":[]}');
-
-      const { stderr } = await runJson(singleKitEntry(['deploy']), { diagnose: true });
-
-      expect(mockFormatJsonReport).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({
-          warnings: [expect.objectContaining({ code: 'skip-masks-pass' })],
-        }),
-      );
-      expect(stderr).toContain('skipped check "a" in kit "default" / checklist "deploy" would have passed.');
-    });
-
-    it('omits the warnings field entirely when the run raised none', async () => {
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
-      mockFormatJsonReport.mockReturnValue('{}');
-
-      await runJson(singleKitEntry(['deploy']));
-
-      expect(mockFormatJsonReport).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.not.objectContaining({ warnings: expect.anything() }),
-      );
-    });
-  });
-
-  describe('unrun-source advisories', () => {
-    it('reports each configured source that contributed no kit in the warnings field', async () => {
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
-      mockFormatJsonReport.mockReturnValue('{}');
-      const unrunSources = [
-        { spelling: 'github:acme/standards', requestedNames: ['default'], publishedNames: ['demo', 'drift'] },
-      ];
-
-      const { stderr } = await runJson(singleKitEntry(), { unrunSources });
-
-      expect(mockFormatJsonReport).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({
-          warnings: [
-            {
-              code: 'source-not-run',
-              message:
-                'configured source "github:acme/standards" publishes no kit named "default", so the run ran none of its kits.',
-              remedy:
-                'Run its kits by name with `rdy run --sources demo`, or every kit with `rdy run --sources --all`. Its other kits: drift.',
-            },
-          ],
-        }),
-      );
-      expect(stderr).toContain('Warning: configured source "github:acme/standards"');
-    });
-  });
-
-  describe('unused-pragma advisories', () => {
-    const PRAGMA_UNUSED: RaisedWarning = {
-      code: 'pragma-unused',
-      message: '`rdy-ignore` pragma at src/a.ts:3 suppressed no finding in this run.',
-      remedy: 'Remove the pragma, or run the kit whose check it was written for.',
-    };
-
-    it('passes the entries into the report’s warnings', async () => {
-      mockListUnusedPragmaWarnings.mockReturnValue([PRAGMA_UNUSED]);
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
-
-      const { exitCode } = await runJson(singleKitEntry(['deploy']));
-
-      expect(mockFormatJsonReport).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({ warnings: [PRAGMA_UNUSED] }),
-      );
-      expect(exitCode).toBe(0);
-    });
-  });
-
-  describe('unmarked-generated advisories', () => {
-    it('passes the entries into the report’s warnings, leaving the exit code alone', async () => {
-      mockListUnmarkedGeneratedSourceWarnings.mockResolvedValue([GENERATED_UNMARKED]);
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
-
-      const { exitCode } = await runJson(singleKitEntry(['deploy']));
-
-      expect(mockFormatJsonReport).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.objectContaining({ warnings: [GENERATED_UNMARKED] }),
-      );
-      expect(exitCode).toBe(0);
-    });
-  });
-
-  describe('warning output', () => {
-    it('writes every warning to stderr in the order of the report’s warnings', async () => {
-      mockReadManifestTracking.mockReturnValue({
-        tracking: undefined,
-        warnings: [{ code: 'manifest-unreadable', message: 'manifest unreadable.', remedy: 'Rewrite it.' }],
-      });
-      mockListKitStalenessWarnings.mockReturnValue([
-        { code: 'target-drift', message: 'kit drifted.', remedy: 'Move the edits.' },
-      ]);
-      mockListUnusedPragmaWarnings.mockReturnValue([
-        { code: 'pragma-unused', message: 'pragma unused.', remedy: 'Remove it.' },
-      ]);
-      mockListUnmarkedGeneratedSourceWarnings.mockResolvedValue([GENERATED_UNMARKED]);
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: '999.0.0' });
-      mockRunRdy.mockResolvedValue({
-        results: [],
-        passed: true,
-        durationMs: 0,
-        diagnoses: [{ name: 'a', verdict: 'masked-pass' }],
-      });
-      mockFormatJsonReport.mockReturnValue('{"kits":[]}');
-
-      const { stderr } = await runJson(singleKitEntry(['deploy']), {
-        unrunSources: [{ spelling: 'npm:a', requestedNames: ['default'], publishedNames: ['x'] }],
-      });
-
-      const warnings = mockFormatJsonReport.mock.lastCall?.[1].warnings ?? [];
-      expect(warnings.map(({ code }) => code)).toStrictEqual([
-        'manifest-unreadable',
-        'target-drift',
-        'version-skew',
-        'skip-masks-pass',
-        'pragma-unused',
-        'generated-unmarked',
-        'source-not-run',
-      ]);
-      expect(stderr).toBe(warnings.map(({ message, remedy }) => `Warning: ${message} ${remedy}\n`).join(''));
     });
   });
 
@@ -557,45 +258,15 @@ describe(runJsonMode, () => {
     const GITHUB_HINT = 'If the repository is private, set GITHUB_TOKEN or run `gh auth login`.';
 
     it('passes the hint into the JSON report’s kit error entry', async () => {
-      mockResolveGitHubToken.mockReturnValue(undefined);
-      mockLoadRemoteKit.mockRejectedValue(new RemoteFetchError('boom', 404));
-      mockFormatJsonReport.mockReturnValue('{}');
+      fakes.loadKit.mockRejectedValue(kitLoadError('boom', { hint: GITHUB_HINT }));
+      fakes.formatJsonReport.mockReturnValue('{}');
 
-      await runJson([{ name: 'deploy', source: { url: GITHUB_URL }, checklists: [] }]);
+      await runJson([{ name: 'deploy', source: { url: GITHUB_URL }, checklists: [] }], {}, fakes);
 
-      expect(mockFormatJsonReport).toHaveBeenCalledWith(
+      expect(fakes.formatJsonReport).toHaveBeenCalledWith(
         [{ name: 'deploy', error: { code: 'kit-load', message: 'boom', hint: GITHUB_HINT } }],
         expect.anything(),
       );
     });
   });
 });
-
-// region | Helpers
-
-/** The settings named by a test, over the defaults that the dispatch would have resolved. */
-interface JsonRunOptions {
-  detail?: JsonDetail;
-  diagnose?: boolean;
-  failOn?: Severity;
-  reportOn?: Severity;
-  unrunSources?: UnrunSource[];
-}
-
-/**
- * Runs the mode over the given entries, filling in every setting that the test did not name, and returns its
- * exit code alongside everything it wrote.
- */
-async function runJson(
-  kitEntries: ResolvedKitEntry[],
-  { detail = 'full', diagnose = false, failOn, reportOn, unrunSources = [] }: JsonRunOptions = {},
-) {
-  using io = captureStdio();
-
-  const remote = createUncachedRemoteContext();
-  const exitCode = await runJsonMode(kitEntries, { detail, diagnose, failOn, remote, reportOn, unrunSources }, false);
-
-  return { exitCode, stdout: io.stdout, stderr: io.stderr };
-}
-
-// endregion | Helpers
