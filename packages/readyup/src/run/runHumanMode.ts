@@ -14,7 +14,13 @@ import { countResults, emptyCounts, reportRdy, selectVisibleResults } from '../r
 import { meetsThreshold } from '../severity/meetsThreshold.ts';
 import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
 import { resolveRunExitCode } from './resolveRunExitCode.ts';
-import { type KitRunEvent, type KitRunSettings, runKitEntries } from './runKitEntries.ts';
+import {
+  defaultKitRunDependencies,
+  type KitRunDependencies,
+  type KitRunEvent,
+  type KitRunSettings,
+  runKitEntries,
+} from './runKitEntries.ts';
 import { formatEmptySelection, listUnrunSourceWarnings } from './source-report.ts';
 
 /** The line under the heading of a kit that did not run, for each reason; the error itself is written to stderr. */
@@ -27,6 +33,18 @@ interface HumanRunSettings extends KitRunSettings {
   quiet: boolean;
 }
 
+/** The collaborators of a human-mode run: the run steps' own, and the renderers of its blocks and summary. */
+export interface HumanRunDependencies extends KitRunDependencies {
+  formatCombinedSummary: typeof formatCombinedSummary;
+  reportRdy: typeof reportRdy;
+}
+
+const defaultHumanRunDependencies: HumanRunDependencies = {
+  ...defaultKitRunDependencies,
+  formatCombinedSummary,
+  reportRdy,
+};
+
 /**
  * Runs all kit entries in human-readable mode.
  *
@@ -37,6 +55,7 @@ export async function runHumanMode(
   kitEntries: ResolvedKitEntry[],
   settings: HumanRunSettings,
   isJit: boolean,
+  dependencies: HumanRunDependencies = defaultHumanRunDependencies,
 ): Promise<number> {
   // Say so when a run selected nothing, which happens under `--sources` when no configured source
   // publishes the requested kit. A blank screen reads as a tool that failed to start rather than as a pass.
@@ -56,7 +75,7 @@ export async function runHumanMode(
   // through leaves its not-run row alone in the table.
   let currentKit: KitInProgress | undefined;
 
-  for await (const event of runKitEntries(kitEntries, settings, isJit)) {
+  for await (const event of runKitEntries(kitEntries, settings, isJit, dependencies)) {
     switch (event.kind) {
       case 'runStarted':
         writeWarnings(event.warnings);
@@ -66,7 +85,9 @@ export async function runHumanMode(
         currentKit = startKit(event, isMultiKit);
         break;
       case 'checklistReported':
-        if (currentKit !== undefined) reportChecklist(event.checklist, event.report, currentKit, settings, writeBlock);
+        if (currentKit !== undefined) {
+          reportChecklist(event.checklist, event.report, currentKit, settings, writeBlock, dependencies.reportRdy);
+        }
         // Warn after the block, so that the reader has just seen the skipped line that the warning is about.
         writeWarnings(event.warnings);
         break;
@@ -90,7 +111,7 @@ export async function runHumanMode(
         // Tally after the last kit rather than inside one, so a kit that failed to load still leaves the table
         // covering the checklists that did run. Because a dropped block is reported by its row alone, one dropped
         // block justifies the table even when the table has only a single row to show.
-        if (rows.length > 1 || anyBlockDropped) writeBlock(formatCombinedSummary(rows));
+        if (rows.length > 1 || anyBlockDropped) writeBlock(dependencies.formatCombinedSummary(rows));
 
         // Warn after the summary table, the last block in which a reported file may have been named.
         writeWarnings(event.warnings);
@@ -209,9 +230,10 @@ function reportChecklist(
   kit: KitInProgress,
   settings: HumanRunSettings,
   writeBlock: BlockWriter,
+  renderReport: typeof reportRdy,
 ): void {
   const { failOn, reportOn } = kit.thresholds;
-  const { body, hasVisibleResults } = reportRdy(report, {
+  const { body, hasVisibleResults } = renderReport(report, {
     fixLocation: resolveFixLocation(checklist, kit.fixLocation),
     quiet: settings.quiet,
     reportOn,

@@ -28,6 +28,26 @@ export interface KitRunSettings {
   unrunSources: readonly UnrunSource[];
 }
 
+/** The collaborators that the run steps call, replaceable so that a test can run the steps without their effects. */
+export interface KitRunDependencies {
+  listKitStalenessWarnings: typeof listKitStalenessWarnings;
+  listUnmarkedGeneratedSourceWarnings: typeof listUnmarkedGeneratedSourceWarnings;
+  listUnusedPragmaWarnings: typeof listUnusedPragmaWarnings;
+  loadKit: typeof loadKit;
+  readManifestTracking: typeof readManifestTracking;
+  runRdy: typeof runRdy;
+}
+
+/** The real collaborators of the run steps. */
+export const defaultKitRunDependencies: KitRunDependencies = {
+  listKitStalenessWarnings,
+  listUnmarkedGeneratedSourceWarnings,
+  listUnusedPragmaWarnings,
+  loadKit,
+  readManifestTracking,
+  runRdy,
+};
+
 /**
  * One step boundary of a run, in the order in which the steps run.
  *
@@ -75,8 +95,9 @@ export async function* runKitEntries(
   kitEntries: ResolvedKitEntry[],
   settings: KitRunSettings,
   isJit: boolean,
+  dependencies: KitRunDependencies = defaultKitRunDependencies,
 ): AsyncGenerator<KitRunEvent> {
-  const { tracking, warnings: manifestWarnings } = readManifestTracking(isJit);
+  const { tracking, warnings: manifestWarnings } = dependencies.readManifestTracking(isJit);
   yield { kind: 'runStarted', warnings: manifestWarnings };
 
   const pragmaLedger = createPragmaLedger();
@@ -86,7 +107,7 @@ export async function* runKitEntries(
   for (const entry of kitEntries) {
     let loaded: LoadedRdyKit;
     try {
-      loaded = await loadKit(entry, settings.remote);
+      loaded = await dependencies.loadKit(entry, settings.remote);
     } catch (error: unknown) {
       failedKitCount++;
       yield { kind: 'kitFailed', entry, error: toRdyError(error), reason: 'didNotLoad', warnings: [] };
@@ -98,7 +119,7 @@ export async function* runKitEntries(
     try {
       recordKitCheckIds(kit, pragmaLedger, entry.provenance);
       pendingWarnings = [
-        ...listKitStalenessWarnings(entry.name, entry.source, tracking),
+        ...dependencies.listKitStalenessWarnings(entry.name, entry.source, tracking),
         ...listVersionSkewWarnings(entry.name, kit, compileTimeVersion, entry.provenance),
       ];
 
@@ -109,7 +130,7 @@ export async function* runKitEntries(
       yield { kind: 'kitLoaded', checklists, compileTimeVersion, entry, kit, thresholds, warnings: kitWarnings };
 
       for (const checklist of checklists) {
-        const report = await runRdy(checklist, {
+        const report = await dependencies.runRdy(checklist, {
           defaultSeverity: thresholds.defaultSeverity,
           diagnose: settings.diagnose,
           failOn: thresholds.failOn,
@@ -140,8 +161,8 @@ export async function* runKitEntries(
   }
 
   const runWarnings = [
-    ...listUnusedPragmaWarnings(pragmaLedger),
-    ...(await listUnmarkedGeneratedSourceWarnings(pragmaLedger)),
+    ...dependencies.listUnusedPragmaWarnings(pragmaLedger),
+    ...(await dependencies.listUnmarkedGeneratedSourceWarnings(pragmaLedger)),
     ...listUnrunSourceWarnings(settings.unrunSources),
   ];
   yield { kind: 'runFinished', allPassed, failedKitCount, warnings: runWarnings };
