@@ -1,5 +1,6 @@
 import path from 'node:path';
 
+import type { OpenPage } from '../portable/open-background-page.ts';
 import type { SpawnDetached } from '../portable/spawn-detached.ts';
 import { CommandError } from '../shared/errors.ts';
 import type { CommandOutput, Environment } from '../shared/output.ts';
@@ -26,6 +27,7 @@ export interface ThorChromeDeps {
   kill: (pid: number) => void;
   /** Returns the current time in epoch milliseconds. */
   now: () => number;
+  openPage: OpenPage;
   run: RunCommand;
   sleep: (milliseconds: number) => Promise<void>;
   spawnDetached: SpawnDetached;

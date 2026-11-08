@@ -24,6 +24,8 @@ export interface FakeThorChrome {
   makeInvocation: (format?: OutputFormat) => Invocation;
   /** Creates a profile directory, with the record that a launch would have left when `record` is given. */
   makeProfile: (name: string, record?: Record<string, string>) => string;
+  /** Pages that the run opened through the DevTools endpoint, failed openings included, in call order. */
+  opened: Array<{ port: string; url: string }>;
   profilesDir: string;
   /** Parses the JSON object that the run printed on stdout. */
   readReport: () => Record<string, unknown>;
@@ -38,6 +40,8 @@ export interface FakeThorChromeOptions {
   env?: Record<string, string | undefined>;
   /** Makes every signal fail, as for a process owned by another user. */
   isKillRefused?: boolean | undefined;
+  /** Failure reasons keyed by URL, for the pages whose opening fails. */
+  pageFailures?: Record<string, string>;
   /**
    * Answers keyed by a prefix of the `program args` line, tried ahead of the defaults: the working repository on branch
    * `321`, a `pgrep` that finds nothing, a `curl` that reaches the endpoint, an `lsof` that finds every port free, and
@@ -102,6 +106,7 @@ export function makeFakeThorChrome(options: FakeThorChromeOptions = {}): FakeTho
 
   let clock = 1_767_323_045_000;
   const killed: number[] = [];
+  const opened: FakeThorChrome['opened'] = [];
   const spawned: FakeThorChrome['spawned'] = [];
   const captured = captureOutput('thor-chrome');
   const deps: ThorChromeDeps = {
@@ -112,6 +117,11 @@ export function makeFakeThorChrome(options: FakeThorChromeOptions = {}): FakeTho
       killed.push(pid);
     },
     now: () => clock,
+    openPage: (port, url) => {
+      opened.push({ port, url });
+      const reason = options.pageFailures?.[url];
+      return Promise.resolve(reason === undefined ? { isOpened: true } : { isOpened: false, reason });
+    },
     run,
     sleep: (milliseconds) => {
       clock += milliseconds;
@@ -142,6 +152,7 @@ export function makeFakeThorChrome(options: FakeThorChromeOptions = {}): FakeTho
       }
       return dir;
     },
+    opened,
     profilesDir,
     readReport: () => {
       const report: unknown = JSON.parse(captured.stdout());

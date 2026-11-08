@@ -10,6 +10,7 @@ import {
   type ParseSpec,
 } from '@williamthorsen/toolbelt.cli/candidate';
 
+import { openBackgroundPage } from '../portable/open-background-page.ts';
 import { spawnDetached } from '../portable/spawn-detached.ts';
 import type { CommandOutput } from '../shared/output.ts';
 import { runCommand } from '../shared/run-command.ts';
@@ -83,6 +84,7 @@ function createProcessDeps(): ThorChromeDeps {
       process.kill(pid, 'SIGTERM');
     },
     now: () => Date.now(),
+    openPage: openBackgroundPage,
     run: runCommand,
     sleep: async (milliseconds) => {
       await sleep(milliseconds);
