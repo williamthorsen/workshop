@@ -24,6 +24,7 @@ const PROFILE_FIELDS = [
   'name',
   'path',
   'state',
+  'headless',
   'pid',
   'port',
   'derivedPort',

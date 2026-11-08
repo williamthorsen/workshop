@@ -11,6 +11,8 @@ export interface PortListener {
 
 /** A profile's state as read from its browser process. */
 export interface ProfileState {
+  /** Whether the browser runs headless, unset when no browser is found. */
+  isHeadless: boolean | undefined;
   pid: string | undefined;
   port: string | undefined;
   state: ProfileStateName;
@@ -68,6 +70,11 @@ export function probeDevtools(invocation: Invocation, port: string): boolean {
   return runTolerantly(invocation, 'curl', ['--silent', '--fail', '--max-time', '1', url]).status === 0;
 }
 
+/** Reports whether a process's argv starts it headless, matching `--headless` with or without a mode. */
+export function readIsHeadless(invocation: Invocation, pid: string): boolean {
+  return /(?:^|\s)--headless(?:=\S*)?(?:\s|$)/.test(readCommandLine(invocation, pid));
+}
+
 /** Returns the debugging port declared in a process's argv, or `undefined` when it owns none. */
 export function readDebuggingPort(invocation: Invocation, pid: string): string | undefined {
   return /--remote-debugging-port=(\d+)/.exec(readCommandLine(invocation, pid))?.[1];
@@ -79,12 +86,13 @@ export function readDebuggingPort(invocation: Invocation, pid: string): string |
  */
 export function resolveProfileState(invocation: Invocation, profileDir: string): ProfileState {
   const lookup = findBrowserPid(invocation, profileDir);
-  if (!lookup.isReadable) return { pid: undefined, port: undefined, state: 'unknown' };
+  if (!lookup.isReadable) return { isHeadless: undefined, pid: undefined, port: undefined, state: 'unknown' };
   const { pid } = lookup;
-  if (pid === undefined) return { pid: undefined, port: undefined, state: 'stopped' };
+  if (pid === undefined) return { isHeadless: undefined, pid: undefined, port: undefined, state: 'stopped' };
+  const isHeadless = readIsHeadless(invocation, pid);
   const port = readDebuggingPort(invocation, pid);
-  if (port === undefined) return { pid, port: undefined, state: 'running-without-port' };
-  return { pid, port, state: probeDevtools(invocation, port) ? 'debugging' : 'unresponsive' };
+  if (port === undefined) return { isHeadless, pid, port: undefined, state: 'running-without-port' };
+  return { isHeadless, pid, port, state: probeDevtools(invocation, port) ? 'debugging' : 'unresponsive' };
 }
 
 // region | Helpers

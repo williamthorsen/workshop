@@ -223,7 +223,7 @@ async function sweepProfiles(
     const facts = resolveProfileFacts(invocation, dir);
     if (selection === 'stale' && facts.stale !== true) continue;
 
-    const { pid, port, state } = resolveProfileState(invocation, dir);
+    const { isHeadless, pid, port, state } = resolveProfileState(invocation, dir);
     // The lookup fails alike for every profile, so the first one refuses the sweep before anything is deleted
     if (state === 'unknown') {
       throw refuse(
@@ -237,7 +237,16 @@ async function sweepProfiles(
       retained += 1;
       if (invocation.format === 'json') {
         invocation.entries.push(
-          renderProfile(invocation, { facts, name: profile, path: dir, pid, port, retained: 'running', state }),
+          renderProfile(invocation, {
+            facts,
+            isHeadless,
+            name: profile,
+            path: dir,
+            pid,
+            port,
+            retained: 'running',
+            state,
+          }),
         );
       } else {
         writeProse(invocation, 'stdout', [`Retained profile '${profile}': running (PID ${pid}).`]);

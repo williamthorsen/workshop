@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { findBrowserPid } from '../browser-process.ts';
+import { findBrowserPid, readIsHeadless, resolveProfileState } from '../browser-process.ts';
 import { type FakeThorChrome, makeFakeThorChrome } from '../test-utils/fake-thor-chrome.ts';
 
 describe(findBrowserPid, () => {
@@ -35,6 +35,43 @@ describe(findBrowserPid, () => {
       pid: undefined,
     });
     expect(findBrowserPid(invocation, `${fake.profilesDir}/thrive-2`)).toStrictEqual({ isReadable: true, pid: '21' });
+  });
+});
+
+describe(readIsHeadless, () => {
+  it.each([
+    ['chrome --headless --user-data-dir=/p', true],
+    ['chrome --user-data-dir=/p --headless=new', true],
+    ['chrome --headless', true],
+    ['chrome --headless-mode-flag --user-data-dir=/p', false],
+    ['chrome --user-data-dir=/p', false],
+  ])('reads %s as headless: %s', (command, isHeadless) => {
+    const fake = makeFakeThorChrome({ results: { 'ps -o command= -p 7': { stdout: `${command}\n` } } });
+    expect(readIsHeadless(fake.makeInvocation(), '7')).toBe(isHeadless);
+  });
+});
+
+describe(resolveProfileState, () => {
+  it('reads the mode of a running browser and leaves it unset when none is found', () => {
+    const fake = makeFakeWithProcesses((profilesDir) => ({
+      '31': `chrome --remote-debugging-port=9321 --headless --user-data-dir=${profilesDir}/thrive`,
+      '32': `chrome --user-data-dir=${profilesDir}/atlas`,
+    }));
+    const invocation = fake.makeInvocation();
+    expect(resolveProfileState(invocation, `${fake.profilesDir}/thrive`)).toStrictEqual({
+      isHeadless: true,
+      pid: '31',
+      port: '9321',
+      state: 'debugging',
+    });
+    expect(resolveProfileState(invocation, `${fake.profilesDir}/atlas`)).toMatchObject({
+      isHeadless: false,
+      state: 'running-without-port',
+    });
+    expect(resolveProfileState(invocation, `${fake.profilesDir}/gone`)).toMatchObject({
+      isHeadless: undefined,
+      state: 'stopped',
+    });
   });
 });
 

@@ -27,13 +27,17 @@ export function showStatus(
   assertProfileNotUnderived(invocation, `${invocation.output.name} status --repo <repo> --branch <branch>`);
   const launchPort = resolvePort(invocation, givenPort);
 
-  const { pid, port, state } = resolveProfileState(invocation, dir);
+  const { isHeadless, pid, port, state } = resolveProfileState(invocation, dir);
   const endpoint = `http://127.0.0.1:${port ?? launchPort}`;
   if (invocation.format === 'json') {
-    writeJson(invocation, { profile: renderProfile(invocation, { name, path: dir, pid, port, state }), endpoint });
+    writeJson(invocation, {
+      profile: renderProfile(invocation, { isHeadless, name, path: dir, pid, port, state }),
+      endpoint,
+    });
     return 0;
   }
-  writeProse(invocation, 'stdout', [`${name}: ${state}, endpoint ${endpoint}`]);
+  const mode = isHeadless === true ? ' (headless)' : '';
+  writeProse(invocation, 'stdout', [`${name}: ${state}${mode}, endpoint ${endpoint}`]);
   if (state === 'unknown') warnProcessListUnavailable(invocation, 'status');
   return 0;
 }

@@ -95,6 +95,22 @@ describe('launch', () => {
       });
     });
 
+    it('adds --headless and starts directly outside the GUI login session for a headless launch', async () => {
+      const fake = makeFakeThorChrome({
+        env: { THOR_CHROME_APP: '/bin/sh' },
+        results: { launchctl: { stdout: 'Background\n' } },
+      });
+      fake.makeProfile('thrive');
+      await expect(run(fake, ['--json', '--dry-run', '--headless', '--profile', 'thrive'])).resolves.toBe(0);
+      const { command } = fake.readReport();
+      expect(Array.isArray(command) ? command.slice(0, 1).concat(command.slice(-2)) : command).toStrictEqual([
+        '/bin/sh',
+        '--no-startup-window',
+        '--headless',
+      ]);
+      expect(fake.calls.some((call) => call.program === 'codesign')).toBe(false);
+    });
+
     it('launches directly when launchctl names no session', async () => {
       const fake = makeFakeThorChrome({
         env: { THOR_CHROME_APP: '/bin/sh' },
@@ -261,6 +277,24 @@ describe('launch', () => {
       expect(fake.spawned).toHaveLength(0);
       expect(fake.opened).toStrictEqual([{ port: '20321', url: 'http://x' }]);
       expect(fs.existsSync(`${fake.profilesDir}/thrive/thor-chrome.html`)).toBe(false);
+    });
+
+    it('names a headless launch in prose and under --json', async () => {
+      const fake = makeFakeThorChrome({ env: { THOR_CHROME_APP: '/bin/sh' } });
+      fake.makeProfile('thrive');
+      await expect(run(fake, ['--headless', '--profile', 'thrive'])).resolves.toBe(0);
+      expect(fake.captured.stdout()).toContain("chrome: profile 'thrive' on port 20321 (headless)\n");
+      expect(fake.spawned[0]?.args).toContain('--headless');
+      expect(fake.opened.map((page) => page.url)).toStrictEqual([
+        'about:blank',
+        `file://${fake.profilesDir}/thrive/thor-chrome.html`,
+      ]);
+    });
+
+    it('reports the mode of the running browser for a launch that opens its URLs there', async () => {
+      const fake = makeRunningFake({ isHeadless: true, port: '20321' });
+      await expect(run(fake, ['--json', '--headless', '--profile', 'thrive', 'http://x'])).resolves.toBe(0);
+      expect(fake.readReport()).toMatchObject({ profile: { headless: true, state: 'debugging' } });
     });
 
     it('opens nothing when the profile is already debugging and no URL is given', async () => {

@@ -5,6 +5,7 @@ import {
   describeProfileCount,
   describeProvenance,
   formatCommandLine,
+  renderProfile,
   renderRefusal,
   stringifyJson,
 } from '../render.ts';
@@ -59,6 +60,20 @@ describe(formatCommandLine, () => {
     expect(formatCommandLine(['/a b/chrome', '--window-name=x · :1', 'http://h/?a=1&b=2'])).toBe(
       String.raw`/a\ b/chrome --window-name=x\ ·\ :1 http://h/\?a=1\&b=2`,
     );
+  });
+});
+
+describe(renderProfile, () => {
+  it.each([
+    ['debugging', true, true],
+    ['unresponsive', false, false],
+    ['running-without-port', true, true],
+    ['stopped', true, null],
+    ['deleted', true, null],
+  ] as const)('reports headless in state %s with mode %s as %s', (state, isHeadless, expected) => {
+    const fake = makeFakeThorChrome();
+    const report = { facts: UNRECORDED, isHeadless, name: 'thrive', path: '/p/thrive', pid: '1', port: '9', state };
+    expect(renderProfile(fake.makeInvocation(), report)['headless']).toBe(expected);
   });
 });
 

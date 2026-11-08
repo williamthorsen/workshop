@@ -11,6 +11,8 @@ export interface ProfileReport {
   error?: { code: string; message: string };
   /** Facts read before the profile was removed, which cannot be read back from a directory that is gone. */
   facts?: ProfileFacts;
+  /** Whether the profile's browser runs headless, which is reported only in a state with a running browser. */
+  isHeadless?: boolean | undefined;
   name: string;
   path: string;
   pid: string | undefined;
@@ -19,6 +21,9 @@ export interface ProfileReport {
   retained?: string;
   state: ProfileStateName | 'deleted';
 }
+
+/** The states in which a profile has a running browser, whose mode a report names. */
+const RUNNING_STATES: ReadonlySet<string> = new Set(['debugging', 'running-without-port', 'unresponsive']);
 
 /** Returns a count of profiles with its noun, so that a summary reads `1 profile` rather than `1 profiles`. */
 export function describeProfileCount(count: number): string {
@@ -57,15 +62,17 @@ export function formatCommandLine(args: readonly string[]): string {
  * Returns one profile as a JSON object, reading its provenance from the profile unless the caller passes the facts.
  *
  * The endpoint is reported only in state `debugging`. One that does not answer is not an endpoint, and a URL beside any
- * other state would invite a caller to use it.
+ * other state would invite a caller to use it. `headless` is null in every state without a running browser.
  */
 export function renderProfile(invocation: Invocation, report: ProfileReport): { [key: string]: JsonValue } {
   const facts = report.facts ?? resolveProfileFacts(invocation, report.path);
   const devtools = report.state === 'debugging' ? `http://127.0.0.1:${report.port ?? ''}/json/version` : undefined;
+  const isRunning = RUNNING_STATES.has(report.state);
   const rendered: { [key: string]: JsonValue } = {
     name: report.name,
     path: report.path,
     state: report.state,
+    headless: isRunning ? (report.isHeadless ?? null) : null,
     pid: toNumber(report.pid),
     port: toNumber(report.port),
     derivedPort: deriveRecordedPort(facts) ?? null,
@@ -95,8 +102,8 @@ export function renderRefusal(invocation: Invocation, refusal: ThorChromeRefusal
     };
     if (refusal.profile !== undefined) {
       const { dir, name } = refusal.profile;
-      const { pid, port, state } = resolveProfileState(invocation, dir);
-      document['profile'] = renderProfile(invocation, { name, path: dir, pid, port, state });
+      const { isHeadless, pid, port, state } = resolveProfileState(invocation, dir);
+      document['profile'] = renderProfile(invocation, { isHeadless, name, path: dir, pid, port, state });
     }
     writeJson(invocation, document);
     return refusal.exitCode;
@@ -123,8 +130,10 @@ export function reportProfileRefusal(
   invocation.refused = true;
   if (invocation.format === 'json') {
     const dir = `${invocation.profilesDir}/${profile}`;
-    const { pid, port, state } = resolveProfileState(invocation, dir);
-    invocation.entries.push(renderProfile(invocation, { error, name: profile, path: dir, pid, port, state }));
+    const { isHeadless, pid, port, state } = resolveProfileState(invocation, dir);
+    invocation.entries.push(
+      renderProfile(invocation, { error, isHeadless, name: profile, path: dir, pid, port, state }),
+    );
     return;
   }
   writeProse(invocation, 'stderr', [

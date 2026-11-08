@@ -132,6 +132,19 @@ describe('launch', () => {
       });
     });
 
+    it.each([
+      [false, ['--headless'], "profile 'thrive' is running windowed (PID 4242), so a headless launch cannot use it"],
+      [true, [], "profile 'thrive' is running headless (PID 4242), so a windowed launch cannot use it"],
+    ])('refuses with mode-mismatch when the running browser is headless: %s', async (isHeadless, flags, message) => {
+      const fake = makeRunningFake({ isHeadless, port: '20321' });
+      await expect(run(fake, ['--json', '--profile', 'thrive', ...flags, 'http://x'])).resolves.toBe(1);
+      expect(fake.readReport()).toMatchObject({
+        error: { code: 'mode-mismatch', message },
+        profile: { headless: isHeadless, name: 'thrive' },
+      });
+      expect(fake.opened).toStrictEqual([]);
+    });
+
     it('refuses with endpoint-unresponsive, or policy-denied when the launch log recorded the policy', async () => {
       const fake = makeRunningFake({ port: '20321', results: { curl: { status: 7 } } });
       await expect(run(fake, ['--json', '--dry-run', '--profile', 'thrive'])).resolves.toBe(1);
