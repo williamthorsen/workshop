@@ -4,9 +4,10 @@ import process from 'node:process';
 import { EXIT_OK } from '../bin/exitCodes.ts';
 import { toRdyError } from '../errors/RdyError.ts';
 import { formatRepositoryLabel, type KitProvenance } from '../kits/KitProvenance.ts';
+import type { LoadedRdyKit } from '../kits/loadRdyKit.ts';
 import type { FixLocation, RdyChecklist, RdyKit, RdyReport, RdyStagedChecklist, Severity } from '../kits/types.ts';
 import { getLayout } from '../layout/engine.ts';
-import type { BreadcrumbSegment, SummaryRow } from '../layout/layoutEngine.ts';
+import type { BreadcrumbSegment, NotRunReason, SummaryRow } from '../layout/layoutEngine.ts';
 import { writeWarnings } from '../output/writeWarnings.ts';
 import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
 import { formatCombinedSummary } from '../reporting/formatCombinedSummary.ts';
@@ -29,8 +30,11 @@ import { listMaskedSkipWarnings } from './skip-diagnosis.ts';
 import { formatEmptySelection, listUnrunSourceWarnings } from './source-report.ts';
 import { listVersionSkewWarnings } from './version-skew.ts';
 
-/** The line under the heading of a kit that did not load, whose error is written to stderr. */
-const DID_NOT_LOAD_STATUS = 'Kit did not load; the error is on stderr';
+/** The line under the heading of a kit that did not run, for each reason; the error itself is written to stderr. */
+const NOT_RUN_STATUSES: Readonly<Record<NotRunReason, string>> = {
+  didNotLoad: 'Kit did not load; the error is on stderr',
+  failedAfterLoad: 'Kit did not run; the error is on stderr',
+};
 
 interface HumanRunSettings {
   diagnose: boolean;
@@ -76,8 +80,17 @@ export async function runHumanMode(
   for (const entry of kitEntries) {
     const kitSegments = buildKitSegments(entry, isMultiKit);
 
+    let loaded: LoadedRdyKit;
     try {
-      const { kit, compileTimeVersion } = await loadKit(entry, settings.remote);
+      loaded = await loadKit(entry, settings.remote);
+    } catch (error: unknown) {
+      rows.push(...reportUnrunKit(error, 'didNotLoad', kitSegments, writeBlock));
+      missingKitCount++;
+      continue;
+    }
+
+    const { kit, compileTimeVersion } = loaded;
+    try {
       recordKitCheckIds(kit, pragmaLedger, entry.provenance);
 
       writeWarnings([
@@ -98,22 +111,7 @@ export async function runHumanMode(
       if (!kitResult.passed) allPassed = false;
       if (kitResult.withheldCount > 0) withheld = addWithheld(withheld, kitResult.withheldCount, kitResult.failOn);
     } catch (error: unknown) {
-      // Head even a kit that never ran, so that stdout alone lists every kit that the invocation asked for and
-      // states which of them did not load.
-      if (kitSegments.length > 0) {
-        const layout = getLayout();
-        const status = `${layout.token('failedError')}${DID_NOT_LOAD_STATUS}`;
-        writeBlock(`${layout.formatBreadcrumb(kitSegments, 'kit')}\n${status}`);
-        rows.push({ counts: emptyCounts(), didNotLoad: true, durationMs: 0, segments: kitSegments });
-      }
-
-      // A lone kit needs no label: nothing to disambiguate, and its source is already in the message.
-      const label = kitSegments.length > 0 ? ` [${getLayout().formatBreadcrumbLabel(kitSegments)}]` : '';
-      const rdyError = toRdyError(error);
-      process.stderr.write(`Error${label}: ${rdyError.message}\n`);
-      if (rdyError.hint !== undefined) {
-        process.stderr.write(getLayout().formatHint(rdyError.hint) + '\n');
-      }
+      rows.push(...reportUnrunKit(error, 'failedAfterLoad', kitSegments, writeBlock));
       missingKitCount++;
     }
   }
@@ -216,6 +214,38 @@ function describeKitProvenance(provenance: KitProvenance | undefined): Breadcrum
 
   const version = provenance.version === undefined ? '' : `@${provenance.version}`;
   return { role: 'sourcePackage', text: `${provenance.packageName}${version}` };
+}
+
+/**
+ * Reports a kit that threw before it finished, and returns its summary rows: one, or none for a lone kit.
+ *
+ * The kit is headed even though it produced no results, so that stdout alone lists every kit that the invocation
+ * asked for and states which of them did not run and why.
+ */
+function reportUnrunKit(
+  error: unknown,
+  reason: NotRunReason,
+  kitSegments: BreadcrumbSegment[],
+  writeBlock: BlockWriter,
+): SummaryRow[] {
+  const layout = getLayout();
+  const rows: SummaryRow[] = [];
+  if (kitSegments.length > 0) {
+    writeBlock(
+      `${layout.formatBreadcrumb(kitSegments, 'kit')}\n${layout.token('failedError')}${NOT_RUN_STATUSES[reason]}`,
+    );
+    rows.push({ counts: emptyCounts(), durationMs: 0, notRun: reason, segments: kitSegments });
+  }
+
+  // A lone kit needs no label: nothing to disambiguate, and its source is already in the message.
+  const label = kitSegments.length > 0 ? ` [${layout.formatBreadcrumbLabel(kitSegments)}]` : '';
+  const rdyError = toRdyError(error);
+  process.stderr.write(`Error${label}: ${rdyError.message}\n`);
+  if (rdyError.hint !== undefined) {
+    process.stderr.write(layout.formatHint(rdyError.hint) + '\n');
+  }
+
+  return rows;
 }
 
 /** Resolves the effective fixLocation for a checklist, falling back to the kit-level default. */

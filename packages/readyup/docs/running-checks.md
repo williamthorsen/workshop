@@ -141,7 +141,7 @@ A run spanning several kits tallies them together, each row naming its source an
 ❌ Total: 1 error, 10 passed (176ms)
 ```
 
-A kit that could not load keeps its heading, under which a line states that it did not load, and its row reads `did not load` in place of a duration and counts. The row and the `Total:` line are marked failed, and the error itself is written to stderr.
+A kit that could not run keeps its heading, under which a line states why, and its row reads the same reason in place of a duration and counts: `did not load` when the kit itself could not be loaded, and `did not run` when it loaded and then failed before its checklists finished, as on an unknown checklist name. The row and the `Total:` line are marked failed, and the error itself is written to stderr.
 
 ## Output styles
 

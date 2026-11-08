@@ -271,10 +271,42 @@ describe(runHumanMode, () => {
     expect(stdout).toMatch(/broken\n\S+ +Kit did not load; the error is on stderr\n/u);
     expect(mockFormatCombinedSummary.mock.calls[0]?.[0][0]).toStrictEqual({
       counts: emptyCounts(),
-      didNotLoad: true,
       durationMs: 0,
+      notRun: 'didNotLoad',
       segments: [{ role: 'kit', text: 'broken' }],
     });
+  });
+
+  it('states that a kit that loaded and then threw did not run, rather than that it did not load', async () => {
+    mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+    const { exitCode, stderr, stdout } = await runHuman([
+      { name: 'halted', source: { path: '.readyup/kits/halted.js' }, checklists: ['missing'] },
+      { name: 'healthy', source: { path: '.readyup/kits/healthy.js' }, checklists: ['deploy'] },
+    ]);
+
+    expect(exitCode).toBe(2);
+    expect(stdout).toMatch(/halted\n\S+ +Kit did not run; the error is on stderr\n/u);
+    expect(stdout).not.toContain('Kit did not load');
+    expect(stderr).toMatch(/^Error \[halted\]: .*missing/u);
+    expect(mockFormatCombinedSummary.mock.calls[0]?.[0][0]).toStrictEqual({
+      counts: emptyCounts(),
+      durationMs: 0,
+      notRun: 'failedAfterLoad',
+      segments: [{ role: 'kit', text: 'halted' }],
+    });
+  });
+
+  it('adds no heading or summary row for a lone kit that loaded and then threw', async () => {
+    mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+
+    const { exitCode, stderr, stdout } = await runHuman(singleKitEntry(['missing']));
+
+    expect(exitCode).toBe(2);
+    expect(stdout).not.toContain('Kit did not run');
+    expect(stderr).toMatch(/^Error: .*missing/u);
+    expect(mockFormatCombinedSummary).not.toHaveBeenCalled();
   });
 
   it('adds no summary row for a lone kit that did not load', async () => {

@@ -87,7 +87,7 @@ describe('formatSummaryTable', () => {
     const lines = engine.formatSummaryTable({
       rows: [
         makeRow({ name: 'build', counts: makeCounts({ passed: 2 }), durationMs: 410 }),
-        makeRow({ name: 'broken', counts: makeCounts(), didNotLoad: true, durationMs: 0 }),
+        makeRow({ name: 'broken', counts: makeCounts(), notRun: 'didNotLoad', durationMs: 0 }),
       ],
       totals: makeCounts({ passed: 2 }),
       totalDurationMs: 410,
@@ -97,11 +97,26 @@ describe('formatSummaryTable', () => {
     expect(lines.at(-1)).toBe(`${FAILED_ERROR} Total: 2 passed (410ms)`);
   });
 
+  it('fails the row and the total of a kit that loaded and then did not run', () => {
+    const lines = engine.formatSummaryTable({
+      rows: [
+        makeRow({ name: 'build', counts: makeCounts({ passed: 2 }), durationMs: 410 }),
+        makeRow({ name: 'halted', counts: makeCounts(), notRun: 'failedAfterLoad', durationMs: 0 }),
+      ],
+      totals: makeCounts({ passed: 2 }),
+      totalDurationMs: 410,
+    });
+
+    expect(lines[3]).toMatch(new RegExp(`^${FAILED_ERROR} +halted {2}did not run$`, 'u'));
+    expect(lines[3]?.indexOf('did not run')).toBe(lines[2]?.indexOf('410ms'));
+    expect(lines.at(-1)).toBe(`${FAILED_ERROR} Total: 2 passed (410ms)`);
+  });
+
   it('starts the did-not-load text at the duration column', () => {
     const lines = engine.formatSummaryTable({
       rows: [
         makeRow({ name: 'build', counts: makeCounts({ passed: 2 }), durationMs: 410 }),
-        makeRow({ name: 'broken', counts: makeCounts(), didNotLoad: true, durationMs: 0 }),
+        makeRow({ name: 'broken', counts: makeCounts(), notRun: 'didNotLoad', durationMs: 0 }),
       ],
       totals: makeCounts({ passed: 2 }),
       totalDurationMs: 410,
@@ -113,8 +128,8 @@ describe('formatSummaryTable', () => {
   it('renders a table in which no kit loaded', () => {
     const lines = engine.formatSummaryTable({
       rows: [
-        makeRow({ name: 'a', counts: makeCounts(), didNotLoad: true, durationMs: 0 }),
-        makeRow({ name: 'b', counts: makeCounts(), didNotLoad: true, durationMs: 0 }),
+        makeRow({ name: 'a', counts: makeCounts(), notRun: 'didNotLoad', durationMs: 0 }),
+        makeRow({ name: 'b', counts: makeCounts(), notRun: 'didNotLoad', durationMs: 0 }),
       ],
       totals: makeCounts(),
       totalDurationMs: 0,
@@ -261,7 +276,10 @@ describe('formatSummaryTable', () => {
     it('stacks the row of a kit that did not load', () => {
       const lines = engine.formatSummaryTable({
         ...wideInput,
-        rows: [...wideInput.rows, makeRow({ name: 'broken', counts: makeCounts(), didNotLoad: true, durationMs: 0 })],
+        rows: [
+          ...wideInput.rows,
+          makeRow({ name: 'broken', counts: makeCounts(), notRun: 'didNotLoad', durationMs: 0 }),
+        ],
         width: 80,
       });
 
