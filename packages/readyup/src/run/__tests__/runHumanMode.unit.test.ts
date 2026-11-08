@@ -4,7 +4,7 @@ import { kitLoadError } from '../../errors/RdyError.ts';
 import { emptyCounts } from '../../reporting/reportRdy.ts';
 import { runHumanMode } from '../runHumanMode.ts';
 import { createRunFakes, type RunFakes } from '../test-utils/createRunFakes.ts';
-import { makeKit, singleKitEntry } from '../test-utils/kit-fixtures.ts';
+import { buildSingleKitEntry, makeKit } from '../test-utils/kit-fixtures.ts';
 import { runHuman } from '../test-utils/runHuman.ts';
 
 describe(runHumanMode, () => {
@@ -40,7 +40,7 @@ describe(runHumanMode, () => {
     fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
     const unrunSources = [{ spelling: 'npm:@acme/kits', requestedNames: ['default'], publishedNames: ['drift'] }];
 
-    const { exitCode, stderr } = await runHuman(singleKitEntry(), { unrunSources }, fakes);
+    const { exitCode, stderr } = await runHuman(buildSingleKitEntry(), { unrunSources }, fakes);
 
     expect(exitCode).toBe(0);
     expect(stderr).toContain('Warning: configured source "npm:@acme/kits" publishes no kit named "default"');
@@ -55,7 +55,7 @@ describe(runHumanMode, () => {
       diagnoses: [{ name: 'a', verdict: 'masked-pass' }],
     });
 
-    const { exitCode, stderr } = await runHuman(singleKitEntry(['deploy']), { diagnose: true }, fakes);
+    const { exitCode, stderr } = await runHuman(buildSingleKitEntry(['deploy']), { diagnose: true }, fakes);
 
     expect(stderr).toContain('skipped check "a" in kit "default" / checklist "deploy" would have passed.');
     expect(exitCode).toBe(0);
@@ -65,7 +65,7 @@ describe(runHumanMode, () => {
     const kit = makeKit();
     fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
 
-    const { exitCode, stderr } = await runHuman(singleKitEntry(['nonexistent']), {}, fakes);
+    const { exitCode, stderr } = await runHuman(buildSingleKitEntry(['nonexistent']), {}, fakes);
 
     expect(exitCode).toBe(2);
     expect(stderr).toContain('Error: Unknown name(s): nonexistent');
@@ -78,7 +78,7 @@ describe(runHumanMode, () => {
       .mockResolvedValueOnce({ results: [], passed: true, durationMs: 0 })
       .mockResolvedValueOnce({ results: [], passed: false, durationMs: 0 });
 
-    const { exitCode } = await runHuman(singleKitEntry(), {}, fakes);
+    const { exitCode } = await runHuman(buildSingleKitEntry(), {}, fakes);
 
     expect(exitCode).toBe(1);
   });
@@ -91,7 +91,7 @@ describe(runHumanMode, () => {
     fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    await runHuman(singleKitEntry(), {}, fakes);
+    await runHuman(buildSingleKitEntry(), {}, fakes);
 
     expect(fakes.reportRdy).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ fixLocation: 'inline' }));
   });
@@ -104,7 +104,7 @@ describe(runHumanMode, () => {
     fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    await runHuman(singleKitEntry(), {}, fakes);
+    await runHuman(buildSingleKitEntry(), {}, fakes);
 
     expect(fakes.reportRdy).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ fixLocation: 'end' }));
   });
@@ -112,7 +112,7 @@ describe(runHumanMode, () => {
   it('reports an unloadable kit against its kit name and exits 2', async () => {
     fakes.loadKit.mockRejectedValue(kitLoadError('Kit not found'));
 
-    const { exitCode, stderr } = await runHuman(singleKitEntry(), {}, fakes);
+    const { exitCode, stderr } = await runHuman(buildSingleKitEntry(), {}, fakes);
 
     expect(exitCode).toBe(2);
     expect(stderr).toBe('Error: Kit not found\n');
@@ -195,7 +195,7 @@ describe(runHumanMode, () => {
   it('adds no heading or summary row for a lone kit that loaded and then threw', async () => {
     fakes.loadKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
 
-    const { exitCode, stderr, stdout } = await runHuman(singleKitEntry(['missing']), {}, fakes);
+    const { exitCode, stderr, stdout } = await runHuman(buildSingleKitEntry(['missing']), {}, fakes);
 
     expect(exitCode).toBe(2);
     expect(stdout).not.toContain('Kit did not run');
@@ -206,7 +206,7 @@ describe(runHumanMode, () => {
   it('adds no summary row for a lone kit that did not load', async () => {
     fakes.loadKit.mockRejectedValue(kitLoadError('Kit not found'));
 
-    const { stdout } = await runHuman(singleKitEntry(), {}, fakes);
+    const { stdout } = await runHuman(buildSingleKitEntry(), {}, fakes);
 
     expect(stdout).not.toContain('Kit did not load');
     expect(fakes.formatCombinedSummary).not.toHaveBeenCalled();

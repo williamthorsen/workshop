@@ -26,7 +26,7 @@ describe('pragma-report.ts', () => {
   describe(listUnusedPragmaWarnings, () => {
     it('raises a warning naming the pragma, its path, and its line', ({ temp }) => {
       temp.write('src/a.ts', ['x;', 'y;', '// rdy-ignore-next-line', 'z;', ''].join('\n'));
-      const ledger = scanning(['src/a.ts']);
+      const ledger = buildScannedLedger(['src/a.ts']);
 
       const warnings = listUnusedPragmaWarnings(ledger);
 
@@ -41,7 +41,7 @@ describe('pragma-report.ts', () => {
 
     it('stays silent about a pragma whose covered line was suppressed by a check', ({ temp }) => {
       temp.write('src/a.ts', ['x; // rdy-ignore', ''].join('\n'));
-      const ledger = scanning(['src/a.ts']);
+      const ledger = buildScannedLedger(['src/a.ts']);
       ledger.recordSuppressed('src/a.ts', 1);
 
       expect(listUnusedPragmaWarnings(ledger)).toStrictEqual([]);
@@ -64,7 +64,7 @@ describe('pragma-report.ts', () => {
 
     it('matches a suppressed site declared in absolute form against a relative examined path', ({ temp }) => {
       temp.write('src/a.ts', ['x; // rdy-ignore', ''].join('\n'));
-      const ledger = scanning(['src/a.ts']);
+      const ledger = buildScannedLedger(['src/a.ts']);
       ledger.recordSuppressed(temp.resolve('src/a.ts'), 1);
 
       expect(listUnusedPragmaWarnings(ledger)).toStrictEqual([]);
@@ -73,7 +73,7 @@ describe('pragma-report.ts', () => {
     it('reads and prints an examined path that a check declared in absolute form', ({ temp }) => {
       temp.write('src/a.ts', ['x; // rdy-ignore', ''].join('\n'));
 
-      const warnings = listUnusedPragmaWarnings(scanning([temp.resolve('src/a.ts')]));
+      const warnings = listUnusedPragmaWarnings(buildScannedLedger([temp.resolve('src/a.ts')]));
 
       expect(warnings.map((warning) => warning.message)).toStrictEqual([
         '`rdy-ignore` pragma at src/a.ts:1 suppressed no finding in this run.',
@@ -83,18 +83,18 @@ describe('pragma-report.ts', () => {
     it('passes over an examined path outside the JS family', ({ temp }) => {
       temp.write('docs/guide.md', ['<!-- rdy-ignore -->', ''].join('\n'));
 
-      expect(listUnusedPragmaWarnings(scanning(['docs/guide.md']))).toStrictEqual([]);
+      expect(listUnusedPragmaWarnings(buildScannedLedger(['docs/guide.md']))).toStrictEqual([]);
     });
 
     it('passes over an examined path that cannot be read', () => {
-      expect(listUnusedPragmaWarnings(scanning(['src/gone.ts']))).toStrictEqual([]);
+      expect(listUnusedPragmaWarnings(buildScannedLedger(['src/gone.ts']))).toStrictEqual([]);
     });
 
     it('orders the warnings by path, then by line', ({ temp }) => {
       temp.write('src/b.ts', ['// rdy-ignore', ''].join('\n'));
       temp.write('src/a.ts', ['// rdy-ignore', 'x;', '// rdy-ignore', ''].join('\n'));
 
-      const warnings = listUnusedPragmaWarnings(scanning(['src/b.ts', 'src/a.ts']));
+      const warnings = listUnusedPragmaWarnings(buildScannedLedger(['src/b.ts', 'src/a.ts']));
 
       expect(warnings.map((warning) => warning.message)).toStrictEqual([
         '`rdy-ignore` pragma at src/a.ts:1 suppressed no finding in this run.',
@@ -106,14 +106,14 @@ describe('pragma-report.ts', () => {
     it('stays silent about a token that the comment rule does not recognize as a site', ({ temp }) => {
       temp.write('src/a.ts', ["const token = 'rdy-ignore';", ''].join('\n'));
 
-      expect(listUnusedPragmaWarnings(scanning(['src/a.ts']))).toStrictEqual([]);
+      expect(listUnusedPragmaWarnings(buildScannedLedger(['src/a.ts']))).toStrictEqual([]);
     });
   });
 
   describe('given an unused pragma naming checks', () => {
     it('names a bare id and the printed form of the check that declares it', ({ temp }) => {
       temp.write('src/a.ts', ['x; // rdy-ignore no-instanceof-error', ''].join('\n'));
-      const ledger = scanning(['src/a.ts']);
+      const ledger = buildScannedLedger(['src/a.ts']);
       loadChecks(ledger, 'toolbelt.errors', 'no-instanceof-error');
 
       const warnings = listUnusedPragmaWarnings(ledger);
@@ -130,7 +130,7 @@ describe('pragma-report.ts', () => {
 
     it('gives the general id form for an id that no check in the run declares', ({ temp }) => {
       temp.write('src/a.ts', ['x; // rdy-ignore no-such-check', ''].join('\n'));
-      const ledger = scanning(['src/a.ts']);
+      const ledger = buildScannedLedger(['src/a.ts']);
       loadChecks(ledger, 'toolbelt.errors', 'no-instanceof-error');
 
       expect(listUnusedPragmaWarnings(ledger)[0]?.remedy).toBe(ID_FORM_REMEDY);
@@ -138,7 +138,7 @@ describe('pragma-report.ts', () => {
 
     it('names every unmatched id, suggesting a form where one is known', ({ temp }) => {
       temp.write('src/a.ts', ['x; // rdy-ignore no-instanceof-error, no-such-check', ''].join('\n'));
-      const ledger = scanning(['src/a.ts']);
+      const ledger = buildScannedLedger(['src/a.ts']);
       loadChecks(ledger, 'toolbelt.errors', 'no-instanceof-error');
 
       const [warning] = listUnusedPragmaWarnings(ledger);
@@ -153,7 +153,7 @@ describe('pragma-report.ts', () => {
 
     it('offers each printed form when two kits declare the same id', ({ temp }) => {
       temp.write('src/a.ts', ['x; // rdy-ignore shared', ''].join('\n'));
-      const ledger = scanning(['src/a.ts']);
+      const ledger = buildScannedLedger(['src/a.ts']);
       loadChecks(ledger, 'kit-a', 'shared');
       loadChecks(ledger, 'kit-b', 'shared');
 
@@ -162,7 +162,7 @@ describe('pragma-report.ts', () => {
 
     it('names only the unmatched id of a pragma that also names a check of the run', ({ temp }) => {
       temp.write('src/a.ts', ['x; // rdy-ignore toolbelt.errors/no-instanceof-error, no-such-check', ''].join('\n'));
-      const ledger = scanning(['src/a.ts']);
+      const ledger = buildScannedLedger(['src/a.ts']);
       loadChecks(ledger, 'toolbelt.errors', 'no-instanceof-error');
 
       expect(listUnusedPragmaWarnings(ledger)[0]?.message).toBe(
@@ -172,7 +172,7 @@ describe('pragma-report.ts', () => {
 
     it('keeps the generic warning when every id names a check of the run', ({ temp }) => {
       temp.write('src/a.ts', ['x; // rdy-ignore toolbelt.errors/no-instanceof-error', ''].join('\n'));
-      const ledger = scanning(['src/a.ts']);
+      const ledger = buildScannedLedger(['src/a.ts']);
       loadChecks(ledger, 'toolbelt.errors', 'no-instanceof-error');
 
       expect(listUnusedPragmaWarnings(ledger)).toStrictEqual([
@@ -188,17 +188,17 @@ describe('pragma-report.ts', () => {
 
 // region | Helpers
 
+/** Opens a ledger recording the given paths as examined and nothing as suppressed. */
+function buildScannedLedger(paths: readonly string[]): PragmaLedger {
+  const ledger = createPragmaLedger();
+  ledger.recordScanned(paths);
+  return ledger;
+}
+
 /** Records a check of a kit published by the named package as loaded. */
 function loadChecks(ledger: PragmaLedger, packageName: string, id: string): void {
   const ids = resolveCheckIds(id, { kind: 'package', packageName, source: `npm:${packageName}`, version: '1.0.0' });
   if (ids !== undefined) ledger.recordCheckIds(ids);
-}
-
-/** Opens a ledger recording the given paths as examined and nothing as suppressed. */
-function scanning(paths: readonly string[]): PragmaLedger {
-  const ledger = createPragmaLedger();
-  ledger.recordScanned(paths);
-  return ledger;
 }
 
 // endregion | Helpers

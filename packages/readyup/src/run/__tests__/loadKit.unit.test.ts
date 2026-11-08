@@ -60,14 +60,14 @@ describe(loadKit, () => {
       const loaded = { kit: makeKit(), compileTimeVersion: VERSION };
       mockLoadRdyKit.mockResolvedValue(loaded);
 
-      await expect(loadKit(localEntry(), createUncachedRemoteContext())).resolves.toBe(loaded);
+      await expect(loadKit(buildLocalEntry(), createUncachedRemoteContext())).resolves.toBe(loaded);
       expect(mockLoadRdyKit).toHaveBeenCalledWith('.readyup/kits/default.js', 'default');
     });
 
     it('passes through a module error naming another package', async () => {
-      mockLoadRdyKit.mockRejectedValue(moduleNotFoundError('chalk'));
+      mockLoadRdyKit.mockRejectedValue(createModuleNotFoundError('chalk'));
 
-      const error = await captureError(RdyError, () => loadKit(localEntry(), createUncachedRemoteContext()));
+      const error = await captureError(RdyError, () => loadKit(buildLocalEntry(), createUncachedRemoteContext()));
 
       expect(error.message).toBe("Cannot find package 'chalk'");
     });
@@ -75,7 +75,7 @@ describe(loadKit, () => {
     it('passes through an error with no module code', async () => {
       mockLoadRdyKit.mockRejectedValue(new Error('boom'));
 
-      const error = await captureError(RdyError, () => loadKit(localEntry(), createUncachedRemoteContext()));
+      const error = await captureError(RdyError, () => loadKit(buildLocalEntry(), createUncachedRemoteContext()));
 
       expect(error.message).toBe('boom');
     });
@@ -83,7 +83,7 @@ describe(loadKit, () => {
     it('passes through an error with an unrelated code', async () => {
       mockLoadRdyKit.mockRejectedValue(Object.assign(new Error('boom'), { code: 'EACCES' }));
 
-      const error = await captureError(RdyError, () => loadKit(localEntry(), createUncachedRemoteContext()));
+      const error = await captureError(RdyError, () => loadKit(buildLocalEntry(), createUncachedRemoteContext()));
 
       expect(error.message).toBe('boom');
     });
@@ -91,7 +91,7 @@ describe(loadKit, () => {
     it('passes through a rejection that is no error at all', async () => {
       mockLoadRdyKit.mockRejectedValue('boom');
 
-      const error = await captureError(RdyError, () => loadKit(localEntry(), createUncachedRemoteContext()));
+      const error = await captureError(RdyError, () => loadKit(buildLocalEntry(), createUncachedRemoteContext()));
 
       expect(error.code).toBe('kit-load');
     });
@@ -103,7 +103,7 @@ describe(loadKit, () => {
         }),
       );
 
-      const error = await captureError(RdyError, () => loadKit(localEntry(), createUncachedRemoteContext()));
+      const error = await captureError(RdyError, () => loadKit(buildLocalEntry(), createUncachedRemoteContext()));
 
       expect(error.hint).toBe('Install it with: pnpm add --save-dev some-lib');
     });
@@ -114,7 +114,7 @@ describe(loadKit, () => {
       mockResolveGitHubToken.mockReturnValue('token-abc');
       mockLoadRemoteKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
 
-      await loadKit(remoteEntry(GITHUB_URL), createUncachedRemoteContext());
+      await loadKit(buildRemoteEntry(GITHUB_URL), createUncachedRemoteContext());
 
       expect(resolveLoaderHeaders()).toStrictEqual({ Authorization: 'token token-abc' });
     });
@@ -123,7 +123,7 @@ describe(loadKit, () => {
       mockResolveBitbucketToken.mockReturnValue('bb-token-xyz');
       mockLoadRemoteKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
 
-      await loadKit(remoteEntry(BITBUCKET_URL), createUncachedRemoteContext());
+      await loadKit(buildRemoteEntry(BITBUCKET_URL), createUncachedRemoteContext());
 
       expect(resolveLoaderHeaders()).toStrictEqual({ Authorization: 'Bearer bb-token-xyz' });
     });
@@ -136,7 +136,7 @@ describe(loadKit, () => {
       mockResolveBitbucketToken.mockReturnValue(undefined);
       mockLoadRemoteKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
 
-      await loadKit(remoteEntry(url), createUncachedRemoteContext());
+      await loadKit(buildRemoteEntry(url), createUncachedRemoteContext());
 
       expect(resolveLoaderHeaders()).toBeUndefined();
     });
@@ -144,7 +144,7 @@ describe(loadKit, () => {
     it('builds no header for a third-party URL, resolving no token', async () => {
       mockLoadRemoteKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
 
-      await loadKit(remoteEntry(THIRD_PARTY_URL), createUncachedRemoteContext());
+      await loadKit(buildRemoteEntry(THIRD_PARTY_URL), createUncachedRemoteContext());
 
       expect(resolveLoaderHeaders()).toBeUndefined();
       expect(mockResolveGitHubToken).not.toHaveBeenCalled();
@@ -155,7 +155,7 @@ describe(loadKit, () => {
       mockResolveGitHubToken.mockReturnValue('token-abc');
       mockLoadRemoteKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
 
-      await loadKit(remoteEntry(GITHUB_URL), createUncachedRemoteContext());
+      await loadKit(buildRemoteEntry(GITHUB_URL), createUncachedRemoteContext());
 
       expect(mockResolveGitHubToken).not.toHaveBeenCalled();
     });
@@ -164,7 +164,7 @@ describe(loadKit, () => {
       mockLoadRemoteKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
       const cache = { dir: '/cache/readyup/http', reload: false };
 
-      await loadKit(remoteEntry(GITHUB_URL), { ...createUncachedRemoteContext(), cache });
+      await loadKit(buildRemoteEntry(GITHUB_URL), { ...createUncachedRemoteContext(), cache });
 
       expect(mockLoadRemoteKit).toHaveBeenCalledWith(expect.objectContaining({ url: GITHUB_URL, cache }));
     });
@@ -173,7 +173,7 @@ describe(loadKit, () => {
       mockLoadRemoteKit.mockRejectedValue(new Error(`Failed to fetch remote kit from ${BITBUCKET_URL}: 404 Not Found`));
 
       const error = await captureError(RdyError, () =>
-        loadKit(remoteEntry(BITBUCKET_URL), createUncachedRemoteContext()),
+        loadKit(buildRemoteEntry(BITBUCKET_URL), createUncachedRemoteContext()),
       );
 
       expect(error.message).toContain(BITBUCKET_URL);
@@ -183,7 +183,7 @@ describe(loadKit, () => {
       mockLoadRemoteKit.mockRejectedValue(new TypeError('fetch failed'));
 
       const error = await captureError(RdyError, () =>
-        loadKit(remoteEntry(BITBUCKET_URL), createUncachedRemoteContext()),
+        loadKit(buildRemoteEntry(BITBUCKET_URL), createUncachedRemoteContext()),
       );
 
       expect(error.message).toContain(BITBUCKET_URL);
@@ -193,7 +193,7 @@ describe(loadKit, () => {
       mockLoadRemoteKit.mockRejectedValue(new Error('Failed to fetch remote kit'));
 
       const error = await captureError(RdyError, () =>
-        loadKit(remoteEntry(THIRD_PARTY_URL), createUncachedRemoteContext()),
+        loadKit(buildRemoteEntry(THIRD_PARTY_URL), createUncachedRemoteContext()),
       );
 
       expect(error.message).toBe(`Failed to reach ${THIRD_PARTY_URL}: Failed to fetch remote kit`);
@@ -202,9 +202,9 @@ describe(loadKit, () => {
 
   describe('unresolvable readyup imports', () => {
     it('names every symbol that the runner does not export', async () => {
-      mockLoadRdyKit.mockRejectedValue(missingSymbolError());
+      mockLoadRdyKit.mockRejectedValue(createMissingSymbolError());
 
-      const error = await captureError(RdyError, () => loadKit(localEntry(), createUncachedRemoteContext()));
+      const error = await captureError(RdyError, () => loadKit(buildLocalEntry(), createUncachedRemoteContext()));
 
       expect(error.code).toBe('kit-load');
       expect(error.message).toBe(
@@ -213,15 +213,15 @@ describe(loadKit, () => {
     });
 
     it('advises recompiling a kit owned by the project', async () => {
-      mockLoadRdyKit.mockRejectedValue(missingSymbolError());
+      mockLoadRdyKit.mockRejectedValue(createMissingSymbolError());
 
-      const error = await captureError(RdyError, () => loadKit(localEntry(), createUncachedRemoteContext()));
+      const error = await captureError(RdyError, () => loadKit(buildLocalEntry(), createUncachedRemoteContext()));
 
       expect(error.hint).toBe(`Run 'rdy compile' to rebuild it against readyup ${VERSION}.`);
     });
 
     it('names the publishing package and advises upgrading it', async () => {
-      mockLoadRdyKit.mockRejectedValue(missingSymbolError());
+      mockLoadRdyKit.mockRejectedValue(createMissingSymbolError());
       const entry: ResolvedKitEntry = {
         name: 'drift',
         source: { path: 'node_modules/@acme/kits/.readyup/kits/drift.js' },
@@ -236,7 +236,7 @@ describe(loadKit, () => {
     });
 
     it('advises asking the publisher of a remote kit to recompile', async () => {
-      mockLoadRemoteKit.mockRejectedValue(missingSymbolError());
+      mockLoadRemoteKit.mockRejectedValue(createMissingSymbolError());
       const entry: ResolvedKitEntry = {
         name: 'deploy',
         source: { url: THIRD_PARTY_URL },
@@ -267,7 +267,7 @@ describe(loadKit, () => {
       mockLoadRemoteKit.mockRejectedValue(new RemoteFetchError('Failed to fetch remote kit', 404));
       mockDiagnoseMissingRemoteKit.mockResolvedValue(diagnosis);
 
-      const error = await captureError(RdyError, () => loadKit(repositoryEntry(), createUncachedRemoteContext()));
+      const error = await captureError(RdyError, () => loadKit(buildRepositoryEntry(), createUncachedRemoteContext()));
 
       expect(error).toBe(diagnosis);
       expect(mockDiagnoseMissingRemoteKit).toHaveBeenCalledWith(
@@ -279,7 +279,7 @@ describe(loadKit, () => {
       mockLoadRemoteKit.mockRejectedValue(new RemoteFetchError('Failed to fetch remote kit', 404));
       mockDiagnoseMissingRemoteKit.mockResolvedValue(undefined);
 
-      const error = await captureError(RdyError, () => loadKit(repositoryEntry(), createUncachedRemoteContext()));
+      const error = await captureError(RdyError, () => loadKit(buildRepositoryEntry(), createUncachedRemoteContext()));
 
       expect(error.message).toBe('Failed to fetch remote kit');
     });
@@ -287,7 +287,7 @@ describe(loadKit, () => {
     it.each([401, 403, 500])('does not read the manifest on a %i', async (status) => {
       mockLoadRemoteKit.mockRejectedValue(new RemoteFetchError('Failed to fetch remote kit', status));
 
-      await captureError(RdyError, () => loadKit(repositoryEntry(), createUncachedRemoteContext()));
+      await captureError(RdyError, () => loadKit(buildRepositoryEntry(), createUncachedRemoteContext()));
 
       expect(mockDiagnoseMissingRemoteKit).not.toHaveBeenCalled();
     });
@@ -295,7 +295,7 @@ describe(loadKit, () => {
     it('does not read a manifest for a kit named by URL alone', async () => {
       mockLoadRemoteKit.mockRejectedValue(new RemoteFetchError('Failed to fetch remote kit', 404));
 
-      await captureError(RdyError, () => loadKit(remoteEntry(GITHUB_URL), createUncachedRemoteContext()));
+      await captureError(RdyError, () => loadKit(buildRemoteEntry(GITHUB_URL), createUncachedRemoteContext()));
 
       expect(mockDiagnoseMissingRemoteKit).not.toHaveBeenCalled();
     });
@@ -303,13 +303,13 @@ describe(loadKit, () => {
     it('does not read the manifest when the kit loads', async () => {
       mockLoadRemoteKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: VERSION });
 
-      await loadKit(repositoryEntry(), createUncachedRemoteContext());
+      await loadKit(buildRepositoryEntry(), createUncachedRemoteContext());
 
       expect(mockDiagnoseMissingRemoteKit).not.toHaveBeenCalled();
     });
 
     /** Builds an entry for kit `deploy` resolved from `github:acme/private`. */
-    function repositoryEntry(): ResolvedKitEntry {
+    function buildRepositoryEntry(): ResolvedKitEntry {
       return { name: 'deploy', source: { url: GITHUB_URL }, checklists: [], provenance: PROVENANCE };
     }
   });
@@ -321,44 +321,46 @@ describe(loadKit, () => {
     it.each([401, 403, 404])('hints at GITHUB_TOKEN on an unauthenticated %i from GitHub', async (status) => {
       mockResolveGitHubToken.mockReturnValue(undefined);
 
-      await expect(hintFor(GITHUB_URL, status)).resolves.toBe(GITHUB_HINT);
+      await expect(captureFetchHint(GITHUB_URL, status)).resolves.toBe(GITHUB_HINT);
     });
 
     it.each([401, 403, 404])('hints at BITBUCKET_TOKEN on an unauthenticated %i from Bitbucket', async (status) => {
       mockResolveBitbucketToken.mockReturnValue(undefined);
 
-      await expect(hintFor(BITBUCKET_URL, status)).resolves.toBe(BITBUCKET_HINT);
+      await expect(captureFetchHint(BITBUCKET_URL, status)).resolves.toBe(BITBUCKET_HINT);
     });
 
     it('stays silent when a token was forwarded', async () => {
       mockResolveGitHubToken.mockReturnValue('my-token');
 
-      await expect(hintFor(GITHUB_URL, 404)).resolves.toBeUndefined();
+      await expect(captureFetchHint(GITHUB_URL, 404)).resolves.toBeUndefined();
     });
 
     it('stays silent for a third-party host, for which readyup has no credential', async () => {
-      await expect(hintFor(THIRD_PARTY_URL, 404)).resolves.toBeUndefined();
+      await expect(captureFetchHint(THIRD_PARTY_URL, 404)).resolves.toBeUndefined();
     });
 
     it.each([500, 502])('stays silent on a %i, which no credential would fix', async (status) => {
       mockResolveGitHubToken.mockReturnValue(undefined);
 
-      await expect(hintFor(GITHUB_URL, status)).resolves.toBeUndefined();
+      await expect(captureFetchHint(GITHUB_URL, status)).resolves.toBeUndefined();
     });
 
     it('stays silent on a network failure, which reached no host to be refused by', async () => {
       mockResolveGitHubToken.mockReturnValue(undefined);
       mockLoadRemoteKit.mockRejectedValue(new TypeError('fetch failed'));
 
-      const error = await captureError(RdyError, () => loadKit(remoteEntry(GITHUB_URL), createUncachedRemoteContext()));
+      const error = await captureError(RdyError, () =>
+        loadKit(buildRemoteEntry(GITHUB_URL), createUncachedRemoteContext()),
+      );
 
       expect(error.hint).toBeUndefined();
     });
 
     /** Loads one kit from `url` against a fetch that failed with `status`, returning the hint raised. */
-    async function hintFor(url: string, status: number): Promise<string | undefined> {
+    async function captureFetchHint(url: string, status: number): Promise<string | undefined> {
       mockLoadRemoteKit.mockRejectedValue(new RemoteFetchError(`Failed to fetch remote kit from ${url}`, status));
-      const error = await captureError(RdyError, () => loadKit(remoteEntry(url), createUncachedRemoteContext()));
+      const error = await captureError(RdyError, () => loadKit(buildRemoteEntry(url), createUncachedRemoteContext()));
       return error.hint;
     }
   });
@@ -367,17 +369,17 @@ describe(loadKit, () => {
 // region | Helpers
 
 /** Builds an entry pointing at a compiled kit in the local kits directory. */
-function localEntry(): ResolvedKitEntry {
+function buildLocalEntry(): ResolvedKitEntry {
   return { name: 'default', source: { path: '.readyup/kits/default.js' }, checklists: [] };
 }
 
-/** Builds a minimal kit with one passing checklist. */
-function makeKit(): RdyKit {
-  return { checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }] };
+/** Builds an entry pointing at a kit served over HTTP. */
+function buildRemoteEntry(url: string): ResolvedKitEntry {
+  return { name: 'deploy', source: { url }, checklists: [] };
 }
 
 /** Returns the failure raised by a loader for a kit binding a symbol that this runner does not export. */
-function missingSymbolError(): UnresolvableKitImportsError {
+function createMissingSymbolError(): UnresolvableKitImportsError {
   return new UnresolvableKitImportsError({
     unknownSubpaths: [],
     missing: [{ specifier: 'readyup/check-utils', names: ['fileExists', 'runGit'] }],
@@ -385,8 +387,13 @@ function missingSymbolError(): UnresolvableKitImportsError {
 }
 
 /** Returns the failure raised by Node for an import that resolves to no installed package. */
-function moduleNotFoundError(packageName: string): Error {
+function createModuleNotFoundError(packageName: string): Error {
   return Object.assign(new Error(`Cannot find package '${packageName}'`), { code: 'MODULE_NOT_FOUND' });
+}
+
+/** Builds a minimal kit with one passing checklist. */
+function makeKit(): RdyKit {
+  return { checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }] };
 }
 
 /** Calls the header builder that `loadKit` passed to the remote loader on its first call. */
@@ -394,11 +401,6 @@ function resolveLoaderHeaders(): Record<string, string> | undefined {
   const [firstCall] = mockLoadRemoteKit.mock.calls;
   assert.ok(firstCall);
   return firstCall[0].resolveHeaders();
-}
-
-/** Builds an entry pointing at a kit served over HTTP. */
-function remoteEntry(url: string): ResolvedKitEntry {
-  return { name: 'deploy', source: { url }, checklists: [] };
 }
 
 // endregion | Helpers

@@ -45,7 +45,7 @@ describe('a run recording what its checks examined and suppressed', () => {
     temp.write(SOURCE_PATH, SOURCE_TEXT);
     const ledger = createPragmaLedger();
 
-    await runRdy(scanningChecklist(), { pragmaLedger: ledger });
+    await runRdy(buildScanningChecklist(), { pragmaLedger: ledger });
 
     expect(ledger.scannedPaths()).toStrictEqual([temp.resolve(SOURCE_PATH)]);
     expect(ledger.hasSuppressed(SOURCE_PATH, 1)).toBe(true);
@@ -56,7 +56,7 @@ describe('a run recording what its checks examined and suppressed', () => {
     temp.write(SOURCE_PATH, SOURCE_TEXT);
     const ledger = createPragmaLedger();
 
-    await runRdy(scanningChecklist('not applicable'), { diagnose: true, pragmaLedger: ledger });
+    await runRdy(buildScanningChecklist('not applicable'), { diagnose: true, pragmaLedger: ledger });
 
     expect(ledger.scannedPaths()).toStrictEqual([]);
     expect(ledger.hasSuppressed(SOURCE_PATH, 1)).toBe(false);
@@ -65,7 +65,7 @@ describe('a run recording what its checks examined and suppressed', () => {
   it('suppresses and reports as before for an invocation keeping no ledger', async ({ temp }) => {
     temp.write(SOURCE_PATH, SOURCE_TEXT);
 
-    const report = await runRdy(scanningChecklist());
+    const report = await runRdy(buildScanningChecklist());
 
     expect(report.results[0]?.detail).toBe('src/a.ts:2');
   });
@@ -74,7 +74,7 @@ describe('a run recording what its checks examined and suppressed', () => {
     temp.write(SOURCE_PATH, SOURCE_TEXT);
     const ledger = createPragmaLedger();
 
-    await runRdy(adoptionChecklist(sweepingCheck({ path: SOURCE_PATH })), { pragmaLedger: ledger });
+    await runRdy(wrapAsAdoptionChecklist(buildSweepingCheck({ path: SOURCE_PATH })), { pragmaLedger: ledger });
 
     expect(ledger.scannedPaths()).toStrictEqual([temp.resolve(SOURCE_PATH)]);
   });
@@ -83,7 +83,7 @@ describe('a run recording what its checks examined and suppressed', () => {
     temp.write(SOURCE_PATH, SOURCE_TEXT);
     const ledger = createPragmaLedger();
 
-    await runRdy(adoptionChecklist(skipSweepingCheck(SOURCE_PATH)), { pragmaLedger: ledger });
+    await runRdy(wrapAsAdoptionChecklist(buildSkipSweepingCheck(SOURCE_PATH)), { pragmaLedger: ledger });
 
     expect(ledger.scannedPaths()).toStrictEqual([temp.resolve(SOURCE_PATH)]);
   });
@@ -92,7 +92,9 @@ describe('a run recording what its checks examined and suppressed', () => {
     temp.write(SOURCE_PATH, SOURCE_TEXT);
     const ledger = createPragmaLedger();
 
-    await runRdy(adoptionChecklist(skipSweepingCheck(SOURCE_PATH, 'not applicable')), { pragmaLedger: ledger });
+    await runRdy(wrapAsAdoptionChecklist(buildSkipSweepingCheck(SOURCE_PATH, 'not applicable')), {
+      pragmaLedger: ledger,
+    });
 
     expect(ledger.scannedPaths()).toStrictEqual([temp.resolve(SOURCE_PATH)]);
   });
@@ -103,9 +105,9 @@ describe('a run recording what its checks examined and suppressed', () => {
     const ledger = createPragmaLedger();
 
     const report = await runRdy(
-      adoptionChecklist(
-        sweepingCheck({ path: SOURCE_PATH }),
-        sweepingCheck({ path: OTHER_PATH, skipReason: 'not applicable' }),
+      wrapAsAdoptionChecklist(
+        buildSweepingCheck({ path: SOURCE_PATH }),
+        buildSweepingCheck({ path: OTHER_PATH, skipReason: 'not applicable' }),
       ),
       { diagnose: true, pragmaLedger: ledger },
     );
@@ -120,16 +122,11 @@ describe('a run recording what its checks examined and suppressed', () => {
 
 // region | Helpers
 
-/** Wraps checks as the one adoption checklist that a test runs. */
-function adoptionChecklist(...checks: RdyCheck[]): RdyChecklist {
-  return { name: 'adoption', checks };
-}
-
 /**
  * Builds a checklist whose one check sweeps the source and reports a finding on each of its two lines,
  * skipping for the reason given if one is passed.
  */
-function scanningChecklist(skipReason?: string): RdyChecklist {
+function buildScanningChecklist(skipReason?: string): RdyChecklist {
   return {
     name: 'adoption',
     checks: [
@@ -153,7 +150,7 @@ function scanningChecklist(skipReason?: string): RdyChecklist {
  * Builds a check that sweeps its path in `skip`, as a kit memoizing one sweep does, then skips for the reason
  * given or runs if none is.
  */
-function skipSweepingCheck(path: string, skipReason?: string): RdyCheck {
+function buildSkipSweepingCheck(path: string, skipReason?: string): RdyCheck {
   return {
     name: `No source at ${path} hand-rolls the idiom`,
     skip: async (): Promise<SkipResult> => {
@@ -164,13 +161,8 @@ function skipSweepingCheck(path: string, skipReason?: string): RdyCheck {
   };
 }
 
-/** Reads the one tracked path, as an adoption check reads the project. */
-async function sweep(path: string): Promise<void> {
-  await readTrackedSources((tracked) => tracked === path);
-}
-
 /** Builds a check that sweeps its path in `check` and reports no finding, skipping if a reason is given. */
-function sweepingCheck(options: { path: string; skipReason?: string }): RdyCheck {
+function buildSweepingCheck(options: { path: string; skipReason?: string }): RdyCheck {
   const { path, skipReason } = options;
   return {
     name: `No source at ${path} hand-rolls the idiom`,
@@ -182,12 +174,22 @@ function sweepingCheck(options: { path: string; skipReason?: string }): RdyCheck
   };
 }
 
+/** Reads the one tracked path, as an adoption check reads the project. */
+async function sweep(path: string): Promise<void> {
+  await readTrackedSources((tracked) => tracked === path);
+}
+
 /** Stubs the repo probe with a working tree, and the listing with the given paths. */
 function trackPaths(...paths: string[]): void {
   execFileAsync.mockImplementation((_file, args) => {
     if (args.includes('rev-parse')) return Promise.resolve({ stdout: '.git\n', stderr: '' });
     return Promise.resolve({ stdout: `${paths.join('\0')}\0`, stderr: '' });
   });
+}
+
+/** Wraps checks as the one adoption checklist that a test runs. */
+function wrapAsAdoptionChecklist(...checks: RdyCheck[]): RdyChecklist {
+  return { name: 'adoption', checks };
 }
 
 // endregion | Helpers

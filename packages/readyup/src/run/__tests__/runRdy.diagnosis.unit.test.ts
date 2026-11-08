@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { RdyChecklist } from '../../kits/types.ts';
 import { runRdy } from '../runRdy.ts';
-import { returning } from '../test-utils/untyped-returns.ts';
+import { wrapAsCheck } from '../test-utils/untyped-returns.ts';
 
 describe(runRdy, () => {
   describe('diagnosis', () => {
@@ -45,7 +45,7 @@ describe(runRdy, () => {
     it('reports a skipped check whose findings cannot be read as inconclusive', async () => {
       const checklist: RdyChecklist = {
         name: 'adoption',
-        checks: [{ name: 'malformed', check: returning({ findings: [null] }), skip: () => 'not applicable' }],
+        checks: [{ name: 'malformed', check: wrapAsCheck({ findings: [null] }), skip: () => 'not applicable' }],
       };
 
       const report = await runRdy(checklist, { diagnose: true });
@@ -100,7 +100,7 @@ describe(runRdy, () => {
     it('reports a check that expresses no verdict as inconclusive', async () => {
       const checklist: RdyChecklist = {
         name: 'broken',
-        checks: [{ name: 'no-verdict', check: returning('yes'), skip: () => 'not applicable' }],
+        checks: [{ name: 'no-verdict', check: wrapAsCheck('yes'), skip: () => 'not applicable' }],
       };
 
       const report = await runRdy(checklist, { diagnose: true });
@@ -121,7 +121,7 @@ describe(runRdy, () => {
         checks: [
           {
             name: 'malformed-findings',
-            check: returning({ findings: [{ line: 1, path: 'missing/source.ts' }] }),
+            check: wrapAsCheck({ findings: [{ line: 1, path: 'missing/source.ts' }] }),
             skip: () => 'not applicable',
           },
         ],
@@ -246,6 +246,7 @@ describe(runRdy, () => {
     });
 
     it('leaves statuses, per-check durations, and the verdict identical to an undiagnosed run', async () => {
+      /** Builds a checklist with a passing, a failing, a skipped, and a blocked check behind one precondition. */
       const buildChecklist = (): RdyChecklist => ({
         name: 'mixed',
         preconditions: [{ name: 'gate', check: () => true }],
@@ -260,7 +261,8 @@ describe(runRdy, () => {
       const plain = await runRdy(buildChecklist());
       const diagnosed = await runRdy(buildChecklist(), { diagnose: true });
 
-      const shapeOf = (report: Awaited<ReturnType<typeof runRdy>>) =>
+      /** Reduces each result to the fields that diagnosis must leave unchanged. */
+      const summarizeResults = (report: Awaited<ReturnType<typeof runRdy>>) =>
         report.results.map((r) => ({
           name: r.name,
           status: r.status,
@@ -268,7 +270,7 @@ describe(runRdy, () => {
           skipReason: r.status === 'skipped' ? r.skipReason : undefined,
         }));
 
-      expect(shapeOf(diagnosed)).toStrictEqual(shapeOf(plain));
+      expect(summarizeResults(diagnosed)).toStrictEqual(summarizeResults(plain));
       expect(diagnosed.passed).toBe(plain.passed);
       const skipped = diagnosed.results.filter((r) => r.status === 'skipped');
       expect(skipped).not.toHaveLength(0);

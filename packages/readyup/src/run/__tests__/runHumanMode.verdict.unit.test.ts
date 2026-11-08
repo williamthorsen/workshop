@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { kitLoadError } from '../../errors/RdyError.ts';
 import { runHumanMode } from '../runHumanMode.ts';
 import { createRunFakes, type RunFakes } from '../test-utils/createRunFakes.ts';
-import { makeKit, singleKitEntry } from '../test-utils/kit-fixtures.ts';
+import { buildSingleKitEntry, makeKit } from '../test-utils/kit-fixtures.ts';
 import { makeFailedResult, makePassedResult, makeSkippedResult } from '../test-utils/result-fixtures.ts';
 import { runHuman } from '../test-utils/runHuman.ts';
 
@@ -20,7 +20,7 @@ describe(runHumanMode, () => {
       fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
       fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-      await runHuman(singleKitEntry(['deploy']), { reportOn: 'warn' }, fakes);
+      await runHuman(buildSingleKitEntry(['deploy']), { reportOn: 'warn' }, fakes);
 
       expect(fakes.reportRdy).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ reportOn: 'warn' }));
     });
@@ -31,7 +31,7 @@ describe(runHumanMode, () => {
       fakes.loadKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
       fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-      const { stdout } = await runHuman(singleKitEntry(['deploy']), {}, fakes);
+      const { stdout } = await runHuman(buildSingleKitEntry(['deploy']), {}, fakes);
 
       expect(stdout).toMatch(/report output\n\n.*Run passed \(fail-on: error\)\n$/);
     });
@@ -45,10 +45,10 @@ describe(runHumanMode, () => {
         durationMs: 0,
       });
 
-      const { exitCode, stdout } = await runHuman(singleKitEntry(['deploy']), { failOn: 'recommend' }, fakes);
+      const { exitCode, stdout } = await runHuman(buildSingleKitEntry(['deploy']), { failOn: 'recommend' }, fakes);
 
       expect(exitCode).toBe(1);
-      expect(lastLine(stdout)).toContain('Run failed (fail-on: recommend)');
+      expect(readLastLine(stdout)).toContain('Run failed (fail-on: recommend)');
     });
 
     it('names each kit with its threshold when the kits resolve different thresholds', async () => {
@@ -66,7 +66,7 @@ describe(runHumanMode, () => {
         fakes,
       );
 
-      expect(lastLine(stdout)).toContain('Run passed (fail-on: error for release; warn for audit)');
+      expect(readLastLine(stdout)).toContain('Run passed (fail-on: error for release; warn for audit)');
     });
 
     it('ends a run in which a kit did not load with an incomplete verdict', async () => {
@@ -84,7 +84,7 @@ describe(runHumanMode, () => {
         fakes,
       );
 
-      expect(lastLine(stdout)).toContain('Run incomplete: 1 kit did not run');
+      expect(readLastLine(stdout)).toContain('Run incomplete: 1 kit did not run');
     });
 
     it('says that a failing check is withheld when the reporting threshold is above the failure threshold', async () => {
@@ -95,7 +95,11 @@ describe(runHumanMode, () => {
         durationMs: 0,
       });
 
-      const { stdout } = await runHuman(singleKitEntry(['deploy']), { failOn: 'recommend', reportOn: 'warn' }, fakes);
+      const { stdout } = await runHuman(
+        buildSingleKitEntry(['deploy']),
+        { failOn: 'recommend', reportOn: 'warn' },
+        fakes,
+      );
 
       expect(stdout).toContain('Hint: 1 failing check is not shown; rerun with --report-on recommend to show it\n');
     });
@@ -108,7 +112,11 @@ describe(runHumanMode, () => {
         durationMs: 0,
       });
 
-      const { stdout } = await runHuman(singleKitEntry(['deploy']), { failOn: 'recommend', reportOn: 'warn' }, fakes);
+      const { stdout } = await runHuman(
+        buildSingleKitEntry(['deploy']),
+        { failOn: 'recommend', reportOn: 'warn' },
+        fakes,
+      );
 
       expect(stdout).not.toContain('not shown');
     });
@@ -121,7 +129,7 @@ describe(runHumanMode, () => {
         durationMs: 0,
       });
 
-      const { stdout } = await runHuman(singleKitEntry(['deploy']), { reportOn: 'warn' }, fakes);
+      const { stdout } = await runHuman(buildSingleKitEntry(['deploy']), { reportOn: 'warn' }, fakes);
 
       expect(stdout).not.toContain('not shown');
     });
@@ -131,7 +139,7 @@ describe(runHumanMode, () => {
 // region | Helpers
 
 /** Returns the last line of `stdout`, ignoring its trailing newline. */
-function lastLine(stdout: string): string | undefined {
+function readLastLine(stdout: string): string | undefined {
   return stdout.trimEnd().split('\n').at(-1);
 }
 

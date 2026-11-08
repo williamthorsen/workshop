@@ -75,7 +75,7 @@ describe(listMaskedSkipWarnings, () => {
     // Every kit resolved by `--sources` has the same name, so the package is the only thing that
     // tells one run entry's warnings from another's.
     it('names the publishing package beside the kit', () => {
-      const warnings = listWarnings([{ name: 'a', verdict: 'masked-pass' }], packagedKit());
+      const warnings = listWarnings([{ name: 'a', verdict: 'masked-pass' }], buildPackagedEntry());
 
       expect(warnings[0]?.message).toBe(
         'skipped check "a" in kit "default" from @williamthorsen/nmr / checklist "repo" would have passed.',
@@ -100,7 +100,7 @@ describe(listMaskedSkipWarnings, () => {
 // region | Helpers
 
 /** Builds the entry to which a kit published by an installed package resolves. */
-function packagedKit(): ResolvedKitEntry {
+function buildPackagedEntry(): ResolvedKitEntry {
   return {
     name: 'default',
     source: { path: 'node_modules/@williamthorsen/nmr/.readyup/kits/default.js' },

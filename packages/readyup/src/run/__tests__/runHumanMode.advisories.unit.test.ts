@@ -9,7 +9,7 @@ import type { UnrunSource } from '../KitSelection.ts';
 import type { ResolvedKitEntry } from '../ResolvedKitEntry.ts';
 import { runHumanMode } from '../runHumanMode.ts';
 import { createRunFakes, type RunFakes } from '../test-utils/createRunFakes.ts';
-import { makeKit, singleKitEntry } from '../test-utils/kit-fixtures.ts';
+import { buildSingleKitEntry, makeKit } from '../test-utils/kit-fixtures.ts';
 import { runHuman } from '../test-utils/runHuman.ts';
 
 /** A warning as the unmarked-generated report returns it. */
@@ -43,7 +43,7 @@ describe(runHumanMode, () => {
 
   describe('unused-pragma advisories', () => {
     /** Builds two entries whose names and compiled paths differ, so that a per-kit ledger would show as two. */
-    function twoKitEntries() {
+    function buildTwoKitEntries() {
       return [
         { name: 'alpha', source: { path: '.readyup/kits/alpha.js' }, checklists: ['deploy'] },
         { name: 'beta', source: { path: '.readyup/kits/beta.js' }, checklists: ['deploy'] },
@@ -56,7 +56,7 @@ describe(runHumanMode, () => {
 
       fakes.listUnusedPragmaWarnings.mockReturnValue([PRAGMA_UNUSED]);
 
-      const writes = await runHumanRecordingWrites(twoKitEntries(), fakes, []);
+      const writes = await runHumanRecordingWrites(buildTwoKitEntries(), fakes, []);
 
       const summaryIndex = writes.findIndex(({ text }) => text === 'combined summary\n');
       const warningIndex = writes.findIndex(({ text }) => text.startsWith(`Warning: ${PRAGMA_UNUSED.message}`));
@@ -85,7 +85,7 @@ describe(runHumanMode, () => {
         diagnoses: [{ name: 'a', verdict: 'masked-pass' }],
       });
 
-      const writes = await runHumanRecordingWrites(singleKitEntry(['deploy']), fakes, [
+      const writes = await runHumanRecordingWrites(buildSingleKitEntry(['deploy']), fakes, [
         { spelling: 'npm:a', requestedNames: ['default'], publishedNames: ['x'] },
       ]);
 

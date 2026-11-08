@@ -44,7 +44,7 @@ describe(listUnmarkedGeneratedSourceWarnings, () => {
     initRepository(temp);
     using _cwd = pointCwdAt(temp.dir);
 
-    const warnings = await listUnmarkedGeneratedSourceWarnings(scanning(['dist/app.mjs']));
+    const warnings = await listUnmarkedGeneratedSourceWarnings(buildScannedLedger(['dist/app.mjs']));
 
     expect(warnings).toStrictEqual([
       {
@@ -61,7 +61,7 @@ describe(listUnmarkedGeneratedSourceWarnings, () => {
     initRepository(temp);
     using _cwd = pointCwdAt(temp.dir);
 
-    const warnings = await listUnmarkedGeneratedSourceWarnings(scanning(['scripts/tool.mjs']));
+    const warnings = await listUnmarkedGeneratedSourceWarnings(buildScannedLedger(['scripts/tool.mjs']));
 
     expect(warnings).toHaveLength(1);
     expect(warnings[0]?.message).toContain("bundler's runtime helpers");
@@ -78,7 +78,7 @@ describe(listUnmarkedGeneratedSourceWarnings, () => {
     using _cwd = pointCwdAt(temp.dir);
 
     const warnings = await listUnmarkedGeneratedSourceWarnings(
-      scanning(['generated.mjs', 'vendored.js', 'hand.ts', 'untracked.mjs']),
+      buildScannedLedger(['generated.mjs', 'vendored.js', 'hand.ts', 'untracked.mjs']),
     );
 
     expect(warnings).toStrictEqual([]);
@@ -89,7 +89,7 @@ describe(listUnmarkedGeneratedSourceWarnings, () => {
     initRepository(temp);
     using _cwd = pointCwdAt(temp.dir);
 
-    const warnings = await listUnmarkedGeneratedSourceWarnings(scanning(['.readyup/kits/default.js']));
+    const warnings = await listUnmarkedGeneratedSourceWarnings(buildScannedLedger(['.readyup/kits/default.js']));
 
     expect(warnings).toStrictEqual([]);
   });
@@ -99,7 +99,7 @@ describe(listUnmarkedGeneratedSourceWarnings, () => {
     initRepository(temp);
     using _cwd = pointCwdAt(join(temp.dir, 'packages/app'));
 
-    const warnings = await listUnmarkedGeneratedSourceWarnings(scanning(['dist/app.js']));
+    const warnings = await listUnmarkedGeneratedSourceWarnings(buildScannedLedger(['dist/app.js']));
 
     expect(warnings[0]?.message).toMatch(/^dist\/app\.js /);
     expect(warnings[0]?.remedy).toContain('`/packages/app/dist/app.js linguist-generated=true`');
@@ -113,7 +113,7 @@ describe(listUnmarkedGeneratedSourceWarnings, () => {
     initRepository(temp);
     using _cwd = pointCwdAt(temp.dir);
 
-    const warnings = await listUnmarkedGeneratedSourceWarnings(scanning(paths));
+    const warnings = await listUnmarkedGeneratedSourceWarnings(buildScannedLedger(paths));
     const lines = warnings.map((warning) => /`(.+)`/.exec(warning.remedy ?? '')?.[1]);
 
     expect(lines).toStrictEqual([
@@ -150,7 +150,7 @@ describe(listUnmarkedGeneratedSourceWarnings, () => {
     temp.write('dist/app.mjs', MINIFIED);
     using _cwd = pointCwdAt(temp.dir);
 
-    const warnings = await listUnmarkedGeneratedSourceWarnings(scanning(['dist/app.mjs']));
+    const warnings = await listUnmarkedGeneratedSourceWarnings(buildScannedLedger(['dist/app.mjs']));
 
     expect(warnings).toStrictEqual([]);
   });
@@ -158,19 +158,19 @@ describe(listUnmarkedGeneratedSourceWarnings, () => {
 
 // region | Helpers
 
+/** Opens a ledger recording the given paths as examined. */
+function buildScannedLedger(paths: readonly string[]): PragmaLedger {
+  const ledger = createPragmaLedger();
+  ledger.recordScanned(paths);
+  return ledger;
+}
+
 /** Initializes a git repository over the temporary directory and stages everything in it. */
 function initRepository(temp: TempTree): void {
   execFileSync('git', ['-C', temp.dir, 'init', '--quiet']);
   // Repository config outranks the global one, so this keeps a developer's `core.attributesFile` out.
   execFileSync('git', ['-C', temp.dir, 'config', 'core.attributesFile', '/dev/null']);
   execFileSync('git', ['-C', temp.dir, 'add', '--all']);
-}
-
-/** Opens a ledger recording the given paths as examined. */
-function scanning(paths: readonly string[]): PragmaLedger {
-  const ledger = createPragmaLedger();
-  ledger.recordScanned(paths);
-  return ledger;
 }
 
 // endregion | Helpers

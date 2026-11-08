@@ -4,7 +4,7 @@ import { kitLoadError } from '../../errors/RdyError.ts';
 import type { KitProvenance } from '../../kits/KitProvenance.ts';
 import { runHumanMode } from '../runHumanMode.ts';
 import { createRunFakes, type RunFakes } from '../test-utils/createRunFakes.ts';
-import { makeKit, singleKitEntry } from '../test-utils/kit-fixtures.ts';
+import { buildSingleKitEntry, makeKit } from '../test-utils/kit-fixtures.ts';
 import { makeFailedResult, makePassedResult } from '../test-utils/result-fixtures.ts';
 import { runHuman } from '../test-utils/runHuman.ts';
 
@@ -30,7 +30,7 @@ describe(runHumanMode, () => {
     fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    const { stdout: allOutput } = await runHuman(singleKitEntry(), {}, fakes);
+    const { stdout: allOutput } = await runHuman(buildSingleKitEntry(), {}, fakes);
 
     expect(allOutput).toContain('\u{2501}\u{2501} \u{1F4CB} deploy');
     expect(allOutput).toContain('\u{2501}\u{2501} \u{1F4CB} infra');
@@ -42,7 +42,7 @@ describe(runHumanMode, () => {
     fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    const { stdout: allOutput } = await runHuman(singleKitEntry(), {}, fakes);
+    const { stdout: allOutput } = await runHuman(buildSingleKitEntry(), {}, fakes);
 
     expect(allOutput).not.toContain(WIDER_GAP);
     expect(allOutput).toContain(`${BLOCK_GAP}\u{2501}\u{2501} \u{1F4CB} infra`);
@@ -56,7 +56,7 @@ describe(runHumanMode, () => {
     fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    const { stdout: allOutput } = await runHuman(singleKitEntry(['deploy']), {}, fakes);
+    const { stdout: allOutput } = await runHuman(buildSingleKitEntry(['deploy']), {}, fakes);
 
     expect(allOutput).not.toContain('\u{2501}\u{2501}');
     expect(allOutput).not.toContain('\u{2500}\u{2500} ');
@@ -85,7 +85,7 @@ describe(runHumanMode, () => {
 
   describe('provenance in the block heading', () => {
     /** Runs one kit with the given provenance, returning everything it wrote to stdout. */
-    async function headingFor(provenance: KitProvenance): Promise<string> {
+    async function captureBlockHeading(provenance: KitProvenance): Promise<string> {
       const kit = makeKit({ checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }] });
       fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
       fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
@@ -100,13 +100,13 @@ describe(runHumanMode, () => {
     }
 
     it('names a remote kit by the source from which it was fetched', async () => {
-      await expect(headingFor({ kind: 'remote', label: 'github:org/repo@main' })).resolves.toContain(
+      await expect(captureBlockHeading({ kind: 'remote', label: 'github:org/repo@main' })).resolves.toContain(
         '\u{1F310} github:org/repo@main / \u{1F4D3} deploy',
       );
     });
 
     it('names a repository kit by its source with the ref resolved', async () => {
-      const heading = headingFor({
+      const heading = captureBlockHeading({
         kind: 'repository',
         host: 'github',
         owner: 'org',
@@ -119,15 +119,15 @@ describe(runHumanMode, () => {
     });
 
     it('names a kit resolved from another directory by that directory', async () => {
-      await expect(headingFor({ kind: 'directory', label: '../sibling-repo/.readyup/kits' })).resolves.toContain(
-        '\u{1F4C1} ../sibling-repo/.readyup/kits / \u{1F4D3} deploy',
-      );
+      await expect(
+        captureBlockHeading({ kind: 'directory', label: '../sibling-repo/.readyup/kits' }),
+      ).resolves.toContain('\u{1F4C1} ../sibling-repo/.readyup/kits / \u{1F4D3} deploy');
     });
 
     // The label is what `path.dirname` yields for a bare filename, and the only form emitted by the producer
     // that normalizes to the working directory.
     it('names no directory for a kit resolved from the working directory', async () => {
-      const allOutput = await headingFor({ kind: 'directory', label: '.' });
+      const allOutput = await captureBlockHeading({ kind: 'directory', label: '.' });
 
       expect(allOutput).not.toContain('\u{1F4C1}');
       expect(allOutput).not.toContain('\u{1F4D3} deploy');
@@ -135,12 +135,12 @@ describe(runHumanMode, () => {
 
     it('names a package kit by its package and version', async () => {
       await expect(
-        headingFor({ kind: 'package', packageName: '@acme/kits', version: '2.1.0', source: 'npm:@acme/kits' }),
+        captureBlockHeading({ kind: 'package', packageName: '@acme/kits', version: '2.1.0', source: 'npm:@acme/kits' }),
       ).resolves.toContain('\u{1F4E6} @acme/kits@2.1.0 / \u{1F4D3} deploy');
     });
 
     it('names a package kit by its package alone when it declares no version', async () => {
-      const allOutput = await headingFor({
+      const allOutput = await captureBlockHeading({
         kind: 'package',
         packageName: '@acme/kits',
         version: undefined,
@@ -181,7 +181,7 @@ describe(runHumanMode, () => {
     fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
     fakes.reportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: false });
 
-    const { stdout: allOutput } = await runHuman(singleKitEntry(), {}, fakes);
+    const { stdout: allOutput } = await runHuman(buildSingleKitEntry(), {}, fakes);
 
     expect(allOutput).not.toContain('report output');
     expect(allOutput).toContain('combined summary');
@@ -193,7 +193,7 @@ describe(runHumanMode, () => {
     fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
     fakes.reportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: false });
 
-    const { stdout: allOutput } = await runHuman(singleKitEntry(), {}, fakes);
+    const { stdout: allOutput } = await runHuman(buildSingleKitEntry(), {}, fakes);
 
     expect(allOutput).toContain('report output');
     expect(fakes.formatCombinedSummary).not.toHaveBeenCalled();
@@ -282,7 +282,7 @@ describe(runHumanMode, () => {
     fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
     fakes.formatCombinedSummary.mockReturnValue('Combined summary');
 
-    await runHuman(singleKitEntry(), {}, fakes);
+    await runHuman(buildSingleKitEntry(), {}, fakes);
 
     expect(fakes.formatCombinedSummary).toHaveBeenCalledTimes(1);
     expect(fakes.formatCombinedSummary.mock.calls[0]?.[0].map((row) => row.segments)).toStrictEqual([
@@ -300,7 +300,7 @@ describe(runHumanMode, () => {
       durationMs: 0,
     });
 
-    await runHuman(singleKitEntry(), { reportOn: 'error' }, fakes);
+    await runHuman(buildSingleKitEntry(), { reportOn: 'error' }, fakes);
 
     expect(fakes.formatCombinedSummary).toHaveBeenCalledWith([
       expect.objectContaining({
@@ -319,7 +319,7 @@ describe(runHumanMode, () => {
     fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    await runHuman(singleKitEntry(['deploy']), {}, fakes);
+    await runHuman(buildSingleKitEntry(['deploy']), {}, fakes);
 
     expect(fakes.formatCombinedSummary).not.toHaveBeenCalled();
   });

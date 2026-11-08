@@ -40,9 +40,9 @@ describe('a pragma matched against the check ids resolved by the runner', () => 
   it('suppresses the named check and leaves its sibling failing on the same line', async ({ temp }) => {
     temp.write(SOURCE_PATH, 'error instanceof Error; // rdy-ignore toolbelt.errors/no-instanceof-error\n');
 
-    const report = await runRdy(twoChecksOverOneLine(), { provenance: PACKAGE });
+    const report = await runRdy(buildTwoChecksOverOneLine(), { provenance: PACKAGE });
 
-    expect(verdicts(report.results)).toStrictEqual([
+    expect(extractVerdicts(report.results)).toStrictEqual([
       { detail: null, id: 'toolbelt.errors/no-instanceof-error', status: 'passed' },
       { detail: 'src/errors.ts:1', id: 'toolbelt.errors/no-hand-rolled-describe-error', status: 'failed' },
     ]);
@@ -52,33 +52,33 @@ describe('a pragma matched against the check ids resolved by the runner', () => 
     const pragma = '// rdy-ignore @williamthorsen/toolbelt.errors/no-instanceof-error';
     temp.write(SOURCE_PATH, `error instanceof Error; ${pragma}\n`);
 
-    const report = await runRdy(twoChecksOverOneLine(), { provenance: PACKAGE });
+    const report = await runRdy(buildTwoChecksOverOneLine(), { provenance: PACKAGE });
 
-    expect(verdicts(report.results)[0]?.status).toBe('passed');
+    expect(extractVerdicts(report.results)[0]?.status).toBe('passed');
   });
 
   it('suppresses neither when the pragma names a check that the run does not include', async ({ temp }) => {
     temp.write(SOURCE_PATH, 'error instanceof Error; // rdy-ignore other.kit/no-instanceof-error\n');
 
-    const report = await runRdy(twoChecksOverOneLine(), { provenance: PACKAGE });
+    const report = await runRdy(buildTwoChecksOverOneLine(), { provenance: PACKAGE });
 
-    expect(verdicts(report.results).map((verdict) => verdict.status)).toStrictEqual(['failed', 'failed']);
+    expect(extractVerdicts(report.results).map((verdict) => verdict.status)).toStrictEqual(['failed', 'failed']);
   });
 
   it('suppresses both when the pragma names no check', async ({ temp }) => {
     temp.write(SOURCE_PATH, 'error instanceof Error; // rdy-ignore\n');
 
-    const report = await runRdy(twoChecksOverOneLine(), { provenance: PACKAGE });
+    const report = await runRdy(buildTwoChecksOverOneLine(), { provenance: PACKAGE });
 
-    expect(verdicts(report.results).map((verdict) => verdict.status)).toStrictEqual(['passed', 'passed']);
+    expect(extractVerdicts(report.results).map((verdict) => verdict.status)).toStrictEqual(['passed', 'passed']);
   });
 
   it('suppresses a repository kit check named under its owner and repository', async ({ temp }) => {
     temp.write(SOURCE_PATH, 'error instanceof Error; // rdy-ignore acme/.github/no-instanceof-error\n');
 
-    const report = await runRdy(twoChecksOverOneLine(), { provenance: REPOSITORY });
+    const report = await runRdy(buildTwoChecksOverOneLine(), { provenance: REPOSITORY });
 
-    expect(verdicts(report.results)).toStrictEqual([
+    expect(extractVerdicts(report.results)).toStrictEqual([
       { detail: null, id: 'acme/.github/no-instanceof-error', status: 'passed' },
       { detail: 'src/errors.ts:1', id: 'acme/.github/no-hand-rolled-describe-error', status: 'failed' },
     ]);
@@ -87,28 +87,28 @@ describe('a pragma matched against the check ids resolved by the runner', () => 
   it('suppresses no repository kit check named by its bare id', async ({ temp }) => {
     temp.write(SOURCE_PATH, 'error instanceof Error; // rdy-ignore no-instanceof-error\n');
 
-    const report = await runRdy(twoChecksOverOneLine(), { provenance: REPOSITORY });
+    const report = await runRdy(buildTwoChecksOverOneLine(), { provenance: REPOSITORY });
 
-    expect(verdicts(report.results).map((verdict) => verdict.status)).toStrictEqual(['failed', 'failed']);
+    expect(extractVerdicts(report.results).map((verdict) => verdict.status)).toStrictEqual(['failed', 'failed']);
   });
 
   it('suppresses neither when the kit has no publishing package to namespace under', async ({ temp }) => {
     temp.write(SOURCE_PATH, 'error instanceof Error; // rdy-ignore toolbelt.errors/no-instanceof-error\n');
 
-    const report = await runRdy(twoChecksOverOneLine());
+    const report = await runRdy(buildTwoChecksOverOneLine());
 
-    expect(verdicts(report.results).map((verdict) => verdict.id)).toStrictEqual([
+    expect(extractVerdicts(report.results).map((verdict) => verdict.id)).toStrictEqual([
       'no-instanceof-error',
       'no-hand-rolled-describe-error',
     ]);
-    expect(verdicts(report.results).map((verdict) => verdict.status)).toStrictEqual(['failed', 'failed']);
+    expect(extractVerdicts(report.results).map((verdict) => verdict.status)).toStrictEqual(['failed', 'failed']);
   });
 });
 
 // region | Helpers
 
 /** Returns two checks reporting a finding on the same line, each addressable by an id of its own. */
-function twoChecksOverOneLine(): RdyChecklist {
+function buildTwoChecksOverOneLine(): RdyChecklist {
   const findings = [{ line: 1, path: SOURCE_PATH, reported: true }];
 
   return {
@@ -125,7 +125,7 @@ function twoChecksOverOneLine(): RdyChecklist {
 }
 
 /** Reduces results to what a suppression shows up in. */
-function verdicts(results: RdyResult[]): Array<{ detail: string | null; id: string | null; status: string }> {
+function extractVerdicts(results: RdyResult[]): Array<{ detail: string | null; id: string | null; status: string }> {
   return results.map((result) => ({ detail: result.detail, id: result.id, status: result.status }));
 }
 
