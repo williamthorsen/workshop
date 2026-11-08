@@ -9,8 +9,8 @@ import { renderProfile, warnProcessListUnavailable, writeJson, writeProse } from
  * the same defaults as a launch and writing nothing, so that a caller can attach to the worktree's browser without
  * knowing how its port is derived.
  *
- * The endpoint uses the running browser's own port whenever it declares one, since a launch would be forwarded to that
- * instance; otherwise it uses the port that a launch would pass. It is reported in every state, unlike the profile's
+ * The endpoint uses the running browser's own port whenever it declares one, since a launch would open its pages in
+ * that instance; otherwise it uses the port that a launch would pass. It is reported in every state, unlike the profile's
  * `devtools` field: A caller attaching ahead of a launch needs the address at which the browser will answer.
  */
 export function showStatus(

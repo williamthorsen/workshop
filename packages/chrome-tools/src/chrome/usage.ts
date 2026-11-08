@@ -9,8 +9,8 @@ export function formatUsage(name: string, profilesDir: string): string {
   return `Launch a Chrome-family browser with remote debugging against a named profile.
 
 Usage:
-  ${name} [launch] [--profile <name>] [--port <n>] [--repo <name>] [--branch <name>] [--browser <name>] [--create]
-      [--dry-run] [--json] [URL...]
+  ${name} [launch] [--profile <name>] [--port <n>] [--repo <name>] [--branch <name>] [--browser <name>] [--headless]
+      [--create] [--dry-run] [--json] [URL...]
   ${name} list [--stale] [--json]
   ${name} status [<profile>] [--port <n>] [--repo <name>] [--branch <name>] [--json]
   ${name} quit [<profile>...] [--all|--idle <duration>] [--json]
@@ -20,8 +20,11 @@ Usage:
 
 Commands:
   launch          Launch the browser against the profile, or report the
-                  command that would. The default when no command is named;
-                  name it to launch a URL that spells a command
+                  command that would, and open the URLs in it, without
+                  bringing it to the front. Against a running profile, open
+                  the URLs there and start nothing. The default when no
+                  command is named; name it to launch a URL that spells a
+                  command
   list            Report each profile's running and debugging state, the port
                   that a derived profile derives, and when it was last used,
                   marking a profile whose branch or repository is gone as stale
@@ -71,8 +74,13 @@ Options:
                   build that Playwright installs, which Chrome's managed
                   preferences do not govern (default: $THOR_CHROME_BROWSER,
                   else '${DEFAULT_BROWSER}')
+      --headless  Start the browser without a window, Dock icon, or focus,
+                  serving the same DevTools endpoint. Refused with
+                  mode-mismatch against a profile running windowed, and a
+                  windowed launch likewise against a headless one
       --create    Permit creating a profile that does not exist yet
-      --dry-run   Print the resolved launch command without running it
+      --dry-run   Print the resolved launch command and the pages that the
+                  launch would open, without running it
   list:
       --stale     List only the profiles that delete --stale would select
   status:
@@ -117,20 +125,23 @@ Startup prompts:
   unclean shutdown.
 
 Window identity:
-  Every launch passes --window-name '<profile> · :<port>', which the Window
-  menu, Mission Control, the Dock's window list, and tab search show. A launch
-  that starts a browser also writes thor-chrome.html into the profile
+  A launch that starts a browser writes thor-chrome.html into the profile
   directory and opens it as the last tab, after a blank tab when no URL is
-  given: the same label as its title, with the port, the DevTools endpoint,
-  the browser, where the profile came from, when it was created and launched,
-  the launch command, and the commands that quit and delete the profile. A
-  launch forwarded to a running instance opens no page, so each window has
-  one; show-instance-page opens it again in a new tab.
+  given. Its title is the label '<profile> · :<port>', which tab search
+  shows; the page adds the port, the DevTools endpoint, the browser, where the
+  profile came from, when it was created and launched, the launch command, and
+  the commands that quit and delete the profile. The window takes its title
+  from its first tab. A launch against a running instance opens no page, so
+  each instance has one; show-instance-page opens it again in a new tab.
 
 Launch session:
-  A shell outside the GUI login session (launchctl managername other than
-  Aqua) launches through 'open -n', so that the browser has a Dock icon and
-  takes keyboard input; the dry run and the instance page show that form.
+  No launch brings the browser to the front: The browser starts with
+  --no-startup-window, and the launch then opens each page through the
+  DevTools endpoint as a background tab. A shell outside the GUI login
+  session (launchctl managername other than Aqua) launches through
+  'open -g -n', so that the browser has a Dock icon and takes keyboard input;
+  the dry run and the instance page show that form. A headless launch always
+  starts the browser directly, since it needs neither.
   There a launch is refused with session-unavailable when open is refused, or
   when the browser is not a code-signed app bundle, as Playwright's Chrome for
   Testing is not on an Intel Mac. Launch from a terminal in the GUI login
@@ -148,14 +159,18 @@ JSON output:
   {"profile":{...},"endpoint":"http://127.0.0.1:<port>"} for status, and
   {"profile":{...},"page":"<path>"} for show-instance-page. A dry
   run adds "dryRun":true, and a launch dry run reports {"command":[...]} in
-  place of the profile. A refusal of the whole invocation is
+  place of the profile, with "pages", the URLs that it would open, in order;
+  against a running profile, which a launch does not start, "command" is
+  null. A refusal of the whole invocation is
   {"error":{"code":...,"message":...}}, with the profile beside it whenever one
-  was resolved. Three codes add a field to the error: "listener" on port-busy,
-  "log" on policy-denied and launch-timeout. A refusal of one profile named to
+  was resolved. Four codes add a field to the error: "listener" on port-busy,
+  "log" on policy-denied and launch-timeout, and "url", the page that did not
+  open, on page-open-failed. A refusal of one profile named to
   quit or delete is an "error" object of the same shape on that profile's
   entry, beside the entries of the profiles that were acted on.
 
-  Every profile object contains "origin" ("derived", "named", or null when the
+  Every profile object contains "headless", true or false while the profile's
+  browser runs and null otherwise, "origin" ("derived", "named", or null when the
   profile records neither), the "repo" and "branch" from which a derived profile
   came, whether it is "stale", and the "lastUsedAt" instant. "derivedPort" is
   the port that a launch from a derived profile's worktree would use, whether
@@ -175,8 +190,9 @@ JSON output:
   Error codes:
     browser-not-found, endpoint-unresponsive, instance-page-missing,
     instance-page-open-failed, invalid-port, invalid-profile-name,
-    invalid-timeout, launch-timeout, missing-command, policy-denied, port-busy,
-    port-mismatch, process-list-unavailable, profile-missing,
+    invalid-timeout, launch-timeout, missing-command, mode-mismatch,
+    page-open-failed, policy-denied, port-busy, port-mismatch,
+    process-list-unavailable, profile-missing,
     profile-not-derived, profile-not-running, profile-running,
     profile-running-without-port, quit-failed, quit-timeout,
     session-unavailable, underived-profile, usage
@@ -193,7 +209,7 @@ Environment:
 
 Dependencies:
   curl            Probes the DevTools endpoint, and opens the instance page
-                  through it
+                  through it for show-instance-page
   pgrep, ps       Identify a profile's browser process and its port
   lsof            Names the process holding a busy port, and finds the
                   clients connected to a browser for quit --idle
@@ -207,6 +223,7 @@ Examples:
   ${name} http://localhost:4798
   ${name} --profile thrive http://localhost:4798
   ${name} --profile thrive --browser chrome-for-testing http://localhost:4798
+  ${name} --headless http://localhost:4798
   ${name} list
   ${name} list --stale
   ${name} status --json
