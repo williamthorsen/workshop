@@ -2,27 +2,13 @@ import process from 'node:process';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { RdyReport } from '../../kits/types.ts';
-import type { SummaryRow } from '../../layout/layoutEngine.ts';
-import { RemoteFetchError } from '../../remote/RemoteFetchError.ts';
+import type { RaisedWarning } from '../../schemas/common.ts';
 import { createUncachedRemoteContext } from '../../test-utils/createUncachedRemoteContext.ts';
 import type { UnrunSource } from '../KitSelection.ts';
 import type { ResolvedKitEntry } from '../ResolvedKitEntry.ts';
-import type { RunRdyOptions } from '../runRdy.ts';
-
-const mockLoadRdyKit = vi.hoisted(() => vi.fn());
-const mockRunRdy = vi.hoisted(() => vi.fn<(checklist: unknown, options?: RunRdyOptions) => Promise<RdyReport>>());
-const mockReportRdy = vi.hoisted(() => vi.fn());
-const mockFormatCombinedSummary = vi.hoisted(() => vi.fn<(rows: SummaryRow[]) => string>());
-const mockResolveGitHubToken = vi.hoisted(() => vi.fn());
-const mockLoadRemoteKit = vi.hoisted(() => vi.fn());
-const mockReadManifestTracking = vi.hoisted(() => vi.fn());
-const mockListKitStalenessWarnings = vi.hoisted(() => vi.fn());
-const mockListUnusedPragmaWarnings = vi.hoisted(() => vi.fn());
-const mockListUnmarkedGeneratedSourceWarnings = vi.hoisted(() => vi.fn());
 
 /** A warning as the unmarked-generated report returns it. */
-const GENERATED_UNMARKED = {
+const GENERATED_UNMARKED: RaisedWarning = {
   code: 'generated-unmarked',
   message:
     'dist/app.mjs looks like bundler output (its mean line length exceeds 250 characters) and is not marked as generated.',
@@ -30,87 +16,30 @@ const GENERATED_UNMARKED = {
 };
 
 /** A staleness warning as the staleness report returns it for the `default` kit. */
-const TARGET_DRIFT_DEFAULT = {
+const TARGET_DRIFT_DEFAULT: RaisedWarning = {
   code: 'target-drift',
   message: 'compiled kit "default" does not match the hash that the manifest recorded for it.',
   remedy: 'Move the edits into the source, then run `rdy compile --force`.',
 };
 
-vi.mock(import('../../kits/loadRdyKit.ts'), () => ({
-  loadRdyKit: mockLoadRdyKit,
-}));
-
-vi.mock(import('../runRdy.ts'), () => ({
-  runRdy: mockRunRdy,
-}));
-
-vi.mock(import('../../reporting/reportRdy.ts'), async () => {
-  const actual = await vi.importActual<typeof import('../../reporting/reportRdy.ts')>('../../reporting/reportRdy.ts');
-  return {
-    ...actual,
-    reportRdy: mockReportRdy,
-  };
-});
-
-vi.mock(import('../../reporting/formatCombinedSummary.ts'), () => ({
-  formatCombinedSummary: mockFormatCombinedSummary,
-}));
-
-vi.mock(import('../../remote/resolveGitHubToken.ts'), () => ({
-  resolveGitHubToken: mockResolveGitHubToken,
-}));
-
-vi.mock(import('../../remote/loadRemoteKit.ts'), () => ({
-  loadRemoteKit: mockLoadRemoteKit,
-}));
-
-// Mocked so that no case reads the repo's own manifest or hashes files on disk. `loadKit.ts` stays real, and the
-// rendering cases assert on its errors.
-vi.mock(import('../kit-staleness.ts'), () => ({
-  readManifestTracking: mockReadManifestTracking,
-  listKitStalenessWarnings: mockListKitStalenessWarnings,
-}));
-
-// Mocked so that no case reads the sources named by the ledger; what the report itself returns is covered by its
-// own tests.
-vi.mock(import('../pragma-report.ts'), () => ({
-  listUnusedPragmaWarnings: mockListUnusedPragmaWarnings,
-}));
-
-// Mocked for the same reason as the pragma report.
-vi.mock(import('../generated-report.ts'), () => ({
-  listUnmarkedGeneratedSourceWarnings: mockListUnmarkedGeneratedSourceWarnings,
-}));
-
+import { kitLoadError } from '../../errors/RdyError.ts';
 import { runHumanMode } from '../runHumanMode.ts';
+import { createRunFakes, type RunFakes } from '../test-utils/createRunFakes.ts';
 import { makeKit, singleKitEntry } from '../test-utils/kit-fixtures.ts';
 import { runHuman } from '../test-utils/runHuman.ts';
 
 /** A warning as the unused-pragma report returns it. */
-const PRAGMA_UNUSED = { code: 'pragma-unused', message: 'pragma unused.', remedy: 'Remove it.' };
+const PRAGMA_UNUSED: RaisedWarning = { code: 'pragma-unused', message: 'pragma unused.', remedy: 'Remove it.' };
 
 describe(runHumanMode, () => {
+  let fakes: RunFakes;
+
   beforeEach(() => {
-    mockReportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: true });
-    mockFormatCombinedSummary.mockReturnValue('combined summary');
-    mockReadManifestTracking.mockReturnValue({ tracking: undefined, warnings: [] });
-    mockListKitStalenessWarnings.mockReturnValue([]);
-    mockListUnusedPragmaWarnings.mockReturnValue([]);
-    mockListUnmarkedGeneratedSourceWarnings.mockResolvedValue([]);
+    fakes = createRunFakes();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
-    mockLoadRdyKit.mockReset();
-    mockRunRdy.mockReset();
-    mockReportRdy.mockReset();
-    mockFormatCombinedSummary.mockReset();
-    mockResolveGitHubToken.mockReset();
-    mockLoadRemoteKit.mockReset();
-    mockReadManifestTracking.mockReset();
-    mockListKitStalenessWarnings.mockReset();
-    mockListUnusedPragmaWarnings.mockReset();
-    mockListUnmarkedGeneratedSourceWarnings.mockReset();
   });
 
   describe('unused-pragma advisories', () => {
@@ -123,12 +52,12 @@ describe(runHumanMode, () => {
     }
 
     it('reports after the summary table, the last block in which a pragma’s file may be named', async () => {
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+      fakes.loadKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-      mockListUnusedPragmaWarnings.mockReturnValue([PRAGMA_UNUSED]);
+      fakes.listUnusedPragmaWarnings.mockReturnValue([PRAGMA_UNUSED]);
 
-      const writes = await runHumanRecordingWrites(twoKitEntries(), []);
+      const writes = await runHumanRecordingWrites(twoKitEntries(), fakes, []);
 
       const summaryIndex = writes.findIndex(({ text }) => text === 'combined summary\n');
       const warningIndex = writes.findIndex(({ text }) => text.startsWith(`Warning: ${PRAGMA_UNUSED.message}`));
@@ -138,22 +67,26 @@ describe(runHumanMode, () => {
   });
 
   describe('warning output', () => {
-    const MANIFEST_UNREADABLE = { code: 'manifest-unreadable', message: 'manifest unreadable.', remedy: 'Rewrite it.' };
+    const MANIFEST_UNREADABLE: RaisedWarning = {
+      code: 'manifest-unreadable',
+      message: 'manifest unreadable.',
+      remedy: 'Rewrite it.',
+    };
 
     it('writes each warning on stderr where its producer runs, around the stdout blocks', async () => {
-      mockReadManifestTracking.mockReturnValue({ tracking: undefined, warnings: [MANIFEST_UNREADABLE] });
-      mockListKitStalenessWarnings.mockReturnValue([TARGET_DRIFT_DEFAULT]);
-      mockListUnusedPragmaWarnings.mockReturnValue([PRAGMA_UNUSED]);
-      mockListUnmarkedGeneratedSourceWarnings.mockResolvedValue([GENERATED_UNMARKED]);
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: '999.0.0' });
-      mockRunRdy.mockResolvedValue({
+      fakes.readManifestTracking.mockReturnValue({ tracking: undefined, warnings: [MANIFEST_UNREADABLE] });
+      fakes.listKitStalenessWarnings.mockReturnValue([TARGET_DRIFT_DEFAULT]);
+      fakes.listUnusedPragmaWarnings.mockReturnValue([PRAGMA_UNUSED]);
+      fakes.listUnmarkedGeneratedSourceWarnings.mockResolvedValue([GENERATED_UNMARKED]);
+      fakes.loadKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: '999.0.0' });
+      fakes.runRdy.mockResolvedValue({
         results: [],
         passed: true,
         durationMs: 0,
         diagnoses: [{ name: 'a', verdict: 'masked-pass' }],
       });
 
-      const writes = await runHumanRecordingWrites(singleKitEntry(['deploy']), [
+      const writes = await runHumanRecordingWrites(singleKitEntry(['deploy']), fakes, [
         { spelling: 'npm:a', requestedNames: ['default'], publishedNames: ['x'] },
       ]);
 
@@ -180,10 +113,11 @@ describe(runHumanMode, () => {
     const GITHUB_HINT = 'If the repository is private, set GITHUB_TOKEN or run `gh auth login`.';
 
     it('puts the hint on a line of its own, below the error', async () => {
-      mockResolveGitHubToken.mockReturnValue(undefined);
-      mockLoadRemoteKit.mockRejectedValue(new RemoteFetchError(`Failed to fetch remote kit from ${GITHUB_URL}`, 404));
+      fakes.loadKit.mockRejectedValue(
+        kitLoadError(`Failed to fetch remote kit from ${GITHUB_URL}`, { hint: GITHUB_HINT }),
+      );
 
-      const { stderr } = await runHuman([{ name: 'deploy', source: { url: GITHUB_URL }, checklists: [] }]);
+      const { stderr } = await runHuman([{ name: 'deploy', source: { url: GITHUB_URL }, checklists: [] }], {}, fakes);
 
       expect(stderr).toBe(`Error: Failed to fetch remote kit from ${GITHUB_URL}\n\u{1F449} Hint: ${GITHUB_HINT}\n`);
     });
@@ -201,6 +135,7 @@ interface RecordedWrite {
 /** Runs the mode over the given entries and returns every write to stdout and stderr, in one ordered list. */
 async function runHumanRecordingWrites(
   kitEntries: ResolvedKitEntry[],
+  fakes: RunFakes,
   unrunSources: UnrunSource[],
 ): Promise<RecordedWrite[]> {
   const writes: RecordedWrite[] = [];
@@ -218,6 +153,7 @@ async function runHumanRecordingWrites(
     kitEntries,
     { diagnose: false, failOn: undefined, quiet: false, remote, reportOn: undefined, unrunSources },
     false,
+    fakes,
   );
 
   return writes;

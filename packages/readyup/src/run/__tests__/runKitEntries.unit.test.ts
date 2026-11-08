@@ -1,55 +1,24 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
+import { kitLoadError } from '../../errors/RdyError.ts';
 import type { RdyReport } from '../../kits/types.ts';
-import type { listUnusedPragmaWarnings } from '../pragma-report.ts';
-import type { RunRdyOptions } from '../runRdy.ts';
-
-const mockLoadRdyKit = vi.hoisted(() => vi.fn());
-const mockRunRdy = vi.hoisted(() => vi.fn<(checklist: unknown, options?: RunRdyOptions) => Promise<RdyReport>>());
-const mockReadManifestTracking = vi.hoisted(() => vi.fn());
-const mockListKitStalenessWarnings = vi.hoisted(() => vi.fn());
-const mockListUnusedPragmaWarnings = vi.hoisted(() => vi.fn<typeof listUnusedPragmaWarnings>());
-const mockListUnmarkedGeneratedSourceWarnings = vi.hoisted(() => vi.fn());
-
-vi.mock(import('../../kits/loadRdyKit.ts'), () => ({
-  loadRdyKit: mockLoadRdyKit,
-}));
-
-vi.mock(import('../runRdy.ts'), () => ({
-  runRdy: mockRunRdy,
-}));
-
-// Mocked so that no case reads the repo's own manifest or hashes files on disk. `loadKit.ts` stays real.
-vi.mock(import('../kit-staleness.ts'), () => ({
-  readManifestTracking: mockReadManifestTracking,
-  listKitStalenessWarnings: mockListKitStalenessWarnings,
-}));
-
-// Mocked so that no case reads the sources named by the ledger; what the report itself returns is covered by its
-// own tests.
-vi.mock(import('../pragma-report.ts'), () => ({
-  listUnusedPragmaWarnings: mockListUnusedPragmaWarnings,
-}));
-
-// Mocked for the same reason as the pragma report.
-vi.mock(import('../generated-report.ts'), () => ({
-  listUnmarkedGeneratedSourceWarnings: mockListUnmarkedGeneratedSourceWarnings,
-}));
-
+import type { RaisedWarning } from '../../schemas/common.ts';
 import { createUncachedRemoteContext } from '../../test-utils/createUncachedRemoteContext.ts';
+import type { ManifestTracking } from '../kit-staleness.ts';
 import type { ResolvedKitEntry } from '../ResolvedKitEntry.ts';
 import { type KitRunEvent, type KitRunSettings, runKitEntries } from '../runKitEntries.ts';
+import { createRunFakes, type RunFakes } from '../test-utils/createRunFakes.ts';
 import { makeKit, singleKitEntry } from '../test-utils/kit-fixtures.ts';
 
 /** A staleness warning as the kit-staleness report returns it. */
-const TARGET_DRIFT = {
+const TARGET_DRIFT: RaisedWarning = {
   code: 'target-drift',
   message: 'compiled kit "alpha" does not match the hash that the manifest recorded for it.',
   remedy: 'Move the edits into the source, then run `rdy compile --force`.',
 };
 
 /** A warning as the unmarked-generated report returns it. */
-const GENERATED_UNMARKED = {
+const GENERATED_UNMARKED: RaisedWarning = {
   code: 'generated-unmarked',
   message: 'dist/app.mjs looks like bundler output and is not marked as generated.',
   remedy: 'Add `/dist/app.mjs linguist-generated=true` to .gitattributes, so that kits stop sweeping it.',
@@ -58,29 +27,18 @@ const GENERATED_UNMARKED = {
 const PASSING_REPORT: RdyReport = { results: [], passed: true, durationMs: 0 };
 
 describe(runKitEntries, () => {
-  beforeEach(() => {
-    mockReadManifestTracking.mockReturnValue({ tracking: undefined, warnings: [] });
-    mockListKitStalenessWarnings.mockReturnValue([]);
-    mockListUnusedPragmaWarnings.mockReturnValue([]);
-    mockListUnmarkedGeneratedSourceWarnings.mockResolvedValue([]);
-  });
+  let fakes: RunFakes;
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-    mockLoadRdyKit.mockReset();
-    mockRunRdy.mockReset();
-    mockReadManifestTracking.mockReset();
-    mockListKitStalenessWarnings.mockReset();
-    mockListUnusedPragmaWarnings.mockReset();
-    mockListUnmarkedGeneratedSourceWarnings.mockReset();
+  beforeEach(() => {
+    fakes = createRunFakes();
   });
 
   describe('event sequence', () => {
     it('yields the events of a passing kit in step order', async () => {
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue(PASSING_REPORT);
+      fakes.loadKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      fakes.runRdy.mockResolvedValue(PASSING_REPORT);
 
-      const events = await collectEvents(singleKitEntry());
+      const events = await collectEvents(singleKitEntry(), fakes);
 
       expect(events.map((event) => event.kind)).toStrictEqual([
         'runStarted',
@@ -94,24 +52,27 @@ describe(runKitEntries, () => {
     });
 
     it('reports a failing check through the outcome without failing the kit', async () => {
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValueOnce(PASSING_REPORT).mockResolvedValueOnce({ ...PASSING_REPORT, passed: false });
+      fakes.loadKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      fakes.runRdy.mockResolvedValueOnce(PASSING_REPORT).mockResolvedValueOnce({ ...PASSING_REPORT, passed: false });
 
-      const events = await collectEvents(singleKitEntry());
+      const events = await collectEvents(singleKitEntry(), fakes);
 
       expect(findRunFinished(events)).toMatchObject({ allPassed: false, failedKitCount: 0 });
     });
 
     it('yields a kit that did not load as failed, and continues with the next kit', async () => {
-      mockLoadRdyKit
-        .mockRejectedValueOnce(new Error('Kit not found'))
+      fakes.loadKit
+        .mockRejectedValueOnce(kitLoadError('Kit not found'))
         .mockResolvedValueOnce({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue(PASSING_REPORT);
+      fakes.runRdy.mockResolvedValue(PASSING_REPORT);
 
-      const events = await collectEvents([
-        { name: 'broken', source: { path: '.readyup/kits/broken.js' }, checklists: ['deploy'] },
-        { name: 'healthy', source: { path: '.readyup/kits/healthy.js' }, checklists: ['deploy'] },
-      ]);
+      const events = await collectEvents(
+        [
+          { name: 'broken', source: { path: '.readyup/kits/broken.js' }, checklists: ['deploy'] },
+          { name: 'healthy', source: { path: '.readyup/kits/healthy.js' }, checklists: ['deploy'] },
+        ],
+        fakes,
+      );
 
       expect(events.map((event) => event.kind)).toStrictEqual([
         'runStarted',
@@ -122,15 +83,15 @@ describe(runKitEntries, () => {
         'runFinished',
       ]);
       expect(events[1]).toMatchObject({ kind: 'kitFailed', reason: 'didNotLoad', entry: { name: 'broken' } });
-      expect(mockRunRdy).toHaveBeenCalledTimes(1);
+      expect(fakes.runRdy).toHaveBeenCalledTimes(1);
       expect(findRunFinished(events)).toMatchObject({ failedKitCount: 1 });
     });
 
     it('yields a kit that threw after its first checklist as failed after loading, without finishing it', async () => {
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValueOnce(PASSING_REPORT).mockRejectedValueOnce(new Error('runner crashed'));
+      fakes.loadKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      fakes.runRdy.mockResolvedValueOnce(PASSING_REPORT).mockRejectedValueOnce(new Error('runner crashed'));
 
-      const events = await collectEvents(singleKitEntry());
+      const events = await collectEvents(singleKitEntry(), fakes);
 
       expect(events.map((event) => event.kind)).toStrictEqual([
         'runStarted',
@@ -143,10 +104,10 @@ describe(runKitEntries, () => {
     });
 
     it('carries the kit’s staleness warnings on the failure when checklist selection throws', async () => {
-      mockListKitStalenessWarnings.mockReturnValue([TARGET_DRIFT]);
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      fakes.listKitStalenessWarnings.mockReturnValue([TARGET_DRIFT]);
+      fakes.loadKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
 
-      const events = await collectEvents(singleKitEntry(['nonexistent']));
+      const events = await collectEvents(singleKitEntry(['nonexistent']), fakes);
 
       expect(events.map((event) => event.kind)).toStrictEqual(['runStarted', 'kitFailed', 'runFinished']);
       expect(events[1]).toMatchObject({
@@ -158,32 +119,32 @@ describe(runKitEntries, () => {
     });
 
     it('yields the manifest read and the run-level warnings for a run that selected no kits', async () => {
-      const events = await collectEvents([]);
+      const events = await collectEvents([], fakes);
 
       expect(events.map((event) => event.kind)).toStrictEqual(['runStarted', 'runFinished']);
-      expect(mockReadManifestTracking).toHaveBeenCalledTimes(1);
-      expect(mockListUnusedPragmaWarnings).toHaveBeenCalledTimes(1);
+      expect(fakes.readManifestTracking).toHaveBeenCalledTimes(1);
+      expect(fakes.listUnusedPragmaWarnings).toHaveBeenCalledTimes(1);
     });
   });
 
   describe('checklist selection', () => {
     it('runs all checklists when no checklist filter is given', async () => {
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue(PASSING_REPORT);
+      fakes.loadKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      fakes.runRdy.mockResolvedValue(PASSING_REPORT);
 
-      await collectEvents(singleKitEntry());
+      await collectEvents(singleKitEntry(), fakes);
 
-      expect(mockRunRdy).toHaveBeenCalledTimes(2);
+      expect(fakes.runRdy).toHaveBeenCalledTimes(2);
     });
 
     it('filters to named checklists only', async () => {
       const kit = makeKit();
-      mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue(PASSING_REPORT);
+      fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+      fakes.runRdy.mockResolvedValue(PASSING_REPORT);
 
-      await collectEvents(singleKitEntry(['deploy']));
+      await collectEvents(singleKitEntry(['deploy']), fakes);
 
-      expect(mockRunRdy).toHaveBeenCalledExactlyOnceWith(
+      expect(fakes.runRdy).toHaveBeenCalledExactlyOnceWith(
         kit.checklists[0],
         expect.objectContaining({ defaultSeverity: 'error', failOn: 'error' }),
       );
@@ -196,82 +157,84 @@ describe(runKitEntries, () => {
           { name: 'infra', checks: [{ name: 'b', id: 'unselected', check: () => true }] },
         ],
       });
-      mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue(PASSING_REPORT);
+      fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+      fakes.runRdy.mockResolvedValue(PASSING_REPORT);
 
-      await collectEvents(singleKitEntry(['deploy']));
+      await collectEvents(singleKitEntry(['deploy']), fakes);
 
-      const [ledger] = mockListUnusedPragmaWarnings.mock.lastCall ?? [];
+      const [ledger] = fakes.listUnusedPragmaWarnings.mock.lastCall ?? [];
       expect(ledger?.checkIds().map((ids) => ids.bare)).toStrictEqual(['selected', 'unselected']);
     });
   });
 
   describe('runner options', () => {
-    it('passes kit path to local kit loader', async () => {
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue(PASSING_REPORT);
+    it('passes each entry and the run’s remote context to the kit loader', async () => {
+      fakes.loadKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      fakes.runRdy.mockResolvedValue(PASSING_REPORT);
+      const entry: ResolvedKitEntry = { name: 'custom', source: { path: 'custom/path.ts' }, checklists: [] };
+      const remote = createUncachedRemoteContext();
 
-      await collectEvents([{ name: 'custom', source: { path: 'custom/path.ts' }, checklists: [] }]);
+      await collectEvents([entry], fakes, { remote });
 
-      expect(mockLoadRdyKit).toHaveBeenCalledWith('custom/path.ts', 'custom');
+      expect(fakes.loadKit).toHaveBeenCalledExactlyOnceWith(entry, remote);
     });
 
     it('asks the runner to diagnose only when --diagnose was passed', async () => {
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue(PASSING_REPORT);
+      fakes.loadKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      fakes.runRdy.mockResolvedValue(PASSING_REPORT);
 
-      await collectEvents(singleKitEntry(['deploy']));
-      expect(mockRunRdy).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ diagnose: false }));
+      await collectEvents(singleKitEntry(['deploy']), fakes);
+      expect(fakes.runRdy).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ diagnose: false }));
 
-      await collectEvents(singleKitEntry(['deploy']), { diagnose: true });
-      expect(mockRunRdy).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ diagnose: true }));
+      await collectEvents(singleKitEntry(['deploy']), fakes, { diagnose: true });
+      expect(fakes.runRdy).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ diagnose: true }));
     });
 
     it('passes the kit’s resolved failOn to runRdy', async () => {
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit({ failOn: 'recommend' }), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue(PASSING_REPORT);
+      fakes.loadKit.mockResolvedValue({ kit: makeKit({ failOn: 'recommend' }), compileTimeVersion: undefined });
+      fakes.runRdy.mockResolvedValue(PASSING_REPORT);
 
-      await collectEvents(singleKitEntry(['deploy']));
+      await collectEvents(singleKitEntry(['deploy']), fakes);
 
-      expect(mockRunRdy).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ failOn: 'recommend' }));
+      expect(fakes.runRdy).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ failOn: 'recommend' }));
     });
   });
 
   describe('staleness advisories', () => {
     it('reads the manifest once per invocation, not once per kit', async () => {
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue(PASSING_REPORT);
+      fakes.loadKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      fakes.runRdy.mockResolvedValue(PASSING_REPORT);
 
-      await collectEvents(twoKitEntries());
+      await collectEvents(twoKitEntries(), fakes);
 
-      expect(mockReadManifestTracking).toHaveBeenCalledTimes(1);
+      expect(fakes.readManifestTracking).toHaveBeenCalledTimes(1);
     });
 
     it('tells the manifest read whether the run is just-in-time', async () => {
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue(PASSING_REPORT);
+      fakes.loadKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      fakes.runRdy.mockResolvedValue(PASSING_REPORT);
 
-      await collectEvents(singleKitEntry(['deploy']), {}, true);
+      await collectEvents(singleKitEntry(['deploy']), fakes, {}, true);
 
-      expect(mockReadManifestTracking).toHaveBeenCalledWith(true);
+      expect(fakes.readManifestTracking).toHaveBeenCalledWith(true);
     });
 
     it('advises on each kit against the source to which that kit resolved', async () => {
-      const tracking = { manifest: { version: 1, kits: [] }, manifestDir: '.readyup' };
-      mockReadManifestTracking.mockReturnValue({ tracking, warnings: [] });
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue(PASSING_REPORT);
+      const tracking: ManifestTracking = { manifest: { version: 1, kits: [] }, manifestDir: '.readyup' };
+      fakes.readManifestTracking.mockReturnValue({ tracking, warnings: [] });
+      fakes.loadKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      fakes.runRdy.mockResolvedValue(PASSING_REPORT);
 
-      await collectEvents(twoKitEntries());
+      await collectEvents(twoKitEntries(), fakes);
 
-      expect(mockListKitStalenessWarnings).toHaveBeenCalledTimes(2);
-      expect(mockListKitStalenessWarnings).toHaveBeenNthCalledWith(
+      expect(fakes.listKitStalenessWarnings).toHaveBeenCalledTimes(2);
+      expect(fakes.listKitStalenessWarnings).toHaveBeenNthCalledWith(
         1,
         'alpha',
         { path: '.readyup/kits/alpha.js' },
         tracking,
       );
-      expect(mockListKitStalenessWarnings).toHaveBeenNthCalledWith(
+      expect(fakes.listKitStalenessWarnings).toHaveBeenNthCalledWith(
         2,
         'beta',
         { path: '.readyup/kits/beta.js' },
@@ -280,11 +243,11 @@ describe(runKitEntries, () => {
     });
 
     it('yields a kit’s warnings on its load event and leaves the outcome alone', async () => {
-      mockListKitStalenessWarnings.mockReturnValue([TARGET_DRIFT]);
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue(PASSING_REPORT);
+      fakes.listKitStalenessWarnings.mockReturnValue([TARGET_DRIFT]);
+      fakes.loadKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      fakes.runRdy.mockResolvedValue(PASSING_REPORT);
 
-      const events = await collectEvents(singleKitEntry(['deploy']));
+      const events = await collectEvents(singleKitEntry(['deploy']), fakes);
 
       expect(events.find((event) => event.kind === 'kitLoaded')).toMatchObject({ warnings: [TARGET_DRIFT] });
       expect(findRunFinished(events)).toMatchObject({ allPassed: true, failedKitCount: 0 });
@@ -293,36 +256,36 @@ describe(runKitEntries, () => {
 
   describe('run-level advisories', () => {
     it('reports unused pragmas once over one ledger shared by every kit of the invocation', async () => {
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue(PASSING_REPORT);
+      fakes.loadKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      fakes.runRdy.mockResolvedValue(PASSING_REPORT);
 
-      await collectEvents(twoKitEntries());
+      await collectEvents(twoKitEntries(), fakes);
 
-      const ledgers = mockRunRdy.mock.calls.map(([, options]) => options?.pragmaLedger);
+      const ledgers = fakes.runRdy.mock.calls.map(([, options]) => options?.pragmaLedger);
       expect(ledgers).toHaveLength(2);
       expect(new Set(ledgers).size).toBe(1);
-      expect(mockListUnusedPragmaWarnings).toHaveBeenCalledExactlyOnceWith(ledgers[0]);
+      expect(fakes.listUnusedPragmaWarnings).toHaveBeenCalledExactlyOnceWith(ledgers[0]);
     });
 
     it('reports unused pragmas over the kits that ran when another failed to load', async () => {
-      mockLoadRdyKit.mockRejectedValue(new Error('Kit not found'));
+      fakes.loadKit.mockRejectedValue(kitLoadError('Kit not found'));
 
-      await collectEvents(singleKitEntry(['deploy']));
+      await collectEvents(singleKitEntry(['deploy']), fakes);
 
-      expect(mockListUnusedPragmaWarnings).toHaveBeenCalledTimes(1);
+      expect(fakes.listUnusedPragmaWarnings).toHaveBeenCalledTimes(1);
     });
 
     it('reports unmarked generated sources over the invocation ledger, after the unused-pragma report', async () => {
-      mockListUnmarkedGeneratedSourceWarnings.mockResolvedValue([GENERATED_UNMARKED]);
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue(PASSING_REPORT);
+      fakes.listUnmarkedGeneratedSourceWarnings.mockResolvedValue([GENERATED_UNMARKED]);
+      fakes.loadKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+      fakes.runRdy.mockResolvedValue(PASSING_REPORT);
 
-      const events = await collectEvents(singleKitEntry(['deploy']));
+      const events = await collectEvents(singleKitEntry(['deploy']), fakes);
 
-      const [ledger] = mockRunRdy.mock.calls.map(([, options]) => options?.pragmaLedger);
-      expect(mockListUnmarkedGeneratedSourceWarnings).toHaveBeenCalledExactlyOnceWith(ledger);
-      const [pragmaOrder] = mockListUnusedPragmaWarnings.mock.invocationCallOrder;
-      const [generatedOrder] = mockListUnmarkedGeneratedSourceWarnings.mock.invocationCallOrder;
+      const [ledger] = fakes.runRdy.mock.calls.map(([, options]) => options?.pragmaLedger);
+      expect(fakes.listUnmarkedGeneratedSourceWarnings).toHaveBeenCalledExactlyOnceWith(ledger);
+      const [pragmaOrder] = fakes.listUnusedPragmaWarnings.mock.invocationCallOrder;
+      const [generatedOrder] = fakes.listUnmarkedGeneratedSourceWarnings.mock.invocationCallOrder;
       expect(pragmaOrder).toBeLessThan(generatedOrder ?? 0);
       expect(findRunFinished(events)).toMatchObject({ allPassed: true, warnings: [GENERATED_UNMARKED] });
     });
@@ -334,6 +297,7 @@ describe(runKitEntries, () => {
 /** Runs the generator to completion over the given entries, filling in every setting that the test did not name. */
 async function collectEvents(
   kitEntries: ResolvedKitEntry[],
+  fakes: RunFakes,
   settings: Partial<KitRunSettings> = {},
   isJit = false,
 ): Promise<KitRunEvent[]> {
@@ -346,7 +310,7 @@ async function collectEvents(
     unrunSources: [],
     ...settings,
   };
-  for await (const event of runKitEntries(kitEntries, fullSettings, isJit)) {
+  for await (const event of runKitEntries(kitEntries, fullSettings, isJit, fakes)) {
     events.push(event);
   }
   return events;

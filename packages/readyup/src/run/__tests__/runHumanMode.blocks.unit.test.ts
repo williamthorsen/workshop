@@ -1,68 +1,9 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
+import { kitLoadError } from '../../errors/RdyError.ts';
 import type { KitProvenance } from '../../kits/KitProvenance.ts';
-import type { RdyReport } from '../../kits/types.ts';
-import type { SummaryRow } from '../../layout/layoutEngine.ts';
-import type { RunRdyOptions } from '../runRdy.ts';
-
-const mockLoadRdyKit = vi.hoisted(() => vi.fn());
-const mockRunRdy = vi.hoisted(() => vi.fn<(checklist: unknown, options?: RunRdyOptions) => Promise<RdyReport>>());
-const mockReportRdy = vi.hoisted(() => vi.fn());
-const mockFormatCombinedSummary = vi.hoisted(() => vi.fn<(rows: SummaryRow[]) => string>());
-const mockResolveGitHubToken = vi.hoisted(() => vi.fn());
-const mockLoadRemoteKit = vi.hoisted(() => vi.fn());
-const mockReadManifestTracking = vi.hoisted(() => vi.fn());
-const mockListKitStalenessWarnings = vi.hoisted(() => vi.fn());
-const mockListUnusedPragmaWarnings = vi.hoisted(() => vi.fn());
-const mockListUnmarkedGeneratedSourceWarnings = vi.hoisted(() => vi.fn());
-
-vi.mock(import('../../kits/loadRdyKit.ts'), () => ({
-  loadRdyKit: mockLoadRdyKit,
-}));
-
-vi.mock(import('../runRdy.ts'), () => ({
-  runRdy: mockRunRdy,
-}));
-
-vi.mock(import('../../reporting/reportRdy.ts'), async () => {
-  const actual = await vi.importActual<typeof import('../../reporting/reportRdy.ts')>('../../reporting/reportRdy.ts');
-  return {
-    ...actual,
-    reportRdy: mockReportRdy,
-  };
-});
-
-vi.mock(import('../../reporting/formatCombinedSummary.ts'), () => ({
-  formatCombinedSummary: mockFormatCombinedSummary,
-}));
-
-vi.mock(import('../../remote/resolveGitHubToken.ts'), () => ({
-  resolveGitHubToken: mockResolveGitHubToken,
-}));
-
-vi.mock(import('../../remote/loadRemoteKit.ts'), () => ({
-  loadRemoteKit: mockLoadRemoteKit,
-}));
-
-// Mocked so that no case reads the repo's own manifest or hashes files on disk. `loadKit.ts` stays real, and the
-// rendering cases assert on its errors.
-vi.mock(import('../kit-staleness.ts'), () => ({
-  readManifestTracking: mockReadManifestTracking,
-  listKitStalenessWarnings: mockListKitStalenessWarnings,
-}));
-
-// Mocked so that no case reads the sources named by the ledger; what the report itself returns is covered by its
-// own tests.
-vi.mock(import('../pragma-report.ts'), () => ({
-  listUnusedPragmaWarnings: mockListUnusedPragmaWarnings,
-}));
-
-// Mocked for the same reason as the pragma report.
-vi.mock(import('../generated-report.ts'), () => ({
-  listUnmarkedGeneratedSourceWarnings: mockListUnmarkedGeneratedSourceWarnings,
-}));
-
 import { runHumanMode } from '../runHumanMode.ts';
+import { createRunFakes, type RunFakes } from '../test-utils/createRunFakes.ts';
 import { makeKit, singleKitEntry } from '../test-utils/kit-fixtures.ts';
 import { makeFailedResult, makePassedResult } from '../test-utils/result-fixtures.ts';
 import { runHuman } from '../test-utils/runHuman.ts';
@@ -78,35 +19,18 @@ const BLOCK_GAP = '\n'.repeat(2);
 const WIDER_GAP = '\n'.repeat(3);
 
 describe(runHumanMode, () => {
-  beforeEach(() => {
-    mockReportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: true });
-    mockFormatCombinedSummary.mockReturnValue('combined summary');
-    mockReadManifestTracking.mockReturnValue({ tracking: undefined, warnings: [] });
-    mockListKitStalenessWarnings.mockReturnValue([]);
-    mockListUnusedPragmaWarnings.mockReturnValue([]);
-    mockListUnmarkedGeneratedSourceWarnings.mockResolvedValue([]);
-  });
+  let fakes: RunFakes;
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-    mockLoadRdyKit.mockReset();
-    mockRunRdy.mockReset();
-    mockReportRdy.mockReset();
-    mockFormatCombinedSummary.mockReset();
-    mockResolveGitHubToken.mockReset();
-    mockLoadRemoteKit.mockReset();
-    mockReadManifestTracking.mockReset();
-    mockListKitStalenessWarnings.mockReset();
-    mockListUnusedPragmaWarnings.mockReset();
-    mockListUnmarkedGeneratedSourceWarnings.mockReset();
+  beforeEach(() => {
+    fakes = createRunFakes();
   });
 
   it('shows checklist headers when running multiple checklists in a single kit', async () => {
     const kit = makeKit();
-    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+    fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+    fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    const { stdout: allOutput } = await runHuman(singleKitEntry());
+    const { stdout: allOutput } = await runHuman(singleKitEntry(), {}, fakes);
 
     expect(allOutput).toContain('\u{2501}\u{2501} \u{1F4CB} deploy');
     expect(allOutput).toContain('\u{2501}\u{2501} \u{1F4CB} infra');
@@ -115,10 +39,10 @@ describe(runHumanMode, () => {
   // One blank separates blocks of the same kit, and the summary that tallies them is separated the same way.
   it('separates one block from the next with a single blank line', async () => {
     const kit = makeKit();
-    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+    fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+    fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    const { stdout: allOutput } = await runHuman(singleKitEntry());
+    const { stdout: allOutput } = await runHuman(singleKitEntry(), {}, fakes);
 
     expect(allOutput).not.toContain(WIDER_GAP);
     expect(allOutput).toContain(`${BLOCK_GAP}\u{2501}\u{2501} \u{1F4CB} infra`);
@@ -129,10 +53,10 @@ describe(runHumanMode, () => {
   // report, so its breadcrumb would have no segment at all.
   it('prints no heading at all for a lone local kit running one checklist', async () => {
     const kit = makeKit();
-    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+    fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+    fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    const { stdout: allOutput } = await runHuman(singleKitEntry(['deploy']));
+    const { stdout: allOutput } = await runHuman(singleKitEntry(['deploy']), {}, fakes);
 
     expect(allOutput).not.toContain('\u{2501}\u{2501}');
     expect(allOutput).not.toContain('\u{2500}\u{2500} ');
@@ -143,13 +67,17 @@ describe(runHumanMode, () => {
     const kit = makeKit({
       checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }],
     });
-    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+    fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+    fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    const { stdout: allOutput } = await runHuman([
-      { name: 'kit1', source: { path: '.readyup/kits/kit1.js' }, checklists: [] },
-      { name: 'kit2', source: { path: '.readyup/kits/kit2.js' }, checklists: [] },
-    ]);
+    const { stdout: allOutput } = await runHuman(
+      [
+        { name: 'kit1', source: { path: '.readyup/kits/kit1.js' }, checklists: [] },
+        { name: 'kit2', source: { path: '.readyup/kits/kit2.js' }, checklists: [] },
+      ],
+      {},
+      fakes,
+    );
 
     expect(allOutput).toContain('\u{2501}\u{2501} \u{1F4D3} kit1');
     expect(allOutput).toContain('\u{2501}\u{2501} \u{1F4D3} kit2');
@@ -159,12 +87,14 @@ describe(runHumanMode, () => {
     /** Runs one kit with the given provenance, returning everything it wrote to stdout. */
     async function headingFor(provenance: KitProvenance): Promise<string> {
       const kit = makeKit({ checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }] });
-      mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+      fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+      fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-      const { stdout } = await runHuman([
-        { name: 'deploy', source: { path: '.readyup/kits/deploy.js' }, checklists: [], provenance },
-      ]);
+      const { stdout } = await runHuman(
+        [{ name: 'deploy', source: { path: '.readyup/kits/deploy.js' }, checklists: [], provenance }],
+        {},
+        fakes,
+      );
 
       return stdout;
     }
@@ -228,13 +158,17 @@ describe(runHumanMode, () => {
     const kit = makeKit({
       checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }],
     });
-    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+    fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+    fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    const { stdout: allOutput } = await runHuman([
-      { name: 'kit1', source: { path: '.readyup/kits/kit1.js' }, checklists: [] },
-      { name: 'kit2', source: { path: '.readyup/kits/kit2.js' }, checklists: [] },
-    ]);
+    const { stdout: allOutput } = await runHuman(
+      [
+        { name: 'kit1', source: { path: '.readyup/kits/kit1.js' }, checklists: [] },
+        { name: 'kit2', source: { path: '.readyup/kits/kit2.js' }, checklists: [] },
+      ],
+      {},
+      fakes,
+    );
 
     expect(allOutput.startsWith('\u{2501}\u{2501} \u{1F4D3} kit1')).toBe(true);
     expect(allOutput).toContain(`${BLOCK_GAP}\u{2501}\u{2501} \u{1F4D3} kit2`);
@@ -243,11 +177,11 @@ describe(runHumanMode, () => {
 
   it('leaves out a block whose tree rendered nothing', async () => {
     const kit = makeKit();
-    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
-    mockReportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: false });
+    fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+    fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+    fakes.reportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: false });
 
-    const { stdout: allOutput } = await runHuman(singleKitEntry());
+    const { stdout: allOutput } = await runHuman(singleKitEntry(), {}, fakes);
 
     expect(allOutput).not.toContain('report output');
     expect(allOutput).toContain('combined summary');
@@ -255,27 +189,31 @@ describe(runHumanMode, () => {
 
   it('keeps a bodiless block when the run will tabulate nothing', async () => {
     const kit = makeKit({ checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }] });
-    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
-    mockReportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: false });
+    fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+    fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+    fakes.reportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: false });
 
-    const { stdout: allOutput } = await runHuman(singleKitEntry());
+    const { stdout: allOutput } = await runHuman(singleKitEntry(), {}, fakes);
 
     expect(allOutput).toContain('report output');
-    expect(mockFormatCombinedSummary).not.toHaveBeenCalled();
+    expect(fakes.formatCombinedSummary).not.toHaveBeenCalled();
   });
 
   it('tabulates a dropped block even when one row is all that survives', async () => {
     const kit = makeKit({ checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }] });
-    mockLoadRdyKit.mockResolvedValueOnce({ kit, compileTimeVersion: undefined });
-    mockLoadRdyKit.mockRejectedValueOnce(new Error('kit2 cannot be read'));
-    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
-    mockReportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: false });
+    fakes.loadKit.mockResolvedValueOnce({ kit, compileTimeVersion: undefined });
+    fakes.loadKit.mockRejectedValueOnce(kitLoadError('kit2 cannot be read'));
+    fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+    fakes.reportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: false });
 
-    const { stdout: allOutput } = await runHuman([
-      { name: 'kit1', source: { path: '.readyup/kits/kit1.js' }, checklists: [] },
-      { name: 'kit2', source: { path: '.readyup/kits/kit2.js' }, checklists: [] },
-    ]);
+    const { stdout: allOutput } = await runHuman(
+      [
+        { name: 'kit1', source: { path: '.readyup/kits/kit1.js' }, checklists: [] },
+        { name: 'kit2', source: { path: '.readyup/kits/kit2.js' }, checklists: [] },
+      ],
+      {},
+      fakes,
+    );
 
     expect(allOutput).not.toContain('report output');
     expect(allOutput).toContain('combined summary');
@@ -283,16 +221,20 @@ describe(runHumanMode, () => {
 
   it('prints one combined summary covering every kit in a multi-kit run', async () => {
     const kit = makeKit();
-    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+    fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+    fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    await runHuman([
-      { name: 'kit1', source: { path: '.readyup/kits/kit1.js' }, checklists: [] },
-      { name: 'kit2', source: { path: '.readyup/kits/kit2.js' }, checklists: [] },
-    ]);
+    await runHuman(
+      [
+        { name: 'kit1', source: { path: '.readyup/kits/kit1.js' }, checklists: [] },
+        { name: 'kit2', source: { path: '.readyup/kits/kit2.js' }, checklists: [] },
+      ],
+      {},
+      fakes,
+    );
 
-    expect(mockFormatCombinedSummary).toHaveBeenCalledTimes(1);
-    expect(mockFormatCombinedSummary.mock.calls[0]?.[0].map((row) => row.segments)).toStrictEqual([
+    expect(fakes.formatCombinedSummary).toHaveBeenCalledTimes(1);
+    expect(fakes.formatCombinedSummary.mock.calls[0]?.[0].map((row) => row.segments)).toStrictEqual([
       [
         { role: 'kit', text: 'kit1' },
         { role: 'checklist', text: 'deploy' },
@@ -313,18 +255,22 @@ describe(runHumanMode, () => {
   });
 
   it('gives a single-checklist kit a row of its own in a multi-kit run', async () => {
-    mockLoadRdyKit.mockResolvedValue({
+    fakes.loadKit.mockResolvedValue({
       kit: makeKit({ checklists: [{ name: 'only', checks: [{ name: 'a', check: () => true }] }] }),
       compileTimeVersion: undefined,
     });
-    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+    fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    await runHuman([
-      { name: 'kit1', source: { path: '.readyup/kits/kit1.js' }, checklists: [] },
-      { name: 'kit2', source: { path: '.readyup/kits/kit2.js' }, checklists: [] },
-    ]);
+    await runHuman(
+      [
+        { name: 'kit1', source: { path: '.readyup/kits/kit1.js' }, checklists: [] },
+        { name: 'kit2', source: { path: '.readyup/kits/kit2.js' }, checklists: [] },
+      ],
+      {},
+      fakes,
+    );
 
-    expect(mockFormatCombinedSummary.mock.calls[0]?.[0].map((row) => row.segments)).toStrictEqual([
+    expect(fakes.formatCombinedSummary.mock.calls[0]?.[0].map((row) => row.segments)).toStrictEqual([
       [{ role: 'kit', text: 'kit1' }],
       [{ role: 'kit', text: 'kit2' }],
     ]);
@@ -332,14 +278,14 @@ describe(runHumanMode, () => {
 
   it('prints combined summary for a single kit with multiple checklists', async () => {
     const kit = makeKit();
-    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
-    mockFormatCombinedSummary.mockReturnValue('Combined summary');
+    fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+    fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+    fakes.formatCombinedSummary.mockReturnValue('Combined summary');
 
-    await runHuman(singleKitEntry());
+    await runHuman(singleKitEntry(), {}, fakes);
 
-    expect(mockFormatCombinedSummary).toHaveBeenCalledTimes(1);
-    expect(mockFormatCombinedSummary.mock.calls[0]?.[0].map((row) => row.segments)).toStrictEqual([
+    expect(fakes.formatCombinedSummary).toHaveBeenCalledTimes(1);
+    expect(fakes.formatCombinedSummary.mock.calls[0]?.[0].map((row) => row.segments)).toStrictEqual([
       [{ role: 'checklist', text: 'deploy' }],
       [{ role: 'checklist', text: 'infra' }],
     ]);
@@ -347,16 +293,16 @@ describe(runHumanMode, () => {
 
   it('counts results pruned by the reporting threshold in each combined-summary row', async () => {
     const kit = makeKit();
-    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-    mockRunRdy.mockResolvedValue({
+    fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+    fakes.runRdy.mockResolvedValue({
       results: [makePassedResult('gate', 'error'), makeFailedResult('lint', 'warn')],
       passed: true,
       durationMs: 0,
     });
 
-    await runHuman(singleKitEntry(), { reportOn: 'error' });
+    await runHuman(singleKitEntry(), { reportOn: 'error' }, fakes);
 
-    expect(mockFormatCombinedSummary).toHaveBeenCalledWith([
+    expect(fakes.formatCombinedSummary).toHaveBeenCalledWith([
       expect.objectContaining({
         counts: expect.objectContaining({ passed: 1, warnings: 1, worstSeverity: 'warn' }),
         segments: [{ role: 'checklist', text: 'deploy' }],
@@ -370,11 +316,11 @@ describe(runHumanMode, () => {
 
   it('does not print combined summary for a single checklist', async () => {
     const kit = makeKit();
-    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+    fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
+    fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    await runHuman(singleKitEntry(['deploy']));
+    await runHuman(singleKitEntry(['deploy']), {}, fakes);
 
-    expect(mockFormatCombinedSummary).not.toHaveBeenCalled();
+    expect(fakes.formatCombinedSummary).not.toHaveBeenCalled();
   });
 });
