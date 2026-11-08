@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.0 — 2026-11-08
+
+### 🎉 Features
+
+- Changes the port that `thor-chrome` derives for a branch: a branch that encodes a ticket gets 20000 plus the ticket number, wrapped within 20000-29999, so that branch `321` debugs on 20321 rather than 9321, and any other branch gets a hash of `<repo>/<branch>` within 30000-39999, so that `main` gets a different port in each repository. (#703)
+- Adds `--repo` and `--branch` to `thor-chrome launch` and `thor-chrome status`, which derive the profile and port from the values given in place of the ones that git reports, for a working directory that git cannot read, such as one that the sandbox denies, and names them in the repair hint of the underived-profile refusal. (#703)
+- Adds a `derivedPort` field to every profile object in the `--json` output and shows the derived port on each derived profile's line in `thor-chrome list`, beside the running port when the two differ, so that a port collision is visible before a launch. (#703)
+- Names the thor-chrome profile that holds a busy port in the port-busy refusal of `thor-chrome launch`, and suggests `thor-chrome quit <profile>` to free the port. (#703)
+- Changes `thor-chrome launch` to open its URLs as background tabs through the DevTools endpoint without bringing the browser to the front, and against a running profile to open them in that instance without starting a new browser; a page that fails to open is refused with `page-open-failed`. (#704)
+- Adds the `--headless` launch option, which starts the browser without a window or Dock icon on the same DevTools endpoint, reports each running browser's mode in the `headless` profile field and in `list` and `status`, and refuses with `mode-mismatch` a launch whose mode differs from the running instance's. (#704)
+
 ## 0.1.1 — 2026-11-05
 
 ### 📦 Dependencies
