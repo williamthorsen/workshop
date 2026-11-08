@@ -86,6 +86,9 @@ import { runHumanMode } from '../runHumanMode.ts';
 import { makeKit, singleKitEntry } from '../test-utils/kit-fixtures.ts';
 import { runHuman } from '../test-utils/runHuman.ts';
 
+/** A warning as the unused-pragma report returns it. */
+const PRAGMA_UNUSED = { code: 'pragma-unused', message: 'pragma unused.', remedy: 'Remove it.' };
+
 describe(runHumanMode, () => {
   beforeEach(() => {
     mockReportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: true });
@@ -202,11 +205,14 @@ describe(runHumanMode, () => {
       mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-      await runHuman(twoKitEntries());
+      mockListUnusedPragmaWarnings.mockReturnValue([PRAGMA_UNUSED]);
 
-      const [summaryOrder] = mockFormatCombinedSummary.mock.invocationCallOrder;
-      const [reportOrder] = mockListUnusedPragmaWarnings.mock.invocationCallOrder;
-      expect(summaryOrder).toBeLessThan(reportOrder ?? 0);
+      const writes = await runHumanRecordingWrites(twoKitEntries(), []);
+
+      const summaryIndex = writes.findIndex(({ text }) => text === 'combined summary\n');
+      const warningIndex = writes.findIndex(({ text }) => text.startsWith(`Warning: ${PRAGMA_UNUSED.message}`));
+      expect(summaryIndex).toBeGreaterThan(-1);
+      expect(warningIndex).toBeGreaterThan(summaryIndex);
     });
 
     it('reports over the kits that ran when another failed to load', async () => {
@@ -238,7 +244,6 @@ describe(runHumanMode, () => {
 
   describe('warning output', () => {
     const MANIFEST_UNREADABLE = { code: 'manifest-unreadable', message: 'manifest unreadable.', remedy: 'Rewrite it.' };
-    const PRAGMA_UNUSED = { code: 'pragma-unused', message: 'pragma unused.', remedy: 'Remove it.' };
 
     it('writes each warning on stderr where its producer runs, around the stdout blocks', async () => {
       mockReadManifestTracking.mockReturnValue({ tracking: undefined, warnings: [MANIFEST_UNREADABLE] });
