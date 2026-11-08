@@ -1,13 +1,13 @@
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
 
-import { captureStdio, createTempTree, pointCwdAt, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { createTempTree, pointCwdAt, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { beforeEach, describe, expect, it as baseIt, vi } from 'vitest';
 
 import { listForeignPaths } from '../../check-utils/project/listForeignPaths.ts';
 import { readTrackedSources } from '../../check-utils/project/readTrackedSources.ts';
-import { warnOnUnmarkedGeneratedSources } from '../generated-report.ts';
+import { listUnmarkedGeneratedSourceWarnings } from '../generated-report.ts';
 import { createPragmaLedger, type PragmaLedger } from '../PragmaLedger.ts';
 
 /** A minified bundle: few lines, each far longer than hand-written code. */
@@ -33,7 +33,7 @@ const it = baseIt.extend(
   makeFixture(() => createTempTree({}, { prefix: 'rdy-generated-report-' })),
 );
 
-describe(warnOnUnmarkedGeneratedSources, () => {
+describe(listUnmarkedGeneratedSourceWarnings, () => {
   beforeEach(() => {
     // Keeps a developer's system-wide linguist declarations out of the attribute lookup.
     vi.stubEnv('GIT_ATTR_NOSYSTEM', '1');
@@ -44,7 +44,7 @@ describe(warnOnUnmarkedGeneratedSources, () => {
     initRepository(temp);
     using _cwd = pointCwdAt(temp.dir);
 
-    const { warnings, stderr } = await warn(scanning(['dist/app.mjs']));
+    const warnings = await listUnmarkedGeneratedSourceWarnings(scanning(['dist/app.mjs']));
 
     expect(warnings).toStrictEqual([
       {
@@ -54,7 +54,6 @@ describe(warnOnUnmarkedGeneratedSources, () => {
         remedy: 'Add `/dist/app.mjs linguist-generated=true` to .gitattributes, so that kits stop sweeping it.',
       },
     ]);
-    expect(stderr).toBe(`Warning: ${warnings[0]?.message} ${warnings[0]?.remedy}\n`);
   });
 
   it('warns about an unmarked unminified bundle by its header', async ({ temp }) => {
@@ -62,7 +61,7 @@ describe(warnOnUnmarkedGeneratedSources, () => {
     initRepository(temp);
     using _cwd = pointCwdAt(temp.dir);
 
-    const { warnings } = await warn(scanning(['scripts/tool.mjs']));
+    const warnings = await listUnmarkedGeneratedSourceWarnings(scanning(['scripts/tool.mjs']));
 
     expect(warnings).toHaveLength(1);
     expect(warnings[0]?.message).toContain("bundler's runtime helpers");
@@ -78,10 +77,11 @@ describe(warnOnUnmarkedGeneratedSources, () => {
     temp.write('untracked.mjs', MINIFIED);
     using _cwd = pointCwdAt(temp.dir);
 
-    const { warnings, stderr } = await warn(scanning(['generated.mjs', 'vendored.js', 'hand.ts', 'untracked.mjs']));
+    const warnings = await listUnmarkedGeneratedSourceWarnings(
+      scanning(['generated.mjs', 'vendored.js', 'hand.ts', 'untracked.mjs']),
+    );
 
     expect(warnings).toStrictEqual([]);
-    expect(stderr).toBe('');
   });
 
   it("leaves readyup's own compiled kits alone even when a check names one as examined", async ({ temp }) => {
@@ -89,7 +89,7 @@ describe(warnOnUnmarkedGeneratedSources, () => {
     initRepository(temp);
     using _cwd = pointCwdAt(temp.dir);
 
-    const { warnings } = await warn(scanning(['.readyup/kits/default.js']));
+    const warnings = await listUnmarkedGeneratedSourceWarnings(scanning(['.readyup/kits/default.js']));
 
     expect(warnings).toStrictEqual([]);
   });
@@ -99,7 +99,7 @@ describe(warnOnUnmarkedGeneratedSources, () => {
     initRepository(temp);
     using _cwd = pointCwdAt(join(temp.dir, 'packages/app'));
 
-    const { warnings } = await warn(scanning(['dist/app.js']));
+    const warnings = await listUnmarkedGeneratedSourceWarnings(scanning(['dist/app.js']));
 
     expect(warnings[0]?.message).toMatch(/^dist\/app\.js /);
     expect(warnings[0]?.remedy).toContain('`/packages/app/dist/app.js linguist-generated=true`');
@@ -113,7 +113,7 @@ describe(warnOnUnmarkedGeneratedSources, () => {
     initRepository(temp);
     using _cwd = pointCwdAt(temp.dir);
 
-    const { warnings } = await warn(scanning(paths));
+    const warnings = await listUnmarkedGeneratedSourceWarnings(scanning(paths));
     const lines = warnings.map((warning) => /`(.+)`/.exec(warning.remedy ?? '')?.[1]);
 
     expect(lines).toStrictEqual([
@@ -140,7 +140,7 @@ describe(warnOnUnmarkedGeneratedSources, () => {
 
     const swept = await readTrackedSources();
     ledger.recordScanned((swept ?? []).map((source) => source.path));
-    const { warnings } = await warn(ledger);
+    const warnings = await listUnmarkedGeneratedSourceWarnings(ledger);
 
     expect(swept?.map((source) => source.path)).toStrictEqual(['dist/app.mjs']);
     expect(warnings).toHaveLength(1);
@@ -150,7 +150,7 @@ describe(warnOnUnmarkedGeneratedSources, () => {
     temp.write('dist/app.mjs', MINIFIED);
     using _cwd = pointCwdAt(temp.dir);
 
-    const { warnings } = await warn(scanning(['dist/app.mjs']));
+    const warnings = await listUnmarkedGeneratedSourceWarnings(scanning(['dist/app.mjs']));
 
     expect(warnings).toStrictEqual([]);
   });
@@ -171,15 +171,6 @@ function scanning(paths: readonly string[]): PragmaLedger {
   const ledger = createPragmaLedger();
   ledger.recordScanned(paths);
   return ledger;
-}
-
-/** Reports over one ledger, returning the warnings alongside everything that the call wrote to stderr. */
-async function warn(ledger: PragmaLedger) {
-  using io = captureStdio();
-
-  const warnings = await warnOnUnmarkedGeneratedSources(ledger);
-
-  return { warnings, stderr: io.stderr };
 }
 
 // endregion | Helpers

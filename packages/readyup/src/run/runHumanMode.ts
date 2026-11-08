@@ -7,16 +7,17 @@ import { formatRepositoryLabel, type KitProvenance } from '../kits/KitProvenance
 import type { FixLocation, RdyChecklist, RdyKit, RdyReport, RdyStagedChecklist, Severity } from '../kits/types.ts';
 import { getLayout } from '../layout/engine.ts';
 import type { BreadcrumbSegment, SummaryRow } from '../layout/layoutEngine.ts';
+import { writeWarnings } from '../output/writeWarnings.ts';
 import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
 import { formatCombinedSummary } from '../reporting/formatCombinedSummary.ts';
 import { formatRunVerdict, type KitThreshold, type WithheldFailures } from '../reporting/formatRunVerdict.ts';
 import { countResults, emptyCounts, reportRdy, selectVisibleResults } from '../reporting/reportRdy.ts';
 import { meetsThreshold } from '../severity/meetsThreshold.ts';
-import { warnOnUnmarkedGeneratedSources } from './generated-report.ts';
-import { readManifestTracking, warnOnKitStaleness } from './kit-staleness.ts';
+import { listUnmarkedGeneratedSourceWarnings } from './generated-report.ts';
+import { listKitStalenessWarnings, readManifestTracking } from './kit-staleness.ts';
 import type { UnrunSource } from './KitSelection.ts';
 import { loadKit } from './loadKit.ts';
-import { warnOnUnusedPragmas } from './pragma-report.ts';
+import { listUnusedPragmaWarnings } from './pragma-report.ts';
 import { createPragmaLedger, type PragmaLedger } from './PragmaLedger.ts';
 import { recordKitCheckIds } from './recordKitCheckIds.ts';
 import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
@@ -24,9 +25,9 @@ import { resolveRunExitCode } from './resolveRunExitCode.ts';
 import { resolveThresholds } from './resolveThresholds.ts';
 import { runRdy } from './runRdy.ts';
 import { selectChecklists } from './selectChecklists.ts';
-import { warnOnMaskedSkips } from './skip-diagnosis.ts';
-import { formatEmptySelection, warnOnUnrunSources } from './source-report.ts';
-import { warnOnVersionSkew } from './version-skew.ts';
+import { listMaskedSkipWarnings } from './skip-diagnosis.ts';
+import { formatEmptySelection, listUnrunSourceWarnings } from './source-report.ts';
+import { listVersionSkewWarnings } from './version-skew.ts';
 
 /** The line under the heading of a kit that did not load, whose error is written to stderr. */
 const DID_NOT_LOAD_STATUS = 'Kit did not load; the error is on stderr';
@@ -56,12 +57,13 @@ export async function runHumanMode(
   // publishes the requested kit. A blank screen reads as a tool that failed to start rather than as a pass.
   if (kitEntries.length === 0) {
     process.stdout.write(`${formatEmptySelection(settings.unrunSources)}\n`);
-    warnOnUnrunSources(settings.unrunSources);
+    writeWarnings(listUnrunSourceWarnings(settings.unrunSources));
     return EXIT_OK;
   }
 
   const isMultiKit = kitEntries.length > 1;
-  const { tracking } = readManifestTracking(isJit);
+  const { tracking, warnings: manifestWarnings } = readManifestTracking(isJit);
+  writeWarnings(manifestWarnings);
   const pragmaLedger = createPragmaLedger();
   const writeBlock = createBlockWriter();
   const rows: SummaryRow[] = [];
@@ -78,8 +80,10 @@ export async function runHumanMode(
       const { kit, compileTimeVersion } = await loadKit(entry, settings.remote);
       recordKitCheckIds(kit, pragmaLedger, entry.provenance);
 
-      warnOnKitStaleness(entry.name, entry.source, tracking);
-      warnOnVersionSkew(entry.name, kit, compileTimeVersion, entry.provenance);
+      writeWarnings([
+        ...listKitStalenessWarnings(entry.name, entry.source, tracking),
+        ...listVersionSkewWarnings(entry.name, kit, compileTimeVersion, entry.provenance),
+      ]);
 
       const kitResult = await runKit(kit, entry.checklists, settings, {
         entry,
@@ -120,9 +124,11 @@ export async function runHumanMode(
   if (rows.length > 1 || anyBlockDropped) writeBlock(formatCombinedSummary(rows));
 
   // Warn after the summary table, the last block in which a reported file may have been named.
-  warnOnUnusedPragmas(pragmaLedger);
-  await warnOnUnmarkedGeneratedSources(pragmaLedger);
-  warnOnUnrunSources(settings.unrunSources);
+  writeWarnings([
+    ...listUnusedPragmaWarnings(pragmaLedger),
+    ...(await listUnmarkedGeneratedSourceWarnings(pragmaLedger)),
+    ...listUnrunSourceWarnings(settings.unrunSources),
+  ]);
 
   // Close with the verdict, after the warnings on stderr, so that it is the last line of a merged CI log.
   writeBlock(formatRunVerdict({ kitThresholds, missingKitCount, passed: allPassed, withheld }));
@@ -284,7 +290,7 @@ async function runKit(
     }
 
     // Warn after the block, so that the reader has just seen the skipped line that the warning is about.
-    warnOnMaskedSkips(entry, checklist.name, report.diagnoses);
+    writeWarnings(listMaskedSkipWarnings(entry, checklist.name, report.diagnoses));
 
     if (!report.passed) {
       allPassed = false;

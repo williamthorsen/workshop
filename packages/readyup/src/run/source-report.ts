@@ -1,5 +1,3 @@
-import process from 'node:process';
-
 import { getLayout } from '../layout/engine.ts';
 import type { RaisedWarning } from '../schemas/common.ts';
 import type { UnrunSource } from './KitSelection.ts';
@@ -22,17 +20,9 @@ export function formatEmptySelection(unrunSources: readonly UnrunSource[]): stri
   ].join('\n');
 }
 
-/**
- * Warns about each configured source from which a `--sources` run selected no kit.
- *
- * The stderr lines are written in both output modes; the returned entries are what JSON mode adds to the report.
- */
-export function warnOnUnrunSources(unrunSources: readonly UnrunSource[]): RaisedWarning[] {
-  const warnings = unrunSources.map((source) => toWarning(source));
-  for (const warning of warnings) {
-    process.stderr.write(`Warning: ${warning.message} ${warning.remedy}\n`);
-  }
-  return warnings;
+/** Lists a warning for each configured source from which a `--sources` run selected no kit. */
+export function listUnrunSourceWarnings(unrunSources: readonly UnrunSource[]): RaisedWarning[] {
+  return unrunSources.map((source) => toWarning(source));
 }
 
 // region | Helpers

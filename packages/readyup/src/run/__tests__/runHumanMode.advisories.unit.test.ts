@@ -12,9 +12,9 @@ const mockFormatCombinedSummary = vi.hoisted(() => vi.fn<(rows: SummaryRow[]) =>
 const mockResolveGitHubToken = vi.hoisted(() => vi.fn());
 const mockLoadRemoteKit = vi.hoisted(() => vi.fn());
 const mockReadManifestTracking = vi.hoisted(() => vi.fn());
-const mockWarnOnKitStaleness = vi.hoisted(() => vi.fn());
-const mockWarnOnUnusedPragmas = vi.hoisted(() => vi.fn());
-const mockWarnOnUnmarkedGeneratedSources = vi.hoisted(() => vi.fn());
+const mockListKitStalenessWarnings = vi.hoisted(() => vi.fn());
+const mockListUnusedPragmaWarnings = vi.hoisted(() => vi.fn());
+const mockListUnmarkedGeneratedSourceWarnings = vi.hoisted(() => vi.fn());
 
 /** A warning as the unmarked-generated report returns it. */
 const GENERATED_UNMARKED = {
@@ -56,18 +56,18 @@ vi.mock(import('../../remote/loadRemoteKit.ts'), () => ({
 // rendering cases assert on its errors.
 vi.mock(import('../kit-staleness.ts'), () => ({
   readManifestTracking: mockReadManifestTracking,
-  warnOnKitStaleness: mockWarnOnKitStaleness,
+  listKitStalenessWarnings: mockListKitStalenessWarnings,
 }));
 
 // Mocked so that no case reads the sources named by the ledger; what the report itself writes is covered by its
 // own tests.
 vi.mock(import('../pragma-report.ts'), () => ({
-  warnOnUnusedPragmas: mockWarnOnUnusedPragmas,
+  listUnusedPragmaWarnings: mockListUnusedPragmaWarnings,
 }));
 
 // Mocked for the same reason as the pragma report.
 vi.mock(import('../generated-report.ts'), () => ({
-  warnOnUnmarkedGeneratedSources: mockWarnOnUnmarkedGeneratedSources,
+  listUnmarkedGeneratedSourceWarnings: mockListUnmarkedGeneratedSourceWarnings,
 }));
 
 import { runHumanMode } from '../runHumanMode.ts';
@@ -79,9 +79,9 @@ describe(runHumanMode, () => {
     mockReportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: true });
     mockFormatCombinedSummary.mockReturnValue('combined summary');
     mockReadManifestTracking.mockReturnValue({ tracking: undefined, warnings: [] });
-    mockWarnOnKitStaleness.mockReturnValue([]);
-    mockWarnOnUnusedPragmas.mockReturnValue([]);
-    mockWarnOnUnmarkedGeneratedSources.mockResolvedValue([]);
+    mockListKitStalenessWarnings.mockReturnValue([]);
+    mockListUnusedPragmaWarnings.mockReturnValue([]);
+    mockListUnmarkedGeneratedSourceWarnings.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -93,9 +93,9 @@ describe(runHumanMode, () => {
     mockResolveGitHubToken.mockReset();
     mockLoadRemoteKit.mockReset();
     mockReadManifestTracking.mockReset();
-    mockWarnOnKitStaleness.mockReset();
-    mockWarnOnUnusedPragmas.mockReset();
-    mockWarnOnUnmarkedGeneratedSources.mockReset();
+    mockListKitStalenessWarnings.mockReset();
+    mockListUnusedPragmaWarnings.mockReset();
+    mockListUnmarkedGeneratedSourceWarnings.mockReset();
   });
 
   describe('staleness advisories', () => {
@@ -139,13 +139,23 @@ describe(runHumanMode, () => {
 
       await runHuman(twoKitEntries());
 
-      expect(mockWarnOnKitStaleness).toHaveBeenCalledTimes(2);
-      expect(mockWarnOnKitStaleness).toHaveBeenNthCalledWith(1, 'alpha', { path: '.readyup/kits/alpha.js' }, tracking);
-      expect(mockWarnOnKitStaleness).toHaveBeenNthCalledWith(2, 'beta', { path: '.readyup/kits/beta.js' }, tracking);
+      expect(mockListKitStalenessWarnings).toHaveBeenCalledTimes(2);
+      expect(mockListKitStalenessWarnings).toHaveBeenNthCalledWith(
+        1,
+        'alpha',
+        { path: '.readyup/kits/alpha.js' },
+        tracking,
+      );
+      expect(mockListKitStalenessWarnings).toHaveBeenNthCalledWith(
+        2,
+        'beta',
+        { path: '.readyup/kits/beta.js' },
+        tracking,
+      );
     });
 
     it('leaves the exit code alone, since verify is the enforcing gate', async () => {
-      mockWarnOnKitStaleness.mockReturnValue([TARGET_DRIFT]);
+      mockListKitStalenessWarnings.mockReturnValue([TARGET_DRIFT]);
       mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
@@ -173,7 +183,7 @@ describe(runHumanMode, () => {
       const ledgers = mockRunRdy.mock.calls.map(([, options]) => options?.pragmaLedger);
       expect(ledgers).toHaveLength(2);
       expect(new Set(ledgers).size).toBe(1);
-      expect(mockWarnOnUnusedPragmas).toHaveBeenCalledExactlyOnceWith(ledgers[0]);
+      expect(mockListUnusedPragmaWarnings).toHaveBeenCalledExactlyOnceWith(ledgers[0]);
     });
 
     it('reports after the summary table, the last block in which a pragma’s file may be named', async () => {
@@ -183,7 +193,7 @@ describe(runHumanMode, () => {
       await runHuman(twoKitEntries());
 
       const [summaryOrder] = mockFormatCombinedSummary.mock.invocationCallOrder;
-      const [reportOrder] = mockWarnOnUnusedPragmas.mock.invocationCallOrder;
+      const [reportOrder] = mockListUnusedPragmaWarnings.mock.invocationCallOrder;
       expect(summaryOrder).toBeLessThan(reportOrder ?? 0);
     });
 
@@ -192,23 +202,23 @@ describe(runHumanMode, () => {
 
       const { exitCode } = await runHuman(singleKitEntry(['deploy']));
 
-      expect(mockWarnOnUnusedPragmas).toHaveBeenCalledTimes(1);
+      expect(mockListUnusedPragmaWarnings).toHaveBeenCalledTimes(1);
       expect(exitCode).toBe(2);
     });
   });
 
   describe('unmarked-generated advisories', () => {
     it('reports over the invocation ledger, after the unused-pragma report, and leaves the exit code alone', async () => {
-      mockWarnOnUnmarkedGeneratedSources.mockResolvedValue([GENERATED_UNMARKED]);
+      mockListUnmarkedGeneratedSourceWarnings.mockResolvedValue([GENERATED_UNMARKED]);
       mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
       const { exitCode } = await runHuman(singleKitEntry(['deploy']));
 
       const [ledger] = mockRunRdy.mock.calls.map(([, options]) => options?.pragmaLedger);
-      expect(mockWarnOnUnmarkedGeneratedSources).toHaveBeenCalledExactlyOnceWith(ledger);
-      const [pragmaOrder] = mockWarnOnUnusedPragmas.mock.invocationCallOrder;
-      const [generatedOrder] = mockWarnOnUnmarkedGeneratedSources.mock.invocationCallOrder;
+      expect(mockListUnmarkedGeneratedSourceWarnings).toHaveBeenCalledExactlyOnceWith(ledger);
+      const [pragmaOrder] = mockListUnusedPragmaWarnings.mock.invocationCallOrder;
+      const [generatedOrder] = mockListUnmarkedGeneratedSourceWarnings.mock.invocationCallOrder;
       expect(pragmaOrder).toBeLessThan(generatedOrder ?? 0);
       expect(exitCode).toBe(0);
     });

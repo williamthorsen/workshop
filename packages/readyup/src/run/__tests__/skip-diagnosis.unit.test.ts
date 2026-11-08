@@ -1,16 +1,15 @@
-import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import type { SkipDiagnosis } from '../../kits/types.ts';
 import type { ResolvedKitEntry } from '../ResolvedKitEntry.ts';
-import { warnOnMaskedSkips } from '../skip-diagnosis.ts';
+import { listMaskedSkipWarnings } from '../skip-diagnosis.ts';
 
 /** The entry produced by a locally-resolved kit: a name, and no package to attribute it to. */
 const LOCAL_KIT: ResolvedKitEntry = { name: 'default', source: { path: '.readyup/kits/default.js' }, checklists: [] };
 
-describe(warnOnMaskedSkips, () => {
+describe(listMaskedSkipWarnings, () => {
   it('raises skip-masks-pass for a skip that suppressed a pass', () => {
-    const { warnings } = warn([{ name: 'Coverage is at least 90%', verdict: 'masked-pass' }]);
+    const warnings = listWarnings([{ name: 'Coverage is at least 90%', verdict: 'masked-pass' }]);
 
     expect(warnings).toStrictEqual([
       {
@@ -22,7 +21,7 @@ describe(warnOnMaskedSkips, () => {
   });
 
   it('raises diagnosis-inconclusive for a check that reached no verdict', () => {
-    const { warnings } = warn([{ name: 'Registry is reachable', verdict: 'inconclusive', reason: 'fetch failed' }]);
+    const warnings = listWarnings([{ name: 'Registry is reachable', verdict: 'inconclusive', reason: 'fetch failed' }]);
 
     expect(warnings).toStrictEqual([
       {
@@ -35,46 +34,48 @@ describe(warnOnMaskedSkips, () => {
   });
 
   it('ends the sentence with one period when the reason already has one', () => {
-    const { warnings } = warn([{ name: 'a', verdict: 'inconclusive', reason: 'check() returned null.' }]);
+    const warnings = listWarnings([{ name: 'a', verdict: 'inconclusive', reason: 'check() returned null.' }]);
 
     expect(warnings[0]?.message).toBe(
       'skipped check "a" in kit "default" / checklist "repo" could not be diagnosed: check() returned null.',
     );
   });
 
-  it('writes every warning to stderr', () => {
-    const { stderr } = warn([
+  it('lists one warning per diagnosis, in order, each with its remedy', () => {
+    const warnings = listWarnings([
       { name: 'a', verdict: 'masked-pass' },
       { name: 'b', verdict: 'inconclusive', reason: 'boom' },
     ]);
 
-    expect(stderr).toBe(
-      'Warning: skipped check "a" in kit "default" / checklist "repo" would have passed. ' +
-        'Narrow its skip to the states in which the check would fail, or remove the skip.\n' +
-        'Warning: skipped check "b" in kit "default" / checklist "repo" could not be diagnosed: boom. ' +
-        'Fix the check so that it returns a verdict, then re-run with --diagnose.\n',
-    );
+    expect(warnings.map(({ message, remedy }) => ({ message, remedy }))).toStrictEqual([
+      {
+        message: 'skipped check "a" in kit "default" / checklist "repo" would have passed.',
+        remedy: 'Narrow its skip to the states in which the check would fail, or remove the skip.',
+      },
+      {
+        message: 'skipped check "b" in kit "default" / checklist "repo" could not be diagnosed: boom.',
+        remedy: 'Fix the check so that it returns a verdict, then re-run with --diagnose.',
+      },
+    ]);
   });
 
   it('stays silent when diagnosis did not run', () => {
-    const { warnings, stderr } = warn(undefined);
+    const warnings = listWarnings(undefined);
 
     expect(warnings).toStrictEqual([]);
-    expect(stderr).toBe('');
   });
 
   it('stays silent when diagnosis found nothing', () => {
-    const { warnings, stderr } = warn([]);
+    const warnings = listWarnings([]);
 
     expect(warnings).toStrictEqual([]);
-    expect(stderr).toBe('');
   });
 
   describe('kit identity', () => {
     // Every kit resolved by `--sources` has the same name, so the package is the only thing that
     // tells one run entry's warnings from another's.
     it('names the publishing package beside the kit', () => {
-      const { warnings } = warn([{ name: 'a', verdict: 'masked-pass' }], packagedKit());
+      const warnings = listWarnings([{ name: 'a', verdict: 'masked-pass' }], packagedKit());
 
       expect(warnings[0]?.message).toBe(
         'skipped check "a" in kit "default" from @williamthorsen/nmr / checklist "repo" would have passed.',
@@ -89,7 +90,7 @@ describe(warnOnMaskedSkips, () => {
         provenance: { kind: 'remote', label: 'example.com/deploy.js' },
       };
 
-      const { warnings } = warn([{ name: 'a', verdict: 'masked-pass' }], remote);
+      const warnings = listWarnings([{ name: 'a', verdict: 'masked-pass' }], remote);
 
       expect(warnings[0]?.message).toBe('skipped check "a" in kit "deploy" / checklist "repo" would have passed.');
     });
@@ -113,13 +114,9 @@ function packagedKit(): ResolvedKitEntry {
   };
 }
 
-/** Warns over one checklist's diagnoses, returning the entries alongside everything `warnOnMaskedSkips` wrote. */
-function warn(diagnoses: SkipDiagnosis[] | undefined, entry: ResolvedKitEntry = LOCAL_KIT) {
-  using io = captureStdio();
-
-  const warnings = warnOnMaskedSkips(entry, 'repo', diagnoses);
-
-  return { warnings, stderr: io.stderr };
+/** Lists the warnings for one checklist's diagnoses. */
+function listWarnings(diagnoses: SkipDiagnosis[] | undefined, entry: ResolvedKitEntry = LOCAL_KIT) {
+  return listMaskedSkipWarnings(entry, 'repo', diagnoses);
 }
 
 // endregion | Helpers

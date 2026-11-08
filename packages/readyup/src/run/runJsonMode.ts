@@ -3,15 +3,16 @@ import process from 'node:process';
 import { toRdyError } from '../errors/RdyError.ts';
 import type { KitProvenance } from '../kits/KitProvenance.ts';
 import type { RdyReport, Severity } from '../kits/types.ts';
+import { writeWarnings } from '../output/writeWarnings.ts';
 import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
 import { formatJsonReport, type KitInput } from '../reporting/formatJsonReport.ts';
 import type { JsonWarning } from '../schemas/common.ts';
 import type { JsonDetail, JsonKitOrigin } from '../schemas/reportSchema.ts';
-import { warnOnUnmarkedGeneratedSources } from './generated-report.ts';
-import { readManifestTracking, warnOnKitStaleness } from './kit-staleness.ts';
+import { listUnmarkedGeneratedSourceWarnings } from './generated-report.ts';
+import { listKitStalenessWarnings, readManifestTracking } from './kit-staleness.ts';
 import type { UnrunSource } from './KitSelection.ts';
 import { loadKit } from './loadKit.ts';
-import { warnOnUnusedPragmas } from './pragma-report.ts';
+import { listUnusedPragmaWarnings } from './pragma-report.ts';
 import { createPragmaLedger } from './PragmaLedger.ts';
 import { recordKitCheckIds } from './recordKitCheckIds.ts';
 import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
@@ -19,9 +20,9 @@ import { resolveRunExitCode } from './resolveRunExitCode.ts';
 import { resolveThresholds } from './resolveThresholds.ts';
 import { runRdy } from './runRdy.ts';
 import { selectChecklists } from './selectChecklists.ts';
-import { warnOnMaskedSkips } from './skip-diagnosis.ts';
-import { warnOnUnrunSources } from './source-report.ts';
-import { warnOnVersionSkew } from './version-skew.ts';
+import { listMaskedSkipWarnings } from './skip-diagnosis.ts';
+import { listUnrunSourceWarnings } from './source-report.ts';
+import { listVersionSkewWarnings } from './version-skew.ts';
 
 interface JsonRunSettings {
   detail: JsonDetail;
@@ -50,6 +51,7 @@ export async function runJsonMode(
   const warnings: JsonWarning[] = [];
   const { tracking, warnings: manifestWarnings } = readManifestTracking(isJit);
   warnings.push(...manifestWarnings);
+  writeWarnings(manifestWarnings);
   const pragmaLedger = createPragmaLedger();
   let allPassed = true;
   let anyKitFailed = false;
@@ -59,10 +61,12 @@ export async function runJsonMode(
       const { kit, compileTimeVersion } = await loadKit(entry, remote);
       recordKitCheckIds(kit, pragmaLedger, entry.provenance);
 
-      warnings.push(
-        ...warnOnKitStaleness(entry.name, entry.source, tracking),
-        ...warnOnVersionSkew(entry.name, kit, compileTimeVersion, entry.provenance),
-      );
+      const kitWarnings = [
+        ...listKitStalenessWarnings(entry.name, entry.source, tracking),
+        ...listVersionSkewWarnings(entry.name, kit, compileTimeVersion, entry.provenance),
+      ];
+      warnings.push(...kitWarnings);
+      writeWarnings(kitWarnings);
 
       const thresholds = resolveThresholds(kit, failOn, reportOn);
       const checklists = selectChecklists(kit, entry.checklists);
@@ -78,7 +82,9 @@ export async function runJsonMode(
           provenance: entry.provenance,
         });
         entries.push({ name: checklist.name, report });
-        warnings.push(...warnOnMaskedSkips(entry, checklist.name, report.diagnoses));
+        const skipWarnings = listMaskedSkipWarnings(entry, checklist.name, report.diagnoses);
+        warnings.push(...skipWarnings);
+        writeWarnings(skipWarnings);
         if (!report.passed) allPassed = false;
       }
 
@@ -103,11 +109,13 @@ export async function runJsonMode(
     }
   }
 
-  warnings.push(
-    ...warnOnUnusedPragmas(pragmaLedger),
-    ...(await warnOnUnmarkedGeneratedSources(pragmaLedger)),
-    ...warnOnUnrunSources(unrunSources),
-  );
+  const runWarnings = [
+    ...listUnusedPragmaWarnings(pragmaLedger),
+    ...(await listUnmarkedGeneratedSourceWarnings(pragmaLedger)),
+    ...listUnrunSourceWarnings(unrunSources),
+  ];
+  warnings.push(...runWarnings);
+  writeWarnings(runWarnings);
 
   // The top-level thresholds say what the invocation asked for: An absent flag stays absent
   // rather than being reported as a default that nobody requested. What governed each kit, including

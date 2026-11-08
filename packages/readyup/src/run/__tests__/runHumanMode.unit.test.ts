@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { RdyReport } from '../../kits/types.ts';
 import type { SummaryRow } from '../../layout/layoutEngine.ts';
-import type { warnOnUnusedPragmas } from '../pragma-report.ts';
+import type { listUnusedPragmaWarnings } from '../pragma-report.ts';
 import type { RunRdyOptions } from '../runRdy.ts';
 
 const mockLoadRdyKit = vi.hoisted(() => vi.fn());
@@ -12,9 +12,9 @@ const mockFormatCombinedSummary = vi.hoisted(() => vi.fn<(rows: SummaryRow[]) =>
 const mockResolveGitHubToken = vi.hoisted(() => vi.fn());
 const mockLoadRemoteKit = vi.hoisted(() => vi.fn());
 const mockReadManifestTracking = vi.hoisted(() => vi.fn());
-const mockWarnOnKitStaleness = vi.hoisted(() => vi.fn());
-const mockWarnOnUnusedPragmas = vi.hoisted(() => vi.fn<typeof warnOnUnusedPragmas>());
-const mockWarnOnUnmarkedGeneratedSources = vi.hoisted(() => vi.fn());
+const mockListKitStalenessWarnings = vi.hoisted(() => vi.fn());
+const mockListUnusedPragmaWarnings = vi.hoisted(() => vi.fn<typeof listUnusedPragmaWarnings>());
+const mockListUnmarkedGeneratedSourceWarnings = vi.hoisted(() => vi.fn());
 
 vi.mock(import('../../kits/loadRdyKit.ts'), () => ({
   loadRdyKit: mockLoadRdyKit,
@@ -48,18 +48,18 @@ vi.mock(import('../../remote/loadRemoteKit.ts'), () => ({
 // rendering cases assert on its errors.
 vi.mock(import('../kit-staleness.ts'), () => ({
   readManifestTracking: mockReadManifestTracking,
-  warnOnKitStaleness: mockWarnOnKitStaleness,
+  listKitStalenessWarnings: mockListKitStalenessWarnings,
 }));
 
 // Mocked so that no case reads the sources named by the ledger; what the report itself writes is covered by its
 // own tests.
 vi.mock(import('../pragma-report.ts'), () => ({
-  warnOnUnusedPragmas: mockWarnOnUnusedPragmas,
+  listUnusedPragmaWarnings: mockListUnusedPragmaWarnings,
 }));
 
 // Mocked for the same reason as the pragma report.
 vi.mock(import('../generated-report.ts'), () => ({
-  warnOnUnmarkedGeneratedSources: mockWarnOnUnmarkedGeneratedSources,
+  listUnmarkedGeneratedSourceWarnings: mockListUnmarkedGeneratedSourceWarnings,
 }));
 
 import { emptyCounts } from '../../reporting/reportRdy.ts';
@@ -72,9 +72,9 @@ describe(runHumanMode, () => {
     mockReportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: true });
     mockFormatCombinedSummary.mockReturnValue('combined summary');
     mockReadManifestTracking.mockReturnValue({ tracking: undefined, warnings: [] });
-    mockWarnOnKitStaleness.mockReturnValue([]);
-    mockWarnOnUnusedPragmas.mockReturnValue([]);
-    mockWarnOnUnmarkedGeneratedSources.mockResolvedValue([]);
+    mockListKitStalenessWarnings.mockReturnValue([]);
+    mockListUnusedPragmaWarnings.mockReturnValue([]);
+    mockListUnmarkedGeneratedSourceWarnings.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -86,9 +86,9 @@ describe(runHumanMode, () => {
     mockResolveGitHubToken.mockReset();
     mockLoadRemoteKit.mockReset();
     mockReadManifestTracking.mockReset();
-    mockWarnOnKitStaleness.mockReset();
-    mockWarnOnUnusedPragmas.mockReset();
-    mockWarnOnUnmarkedGeneratedSources.mockReset();
+    mockListKitStalenessWarnings.mockReset();
+    mockListUnusedPragmaWarnings.mockReset();
+    mockListUnmarkedGeneratedSourceWarnings.mockReset();
   });
 
   it('says the run selected no kits rather than printing nothing', async () => {
@@ -298,7 +298,7 @@ describe(runHumanMode, () => {
 
     await runHuman(singleKitEntry(['deploy']));
 
-    const [ledger] = mockWarnOnUnusedPragmas.mock.lastCall ?? [];
+    const [ledger] = mockListUnusedPragmaWarnings.mock.lastCall ?? [];
     expect(ledger?.checkIds().map((ids) => ids.bare)).toStrictEqual(['selected', 'unselected']);
   });
 });

@@ -11,9 +11,9 @@ const mockFormatCombinedSummary = vi.hoisted(() => vi.fn<(rows: SummaryRow[]) =>
 const mockResolveGitHubToken = vi.hoisted(() => vi.fn());
 const mockLoadRemoteKit = vi.hoisted(() => vi.fn());
 const mockReadManifestTracking = vi.hoisted(() => vi.fn());
-const mockWarnOnKitStaleness = vi.hoisted(() => vi.fn());
-const mockWarnOnUnusedPragmas = vi.hoisted(() => vi.fn());
-const mockWarnOnUnmarkedGeneratedSources = vi.hoisted(() => vi.fn());
+const mockListKitStalenessWarnings = vi.hoisted(() => vi.fn());
+const mockListUnusedPragmaWarnings = vi.hoisted(() => vi.fn());
+const mockListUnmarkedGeneratedSourceWarnings = vi.hoisted(() => vi.fn());
 
 vi.mock(import('../../kits/loadRdyKit.ts'), () => ({
   loadRdyKit: mockLoadRdyKit,
@@ -47,18 +47,18 @@ vi.mock(import('../../remote/loadRemoteKit.ts'), () => ({
 // rendering cases assert on its errors.
 vi.mock(import('../kit-staleness.ts'), () => ({
   readManifestTracking: mockReadManifestTracking,
-  warnOnKitStaleness: mockWarnOnKitStaleness,
+  listKitStalenessWarnings: mockListKitStalenessWarnings,
 }));
 
 // Mocked so that no case reads the sources named by the ledger; what the report itself writes is covered by its
 // own tests.
 vi.mock(import('../pragma-report.ts'), () => ({
-  warnOnUnusedPragmas: mockWarnOnUnusedPragmas,
+  listUnusedPragmaWarnings: mockListUnusedPragmaWarnings,
 }));
 
 // Mocked for the same reason as the pragma report.
 vi.mock(import('../generated-report.ts'), () => ({
-  warnOnUnmarkedGeneratedSources: mockWarnOnUnmarkedGeneratedSources,
+  listUnmarkedGeneratedSourceWarnings: mockListUnmarkedGeneratedSourceWarnings,
 }));
 
 import { runHumanMode } from '../runHumanMode.ts';
@@ -71,9 +71,9 @@ describe(runHumanMode, () => {
     mockReportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: true });
     mockFormatCombinedSummary.mockReturnValue('combined summary');
     mockReadManifestTracking.mockReturnValue({ tracking: undefined, warnings: [] });
-    mockWarnOnKitStaleness.mockReturnValue([]);
-    mockWarnOnUnusedPragmas.mockReturnValue([]);
-    mockWarnOnUnmarkedGeneratedSources.mockResolvedValue([]);
+    mockListKitStalenessWarnings.mockReturnValue([]);
+    mockListUnusedPragmaWarnings.mockReturnValue([]);
+    mockListUnmarkedGeneratedSourceWarnings.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -85,9 +85,9 @@ describe(runHumanMode, () => {
     mockResolveGitHubToken.mockReset();
     mockLoadRemoteKit.mockReset();
     mockReadManifestTracking.mockReset();
-    mockWarnOnKitStaleness.mockReset();
-    mockWarnOnUnusedPragmas.mockReset();
-    mockWarnOnUnmarkedGeneratedSources.mockReset();
+    mockListKitStalenessWarnings.mockReset();
+    mockListUnusedPragmaWarnings.mockReset();
+    mockListUnmarkedGeneratedSourceWarnings.mockReset();
   });
 
   describe('resolved thresholds', () => {

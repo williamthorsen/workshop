@@ -1,5 +1,3 @@
-import process from 'node:process';
-
 import { describeKitOwner } from '../kits/describeKitOwner.ts';
 import type { KitProvenance } from '../kits/KitProvenance.ts';
 import type { RdyCheck, SkipDiagnosis } from '../kits/types.ts';
@@ -21,29 +19,24 @@ export async function diagnoseSkips(checks: readonly RdyCheck[], provenance?: Ki
 }
 
 /**
- * Emits an advisory stderr warning for each diagnosed skip, and returns the entries.
+ * Lists an advisory warning for each diagnosed skip.
  *
  * `skip-masks-pass` says the skip suppressed a pass, which is the condition that `--diagnose` exists
  * to expose. `diagnosis-inconclusive` says the check reached no verdict and the run established
  * nothing about that skip either way; the two are separate codes because a consumer branching on
  * one must never read the other as a masked pass.
  *
- * Mirrors `warnOnKitStaleness`: The stderr lines are written in both output modes, and the returned
- * entries are what JSON mode captures into the report for a consumer that owns only stdout. Unlike
- * that family, these are check-derived rather than manifest-derived, so no kit source silences them.
+ * Unlike `listKitStalenessWarnings`, these are check-derived rather than manifest-derived, so no kit source
+ * silences them.
  */
-export function warnOnMaskedSkips(
+export function listMaskedSkipWarnings(
   entry: ResolvedKitEntry,
   checklistName: string,
   diagnoses: SkipDiagnosis[] | undefined,
 ): RaisedWarning[] {
   if (diagnoses === undefined) return [];
 
-  const warnings = diagnoses.map((diagnosis) => toWarning(entry, checklistName, diagnosis));
-  for (const warning of warnings) {
-    process.stderr.write(`Warning: ${warning.message} ${warning.remedy}\n`);
-  }
-  return warnings;
+  return diagnoses.map((diagnosis) => toWarning(entry, checklistName, diagnosis));
 }
 
 // region | Helpers

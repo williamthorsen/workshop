@@ -7,7 +7,7 @@ import { RemoteFetchError } from '../../remote/RemoteFetchError.ts';
 import type { RaisedWarning } from '../../schemas/common.ts';
 import type { JsonDetail, JsonKitOrigin } from '../../schemas/reportSchema.ts';
 import type { UnrunSource } from '../KitSelection.ts';
-import type { warnOnUnusedPragmas } from '../pragma-report.ts';
+import type { listUnusedPragmaWarnings } from '../pragma-report.ts';
 import type { ResolvedKitEntry } from '../ResolvedKitEntry.ts';
 import type { RunRdyOptions } from '../runRdy.ts';
 
@@ -19,9 +19,9 @@ const mockFormatCombinedSummary = vi.hoisted(() => vi.fn());
 const mockResolveGitHubToken = vi.hoisted(() => vi.fn());
 const mockLoadRemoteKit = vi.hoisted(() => vi.fn());
 const mockReadManifestTracking = vi.hoisted(() => vi.fn());
-const mockWarnOnKitStaleness = vi.hoisted(() => vi.fn());
-const mockWarnOnUnusedPragmas = vi.hoisted(() => vi.fn<typeof warnOnUnusedPragmas>());
-const mockWarnOnUnmarkedGeneratedSources = vi.hoisted(() => vi.fn());
+const mockListKitStalenessWarnings = vi.hoisted(() => vi.fn());
+const mockListUnusedPragmaWarnings = vi.hoisted(() => vi.fn<typeof listUnusedPragmaWarnings>());
+const mockListUnmarkedGeneratedSourceWarnings = vi.hoisted(() => vi.fn());
 
 /** A warning as the unmarked-generated report returns it. */
 const GENERATED_UNMARKED = {
@@ -69,18 +69,18 @@ vi.mock(import('../../remote/loadRemoteKit.ts'), () => ({
 // kit-load cases assert on its errors.
 vi.mock(import('../kit-staleness.ts'), () => ({
   readManifestTracking: mockReadManifestTracking,
-  warnOnKitStaleness: mockWarnOnKitStaleness,
+  listKitStalenessWarnings: mockListKitStalenessWarnings,
 }));
 
 // Mocked so that no case reads the sources named by the ledger; what the report itself writes is covered by its
 // own tests.
 vi.mock(import('../pragma-report.ts'), () => ({
-  warnOnUnusedPragmas: mockWarnOnUnusedPragmas,
+  listUnusedPragmaWarnings: mockListUnusedPragmaWarnings,
 }));
 
 // Mocked for the same reason as the pragma report.
 vi.mock(import('../generated-report.ts'), () => ({
-  warnOnUnmarkedGeneratedSources: mockWarnOnUnmarkedGeneratedSources,
+  listUnmarkedGeneratedSourceWarnings: mockListUnmarkedGeneratedSourceWarnings,
 }));
 
 import { createUncachedRemoteContext } from '../../test-utils/createUncachedRemoteContext.ts';
@@ -91,9 +91,9 @@ describe(runJsonMode, () => {
   beforeEach(() => {
     mockFormatJsonReport.mockReturnValue('{"worstSeverity":null}');
     mockReadManifestTracking.mockReturnValue({ tracking: undefined, warnings: [] });
-    mockWarnOnKitStaleness.mockReturnValue([]);
-    mockWarnOnUnusedPragmas.mockReturnValue([]);
-    mockWarnOnUnmarkedGeneratedSources.mockResolvedValue([]);
+    mockListKitStalenessWarnings.mockReturnValue([]);
+    mockListUnusedPragmaWarnings.mockReturnValue([]);
+    mockListUnmarkedGeneratedSourceWarnings.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -106,9 +106,9 @@ describe(runJsonMode, () => {
     mockResolveGitHubToken.mockReset();
     mockLoadRemoteKit.mockReset();
     mockReadManifestTracking.mockReset();
-    mockWarnOnKitStaleness.mockReset();
-    mockWarnOnUnusedPragmas.mockReset();
-    mockWarnOnUnmarkedGeneratedSources.mockReset();
+    mockListKitStalenessWarnings.mockReset();
+    mockListUnusedPragmaWarnings.mockReset();
+    mockListUnmarkedGeneratedSourceWarnings.mockReset();
   });
 
   it('emits JSON output and no human-readable text', async () => {
@@ -332,15 +332,25 @@ describe(runJsonMode, () => {
     it('passes every advisory raised by the run into the JSON report', async () => {
       const tracking = { manifest: { version: 1, kits: [] }, manifestDir: '.readyup' };
       mockReadManifestTracking.mockReturnValue({ tracking, warnings: [] });
-      mockWarnOnKitStaleness.mockReturnValueOnce([TARGET_DRIFT]).mockReturnValueOnce([SOURCE_STALE]);
+      mockListKitStalenessWarnings.mockReturnValueOnce([TARGET_DRIFT]).mockReturnValueOnce([SOURCE_STALE]);
       mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
       mockFormatJsonReport.mockReturnValue('{"kits":[]}');
 
       const { exitCode } = await runJson(twoKitEntries());
 
-      expect(mockWarnOnKitStaleness).toHaveBeenNthCalledWith(1, 'alpha', { path: '.readyup/kits/alpha.js' }, tracking);
-      expect(mockWarnOnKitStaleness).toHaveBeenNthCalledWith(2, 'beta', { path: '.readyup/kits/beta.js' }, tracking);
+      expect(mockListKitStalenessWarnings).toHaveBeenNthCalledWith(
+        1,
+        'alpha',
+        { path: '.readyup/kits/alpha.js' },
+        tracking,
+      );
+      expect(mockListKitStalenessWarnings).toHaveBeenNthCalledWith(
+        2,
+        'beta',
+        { path: '.readyup/kits/beta.js' },
+        tracking,
+      );
       expect(mockFormatJsonReport).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({ warnings: [TARGET_DRIFT, SOURCE_STALE] }),
@@ -459,11 +469,11 @@ describe(runJsonMode, () => {
       const ledgers = mockRunRdy.mock.calls.map(([, options]) => options?.pragmaLedger);
       expect(ledgers).toHaveLength(2);
       expect(new Set(ledgers).size).toBe(1);
-      expect(mockWarnOnUnusedPragmas).toHaveBeenCalledExactlyOnceWith(ledgers[0]);
+      expect(mockListUnusedPragmaWarnings).toHaveBeenCalledExactlyOnceWith(ledgers[0]);
     });
 
     it('passes the entries into the report’s warnings', async () => {
-      mockWarnOnUnusedPragmas.mockReturnValue([PRAGMA_UNUSED]);
+      mockListUnusedPragmaWarnings.mockReturnValue([PRAGMA_UNUSED]);
       mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
@@ -479,14 +489,14 @@ describe(runJsonMode, () => {
 
   describe('unmarked-generated advisories', () => {
     it('passes the entries into the report’s warnings over the invocation ledger, leaving the exit code alone', async () => {
-      mockWarnOnUnmarkedGeneratedSources.mockResolvedValue([GENERATED_UNMARKED]);
+      mockListUnmarkedGeneratedSourceWarnings.mockResolvedValue([GENERATED_UNMARKED]);
       mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
       const { exitCode } = await runJson(singleKitEntry(['deploy']));
 
       const [ledger] = mockRunRdy.mock.calls.map(([, options]) => options?.pragmaLedger);
-      expect(mockWarnOnUnmarkedGeneratedSources).toHaveBeenCalledExactlyOnceWith(ledger);
+      expect(mockListUnmarkedGeneratedSourceWarnings).toHaveBeenCalledExactlyOnceWith(ledger);
       expect(mockFormatJsonReport).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({ warnings: [GENERATED_UNMARKED] }),
@@ -525,7 +535,7 @@ describe(runJsonMode, () => {
 
     await runJson(singleKitEntry(['deploy']));
 
-    const [ledger] = mockWarnOnUnusedPragmas.mock.lastCall ?? [];
+    const [ledger] = mockListUnusedPragmaWarnings.mock.lastCall ?? [];
     expect(ledger?.checkIds().map((ids) => ids.bare)).toStrictEqual(['selected', 'unselected']);
   });
 });

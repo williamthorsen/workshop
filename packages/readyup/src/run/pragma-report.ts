@@ -21,7 +21,7 @@ interface UnusedPragma extends PragmaSite {
 }
 
 /**
- * Emits an advisory stderr warning for each pragma that suppressed nothing, and returns the entries.
+ * Lists an advisory warning for each pragma that suppressed nothing.
  *
  * The evidence is what the run's checks read: A pragma is reported only when some check examined the file
  * that contains it, by sweeping it or by declaring it, and no check suppressed a finding on the line that it covers. A
@@ -32,19 +32,12 @@ interface UnusedPragma extends PragmaSite {
  *
  * A pragma naming ids that no check of the run accepts has them named in its warning, with the printed form of each
  * check that declares the same unqualified id, or the general `<package>/<id>` form when none does.
- *
- * Mirrors `warnOnMaskedSkips`: The stderr lines are written in both output modes, and the returned entries are
- * what JSON mode captures into the report for a consumer that owns only stdout.
  */
-export function warnOnUnusedPragmas(ledger: PragmaLedger): RaisedWarning[] {
+export function listUnusedPragmaWarnings(ledger: PragmaLedger): RaisedWarning[] {
   const unused = listUnusedPragmas(ledger).toSorted(byPathThenLine);
 
   const checkIds = ledger.checkIds();
-  const warnings = unused.map((pragma) => toWarning(pragma, checkIds));
-  for (const warning of warnings) {
-    process.stderr.write(`Warning: ${warning.message} ${warning.remedy}\n`);
-  }
-  return warnings;
+  return unused.map((pragma) => toWarning(pragma, checkIds));
 }
 
 // region | Helpers
