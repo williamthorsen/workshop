@@ -36,17 +36,20 @@ describe('list', () => {
   });
 
   it("shows a derived profile's port, and the derived one beside a running port that differs from it", async () => {
-    const fake = makeFakeWithBranches(['1', '2', '3', '4'], {
+    const fake = makeFakeWithBranches(['1', '2', '3', '4', '5'], {
       'pgrep -f user-data-dir=PROFILES/widget-1': { stdout: '11\n' },
       'pgrep -f user-data-dir=PROFILES/widget-2': { stdout: '12\n' },
       'pgrep -f user-data-dir=PROFILES/widget-3': { stdout: '13\n' },
+      'pgrep -f user-data-dir=PROFILES/widget-5': { stdout: '15\n' },
       'ps -o command= -p 11': { stdout: 'chrome --remote-debugging-port=20001\n' },
       'ps -o command= -p 12': { stdout: 'chrome --remote-debugging-port=9002\n' },
       'ps -o command= -p 13': { stdout: 'chrome --remote-debugging-port=9003\n' },
+      'ps -o command= -p 15': { stdout: 'chrome\n' },
       'curl --silent --fail --max-time 1 http://127.0.0.1:9003': { status: 7 },
     });
     rewritePatterns(fake);
-    for (const branch of ['1', '2', '3', '4']) makeFrozenProfile(fake, `widget-${branch}`, derivedRecord(fake, branch));
+    for (const branch of ['1', '2', '3', '4', '5'])
+      makeFrozenProfile(fake, `widget-${branch}`, derivedRecord(fake, branch));
     await expect(run(fake, ['list'])).resolves.toBe(0);
     expect(fake.captured.stdout()).toBe(
       [
@@ -54,6 +57,7 @@ describe('list', () => {
         '  PASS  widget-2: debugging on port 9002 (derived 20002) (PID 12), last used 2026-01-02',
         '  WARN  widget-3: running (PID 13), port 9003 (derived 20003) not answering, last used 2026-01-02',
         '  INFO  widget-4: stopped, port 20004, last used 2026-01-02',
+        '  WARN  widget-5: running (PID 15), no debugging port (derived 20005), last used 2026-01-02',
         '',
       ].join('\n'),
     );
@@ -177,7 +181,7 @@ describe('list', () => {
     makeFrozenProfile(fake, 'widget-9', derivedRecord(fake, '9'));
     await expect(run(fake, ['list', '--stale'])).resolves.toBe(0);
     expect(fake.captured.stdout()).toBe(
-      "  WARN  widget-9: state unknown, last used 2026-01-02, stale: branch '9' is gone\n",
+      "  WARN  widget-9: state unknown, port 20009, last used 2026-01-02, stale: branch '9' is gone\n",
     );
     expect(fake.captured.stderr()).toContain('could not read the process list');
   });

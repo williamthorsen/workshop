@@ -58,13 +58,15 @@ function writeProfilesProse(invocation: Invocation, isStaleOnly: boolean): void 
     isFound = true;
     const { pid = '', port = '', state } = resolveProfileState(invocation, dir);
     const derivedPort = deriveRecordedPort(facts);
+    const derivedNote = derivedPort === undefined ? '' : ` (derived ${derivedPort})`;
     // A running browser keeps the port that it was launched on, which a later launch would not derive
-    const divergence = derivedPort === undefined || String(derivedPort) === port ? '' : ` (derived ${derivedPort})`;
+    const divergence = String(derivedPort) === port ? '' : derivedNote;
+    const portClause = derivedPort === undefined ? '' : `, port ${derivedPort}`;
     const descriptions = {
       debugging: `  ${passed} ${name}: debugging on port ${port}${divergence} (PID ${pid})`,
-      'running-without-port': `  ${warning} ${name}: running (PID ${pid}), no debugging port`,
-      stopped: `  ${info} ${name}: stopped${derivedPort === undefined ? '' : `, port ${derivedPort}`}`,
-      unknown: `  ${warning} ${name}: state unknown`,
+      'running-without-port': `  ${warning} ${name}: running (PID ${pid}), no debugging port${derivedNote}`,
+      stopped: `  ${info} ${name}: stopped${portClause}`,
+      unknown: `  ${warning} ${name}: state unknown${portClause}`,
       unresponsive: `  ${warning} ${name}: running (PID ${pid}), port ${port}${divergence} not answering`,
     };
     if (state === 'unknown') isUnknown = true;
