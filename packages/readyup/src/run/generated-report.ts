@@ -28,25 +28,20 @@ const SIGNAL_EVIDENCE: Record<BundlerSignal, string> = {
 };
 
 /**
- * Emits an advisory stderr warning for each examined source that looks like bundler output while the project has
- * not marked it `linguist-generated` or `linguist-vendored`, and returns the entries.
+ * Lists an advisory warning for each examined source that looks like bundler output while the project has not
+ * marked it `linguist-generated` or `linguist-vendored`.
  *
  * The evidence is what the run's checks read, as for the unused-pragma report: Only a tracked JS-family source that
  * some check examined is judged, and a file outside every sweep is left alone. The warning advises and excludes
  * nothing, so a flagged file stays in every sweep until the project marks it.
  *
  * The report is advisory, so a git failure while resolving the candidates yields no warning rather than failing
- * the run. The stderr lines are written in both output modes, and the returned entries are what JSON mode
- * captures into the report.
+ * the run.
  */
-export async function warnOnUnmarkedGeneratedSources(ledger: PragmaLedger): Promise<RaisedWarning[]> {
+export async function listUnmarkedGeneratedSourceWarnings(ledger: PragmaLedger): Promise<RaisedWarning[]> {
   const unmarked = (await listUnmarkedSources(ledger)).toSorted(byDisplayPath);
 
-  const warnings = unmarked.map((source) => toWarning(source));
-  for (const warning of warnings) {
-    process.stderr.write(`Warning: ${warning.message} ${warning.remedy}\n`);
-  }
-  return warnings;
+  return unmarked.map((source) => toWarning(source));
 }
 
 // region | Helpers

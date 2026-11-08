@@ -1,8 +1,13 @@
+import process from 'node:process';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { RdyReport } from '../../kits/types.ts';
 import type { SummaryRow } from '../../layout/layoutEngine.ts';
 import { RemoteFetchError } from '../../remote/RemoteFetchError.ts';
+import { createUncachedRemoteContext } from '../../test-utils/createUncachedRemoteContext.ts';
+import type { UnrunSource } from '../KitSelection.ts';
+import type { ResolvedKitEntry } from '../ResolvedKitEntry.ts';
 import type { RunRdyOptions } from '../runRdy.ts';
 
 const mockLoadRdyKit = vi.hoisted(() => vi.fn());
@@ -12,9 +17,9 @@ const mockFormatCombinedSummary = vi.hoisted(() => vi.fn<(rows: SummaryRow[]) =>
 const mockResolveGitHubToken = vi.hoisted(() => vi.fn());
 const mockLoadRemoteKit = vi.hoisted(() => vi.fn());
 const mockReadManifestTracking = vi.hoisted(() => vi.fn());
-const mockWarnOnKitStaleness = vi.hoisted(() => vi.fn());
-const mockWarnOnUnusedPragmas = vi.hoisted(() => vi.fn());
-const mockWarnOnUnmarkedGeneratedSources = vi.hoisted(() => vi.fn());
+const mockListKitStalenessWarnings = vi.hoisted(() => vi.fn());
+const mockListUnusedPragmaWarnings = vi.hoisted(() => vi.fn());
+const mockListUnmarkedGeneratedSourceWarnings = vi.hoisted(() => vi.fn());
 
 /** A warning as the unmarked-generated report returns it. */
 const GENERATED_UNMARKED = {
@@ -22,6 +27,13 @@ const GENERATED_UNMARKED = {
   message:
     'dist/app.mjs looks like bundler output (its mean line length exceeds 250 characters) and is not marked as generated.',
   remedy: 'Add `/dist/app.mjs linguist-generated=true` to .gitattributes, so that kits stop sweeping it.',
+};
+
+/** A staleness warning as the staleness report returns it for the `default` kit. */
+const TARGET_DRIFT_DEFAULT = {
+  code: 'target-drift',
+  message: 'compiled kit "default" does not match the hash that the manifest recorded for it.',
+  remedy: 'Move the edits into the source, then run `rdy compile --force`.',
 };
 
 vi.mock(import('../../kits/loadRdyKit.ts'), () => ({
@@ -56,18 +68,18 @@ vi.mock(import('../../remote/loadRemoteKit.ts'), () => ({
 // rendering cases assert on its errors.
 vi.mock(import('../kit-staleness.ts'), () => ({
   readManifestTracking: mockReadManifestTracking,
-  warnOnKitStaleness: mockWarnOnKitStaleness,
+  listKitStalenessWarnings: mockListKitStalenessWarnings,
 }));
 
-// Mocked so that no case reads the sources named by the ledger; what the report itself writes is covered by its
+// Mocked so that no case reads the sources named by the ledger; what the report itself returns is covered by its
 // own tests.
 vi.mock(import('../pragma-report.ts'), () => ({
-  warnOnUnusedPragmas: mockWarnOnUnusedPragmas,
+  listUnusedPragmaWarnings: mockListUnusedPragmaWarnings,
 }));
 
 // Mocked for the same reason as the pragma report.
 vi.mock(import('../generated-report.ts'), () => ({
-  warnOnUnmarkedGeneratedSources: mockWarnOnUnmarkedGeneratedSources,
+  listUnmarkedGeneratedSourceWarnings: mockListUnmarkedGeneratedSourceWarnings,
 }));
 
 import { runHumanMode } from '../runHumanMode.ts';
@@ -79,9 +91,9 @@ describe(runHumanMode, () => {
     mockReportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: true });
     mockFormatCombinedSummary.mockReturnValue('combined summary');
     mockReadManifestTracking.mockReturnValue({ tracking: undefined, warnings: [] });
-    mockWarnOnKitStaleness.mockReturnValue([]);
-    mockWarnOnUnusedPragmas.mockReturnValue([]);
-    mockWarnOnUnmarkedGeneratedSources.mockResolvedValue([]);
+    mockListKitStalenessWarnings.mockReturnValue([]);
+    mockListUnusedPragmaWarnings.mockReturnValue([]);
+    mockListUnmarkedGeneratedSourceWarnings.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -93,9 +105,9 @@ describe(runHumanMode, () => {
     mockResolveGitHubToken.mockReset();
     mockLoadRemoteKit.mockReset();
     mockReadManifestTracking.mockReset();
-    mockWarnOnKitStaleness.mockReset();
-    mockWarnOnUnusedPragmas.mockReset();
-    mockWarnOnUnmarkedGeneratedSources.mockReset();
+    mockListKitStalenessWarnings.mockReset();
+    mockListUnusedPragmaWarnings.mockReset();
+    mockListUnmarkedGeneratedSourceWarnings.mockReset();
   });
 
   describe('staleness advisories', () => {
@@ -139,13 +151,23 @@ describe(runHumanMode, () => {
 
       await runHuman(twoKitEntries());
 
-      expect(mockWarnOnKitStaleness).toHaveBeenCalledTimes(2);
-      expect(mockWarnOnKitStaleness).toHaveBeenNthCalledWith(1, 'alpha', { path: '.readyup/kits/alpha.js' }, tracking);
-      expect(mockWarnOnKitStaleness).toHaveBeenNthCalledWith(2, 'beta', { path: '.readyup/kits/beta.js' }, tracking);
+      expect(mockListKitStalenessWarnings).toHaveBeenCalledTimes(2);
+      expect(mockListKitStalenessWarnings).toHaveBeenNthCalledWith(
+        1,
+        'alpha',
+        { path: '.readyup/kits/alpha.js' },
+        tracking,
+      );
+      expect(mockListKitStalenessWarnings).toHaveBeenNthCalledWith(
+        2,
+        'beta',
+        { path: '.readyup/kits/beta.js' },
+        tracking,
+      );
     });
 
     it('leaves the exit code alone, since verify is the enforcing gate', async () => {
-      mockWarnOnKitStaleness.mockReturnValue([TARGET_DRIFT]);
+      mockListKitStalenessWarnings.mockReturnValue([TARGET_DRIFT]);
       mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
@@ -173,7 +195,7 @@ describe(runHumanMode, () => {
       const ledgers = mockRunRdy.mock.calls.map(([, options]) => options?.pragmaLedger);
       expect(ledgers).toHaveLength(2);
       expect(new Set(ledgers).size).toBe(1);
-      expect(mockWarnOnUnusedPragmas).toHaveBeenCalledExactlyOnceWith(ledgers[0]);
+      expect(mockListUnusedPragmaWarnings).toHaveBeenCalledExactlyOnceWith(ledgers[0]);
     });
 
     it('reports after the summary table, the last block in which a pragma’s file may be named', async () => {
@@ -183,7 +205,7 @@ describe(runHumanMode, () => {
       await runHuman(twoKitEntries());
 
       const [summaryOrder] = mockFormatCombinedSummary.mock.invocationCallOrder;
-      const [reportOrder] = mockWarnOnUnusedPragmas.mock.invocationCallOrder;
+      const [reportOrder] = mockListUnusedPragmaWarnings.mock.invocationCallOrder;
       expect(summaryOrder).toBeLessThan(reportOrder ?? 0);
     });
 
@@ -192,25 +214,64 @@ describe(runHumanMode, () => {
 
       const { exitCode } = await runHuman(singleKitEntry(['deploy']));
 
-      expect(mockWarnOnUnusedPragmas).toHaveBeenCalledTimes(1);
+      expect(mockListUnusedPragmaWarnings).toHaveBeenCalledTimes(1);
       expect(exitCode).toBe(2);
     });
   });
 
   describe('unmarked-generated advisories', () => {
     it('reports over the invocation ledger, after the unused-pragma report, and leaves the exit code alone', async () => {
-      mockWarnOnUnmarkedGeneratedSources.mockResolvedValue([GENERATED_UNMARKED]);
+      mockListUnmarkedGeneratedSourceWarnings.mockResolvedValue([GENERATED_UNMARKED]);
       mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
       const { exitCode } = await runHuman(singleKitEntry(['deploy']));
 
       const [ledger] = mockRunRdy.mock.calls.map(([, options]) => options?.pragmaLedger);
-      expect(mockWarnOnUnmarkedGeneratedSources).toHaveBeenCalledExactlyOnceWith(ledger);
-      const [pragmaOrder] = mockWarnOnUnusedPragmas.mock.invocationCallOrder;
-      const [generatedOrder] = mockWarnOnUnmarkedGeneratedSources.mock.invocationCallOrder;
+      expect(mockListUnmarkedGeneratedSourceWarnings).toHaveBeenCalledExactlyOnceWith(ledger);
+      const [pragmaOrder] = mockListUnusedPragmaWarnings.mock.invocationCallOrder;
+      const [generatedOrder] = mockListUnmarkedGeneratedSourceWarnings.mock.invocationCallOrder;
       expect(pragmaOrder).toBeLessThan(generatedOrder ?? 0);
       expect(exitCode).toBe(0);
+    });
+  });
+
+  describe('warning output', () => {
+    const MANIFEST_UNREADABLE = { code: 'manifest-unreadable', message: 'manifest unreadable.', remedy: 'Rewrite it.' };
+    const PRAGMA_UNUSED = { code: 'pragma-unused', message: 'pragma unused.', remedy: 'Remove it.' };
+
+    it('writes each warning on stderr where its producer runs, around the stdout blocks', async () => {
+      mockReadManifestTracking.mockReturnValue({ tracking: undefined, warnings: [MANIFEST_UNREADABLE] });
+      mockListKitStalenessWarnings.mockReturnValue([TARGET_DRIFT_DEFAULT]);
+      mockListUnusedPragmaWarnings.mockReturnValue([PRAGMA_UNUSED]);
+      mockListUnmarkedGeneratedSourceWarnings.mockResolvedValue([GENERATED_UNMARKED]);
+      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: '999.0.0' });
+      mockRunRdy.mockResolvedValue({
+        results: [],
+        passed: true,
+        durationMs: 0,
+        diagnoses: [{ name: 'a', verdict: 'masked-pass' }],
+      });
+
+      const writes = await runHumanRecordingWrites(singleKitEntry(['deploy']), [
+        { spelling: 'npm:a', requestedNames: ['default'], publishedNames: ['x'] },
+      ]);
+
+      // Collapse each stdout block to a marker, since only its position relative to the warnings is under test.
+      const sequence = writes
+        .filter(({ text }) => text !== '\n')
+        .map(({ stream, text }) => (stream === 'stdout' ? 'stdout' : text));
+      expect(sequence).toStrictEqual([
+        `Warning: ${MANIFEST_UNREADABLE.message} ${MANIFEST_UNREADABLE.remedy}\n`,
+        `Warning: ${TARGET_DRIFT_DEFAULT.message} ${TARGET_DRIFT_DEFAULT.remedy}\n`,
+        expect.stringMatching(/^Warning: kit "default" was compiled by readyup 999\.0\.0, ahead of/),
+        'stdout',
+        expect.stringMatching(/^Warning: skipped check "a" in kit "default" \/ checklist "deploy" would have passed\./),
+        `Warning: ${PRAGMA_UNUSED.message} ${PRAGMA_UNUSED.remedy}\n`,
+        `Warning: ${GENERATED_UNMARKED.message} ${GENERATED_UNMARKED.remedy}\n`,
+        expect.stringMatching(/^Warning: configured source "npm:a" publishes no kit named "default"/),
+        'stdout',
+      ]);
     });
   });
 
@@ -228,3 +289,38 @@ describe(runHumanMode, () => {
     });
   });
 });
+
+// region | Helpers
+
+/** One write to stdout or stderr, in the order in which the run made it. */
+interface RecordedWrite {
+  stream: 'stderr' | 'stdout';
+  text: string;
+}
+
+/** Runs the mode over the given entries and returns every write to stdout and stderr, in one ordered list. */
+async function runHumanRecordingWrites(
+  kitEntries: ResolvedKitEntry[],
+  unrunSources: UnrunSource[],
+): Promise<RecordedWrite[]> {
+  const writes: RecordedWrite[] = [];
+  vi.spyOn(process.stdout, 'write').mockImplementation((chunk) => {
+    writes.push({ stream: 'stdout', text: String(chunk) });
+    return true;
+  });
+  vi.spyOn(process.stderr, 'write').mockImplementation((chunk) => {
+    writes.push({ stream: 'stderr', text: String(chunk) });
+    return true;
+  });
+
+  const remote = createUncachedRemoteContext();
+  await runHumanMode(
+    kitEntries,
+    { diagnose: false, failOn: undefined, quiet: false, remote, reportOn: undefined, unrunSources },
+    false,
+  );
+
+  return writes;
+}
+
+// endregion | Helpers

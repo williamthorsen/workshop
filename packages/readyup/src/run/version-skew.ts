@@ -1,5 +1,3 @@
-import process from 'node:process';
-
 import { compareVersions } from '../check-utils/semver.ts';
 import { kitLoadError } from '../errors/RdyError.ts';
 import { describeKitOwner } from '../kits/describeKitOwner.ts';
@@ -25,12 +23,11 @@ export function assertSatisfiesVersionFloor(kitName: string, kit: RdyKit): void 
 }
 
 /**
- * Warns that a bundle was compiled by a readyup newer than the one running it.
+ * Lists the warning that a bundle was compiled by a readyup newer than the one running it.
  *
- * Stands in for a floor that the author never declared, so a kit declaring one raises nothing here. The stderr
- * line is written in both output modes; the returned entries are what JSON mode adds to the report.
+ * Stands in for a floor that the author never declared, so a kit declaring one raises nothing here.
  */
-export function warnOnVersionSkew(
+export function listVersionSkewWarnings(
   kitName: string,
   kit: RdyKit,
   compileTimeVersion: string | undefined,
@@ -46,7 +43,6 @@ export function warnOnVersionSkew(
       ? `Upgrade readyup to ${compileTimeVersion} or later.`
       : `Upgrade readyup to ${compileTimeVersion} or later, or recompile the kit with this one.`,
   };
-  process.stderr.write(`Warning: ${warning.message} ${warning.remedy}\n`);
   return [warning];
 }
 

@@ -46,12 +46,12 @@ export function readManifestTracking(isJit: boolean): ManifestRead {
     return { tracking, warnings: [] };
   } catch (error: unknown) {
     if (error instanceof ManifestNotFoundError) return { tracking: undefined, warnings: [] };
-    return { tracking: undefined, warnings: [raiseUnreadableManifest(manifestPath, error)] };
+    return { tracking: undefined, warnings: [toUnreadableManifestWarning(manifestPath, error)] };
   }
 }
 
 /**
- * Emits advisory stderr warnings when the manifest disagrees with the kit that is about to run.
+ * Lists the advisory warnings for each way in which the manifest disagrees with the kit that is about to run.
  *
  * `target-drift` says the compiled bundle is not the one recorded by the manifest: Someone
  * edited it by hand. `source-stale` says the TypeScript from which it was built has changed: The
@@ -64,11 +64,8 @@ export function readManifestTracking(isJit: boolean): ManifestRead {
  * kit described by no entry, an entry recording no hash or no closure, a remote or just-in-time
  * source, and a file that is gone or cannot be read are all silent, because none of them is
  * evidence that anything changed.
- *
- * The stderr lines are written in both modes; the returned entries are what JSON mode captures into
- * the report, so a consumer that owns only stdout still learns the run was advised of something.
  */
-export function warnOnKitStaleness(
+export function listKitStalenessWarnings(
   kitName: string,
   source: KitSource,
   tracking: ManifestTracking | undefined,
@@ -101,9 +98,6 @@ export function warnOnKitStaleness(
     });
   }
 
-  for (const warning of warnings) {
-    process.stderr.write(`Warning: ${warning.message} ${warning.remedy}\n`);
-  }
   return warnings;
 }
 
@@ -134,15 +128,13 @@ function hasChangedInput(status: InputsStatus | undefined): boolean {
   return status?.kind === 'stale' && status.failures.some((failure) => failure.reason === 'changed');
 }
 
-/** Raises the advisory for a manifest that is present and unreadable, and writes its stderr line. */
-function raiseUnreadableManifest(manifestPath: string, error: unknown): RaisedWarning {
-  const warning: RaisedWarning = {
+/** Builds the advisory for a manifest that is present and unreadable. */
+function toUnreadableManifestWarning(manifestPath: string, error: unknown): RaisedWarning {
+  return {
     code: 'manifest-unreadable',
     message: `${toDisplayPath(manifestPath)} could not be read, so no kit was checked against it: ${describeError(error)}`,
     remedy: 'Run `rdy compile` to rewrite it.',
   };
-  process.stderr.write(`Warning: ${warning.message} ${warning.remedy}\n`);
-  return warning;
 }
 
 /** Returns a staleness verdict, or `undefined` when reaching one needed a file that cannot be read. */

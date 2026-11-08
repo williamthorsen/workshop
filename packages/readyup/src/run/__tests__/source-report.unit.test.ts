@@ -1,13 +1,10 @@
-import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
-import { formatEmptySelection, warnOnUnrunSources } from '../source-report.ts';
+import { formatEmptySelection, listUnrunSourceWarnings } from '../source-report.ts';
 
-describe(warnOnUnrunSources, () => {
+describe(listUnrunSourceWarnings, () => {
   it('names the requested kit that the source lacks and the kit that it publishes', () => {
-    using _io = captureStdio();
-
-    const warnings = warnOnUnrunSources([
+    const warnings = listUnrunSourceWarnings([
       { spelling: 'github:acme/standards', requestedNames: ['default'], publishedNames: ['demo'] },
     ]);
 
@@ -22,9 +19,7 @@ describe(warnOnUnrunSources, () => {
   });
 
   it('names every requested kit, and lists the source kits beyond the first', () => {
-    using _io = captureStdio();
-
-    const [warning] = warnOnUnrunSources([
+    const [warning] = listUnrunSourceWarnings([
       { spelling: 'npm:@acme/kits', requestedNames: ['preflight', 'default'], publishedNames: ['drift', 'audit'] },
     ]);
 
@@ -36,16 +31,16 @@ describe(warnOnUnrunSources, () => {
     );
   });
 
-  it('writes one stderr line per source', () => {
-    using io = captureStdio();
-
-    warnOnUnrunSources([
+  it('lists one warning per source, in order', () => {
+    const warnings = listUnrunSourceWarnings([
       { spelling: 'npm:a', requestedNames: ['default'], publishedNames: ['x'] },
       { spelling: 'npm:b', requestedNames: ['default'], publishedNames: ['y'] },
     ]);
 
-    expect(io.stderr.trimEnd().split('\n')).toHaveLength(2);
-    expect(io.stderr).toMatch(/^Warning: configured source "npm:a"/);
+    expect(warnings.map((warning) => warning.message)).toStrictEqual([
+      expect.stringMatching(/^configured source "npm:a"/),
+      expect.stringMatching(/^configured source "npm:b"/),
+    ]);
   });
 });
 
