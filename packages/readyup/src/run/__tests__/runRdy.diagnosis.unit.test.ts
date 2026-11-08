@@ -1,3 +1,5 @@
+import { setImmediate } from 'node:timers/promises';
+
 import { describe, expect, it } from 'vitest';
 
 import type { RdyChecklist } from '../../kits/types.ts';
@@ -231,7 +233,7 @@ describe(runRdy, () => {
             name: 'slow-skip',
             check: () => true,
             skip: async () => {
-              await new Promise((resolve) => setTimeout(resolve, 20));
+              await setImmediate();
               return 'not applicable';
             },
           },

@@ -1,4 +1,5 @@
 import { Readable } from 'node:stream';
+import { setImmediate } from 'node:timers/promises';
 
 import { describe, expect, it } from 'vitest';
 
@@ -25,9 +26,9 @@ function buildStream(chunks: string[]): Readable {
   return Readable.from(chunks, { objectMode: false });
 }
 
-/** Yields one chunk only after a delay, as a producer that has to reach a keychain or a network does. */
+/** Yields one chunk only on a later event-loop turn, as a producer that has to reach a keychain or a network does. */
 async function* emitLate(chunk: string): AsyncGenerator<string> {
-  await new Promise((resolve) => setTimeout(resolve, 20));
+  await setImmediate();
 
   yield chunk;
 }
