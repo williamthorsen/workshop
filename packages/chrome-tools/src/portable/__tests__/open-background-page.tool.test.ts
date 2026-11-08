@@ -14,11 +14,11 @@ const CHROME_PATH = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrom
 // Start the browser once at collection, so that every case shares it and the skip is decided before any case runs
 const browser = await startHeadlessChrome();
 
-afterAll(async () => {
-  await browser?.stop();
-});
-
 describe(openBackgroundPage, () => {
+  afterAll(async () => {
+    await browser?.stop();
+  });
+
   it.skipIf(browser === undefined)('opens each page as a target of the browser, in call order', async () => {
     const port = browser?.port ?? '';
     await expect(openBackgroundPage(port, 'data:text/html,one')).resolves.toStrictEqual({ isOpened: true });

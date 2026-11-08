@@ -1,3 +1,5 @@
+import { describeError } from '@williamthorsen/toolbelt.errors';
+
 /** Opens a page in a browser through its DevTools endpoint, leaving the browser behind the focused app. */
 export type OpenPage = (port: string, url: string) => Promise<PageOpening>;
 
@@ -32,14 +34,14 @@ export const openBackgroundPage: OpenPage = async (port, url) => {
 function createTarget(socketUrl: string, url: string, signal: AbortSignal): Promise<PageOpening> {
   return new Promise((resolve) => {
     const socket = new WebSocket(socketUrl);
-    const finish = (opening: PageOpening) => {
+    function finish(opening: PageOpening) {
       signal.removeEventListener('abort', onAbort);
       socket.close();
       resolve(opening);
-    };
-    const onAbort = () => {
+    }
+    function onAbort() {
       finish({ isOpened: false, reason: `the browser did not answer within ${PAGE_OPEN_TIMEOUT_MILLISECONDS} ms` });
-    };
+    }
     signal.addEventListener('abort', onAbort);
     socket.addEventListener('open', () => {
       socket.send(JSON.stringify({ id: 1, method: 'Target.createTarget', params: { url, background: true } }));
@@ -51,11 +53,6 @@ function createTarget(socketUrl: string, url: string, signal: AbortSignal): Prom
       finish({ isOpened: false, reason: `could not connect to ${socketUrl}` });
     });
   });
-}
-
-/** Returns an error's message, or the value itself as text. */
-function describeError(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }
 
 /** Returns whether a value is a non-array object. */
