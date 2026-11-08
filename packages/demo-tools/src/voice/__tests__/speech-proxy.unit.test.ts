@@ -151,7 +151,7 @@ describe(startSpeechProxy, () => {
     });
 
     await expect(request).rejects.toThrow('aborted');
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    await expect(upstream.firstClose).resolves.toStrictEqual({ answered: false });
     expect(upstream.requests).toHaveLength(1);
     expect(proxy.readFailure()).toBeUndefined();
   });
@@ -225,10 +225,11 @@ async function postSpeech(baseUrl: string, body: unknown): Promise<Response> {
 
 /**
  * Starts a stub voice-clone server that records each JSON body and sends the given answers in order, repeating the
- * last one.
+ * last one. `firstClose` settles when the first response closes, and reports whether the stub had sent its answer.
  */
 async function startUpstream(...answers: [StubAnswer, ...StubAnswer[]]) {
   const requests: unknown[] = [];
+  const firstClose = Promise.withResolvers<{ answered: boolean }>();
   const server = http.createServer((request, response) => {
     let text = '';
     request.on('data', (chunk: Buffer) => {
@@ -248,6 +249,7 @@ async function startUpstream(...answers: [StubAnswer, ...StubAnswer[]]) {
       }, delayMs);
       response.once('close', () => {
         clearTimeout(timer);
+        firstClose.resolve({ answered: response.writableFinished });
       });
     });
   });
@@ -262,7 +264,13 @@ async function startUpstream(...answers: [StubAnswer, ...StubAnswer[]]) {
     await closed;
   }
 
-  return { baseUrl: `http://127.0.0.1:${port}`, requests, stop, [Symbol.asyncDispose]: stop };
+  return {
+    baseUrl: `http://127.0.0.1:${port}`,
+    firstClose: firstClose.promise,
+    requests,
+    stop,
+    [Symbol.asyncDispose]: stop,
+  };
 }
 
 // endregion | Helpers
