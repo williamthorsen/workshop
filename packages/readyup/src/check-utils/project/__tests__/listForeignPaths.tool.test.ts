@@ -10,7 +10,6 @@ import { listForeignPaths } from '../listForeignPaths.ts';
 // Separated from the module's unit suite, which stubs git: The attribute values, the nested-`.gitattributes`
 // precedence, and the relative-path resolution are all git's, and a stub asserting them would pass against a git
 // that disagreed.
-// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
   makeFixture(() => createTempTree({}, { prefix: 'rdy-foreign-' })),

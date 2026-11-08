@@ -23,7 +23,6 @@ import {
 
 const documents = new Map(buildSchemaDocuments().map(({ fileName, document }) => [fileName, document]));
 
-// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
   makeFixture(() => createTempTree({}, { prefix: 'readyup-schemas-' })),

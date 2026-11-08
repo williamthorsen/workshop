@@ -12,7 +12,6 @@ import { VERSION } from '../../version.ts';
 import { checkRebuild } from '../checkRebuild.ts';
 import { hashBytes } from '../targetHash.ts';
 
-// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
   makeFixture(() => createTempTree({}, { prefix: 'rebuild-test-' })),

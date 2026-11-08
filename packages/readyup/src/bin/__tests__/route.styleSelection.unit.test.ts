@@ -31,7 +31,6 @@ const RENDERING_COMMANDS = [
   { name: 'init', args: ['init', '--dry-run'], expected: /^WRITE \.config\/readyup\.config\.ts/mu },
 ] as const;
 
-// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
   { scope: 'file' },

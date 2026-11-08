@@ -11,7 +11,6 @@ const UNREACHABLE_FLOOR = '99.0.0';
 /** A floor met by every readyup. The kit declaring it always runs. */
 const MET_FLOOR = '0.0.1';
 
-// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
   { scope: 'file' },

@@ -27,7 +27,6 @@ const HAND_WRITTEN = [
 ].join('\n');
 
 // Separated from a unit suite because the tracked listing, the attribute lookup, and the root prefix are all git's.
-// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
   makeFixture(() => createTempTree({}, { prefix: 'rdy-generated-report-' })),

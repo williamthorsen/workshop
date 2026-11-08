@@ -8,7 +8,6 @@ import { routeCommand } from '../route.ts';
 /** A stamp reached by no released readyup, so the bundle stamped with it is always ahead of the runner. */
 const AHEAD_STAMP = '99.0.0';
 
-// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
   { scope: 'file' },

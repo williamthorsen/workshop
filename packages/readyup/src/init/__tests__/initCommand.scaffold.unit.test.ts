@@ -13,7 +13,6 @@ const KIT_PATH = '.readyup/kits/default.ts';
 
 const PACKAGE_ROOT = path.resolve(import.meta.dirname, '../../..');
 
-// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
   makeFixture(() => {

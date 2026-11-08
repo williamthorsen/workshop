@@ -27,7 +27,6 @@ const OTHER_PATH = 'src/b.ts';
 /** A source whose first line has a pragma and whose second does not. */
 const SOURCE_TEXT = ['x; // rdy-ignore', 'y;', ''].join('\n');
 
-// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
   makeFixture(() => createTempTree({}, { prefix: 'rdy-pragma-recording-' })),

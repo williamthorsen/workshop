@@ -10,7 +10,6 @@ const REMEDY = 'Remove the pragma, or run the kit whose check it was written for
 
 const ID_FORM_REMEDY = `Name a check by the id printed beside its findings, such as \`<package>/<id>\`; or remove the pragma, or run the kit whose check it was written for.`;
 
-// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
   makeFixture(() => createTempTree({}, { prefix: 'rdy-pragma-report-' })),

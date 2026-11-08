@@ -36,7 +36,6 @@ const RECORDED_PICK: RdyManifestInput = {
   paths: ['version'],
 };
 
-// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
   makeFixture(() => createTempTree({}, { prefix: 'input-drift-test-' })),

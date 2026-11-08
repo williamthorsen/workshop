@@ -13,7 +13,6 @@ const COUNTED: OutcomeFinding = { line: 7, path: 'src/other.ts', reported: false
 
 const NAMED = ['toolbelt.errors/no-instanceof-error'];
 
-// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
   makeFixture(() => createTempTree({}, { prefix: 'rdy-finding-outcome-' })),

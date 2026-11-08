@@ -11,7 +11,6 @@ const MIXED_KIT =
   `  { name: 'nope', check: () => false, fix: 'do the thing' },\n` +
   `] }] };\n`;
 
-// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
   { scope: 'file' },

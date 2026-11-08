@@ -10,7 +10,6 @@ import { resolveCompileRoot } from '../resolveCompileRoot.ts';
 
 const MANIFEST = JSON.stringify({ name: 'fixture', version: '1.0.0' });
 
-// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
   { scope: 'file' },

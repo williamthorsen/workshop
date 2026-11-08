@@ -1,4 +1,5 @@
 import assert from 'node:assert';
+import { setImmediate } from 'node:timers/promises';
 
 import { describe, expect, it } from 'vitest';
 
@@ -101,7 +102,7 @@ describe(runRdy, () => {
           {
             name: 'slow',
             check: async () => {
-              await new Promise((resolve) => setTimeout(resolve, 20));
+              await setImmediate();
               order.push('slow');
               return true;
             },

@@ -88,6 +88,7 @@ async function startHeadlessChrome(): Promise<HeadlessChrome | undefined> {
     } catch {
       // Keep polling until the endpoint answers or the deadline passes
     }
+    // eslint-disable-next-line sky-pilot/no-real-time-sleep -- polls a real Chrome; fake timers cannot advance it.
     await sleep(200);
   }
   await stop();
