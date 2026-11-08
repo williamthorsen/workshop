@@ -16,7 +16,7 @@ Node 24 or later and macOS are required.
 
 ## Usage
 
-Launch the working directory's browser on the page under development. On branch `321` of repository `widget`, the profile is `widget-321` and the port is 9321, and the first launch creates the profile:
+Launch the working directory's browser on the page under development. On branch `321` of repository `widget`, the profile is `widget-321` and the port is 20321, and the first launch creates the profile:
 
 ```bash
 thor-chrome http://localhost:4798
