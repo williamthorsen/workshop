@@ -195,9 +195,9 @@ describe('thor-jira issue', () => {
   });
 
   it.each([
-    [[], 'Error: A command is required.'],
-    [['nope'], 'Error: Unknown command: nope'],
-    [['--nope'], 'Error: Unknown option: --nope'],
+    [[], 'thor-jira: A command is required.'],
+    [['nope'], 'thor-jira: Unknown command: nope'],
+    [['--nope'], 'thor-jira: Unknown option: --nope'],
   ])('reports %j as a usage error pointing at the help of issue', async (args, message) => {
     const harness = createHarness();
 

@@ -34,14 +34,14 @@ describe(run, () => {
       };
 
       await expect(run(['--version'], effects)).resolves.toBe(2);
-      expect(harness.readErrors()).toBe("Error: The manifest declares no version.\nTry 'thor-jira --help'.\n");
+      expect(harness.readErrors()).toBe("thor-jira: The manifest declares no version.\nTry 'thor-jira --help'.\n");
     });
 
     it('reports a missing subcommand as a usage error', async () => {
       const harness = createRunHarness({ env: EMAIL_ENV });
 
       await expect(run([], harness.effects)).resolves.toBe(2);
-      expect(harness.readErrors()).toContain('Error: A command is required.');
+      expect(harness.readErrors()).toContain('thor-jira: A command is required.');
     });
 
     it('distinguishes an unknown option from an unknown subcommand', async () => {
@@ -51,8 +51,8 @@ describe(run, () => {
       await run(['--nope'], options.effects);
       await run(['nope'], subcommands.effects);
 
-      expect(options.readErrors()).toContain('Error: Unknown option: --nope');
-      expect(subcommands.readErrors()).toContain('Error: Unknown command: nope');
+      expect(options.readErrors()).toContain('thor-jira: Unknown option: --nope');
+      expect(subcommands.readErrors()).toContain('thor-jira: Unknown command: nope');
     });
 
     it('points a failing subcommand at the help of that subcommand', async () => {

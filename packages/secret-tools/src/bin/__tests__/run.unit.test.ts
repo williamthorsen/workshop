@@ -149,12 +149,12 @@ describe(run, () => {
 
   describe('usage', () => {
     it.each([
-      { args: [], message: /Error: A command is required\./ },
-      { args: ['sniff', 'token'], message: /Error: Unknown command: sniff/ },
-      { args: ['--sniff'], message: /Error: Unknown option: --sniff/ },
-      { args: ['get'], message: /Error: Missing argument: <service>/ },
-      { args: ['get', ''], message: /Error: The service name is empty\./ },
-      { args: ['get', 'token', 'extra'], message: /Error: Unexpected positional argument: extra/ },
+      { args: [], message: /thor-secret: A command is required\./ },
+      { args: ['sniff', 'token'], message: /thor-secret: Unknown command: sniff/ },
+      { args: ['--sniff'], message: /thor-secret: Unknown option: --sniff/ },
+      { args: ['get'], message: /thor-secret: Missing argument: <service>/ },
+      { args: ['get', ''], message: /thor-secret: The service name is empty\./ },
+      { args: ['get', 'token', 'extra'], message: /thor-secret: Unexpected positional argument: extra/ },
     ])('exits 2 on $args', async ({ args, message }) => {
       const result = await run(args, createHarness().effects);
 
@@ -199,7 +199,7 @@ describe(run, () => {
 
       await expect(run(['--version'], effects)).resolves.toStrictEqual({
         exitCode: 2,
-        stderr: "Error: The manifest declares no version.\nTry 'thor-secret --help'.\n",
+        stderr: "thor-secret: The manifest declares no version.\nTry 'thor-secret --help'.\n",
         stdout: '',
       });
     });

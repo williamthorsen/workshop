@@ -445,7 +445,7 @@ describe(run, () => {
 
       await expect(runWithBuffers(['--version'], effects)).resolves.toStrictEqual({
         exitCode: 2,
-        stderr: "Error: The manifest declares no version.\nTry 'thor-node --help'.\n",
+        stderr: "thor-node: The manifest declares no version.\nTry 'thor-node --help'.\n",
         stdout: '',
       });
     });
@@ -455,9 +455,9 @@ describe(run, () => {
     });
 
     it.each([
-      [[], 'Error: A command is required.'],
-      [['frobnicate'], 'Error: Unknown command: frobnicate'],
-      [['--frobnicate'], 'Error: Unknown option: --frobnicate'],
+      [[], 'thor-node: A command is required.'],
+      [['frobnicate'], 'thor-node: Unknown command: frobnicate'],
+      [['--frobnicate'], 'thor-node: Unknown option: --frobnicate'],
     ])('exits 2 pointing at the root help: %o', async (args, message) => {
       await expect(runWithBuffers(args, buildEffects([], []))).resolves.toStrictEqual({
         exitCode: 2,

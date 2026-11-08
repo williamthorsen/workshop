@@ -103,7 +103,7 @@ describe(run, () => {
 
       await expect(run(['--version'], failing)).resolves.toStrictEqual({
         exitCode: 2,
-        stderr: "Error: The manifest declares no version.\nTry 'thor-git --help'.\n",
+        stderr: "thor-git: The manifest declares no version.\nTry 'thor-git --help'.\n",
         stdout: '',
       });
     });
@@ -115,9 +115,9 @@ describe(run, () => {
 
   describe('given a bad invocation', () => {
     it.each([
-      { args: ['branch'], expected: 'Error: Unknown command: branch' },
-      { args: ['--bogus'], expected: 'Error: Unknown option: --bogus' },
-      { args: ['branch-number', '--bogus'], expected: 'Error: Unknown option: --bogus' },
+      { args: ['branch'], expected: 'thor-git: Unknown command: branch' },
+      { args: ['--bogus'], expected: 'thor-git: Unknown option: --bogus' },
+      { args: ['branch-number', '--bogus'], expected: 'thor-git: Unknown option: --bogus' },
       { args: ['branch-number', ''], expected: 'The branch name is empty.' },
       { args: ['ticket-ref', 'a', 'b'], expected: 'Unexpected positional argument: b' },
       { args: ['branch-number', '249', '--offset', '-3'], expected: 'Missing value for option: --offset' },
