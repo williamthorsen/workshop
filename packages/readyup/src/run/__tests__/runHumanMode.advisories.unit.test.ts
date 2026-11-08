@@ -43,7 +43,7 @@ describe(runHumanMode, () => {
 
   describe('unused-pragma advisories', () => {
     /** Builds two entries whose names and compiled paths differ, so that a per-kit ledger would show as two. */
-    function twoKitEntries() {
+    function buildTwoKitEntries() {
       return [
         { name: 'alpha', source: { path: '.readyup/kits/alpha.js' }, checklists: ['deploy'] },
         { name: 'beta', source: { path: '.readyup/kits/beta.js' }, checklists: ['deploy'] },
@@ -56,7 +56,7 @@ describe(runHumanMode, () => {
 
       fakes.listUnusedPragmaWarnings.mockReturnValue([PRAGMA_UNUSED]);
 
-      const writes = await runHumanRecordingWrites(twoKitEntries(), fakes, []);
+      const writes = await runHumanRecordingWrites(buildTwoKitEntries(), fakes, []);
 
       const summaryIndex = writes.findIndex(({ text }) => text === 'combined summary\n');
       const warningIndex = writes.findIndex(({ text }) => text.startsWith(`Warning: ${PRAGMA_UNUSED.message}`));

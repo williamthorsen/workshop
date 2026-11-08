@@ -23,7 +23,7 @@ describe(recordKitCheckIds, () => {
       ],
     };
 
-    expect(bareIds(recording(kit))).toStrictEqual(['parent', 'child', 'other']);
+    expect(listBareIds(recordKitIntoLedger(kit))).toStrictEqual(['parent', 'child', 'other']);
   });
 
   it('records the preconditions and every group of a staged checklist', () => {
@@ -40,7 +40,7 @@ describe(recordKitCheckIds, () => {
       ],
     };
 
-    expect(bareIds(recording(kit))).toStrictEqual(['gate', 'first', 'second']);
+    expect(listBareIds(recordKitIntoLedger(kit))).toStrictEqual(['gate', 'first', 'second']);
   });
 
   it('records the parent of checks built at run time, without calling the builder', () => {
@@ -62,7 +62,7 @@ describe(recordKitCheckIds, () => {
       ],
     };
 
-    expect(bareIds(recording(kit))).toStrictEqual(['parent']);
+    expect(listBareIds(recordKitIntoLedger(kit))).toStrictEqual(['parent']);
   });
 
   it('records the ids in the namespace of the kit', () => {
@@ -82,19 +82,19 @@ describe(recordKitCheckIds, () => {
   it('records nothing for a check declaring no id', () => {
     const kit: RdyKit = { checklists: [{ name: 'build', checks: [{ name: 'anonymous', check: () => true }] }] };
 
-    expect(recording(kit).checkIds()).toStrictEqual([]);
+    expect(recordKitIntoLedger(kit).checkIds()).toStrictEqual([]);
   });
 });
 
 // region | Helpers
 
 /** Returns the declared id of each check recorded in a ledger. */
-function bareIds(ledger: PragmaLedger): string[] {
+function listBareIds(ledger: PragmaLedger): string[] {
   return ledger.checkIds().map((ids) => ids.bare);
 }
 
 /** Records a kit without provenance into a fresh ledger and returns the ledger. */
-function recording(kit: RdyKit): PragmaLedger {
+function recordKitIntoLedger(kit: RdyKit): PragmaLedger {
   const ledger = createPragmaLedger();
   recordKitCheckIds(kit, ledger, undefined);
   return ledger;

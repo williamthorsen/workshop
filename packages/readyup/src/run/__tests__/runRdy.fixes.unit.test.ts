@@ -128,8 +128,8 @@ describe(runRdy, () => {
     });
 
     it.each<[string, Pick<RdyCheck, 'check' | 'skip'>]>([
-      ['check throws', { check: throwing }],
-      ['skip throws', { check: () => true, skip: throwing }],
+      ['check throws', { check: throwError }],
+      ['skip throws', { check: () => true, skip: throwError }],
       ['skip returns an uninterpretable value', { check: () => true, skip: wrapAsSkip(true) }],
       ['check returns an uninterpretable value', { check: wrapAsCheck('yes') }],
     ])('reports no fix and reads no fix accessor when the %s', async (_label, functions) => {
@@ -166,7 +166,7 @@ describe(runRdy, () => {
             check: () => false,
             severity: 'warn',
             get fix() {
-              return asFix(42);
+              return castToFix(42);
             },
           },
         ],
@@ -352,14 +352,14 @@ describe(runRdy, () => {
 /* eslint-disable @typescript-eslint/consistent-type-assertions */
 
 /** Wraps a value as the string promised by a `fix` accessor. */
-function asFix(value: unknown): string {
+function castToFix(value: unknown): string {
   return value as string;
 }
 
 /* eslint-enable @typescript-eslint/consistent-type-assertions */
 
 /** Throws, as a crashing check or skip function does. */
-function throwing(): never {
+function throwError(): never {
   throw new Error('boom');
 }
 

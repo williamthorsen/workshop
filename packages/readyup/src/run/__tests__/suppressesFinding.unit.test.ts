@@ -7,19 +7,19 @@ const NAMED = ['toolbelt.errors/no-instanceof-error'];
 describe(suppressesFinding, () => {
   describe('given an `rdy-ignore`', () => {
     it('suppresses a finding on the same line', () => {
-      const lines = linesOf('const a = 1;\nerror instanceof Error; // rdy-ignore\nconst b = 2;');
+      const lines = splitLines('const a = 1;\nerror instanceof Error; // rdy-ignore\nconst b = 2;');
 
       expect(suppressesFinding(lines, 2, [])).toBe(true);
     });
 
     it('reports false on the line below it', () => {
-      const lines = linesOf('// rdy-ignore\nerror instanceof Error;');
+      const lines = splitLines('// rdy-ignore\nerror instanceof Error;');
 
       expect(suppressesFinding(lines, 2, [])).toBe(false);
     });
 
     it('suppresses a finding on the first line', () => {
-      const lines = linesOf('error instanceof Error; // rdy-ignore');
+      const lines = splitLines('error instanceof Error; // rdy-ignore');
 
       expect(suppressesFinding(lines, 1, [])).toBe(true);
     });
@@ -27,13 +27,13 @@ describe(suppressesFinding, () => {
 
   describe('given an `rdy-ignore-next-line`', () => {
     it('suppresses a finding on the line below it', () => {
-      const lines = linesOf('// rdy-ignore-next-line\nerror instanceof Error;');
+      const lines = splitLines('// rdy-ignore-next-line\nerror instanceof Error;');
 
       expect(suppressesFinding(lines, 2, [])).toBe(true);
     });
 
     it('reports false on the same line', () => {
-      const lines = linesOf('error instanceof Error; // rdy-ignore-next-line');
+      const lines = splitLines('error instanceof Error; // rdy-ignore-next-line');
 
       expect(suppressesFinding(lines, 1, [])).toBe(false);
     });
@@ -41,13 +41,13 @@ describe(suppressesFinding, () => {
 
   describe('given a pragma naming no check', () => {
     it('suppresses whatever ids the check has', () => {
-      const lines = linesOf('error instanceof Error; // rdy-ignore');
+      const lines = splitLines('error instanceof Error; // rdy-ignore');
 
       expect(suppressesFinding(lines, 1, NAMED)).toBe(true);
     });
 
     it('accepts a reason, which names no check', () => {
-      const lines = linesOf('error instanceof Error; // rdy-ignore -- the bootstrap shim, no deps allowed');
+      const lines = splitLines('error instanceof Error; // rdy-ignore -- the bootstrap shim, no deps allowed');
 
       expect(suppressesFinding(lines, 1, NAMED)).toBe(true);
     });
@@ -55,26 +55,26 @@ describe(suppressesFinding, () => {
 
   describe('given a pragma naming checks', () => {
     it('suppresses for a check that it names', () => {
-      const lines = linesOf('error instanceof Error; // rdy-ignore toolbelt.errors/no-instanceof-error');
+      const lines = splitLines('error instanceof Error; // rdy-ignore toolbelt.errors/no-instanceof-error');
 
       expect(suppressesFinding(lines, 1, NAMED)).toBe(true);
     });
 
     it('reports false for a check that it does not name', () => {
-      const lines = linesOf('error instanceof Error; // rdy-ignore toolbelt.errors/other-check');
+      const lines = splitLines('error instanceof Error; // rdy-ignore toolbelt.errors/other-check');
 
       expect(suppressesFinding(lines, 1, NAMED)).toBe(false);
     });
 
     it('reports false for a check with no id at all', () => {
-      const lines = linesOf('error instanceof Error; // rdy-ignore toolbelt.errors/no-instanceof-error');
+      const lines = splitLines('error instanceof Error; // rdy-ignore toolbelt.errors/no-instanceof-error');
 
       expect(suppressesFinding(lines, 1, [])).toBe(false);
     });
 
     it('suppresses when it names either form accepted by the check', () => {
       const accepted = ['toolbelt.errors/no-instanceof-error', '@williamthorsen/toolbelt.errors/no-instanceof-error'];
-      const lines = linesOf(
+      const lines = splitLines(
         'error instanceof Error; // rdy-ignore @williamthorsen/toolbelt.errors/no-instanceof-error',
       );
 
@@ -82,25 +82,25 @@ describe(suppressesFinding, () => {
     });
 
     it('suppresses for any check named by a comma-separated list', () => {
-      const lines = linesOf('error instanceof Error; // rdy-ignore x/y,toolbelt.errors/no-instanceof-error');
+      const lines = splitLines('error instanceof Error; // rdy-ignore x/y,toolbelt.errors/no-instanceof-error');
 
       expect(suppressesFinding(lines, 1, NAMED)).toBe(true);
     });
 
     it('reads a list spaced around its commas', () => {
-      const lines = linesOf('error instanceof Error; // rdy-ignore x/y , toolbelt.errors/no-instanceof-error , z');
+      const lines = splitLines('error instanceof Error; // rdy-ignore x/y , toolbelt.errors/no-instanceof-error , z');
 
       expect(suppressesFinding(lines, 1, NAMED)).toBe(true);
     });
 
     it('reports false when the named check belongs to another kit', () => {
-      const lines = linesOf('error instanceof Error; // rdy-ignore other.kit/no-instanceof-error');
+      const lines = splitLines('error instanceof Error; // rdy-ignore other.kit/no-instanceof-error');
 
       expect(suppressesFinding(lines, 1, NAMED)).toBe(false);
     });
 
     it('narrows the pragma covering the line below it', () => {
-      const lines = linesOf('// rdy-ignore-next-line toolbelt.errors/other-check\nerror instanceof Error;');
+      const lines = splitLines('// rdy-ignore-next-line toolbelt.errors/other-check\nerror instanceof Error;');
 
       expect(suppressesFinding(lines, 2, NAMED)).toBe(false);
     });
@@ -108,19 +108,19 @@ describe(suppressesFinding, () => {
 
   describe('given a tail against which the id list ends', () => {
     it('ends at a reason', () => {
-      const lines = linesOf('// rdy-ignore-next-line toolbelt.errors/no-instanceof-error -- the shim\nerror;');
+      const lines = splitLines('// rdy-ignore-next-line toolbelt.errors/no-instanceof-error -- the shim\nerror;');
 
       expect(suppressesFinding(lines, 2, NAMED)).toBe(true);
     });
 
     it('ends at the delimiter closing a block comment', () => {
-      const lines = linesOf('error instanceof Error; /* rdy-ignore toolbelt.errors/no-instanceof-error */');
+      const lines = splitLines('error instanceof Error; /* rdy-ignore toolbelt.errors/no-instanceof-error */');
 
       expect(suppressesFinding(lines, 1, NAMED)).toBe(true);
     });
 
     it('ends at a second pragma token rather than reading it as an id', () => {
-      const lines = linesOf('// rdy-ignore rdy-ignore-next-line\nerror;');
+      const lines = splitLines('// rdy-ignore rdy-ignore-next-line\nerror;');
 
       expect(suppressesFinding(lines, 1, NAMED)).toBe(true);
       expect(suppressesFinding(lines, 2, NAMED)).toBe(true);
@@ -129,40 +129,40 @@ describe(suppressesFinding, () => {
 
   describe('given a token that the grammar does not name', () => {
     it('reports false for a word that the token only prefixes', () => {
-      const lines = linesOf('const rdy-ignored = 1;');
+      const lines = splitLines('const rdy-ignored = 1;');
 
       expect(suppressesFinding(lines, 1, [])).toBe(false);
     });
 
     it('reports false for a misspelt next-line suffix', () => {
-      const lines = linesOf('// rdy-ignore-nextline\nerror instanceof Error;');
+      const lines = splitLines('// rdy-ignore-nextline\nerror instanceof Error;');
 
       expect(suppressesFinding(lines, 1, [])).toBe(false);
       expect(suppressesFinding(lines, 2, [])).toBe(false);
     });
 
     it('reports false for a token with which a longer word ends', () => {
-      const lines = linesOf('const notrdy-ignore = 1;');
+      const lines = splitLines('const notrdy-ignore = 1;');
 
       expect(suppressesFinding(lines, 1, [])).toBe(false);
     });
   });
 
   it('reads a pragma against which a block comment closes without a space', () => {
-    const lines = linesOf('error instanceof Error; /*rdy-ignore*/');
+    const lines = splitLines('error instanceof Error; /*rdy-ignore*/');
 
     expect(suppressesFinding(lines, 1, [])).toBe(true);
   });
 
   it('reports for each scope when one line has both tokens', () => {
-    const lines = linesOf('// rdy-ignore rdy-ignore-next-line\nerror;');
+    const lines = splitLines('// rdy-ignore rdy-ignore-next-line\nerror;');
 
     expect(suppressesFinding(lines, 1, [])).toBe(true);
     expect(suppressesFinding(lines, 2, [])).toBe(true);
   });
 
   it('reports false when no line has a pragma', () => {
-    const lines = linesOf('const a = 1;\nerror instanceof Error;');
+    const lines = splitLines('const a = 1;\nerror instanceof Error;');
 
     expect(suppressesFinding(lines, 2, [])).toBe(false);
   });
@@ -171,7 +171,7 @@ describe(suppressesFinding, () => {
 // region | Helpers
 
 /** Splits a source into the lines read by `suppressesFinding`. */
-function linesOf(source: string): readonly string[] {
+function splitLines(source: string): readonly string[] {
   return source.split('\n');
 }
 

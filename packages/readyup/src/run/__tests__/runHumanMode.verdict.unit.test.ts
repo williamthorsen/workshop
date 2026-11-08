@@ -48,7 +48,7 @@ describe(runHumanMode, () => {
       const { exitCode, stdout } = await runHuman(buildSingleKitEntry(['deploy']), { failOn: 'recommend' }, fakes);
 
       expect(exitCode).toBe(1);
-      expect(lastLine(stdout)).toContain('Run failed (fail-on: recommend)');
+      expect(readLastLine(stdout)).toContain('Run failed (fail-on: recommend)');
     });
 
     it('names each kit with its threshold when the kits resolve different thresholds', async () => {
@@ -66,7 +66,7 @@ describe(runHumanMode, () => {
         fakes,
       );
 
-      expect(lastLine(stdout)).toContain('Run passed (fail-on: error for release; warn for audit)');
+      expect(readLastLine(stdout)).toContain('Run passed (fail-on: error for release; warn for audit)');
     });
 
     it('ends a run in which a kit did not load with an incomplete verdict', async () => {
@@ -84,7 +84,7 @@ describe(runHumanMode, () => {
         fakes,
       );
 
-      expect(lastLine(stdout)).toContain('Run incomplete: 1 kit did not run');
+      expect(readLastLine(stdout)).toContain('Run incomplete: 1 kit did not run');
     });
 
     it('says that a failing check is withheld when the reporting threshold is above the failure threshold', async () => {
@@ -139,7 +139,7 @@ describe(runHumanMode, () => {
 // region | Helpers
 
 /** Returns the last line of `stdout`, ignoring its trailing newline. */
-function lastLine(stdout: string): string | undefined {
+function readLastLine(stdout: string): string | undefined {
   return stdout.trimEnd().split('\n').at(-1);
 }
 

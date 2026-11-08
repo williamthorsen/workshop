@@ -40,7 +40,7 @@ describe('--sources run path wiring', () => {
     const { entries } = await resolveKitSources({
       ...baseArgs,
       sources: true,
-      configuredSources: npmSources('@acme/kits'),
+      configuredSources: buildNpmSources('@acme/kits'),
     });
 
     expect(entries).toStrictEqual([
@@ -59,7 +59,7 @@ describe('--sources run path wiring', () => {
     const { entries } = await resolveKitSources({
       ...baseArgs,
       sources: true,
-      configuredSources: npmSources('@acme/kits'),
+      configuredSources: buildNpmSources('@acme/kits'),
     });
 
     expect(entries.map((entry) => entry.name)).toStrictEqual(['default']);
@@ -72,7 +72,7 @@ describe('--sources run path wiring', () => {
     const { entries } = await resolveKitSources({
       ...baseArgs,
       sources: true,
-      configuredSources: npmSources('plain-kit', '@acme/kits'),
+      configuredSources: buildNpmSources('plain-kit', '@acme/kits'),
       kitSpecifiers: [{ kitName: 'preflight', checklists: [] }],
     });
 
@@ -89,7 +89,7 @@ describe('--sources run path wiring', () => {
     const { entries } = await resolveKitSources({
       ...baseArgs,
       sources: true,
-      configuredSources: npmSources('plain-kit'),
+      configuredSources: buildNpmSources('plain-kit'),
     });
 
     expect(entries.map((entry) => entry.name)).toStrictEqual(['default']);
@@ -103,7 +103,7 @@ describe('--sources run path wiring', () => {
     const { entries } = await resolveKitSources({
       ...baseArgs,
       sources: true,
-      configuredSources: npmSources('plain-kit', '@acme/kits'),
+      configuredSources: buildNpmSources('plain-kit', '@acme/kits'),
     });
 
     expect(entries.map(describeEntry)).toStrictEqual(['plain-kit:default']);
@@ -116,7 +116,7 @@ describe('--sources run path wiring', () => {
     const { entries, unrunSources } = await resolveKitSources({
       ...baseArgs,
       sources: true,
-      configuredSources: npmSources('@acme/kits'),
+      configuredSources: buildNpmSources('@acme/kits'),
     });
 
     const { exitCode, stderr, stdout } = await run({ kitEntries: entries, json: false, unrunSources });
@@ -133,7 +133,7 @@ describe('--sources run path wiring', () => {
     const { entries, unrunSources } = await resolveKitSources({
       ...baseArgs,
       sources: true,
-      configuredSources: npmSources('plain-kit', '@acme/kits'),
+      configuredSources: buildNpmSources('plain-kit', '@acme/kits'),
     });
 
     const { stdout } = await run({ kitEntries: entries, json: true, unrunSources });
@@ -147,7 +147,7 @@ describe('--sources run path wiring', () => {
     const { entries } = await resolveKitSources({
       ...baseArgs,
       sources: true,
-      configuredSources: npmSources('@acme/kits'),
+      configuredSources: buildNpmSources('@acme/kits'),
     });
 
     const { exitCode, stdout } = await run({ kitEntries: entries, json: true });
@@ -162,7 +162,7 @@ describe('--sources run path wiring', () => {
     const { entries } = await resolveKitSources({
       ...baseArgs,
       sources: true,
-      configuredSources: npmSources('@acme/kits'),
+      configuredSources: buildNpmSources('@acme/kits'),
     });
 
     const { stdout } = await run({ kitEntries: entries, json: true });
@@ -177,7 +177,7 @@ describe('--sources run path wiring', () => {
     const { entries } = await resolveKitSources({
       ...baseArgs,
       sources: true,
-      configuredSources: npmSources('@acme/kits'),
+      configuredSources: buildNpmSources('@acme/kits'),
     });
 
     const { stdout } = await run({ kitEntries: entries, json: true });
@@ -193,7 +193,7 @@ describe('--sources run path wiring', () => {
     const { entries } = await resolveKitSources({
       ...baseArgs,
       sources: true,
-      configuredSources: npmSources('@acme/kits'),
+      configuredSources: buildNpmSources('@acme/kits'),
     });
 
     const { stdout } = await run({ kitEntries: entries, json: false });
@@ -208,7 +208,7 @@ describe('--sources run path wiring', () => {
     const { entries } = await resolveKitSources({
       ...baseArgs,
       sources: true,
-      configuredSources: npmSources('plain-kit', '@acme/kits'),
+      configuredSources: buildNpmSources('plain-kit', '@acme/kits'),
     });
 
     const { stdout } = await run({ kitEntries: entries, json: false });
@@ -229,7 +229,7 @@ describe('--sources run path wiring', () => {
     const { entries } = await resolveKitSources({
       ...baseArgs,
       sources: true,
-      configuredSources: npmSources('@acme/kits', 'plain-kit'),
+      configuredSources: buildNpmSources('@acme/kits', 'plain-kit'),
     });
 
     const { stdout } = await run({ kitEntries: entries, json: false });
@@ -256,7 +256,7 @@ describe('--sources run path wiring', () => {
     const { entries } = await resolveKitSources({
       ...baseArgs,
       sources: true,
-      configuredSources: npmSources('@acme/kits', 'broken-kit', 'plain-kit'),
+      configuredSources: buildNpmSources('@acme/kits', 'broken-kit', 'plain-kit'),
     });
 
     const { stdout } = await run({ kitEntries: entries, json: false });
@@ -283,6 +283,11 @@ const baseArgs = {
   internal: false,
   remote: createUncachedRemoteContext(),
 };
+
+/** Returns the configured sources naming each installed package. */
+function buildNpmSources(...names: string[]): ConfiguredSource[] {
+  return names.map((name) => parseConfiguredSource(`npm:${name}`));
+}
 
 /**
  * Names a run entry as the package from which it came and the kit that it runs, which is what an order
@@ -325,11 +330,6 @@ async function run(options: Omit<Parameters<typeof runCommand>[0], 'remote'>) {
   const exitCode = await runCommand({ ...options, remote: createUncachedRemoteContext() });
 
   return { exitCode, stdout: io.stdout, stderr: io.stderr };
-}
-
-/** Returns the configured sources naming each installed package. */
-function npmSources(...names: string[]): ConfiguredSource[] {
-  return names.map((name) => parseConfiguredSource(`npm:${name}`));
 }
 
 // endregion | Helpers

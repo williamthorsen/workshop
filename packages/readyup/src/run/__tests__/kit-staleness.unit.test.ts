@@ -108,7 +108,7 @@ describe(listKitStalenessWarnings, () => {
     it('advises recompiling when the compiled bundle no longer matches the manifest', () => {
       arrangeTargetDrift();
 
-      expect(listKitStalenessWarnings('default', { path: KIT_PATH }, defaultTracking())).toStrictEqual([
+      expect(listKitStalenessWarnings('default', { path: KIT_PATH }, buildDefaultTracking())).toStrictEqual([
         {
           code: 'target-drift',
           message: 'compiled kit "default" does not match the hash that the manifest recorded for it.',
@@ -120,7 +120,7 @@ describe(listKitStalenessWarnings, () => {
     it('advises recompiling when the source has moved on since the kit was compiled', () => {
       arrangeSourceStale();
 
-      expect(listKitStalenessWarnings('default', { path: KIT_PATH }, defaultTracking())).toStrictEqual([
+      expect(listKitStalenessWarnings('default', { path: KIT_PATH }, buildDefaultTracking())).toStrictEqual([
         {
           code: 'source-stale',
           message: 'kit "default" was compiled from an older source than the one on disk.',
@@ -132,7 +132,7 @@ describe(listKitStalenessWarnings, () => {
     it('advises recompiling when a file inlined by the compile has changed', () => {
       arrangeInputStale();
 
-      expect(listKitStalenessWarnings('default', { path: KIT_PATH }, defaultTracking())).toStrictEqual([
+      expect(listKitStalenessWarnings('default', { path: KIT_PATH }, buildDefaultTracking())).toStrictEqual([
         {
           code: 'input-stale',
           message: 'kit "default" inlined files that no longer match the ones on disk.',
@@ -151,7 +151,7 @@ describe(listKitStalenessWarnings, () => {
       });
 
       expect(
-        listKitStalenessWarnings('default', { path: KIT_PATH }, defaultTracking()).map((w) => w.code),
+        listKitStalenessWarnings('default', { path: KIT_PATH }, buildDefaultTracking()).map((w) => w.code),
       ).toStrictEqual(['input-stale']);
     });
 
@@ -161,7 +161,7 @@ describe(listKitStalenessWarnings, () => {
       arrangeInputStale();
 
       expect(
-        listKitStalenessWarnings('default', { path: KIT_PATH }, defaultTracking()).map((w) => w.code),
+        listKitStalenessWarnings('default', { path: KIT_PATH }, buildDefaultTracking()).map((w) => w.code),
       ).toStrictEqual(['target-drift', 'source-stale', 'input-stale']);
     });
 
@@ -170,14 +170,14 @@ describe(listKitStalenessWarnings, () => {
       arrangeSourceStale();
 
       expect(
-        listKitStalenessWarnings('default', { path: KIT_PATH }, defaultTracking()).map((w) => w.code),
+        listKitStalenessWarnings('default', { path: KIT_PATH }, buildDefaultTracking()).map((w) => w.code),
       ).toStrictEqual(['target-drift', 'source-stale']);
     });
 
     it('names the kit for which it was called, not the entry that it matched', () => {
       arrangeTargetDrift();
 
-      const warnings = listKitStalenessWarnings('alpha', { path: KIT_PATH }, defaultTracking());
+      const warnings = listKitStalenessWarnings('alpha', { path: KIT_PATH }, buildDefaultTracking());
 
       expect(warnings[0]?.message).toContain('compiled kit "alpha"');
     });
@@ -189,7 +189,7 @@ describe(listKitStalenessWarnings, () => {
       });
 
       expect(
-        listKitStalenessWarnings('default', { path: KIT_PATH }, defaultTracking()).map((w) => w.code),
+        listKitStalenessWarnings('default', { path: KIT_PATH }, buildDefaultTracking()).map((w) => w.code),
       ).toStrictEqual(['target-drift']);
     });
 
@@ -200,7 +200,7 @@ describe(listKitStalenessWarnings, () => {
       });
 
       expect(
-        listKitStalenessWarnings('default', { path: KIT_PATH }, defaultTracking()).map((w) => w.code),
+        listKitStalenessWarnings('default', { path: KIT_PATH }, buildDefaultTracking()).map((w) => w.code),
       ).toStrictEqual(['source-stale']);
     });
   });
@@ -217,14 +217,14 @@ describe(listKitStalenessWarnings, () => {
       arrangeTargetDrift();
 
       expect(
-        listKitStalenessWarnings('deploy', { url: 'https://example.com/kits/deploy.js' }, defaultTracking()),
+        listKitStalenessWarnings('deploy', { url: 'https://example.com/kits/deploy.js' }, buildDefaultTracking()),
       ).toStrictEqual([]);
       expect(mockCheckDrift).not.toHaveBeenCalled();
     });
 
     it('stays silent when no manifest entry describes the kit', () => {
       arrangeTargetDrift();
-      const tracking = trackingFor([{ name: 'other', path: 'kits/other.js', source: 'kits/other.ts' }]);
+      const tracking = buildTracking([{ name: 'other', path: 'kits/other.js', source: 'kits/other.ts' }]);
 
       expect(listKitStalenessWarnings('default', { path: KIT_PATH }, tracking)).toStrictEqual([]);
       expect(mockCheckDrift).not.toHaveBeenCalled();
@@ -235,20 +235,20 @@ describe(listKitStalenessWarnings, () => {
       arrangeTargetDrift();
 
       expect(
-        listKitStalenessWarnings('default', { path: '/elsewhere/.readyup/kits/default.js' }, defaultTracking()),
+        listKitStalenessWarnings('default', { path: '/elsewhere/.readyup/kits/default.js' }, buildDefaultTracking()),
       ).toStrictEqual([]);
       expect(mockCheckDrift).not.toHaveBeenCalled();
     });
 
     it('stays silent for an entry that records no path to match on', () => {
       arrangeTargetDrift();
-      const tracking = trackingFor([{ name: 'default', source: 'kits/default.ts' }]);
+      const tracking = buildTracking([{ name: 'default', source: 'kits/default.ts' }]);
 
       expect(listKitStalenessWarnings('default', { path: KIT_PATH }, tracking)).toStrictEqual([]);
     });
 
     it('stays silent when both artifacts match the manifest', () => {
-      const warnings = listKitStalenessWarnings('default', { path: KIT_PATH }, defaultTracking());
+      const warnings = listKitStalenessWarnings('default', { path: KIT_PATH }, buildDefaultTracking());
 
       expect(warnings).toStrictEqual([]);
     });
@@ -259,7 +259,7 @@ describe(listKitStalenessWarnings, () => {
         failures: [{ kind: 'module', path: 'kits/shared.ts', reason: 'missing' }],
       });
 
-      expect(listKitStalenessWarnings('default', { path: KIT_PATH }, defaultTracking())).toStrictEqual([]);
+      expect(listKitStalenessWarnings('default', { path: KIT_PATH }, buildDefaultTracking())).toStrictEqual([]);
     });
 
     it('stays silent for a projection that it can no longer reproduce', () => {
@@ -275,13 +275,13 @@ describe(listKitStalenessWarnings, () => {
         ],
       });
 
-      expect(listKitStalenessWarnings('default', { path: KIT_PATH }, defaultTracking())).toStrictEqual([]);
+      expect(listKitStalenessWarnings('default', { path: KIT_PATH }, buildDefaultTracking())).toStrictEqual([]);
     });
 
     it('stays silent for an entry that predates the recorded closure', () => {
       mockCheckInputDrift.mockReturnValue({ kind: 'unverified' });
 
-      expect(listKitStalenessWarnings('default', { path: KIT_PATH }, defaultTracking())).toStrictEqual([]);
+      expect(listKitStalenessWarnings('default', { path: KIT_PATH }, buildDefaultTracking())).toStrictEqual([]);
     });
 
     it('stays silent when the manifest entry records no hashes to compare', () => {
@@ -289,14 +289,14 @@ describe(listKitStalenessWarnings, () => {
       mockCheckInputDrift.mockReturnValue({ kind: 'unverified' });
       mockCheckSourceDrift.mockReturnValue({ kind: 'unverified' });
 
-      expect(listKitStalenessWarnings('default', { path: KIT_PATH }, defaultTracking())).toStrictEqual([]);
+      expect(listKitStalenessWarnings('default', { path: KIT_PATH }, buildDefaultTracking())).toStrictEqual([]);
     });
 
     it('stays silent when a file named by the manifest is gone', () => {
       mockCheckDrift.mockReturnValue({ kind: 'missing', resolvedPath: '/abs/default.js' });
       mockCheckSourceDrift.mockReturnValue({ kind: 'missing', resolvedPath: '/abs/default.ts' });
 
-      expect(listKitStalenessWarnings('default', { path: KIT_PATH }, defaultTracking())).toStrictEqual([]);
+      expect(listKitStalenessWarnings('default', { path: KIT_PATH }, buildDefaultTracking())).toStrictEqual([]);
     });
 
     it('stays silent when no file that it would compare can be read', () => {
@@ -310,7 +310,7 @@ describe(listKitStalenessWarnings, () => {
         throw new Error('EACCES: permission denied, open /abs/default.ts');
       });
 
-      expect(listKitStalenessWarnings('default', { path: KIT_PATH }, defaultTracking())).toStrictEqual([]);
+      expect(listKitStalenessWarnings('default', { path: KIT_PATH }, buildDefaultTracking())).toStrictEqual([]);
     });
   });
 
@@ -347,12 +347,12 @@ describe(listKitStalenessWarnings, () => {
   }
 
   /** Returns tracking whose sole entry describes the kit at `KIT_PATH`. */
-  function defaultTracking(): ManifestTracking {
-    return trackingFor([{ name: 'default', path: MANIFEST_KIT_PATH, source: 'kits/default.ts' }]);
+  function buildDefaultTracking(): ManifestTracking {
+    return buildTracking([{ name: 'default', path: MANIFEST_KIT_PATH, source: 'kits/default.ts' }]);
   }
 
   /** Returns tracking as `readManifestTracking` would have built it, containing the given entries. */
-  function trackingFor(kits: RdyManifestKit[]): ManifestTracking {
+  function buildTracking(kits: RdyManifestKit[]): ManifestTracking {
     return { manifest: { version: 1, kits }, manifestDir: path.resolve(process.cwd(), '.readyup') };
   }
 

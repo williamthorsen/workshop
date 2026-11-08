@@ -36,7 +36,7 @@ describe(runJsonMode, () => {
     };
 
     /** Builds two entries whose names and compiled paths differ, so that a kit paired with the wrong source shows. */
-    function twoKitEntries() {
+    function buildTwoKitEntries() {
       return [
         { name: 'alpha', source: { path: '.readyup/kits/alpha.js' }, checklists: ['deploy'] },
         { name: 'beta', source: { path: '.readyup/kits/beta.js' }, checklists: ['deploy'] },
@@ -51,7 +51,7 @@ describe(runJsonMode, () => {
       fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
       fakes.formatJsonReport.mockReturnValue('{"kits":[]}');
 
-      const { exitCode } = await runJson(twoKitEntries(), {}, fakes);
+      const { exitCode } = await runJson(buildTwoKitEntries(), {}, fakes);
 
       expect(fakes.listKitStalenessWarnings).toHaveBeenNthCalledWith(
         1,

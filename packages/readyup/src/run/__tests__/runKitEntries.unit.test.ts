@@ -205,7 +205,7 @@ describe(runKitEntries, () => {
       fakes.loadKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
       fakes.runRdy.mockResolvedValue(PASSING_REPORT);
 
-      await collectEvents(twoKitEntries(), fakes);
+      await collectEvents(buildTwoKitEntries(), fakes);
 
       expect(fakes.readManifestTracking).toHaveBeenCalledTimes(1);
     });
@@ -225,7 +225,7 @@ describe(runKitEntries, () => {
       fakes.loadKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
       fakes.runRdy.mockResolvedValue(PASSING_REPORT);
 
-      await collectEvents(twoKitEntries(), fakes);
+      await collectEvents(buildTwoKitEntries(), fakes);
 
       expect(fakes.listKitStalenessWarnings).toHaveBeenCalledTimes(2);
       expect(fakes.listKitStalenessWarnings).toHaveBeenNthCalledWith(
@@ -259,7 +259,7 @@ describe(runKitEntries, () => {
       fakes.loadKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
       fakes.runRdy.mockResolvedValue(PASSING_REPORT);
 
-      await collectEvents(twoKitEntries(), fakes);
+      await collectEvents(buildTwoKitEntries(), fakes);
 
       const ledgers = fakes.runRdy.mock.calls.map(([, options]) => options?.pragmaLedger);
       expect(ledgers).toHaveLength(2);
@@ -294,6 +294,14 @@ describe(runKitEntries, () => {
 
 // region | Helpers
 
+/** Builds two entries whose names and compiled paths differ, so that a kit paired with the wrong source shows. */
+function buildTwoKitEntries(): ResolvedKitEntry[] {
+  return [
+    { name: 'alpha', source: { path: '.readyup/kits/alpha.js' }, checklists: ['deploy'] },
+    { name: 'beta', source: { path: '.readyup/kits/beta.js' }, checklists: ['deploy'] },
+  ];
+}
+
 /** Runs the generator to completion over the given entries, filling in every setting that the test did not name. */
 async function collectEvents(
   kitEntries: ResolvedKitEntry[],
@@ -322,14 +330,6 @@ function findRunFinished(events: KitRunEvent[]): KitRunEvent {
   expect(event?.kind).toBe('runFinished');
   if (event === undefined) throw new Error('The run yielded no events');
   return event;
-}
-
-/** Builds two entries whose names and compiled paths differ, so that a kit paired with the wrong source shows. */
-function twoKitEntries(): ResolvedKitEntry[] {
-  return [
-    { name: 'alpha', source: { path: '.readyup/kits/alpha.js' }, checklists: ['deploy'] },
-    { name: 'beta', source: { path: '.readyup/kits/beta.js' }, checklists: ['deploy'] },
-  ];
 }
 
 // endregion | Helpers

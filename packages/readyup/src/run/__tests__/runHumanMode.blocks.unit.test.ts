@@ -85,7 +85,7 @@ describe(runHumanMode, () => {
 
   describe('provenance in the block heading', () => {
     /** Runs one kit with the given provenance, returning everything it wrote to stdout. */
-    async function headingFor(provenance: KitProvenance): Promise<string> {
+    async function captureBlockHeading(provenance: KitProvenance): Promise<string> {
       const kit = makeKit({ checklists: [{ name: 'deploy', checks: [{ name: 'a', check: () => true }] }] });
       fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
       fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
@@ -100,13 +100,13 @@ describe(runHumanMode, () => {
     }
 
     it('names a remote kit by the source from which it was fetched', async () => {
-      await expect(headingFor({ kind: 'remote', label: 'github:org/repo@main' })).resolves.toContain(
+      await expect(captureBlockHeading({ kind: 'remote', label: 'github:org/repo@main' })).resolves.toContain(
         '\u{1F310} github:org/repo@main / \u{1F4D3} deploy',
       );
     });
 
     it('names a repository kit by its source with the ref resolved', async () => {
-      const heading = headingFor({
+      const heading = captureBlockHeading({
         kind: 'repository',
         host: 'github',
         owner: 'org',
@@ -119,15 +119,15 @@ describe(runHumanMode, () => {
     });
 
     it('names a kit resolved from another directory by that directory', async () => {
-      await expect(headingFor({ kind: 'directory', label: '../sibling-repo/.readyup/kits' })).resolves.toContain(
-        '\u{1F4C1} ../sibling-repo/.readyup/kits / \u{1F4D3} deploy',
-      );
+      await expect(
+        captureBlockHeading({ kind: 'directory', label: '../sibling-repo/.readyup/kits' }),
+      ).resolves.toContain('\u{1F4C1} ../sibling-repo/.readyup/kits / \u{1F4D3} deploy');
     });
 
     // The label is what `path.dirname` yields for a bare filename, and the only form emitted by the producer
     // that normalizes to the working directory.
     it('names no directory for a kit resolved from the working directory', async () => {
-      const allOutput = await headingFor({ kind: 'directory', label: '.' });
+      const allOutput = await captureBlockHeading({ kind: 'directory', label: '.' });
 
       expect(allOutput).not.toContain('\u{1F4C1}');
       expect(allOutput).not.toContain('\u{1F4D3} deploy');
@@ -135,12 +135,12 @@ describe(runHumanMode, () => {
 
     it('names a package kit by its package and version', async () => {
       await expect(
-        headingFor({ kind: 'package', packageName: '@acme/kits', version: '2.1.0', source: 'npm:@acme/kits' }),
+        captureBlockHeading({ kind: 'package', packageName: '@acme/kits', version: '2.1.0', source: 'npm:@acme/kits' }),
       ).resolves.toContain('\u{1F4E6} @acme/kits@2.1.0 / \u{1F4D3} deploy');
     });
 
     it('names a package kit by its package alone when it declares no version', async () => {
-      const allOutput = await headingFor({
+      const allOutput = await captureBlockHeading({
         kind: 'package',
         packageName: '@acme/kits',
         version: undefined,
