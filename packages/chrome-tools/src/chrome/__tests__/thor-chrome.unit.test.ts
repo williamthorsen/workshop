@@ -39,7 +39,7 @@ describe(runThorChrome, () => {
     const fake = makeFakeThorChrome();
     await expect(run(fake, ['frobnicate'])).resolves.toBe(2);
     await expect(run(fake, ['--json', 'frobnicate'])).resolves.toBe(2);
-    expect(fake.captured.stderr()).toBe("Error: unknown command 'frobnicate'\nTry 'thor-chrome --help'.\n");
+    expect(fake.captured.stderr()).toBe("thor-chrome: unknown command 'frobnicate'\nTry 'thor-chrome --help'.\n");
     expect(fake.captured.stdout()).toBe(`{"error":{"code":"usage","message":"unknown command 'frobnicate'"}}\n`);
   });
 

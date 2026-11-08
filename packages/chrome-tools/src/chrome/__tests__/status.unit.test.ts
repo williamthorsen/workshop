@@ -117,7 +117,7 @@ describe('status', () => {
     await expect(run(fake, ['status', 'thrive', 'atlas'])).resolves.toBe(2);
     await expect(run(fake, ['status', 'thrive', '--port', '0'])).resolves.toBe(1);
     expect(fake.captured.stderr()).toBe(
-      "Error: status takes one profile name (got 'thrive' and 'atlas')\nTry 'thor-chrome --help'.\n" +
+      "thor-chrome: status takes one profile name (got 'thrive' and 'atlas')\nTry 'thor-chrome --help'.\n" +
         'thor-chrome: invalid port: 0 (must be 1–65535)\n',
     );
   });
