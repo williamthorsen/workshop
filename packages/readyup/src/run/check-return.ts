@@ -64,6 +64,23 @@ export function resolveCheckReturn(
 
 // region | Helpers
 
+/** Describes the first field of one finding that does not match `OutcomeFinding`, if any. */
+function describeMalformedFinding(finding: unknown, location: string): string | undefined {
+  if (!isRecord(finding)) {
+    return describeMismatch(location, finding, 'an object with string "path", number "line", and boolean "reported"');
+  }
+
+  const { line, path, reported, symbol } = finding;
+  if (typeof path !== 'string') return describeMismatch(`${location}.path`, path, 'a string');
+  if (typeof line !== 'number') return describeMismatch(`${location}.line`, line, 'a number');
+  if (typeof reported !== 'boolean') return describeMismatch(`${location}.reported`, reported, 'a boolean');
+  if (symbol !== undefined && typeof symbol !== 'string') {
+    return describeMismatch(`${location}.symbol`, symbol, 'a string or nothing');
+  }
+
+  return undefined;
+}
+
 /** Describes the first field of a set of findings that does not match its declared shape, if any. */
 function describeMalformedFindings(outcome: FindingOutcome): string | undefined {
   // Widened to `unknown`: The declared types do not hold for a value returned by a kit.
@@ -83,23 +100,6 @@ function describeMalformedFindings(outcome: FindingOutcome): string | undefined 
   if (!Array.isArray(scanned)) return describeMismatch('scanned', scanned, 'an array of strings or nothing');
   for (const [index, path] of scanned.entries()) {
     if (typeof path !== 'string') return describeMismatch(`scanned[${index}]`, path, 'a string');
-  }
-
-  return undefined;
-}
-
-/** Describes the first field of one finding that does not match `OutcomeFinding`, if any. */
-function describeMalformedFinding(finding: unknown, location: string): string | undefined {
-  if (!isRecord(finding)) {
-    return describeMismatch(location, finding, 'an object with string "path", number "line", and boolean "reported"');
-  }
-
-  const { line, path, reported, symbol } = finding;
-  if (typeof path !== 'string') return describeMismatch(`${location}.path`, path, 'a string');
-  if (typeof line !== 'number') return describeMismatch(`${location}.line`, line, 'a number');
-  if (typeof reported !== 'boolean') return describeMismatch(`${location}.reported`, reported, 'a boolean');
-  if (symbol !== undefined && typeof symbol !== 'string') {
-    return describeMismatch(`${location}.symbol`, symbol, 'a string or nothing');
   }
 
   return undefined;
