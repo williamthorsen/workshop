@@ -75,7 +75,7 @@ describe('launch', () => {
       });
     });
 
-    it('refuses with underived-profile outside a repository, naming the profile to pass', async () => {
+    it('refuses with underived-profile outside a repository, naming --repo and --branch', async () => {
       const fake = makeFakeThorChrome({
         env: { THOR_CHROME_APP: '/bin/sh' },
         results: { 'git branch': { status: 128 }, 'git rev-parse': { status: 128 } },
@@ -83,7 +83,7 @@ describe('launch', () => {
       await expect(run(fake, ['--dry-run'])).resolves.toBe(1);
       expect(fake.captured.stderr()).toBe(
         "thor-chrome: no repository or branch resolved from the working directory, so the profile fell back to 'default'\n" +
-          '  Name the profile instead:\n' +
+          '  Run instead:\n' +
           '    thor-chrome --repo <repo> --branch <branch>\n',
       );
     });

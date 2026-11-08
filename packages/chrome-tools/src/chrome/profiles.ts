@@ -42,7 +42,8 @@ export const PROFILE_RECORD_FILE = '.thor-chrome.record';
 
 /**
  * Refuses when the profile is the default reached by a lost derivation rather than by a caller's choice, naming what
- * was lost. `--create` cannot produce the profile that the caller wanted, so the repair names the profile instead.
+ * was lost. `--create` cannot produce the profile that the caller wanted, so the repair names the command that
+ * reaches it: one naming the profile, or the repository and branch from which it derives.
  */
 export function assertProfileNotUnderived(invocation: Invocation, repairCommand: string): void {
   if (invocation.origin !== 'underived') return;
@@ -50,7 +51,7 @@ export function assertProfileNotUnderived(invocation: Invocation, repairCommand:
     invocation,
     'underived-profile',
     `no repository or branch resolved from the working directory, so the profile fell back to '${DEFAULT_PROFILE}'`,
-    { hints: ['Name the profile instead:', `  ${repairCommand}`] },
+    { hints: ['Run instead:', `  ${repairCommand}`] },
   );
 }
 

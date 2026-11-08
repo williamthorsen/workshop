@@ -81,7 +81,7 @@ describe('status', () => {
     expect(fake.captured.stderr()).toBe('');
   });
 
-  it('refuses outside a repository with underived-profile, naming the profile to pass', async () => {
+  it('refuses outside a repository with underived-profile, naming --repo and --branch', async () => {
     const fake = makeFakeThorChrome({ results: { 'git branch': { status: 128 }, 'git rev-parse': { status: 128 } } });
     await expect(run(fake, ['status', '--json'])).resolves.toBe(1);
     expect(fake.readReport()).toMatchObject({ error: { code: 'underived-profile' } });

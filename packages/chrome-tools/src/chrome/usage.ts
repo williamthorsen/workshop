@@ -55,7 +55,7 @@ Options:
                   working directory's repository and branch, as in
                   'macos-321'; '${DEFAULT_PROFILE}' with no branch. A launch
                   without --create, and quit and delete, refuse that fallback
-                  when the profile does not exist, naming the profile to pass)
+                  when the profile does not exist, naming what to pass)
       --port      Remote-debugging port (default: derived from the working
                   directory's repository and branch. A branch that encodes a
                   ticket gets ${TICKET_PORT_RANGE.min} plus the ticket, wrapped within
