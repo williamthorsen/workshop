@@ -279,7 +279,7 @@ describe('launch', () => {
       await expect(run(fake, ['--json', '--profile', 'thrive'])).resolves.toBe(0);
       expect(fake.readReport()).toMatchObject({
         browser: 'chrome',
-        profile: { devtools: 'http://127.0.0.1:20321/json/version', name: 'thrive', port: 20321, state: 'debugging' },
+        profile: { devtools: 'http://127.0.0.1:20321/json/version', name: 'thrive', port: 20_321, state: 'debugging' },
       });
     });
 

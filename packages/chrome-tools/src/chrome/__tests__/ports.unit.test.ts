@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { derivePort, HASH_PORT_RANGE } from '../ports.ts';
 
-describe('derivePort', () => {
+describe(derivePort, () => {
   it.each([
     ['a bare ticket number', '701', 20_701],
     ['a ticket number of ten thousand or more, wrapped into the range', '12345', 22_345],
