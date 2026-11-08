@@ -9,15 +9,12 @@ import {
   SESSION_RECOVERY,
   SESSION_RECOVERY_HINT,
 } from './browser.ts';
-import {
-  describePortListener,
-  findBrowserPid,
-  findProcessProfile,
-  probeDevtools,
-  readDebuggingPort,
-} from './browser-process.ts';
+import { findBrowserPid, probeDevtools } from './browser-process.ts';
 import { composeInstanceLabel, INSTANCE_PAGE_FILE, writeInstancePage } from './instance-page.ts';
-import { type Invocation, PROCESS_LIST_RECOVERY_HINT, refuse, requireCommand, runTolerantly } from './invocation.ts';
+import { type Invocation, refuse, requireCommand, runTolerantly } from './invocation.ts';
+import { POLICY_DENIAL_MESSAGE, readLogFile, resolveLogPath } from './launch-log.ts';
+import { openPages } from './open-pages.ts';
+import { assertPortAvailable } from './port-availability.ts';
 import { assertValidPort, resolvePort } from './ports.ts';
 import {
   assertProfileNotUnderived,
@@ -25,7 +22,7 @@ import {
   type WorkOverrides,
   writeProfileRecord,
 } from './profiles.ts';
-import { formatCommandLine, renderProfile, writeJson, writeProse } from './render.ts';
+import { formatCommandLine, type ProfileReport, renderProfile, writeJson, writeProse } from './render.ts';
 import { readTimeoutSeconds } from './timeouts.ts';
 
 /** The options of a launch, as parsed from its command line. */
@@ -33,6 +30,7 @@ export interface LaunchOptions {
   browser: string | undefined;
   isCreate: boolean;
   isDryRun: boolean;
+  isHeadless: boolean;
   port: string | undefined;
   profile: string | undefined;
   urls: readonly string[];
@@ -50,8 +48,14 @@ const PROMPT_SUPPRESSION_FLAGS = [
   '--no-first-run',
 ];
 
-/** Verbatim fragment of the message printed by a browser when the RemoteDebuggingAllowed policy denies the port. */
-const POLICY_DENIAL_MESSAGE = 'disallowed by the system admin';
+/**
+ * Every launch starts the browser without a window and opens its pages through the DevTools endpoint as background
+ * targets, because a browser activates itself whenever it opens a window from its command line, `open -g` or not.
+ */
+const NO_STARTUP_WINDOW_FLAG = '--no-startup-window';
+
+/** Chrome's flag for its headless mode, which since Chrome 132 is the only one and takes no value. */
+const HEADLESS_FLAG = '--headless';
 
 export const DEFAULT_LAUNCH_TIMEOUT_SECONDS = 10;
 const LAUNCH_POLL_INTERVAL_MILLISECONDS = 200;
@@ -63,13 +67,19 @@ const LAUNCH_POLL_INTERVAL_MILLISECONDS = 200;
  * RemoteDebuggingAllowed enterprise policy, naming the refusal on its own output, so the launch keeps that output and
  * reads it back rather than reporting an endpoint that will never exist.
  *
+ * No launch brings the browser to the front: The browser starts without a window, and once its endpoint answers, the
+ * launch opens each page as a background target, which creates the window without activating the browser. A launch
+ * against a running profile starts nothing and opens its URLs in that instance the same way.
+ *
+ * A headless launch always starts the browser directly, since a browser without a window needs neither the Dock icon
+ * nor the keyboard input that the GUI login session provides.
+ *
  * A browser started directly registers in the launching shell's launchd session, and outside the GUI login session
  * (`launchctl managername` other than Aqua) it gets no Dock icon, no ⌘-Tab entry, and no keyboard input. There the
- * launch goes through `open -n`, which starts it in the console session. Inside it, the launch stays direct, because
+ * launch goes through `open -g -n`, which starts it in the console session. Inside it, the launch stays direct, because
  * the agent sandbox refuses `open`.
  */
 export async function launchProfile(invocation: Invocation, options: LaunchOptions): Promise<number> {
-  const { output } = invocation;
   const { dir: profileDir, name: profile } = resolveDefaultProfile(invocation, options.profile ?? '', options.work);
   if (options.port !== undefined) assertValidPort(invocation, options.port);
 
@@ -81,53 +91,38 @@ export async function launchProfile(invocation: Invocation, options: LaunchOptio
   const browser = resolveBrowserName(invocation, options.browser);
   const browserApp = resolveBrowserApp(invocation, browser);
 
-  // A derived name contains no typo, so only a name given on the command line has to be confirmed with --create
-  if (!isDirectory(profileDir) && !options.isCreate && invocation.origin !== 'derived') {
-    assertProfileNotUnderived(invocation, `${output.name} --repo <repo> --branch <branch>`);
-    throw refuse(invocation, 'profile-missing', `profile '${profile}' does not exist at ${profileDir}`, {
-      hints: [`Pass --create to make it, or list existing profiles: ${output.name} list`],
-    });
-  }
+  assertProfileCreatable(invocation, { isCreate: options.isCreate, profile, profileDir });
 
-  const runningPid = assertPortAvailable(invocation, profile, profileDir, port);
+  const running = assertPortAvailable(invocation, { isHeadless: options.isHeadless, port, profile, profileDir });
+  const runningPid = running?.pid;
+  const isHeadless = running?.isHeadless ?? options.isHeadless;
   const label = composeInstanceLabel(profile, port);
   const commandLine = [
     browserApp,
     `--remote-debugging-port=${port}`,
     `--user-data-dir=${profileDir}`,
     ...PROMPT_SUPPRESSION_FLAGS,
-    `--window-name=${label}`,
-    ...options.urls,
+    NO_STARTUP_WINDOW_FLAG,
+    ...(options.isHeadless ? [HEADLESS_FLAG] : []),
   ];
 
-  // Because the browser forwards a launch against a running profile to that instance and opens no window there, only
-  // a launch that starts one opens the page. It comes after a tab of another kind, because Chromium reports tabs in
-  // creation order and the Playwright MCP server works in the first one
+  // Only a launch that starts the browser opens the instance page
   const pageFile = runningPid === undefined ? `${profileDir}/${INSTANCE_PAGE_FILE}` : undefined;
-  if (pageFile !== undefined) {
-    if (options.urls.length === 0) commandLine.push('about:blank');
-    commandLine.push(`file://${pageFile}`);
-  }
+  const pages = composePages(options.urls, pageFile);
 
   // Because the endpoint alone cannot tell a slow start from a policy refusal, the browser's own output is kept for the
   // failure report to read back
   const logFile = resolveLogPath(invocation, profile);
 
   const session = readLaunchSession(invocation);
-  const isOpenLaunch = session !== '' && session !== 'Aqua';
-  let launchCommand = commandLine;
-  if (isOpenLaunch) {
-    const bundle = resolveAppBundle(invocation, browserApp, session);
-    const openOptions = ['-n', '-a', bundle, '--stdout', logFile, '--stderr', logFile, '--args'];
-    launchCommand = ['open', ...openOptions, ...commandLine.slice(1)];
-  }
+  const isOpenLaunch = !options.isHeadless && session !== '' && session !== 'Aqua';
+  const launchCommand =
+    runningPid === undefined
+      ? composeLaunchCommand(invocation, commandLine, isOpenLaunch ? session : undefined, logFile)
+      : undefined;
 
   if (options.isDryRun) {
-    if (invocation.format === 'json') {
-      writeJson(invocation, { command: launchCommand, dryRun: true });
-    } else {
-      writeProse(invocation, 'stdout', [formatCommandLine(launchCommand)]);
-    }
+    reportDryRun(invocation, { launchCommand, pages, port, profile });
     return 0;
   }
 
@@ -136,121 +131,38 @@ export async function launchProfile(invocation: Invocation, options: LaunchOptio
   // Write no record for an underived profile: The derivation that would say where it came from was lost
   fs.mkdirSync(profileDir, { recursive: true });
   if (invocation.origin !== 'underived') writeProfileRecord(invocation, profileDir);
-  if (pageFile !== undefined) {
-    writeInstancePage(invocation, { browser, browserApp, label, launchCommand, logFile, pageFile, port, profile });
+  if (launchCommand !== undefined) {
+    if (pageFile !== undefined) {
+      writeInstancePage(invocation, { browser, browserApp, label, launchCommand, logFile, pageFile, port, profile });
+    }
+    startBrowser(invocation, launchCommand, logFile, isOpenLaunch ? session : undefined);
+    if (!(await awaitDevtools(invocation, port, timeout.seconds))) {
+      throw describeLaunchFailure(invocation, profile, port, logFile, timeout.text);
+    }
   }
-
-  startBrowser(invocation, launchCommand, logFile, isOpenLaunch ? session : undefined);
-  if (!(await awaitDevtools(invocation, port, timeout.seconds))) {
-    throw describeLaunchFailure(invocation, profile, port, logFile, timeout.text);
-  }
-
-  if (invocation.format === 'json') {
-    const lookup = findBrowserPid(invocation, profileDir);
-    const pid = lookup.isReadable ? lookup.pid : undefined;
-    const rendered = renderProfile(invocation, { name: profile, path: profileDir, pid, port, state: 'debugging' });
-    writeJson(invocation, { profile: rendered, browser });
-    return 0;
-  }
-  writeProse(invocation, 'stdout', [
-    `${browser}: profile '${profile}' on port ${port}`,
-    `DevTools: http://127.0.0.1:${port}/json/version`,
-  ]);
+  const relaunchOptions = composeRelaunchOptions(invocation, { ...options, isHeadless }, profile);
+  await openPages(invocation, { port, profile, relaunchOptions }, pages);
+  reportLaunch(invocation, { browser, isHeadless, port, profile, profileDir });
   return 0;
 }
 
 // region | Helpers
 
 /**
- * Refuses unless the requested port is usable for the profile, which is the case when the profile already owns a live
- * endpoint on it (Chrome then forwards the URLs to that instance) or when nothing is listening. Returns the PID of the
- * profile's browser when one is running, which tells a fresh start from a launch that the browser will forward.
- *
- * The browser forwards a second launch against a live `--user-data-dir` to the running process and discards
- * `--remote-debugging-port`, producing a browser with no port and no error. State is therefore read from the profile's
- * browser process, whose argv contains the port that it actually owns, before the DevTools endpoint is probed: A probe
- * alone identifies some browser on the port, not this profile's.
+ * Refuses a profile that does not exist unless the launch may create it. A derived name contains no typo, so only a
+ * name given on the command line has to be confirmed with --create.
  */
-function assertPortAvailable(invocation: Invocation, profile: string, profileDir: string, port: string) {
+function assertProfileCreatable(
+  invocation: Invocation,
+  request: { isCreate: boolean; profile: string; profileDir: string },
+): void {
+  const { isCreate, profile, profileDir } = request;
   const { name } = invocation.output;
-  const lookup = findBrowserPid(invocation, profileDir);
-  if (!lookup.isReadable) {
-    throw refuse(
-      invocation,
-      'process-list-unavailable',
-      `could not read the process list, so the state of profile '${profile}' is unknown`,
-      { hints: [PROCESS_LIST_RECOVERY_HINT] },
-    );
-  }
-
-  const { pid } = lookup;
-  if (pid !== undefined) {
-    const runningPort = readDebuggingPort(invocation, pid);
-    if (runningPort === undefined) {
-      throw refuse(
-        invocation,
-        'profile-running-without-port',
-        `profile '${profile}' is running (PID ${pid}) without a debugging port`,
-        {
-          hints: [
-            'The browser discards --remote-debugging-port while an instance owns the profile.',
-            `Quit it first: ${name} quit ${profile}`,
-          ],
-        },
-      );
-    }
-    if (runningPort !== port) {
-      throw refuse(
-        invocation,
-        'port-mismatch',
-        `profile '${profile}' is already debugging on port ${runningPort}, not ${port}`,
-        {
-          hints: [`Attach there with --port ${runningPort}, or quit it: ${name} quit ${profile}`],
-        },
-      );
-    }
-    if (!probeDevtools(invocation, port)) {
-      const logFile = resolveLogPath(invocation, profile);
-      if (readFile(logFile).includes(POLICY_DENIAL_MESSAGE)) {
-        throw refuse(
-          invocation,
-          'policy-denied',
-          `profile '${profile}' is running (PID ${pid}) but policy blocked its debugging port`,
-          {
-            extra: { log: logFile },
-            hints: [
-              'Retrying cannot open it. Quit the instance and relaunch with --browser chrome-for-testing:',
-              `  ${name} quit ${profile}`,
-            ],
-          },
-        );
-      }
-      throw refuse(
-        invocation,
-        'endpoint-unresponsive',
-        `profile '${profile}' declares port ${port} (PID ${pid}) but the endpoint is not answering`,
-        { hints: [`The browser may still be starting. Retry, or quit it: ${name} quit ${profile}`] },
-      );
-    }
-    return pid;
-  }
-
-  const listener = describePortListener(invocation, port);
-  if (listener !== undefined) {
-    const holder = findProcessProfile(invocation, listener.pid);
-    const { description } = listener;
-    if (holder !== undefined) {
-      throw refuse(invocation, 'port-busy', `port ${port} is held by profile '${holder}': ${description}`, {
-        extra: { listener: description },
-        hints: [`Pick another port with --port, or quit that profile: ${name} quit ${holder}`],
-      });
-    }
-    throw refuse(invocation, 'port-busy', `port ${port} is held by ${description}`, {
-      extra: { listener: description },
-      hints: ['Pick another port with --port, or stop the process that holds it.'],
-    });
-  }
-  return;
+  if (isDirectory(profileDir) || isCreate || invocation.origin === 'derived') return;
+  assertProfileNotUnderived(invocation, `${name} --repo <repo> --branch <branch>`);
+  throw refuse(invocation, 'profile-missing', `profile '${profile}' does not exist at ${profileDir}`, {
+    hints: [`Pass --create to make it, or list existing profiles: ${name} list`],
+  });
 }
 
 /** Reports whether the DevTools endpoint answers within the launch budget. */
@@ -265,6 +177,46 @@ async function awaitDevtools(invocation: Invocation, port: string, timeoutSecond
 }
 
 /**
+ * Returns the launch options that select the same instance again: the profile only when it was named, since naming a
+ * derived profile records it as named, and the work overrides, the port, and the mode as this launch was given them.
+ */
+function composeRelaunchOptions(invocation: Invocation, options: LaunchOptions, profile: string): string[] {
+  return [
+    ...(invocation.origin === 'named' ? ['--profile', profile] : []),
+    ...(options.work.repo === undefined ? [] : ['--repo', options.work.repo]),
+    ...(options.work.branch === undefined ? [] : ['--branch', options.work.branch]),
+    ...(options.port === undefined ? [] : ['--port', options.port]),
+    ...(options.isHeadless ? ['--headless'] : []),
+  ];
+}
+
+/**
+ * Returns the pages that a launch opens, in order. A launch that starts the browser opens the instance page after a tab
+ * of another kind, a blank one when no URL is given, because Chromium reports targets to a client in the order of the
+ * calls that created them, and the Playwright MCP server works in the first one.
+ */
+function composePages(urls: readonly string[], pageFile: string | undefined): string[] {
+  if (pageFile === undefined) return [...urls];
+  return [...(urls.length === 0 ? ['about:blank'] : urls), `file://${pageFile}`];
+}
+
+/**
+ * Returns the command that starts the browser: the command line itself, or, given the launchd session outside the GUI
+ * login session that made it necessary, `open` with the command line as its arguments.
+ */
+function composeLaunchCommand(
+  invocation: Invocation,
+  commandLine: readonly string[],
+  openSession: string | undefined,
+  logFile: string,
+): readonly string[] {
+  const [browserApp = '', ...args] = commandLine;
+  if (openSession === undefined) return commandLine;
+  const bundle = resolveAppBundle(invocation, browserApp, openSession);
+  return ['open', '-g', '-n', '-a', bundle, '--stdout', logFile, '--stderr', logFile, '--args', ...args];
+}
+
+/**
  * Returns the refusal that explains a launch that produced no DevTools endpoint, naming the policy refusal when the
  * browser reported one, since no retry can clear it.
  */
@@ -276,7 +228,7 @@ function describeLaunchFailure(
   timeout: string,
 ) {
   const { name } = invocation.output;
-  if (readFile(logFile).includes(POLICY_DENIAL_MESSAGE)) {
+  if (readLogFile(logFile).includes(POLICY_DENIAL_MESSAGE)) {
     return refuse(invocation, 'policy-denied', `policy blocked remote debugging for profile '${profile}'`, {
       extra: { log: logFile },
       hints: [
@@ -298,18 +250,45 @@ function describeLaunchFailure(
   );
 }
 
-/** Returns a file's content, or an empty string when it cannot be read. */
-function readFile(file: string): string {
-  try {
-    return fs.readFileSync(file, 'utf8');
-  } catch {
-    return '';
+/**
+ * Reports what a launch would do: the command that would start the browser, or that the profile is running when
+ * nothing would start, then the pages that it would open.
+ */
+function reportDryRun(
+  invocation: Invocation,
+  plan: { launchCommand: readonly string[] | undefined; pages: readonly string[]; port: string; profile: string },
+): void {
+  const { launchCommand, pages, port, profile } = plan;
+  if (invocation.format === 'json') {
+    writeJson(invocation, {
+      command: launchCommand === undefined ? null : [...launchCommand],
+      pages: [...pages],
+      dryRun: true,
+    });
+    return;
   }
+  const start =
+    launchCommand === undefined ? `profile '${profile}' is running on port ${port}` : formatCommandLine(launchCommand);
+  writeProse(invocation, 'stdout', [start, ...pages.map((page) => `Opens: ${page}`)]);
 }
 
-/** Returns the path of the file that contains a profile's most recent launch output. */
-function resolveLogPath(invocation: Invocation, profile: string): string {
-  return `${invocation.deps.env['TMPDIR'] || '/tmp'}/thor-chrome-${profile}.log`;
+/** Reports the launched profile and the browser that serves it, naming a headless one as such. */
+function reportLaunch(
+  invocation: Invocation,
+  launch: { browser: string; isHeadless: boolean; port: string; profile: string; profileDir: string },
+): void {
+  const { browser, isHeadless, port, profile, profileDir } = launch;
+  if (invocation.format === 'json') {
+    const lookup = findBrowserPid(invocation, profileDir);
+    const pid = lookup.isReadable ? lookup.pid : undefined;
+    const report: ProfileReport = { isHeadless, name: profile, path: profileDir, pid, port, state: 'debugging' };
+    writeJson(invocation, { profile: renderProfile(invocation, report), browser });
+    return;
+  }
+  writeProse(invocation, 'stdout', [
+    `${browser}: profile '${profile}' on port ${port}${isHeadless ? ' (headless)' : ''}`,
+    `DevTools: http://127.0.0.1:${port}/json/version`,
+  ]);
 }
 
 /**

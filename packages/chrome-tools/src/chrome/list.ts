@@ -30,8 +30,8 @@ function writeProfilesJson(invocation: Invocation, isStaleOnly: boolean): void {
     const dir = `${invocation.profilesDir}/${name}`;
     const facts = resolveProfileFacts(invocation, dir);
     if (isStaleOnly && facts.stale !== true) continue;
-    const { pid, port, state } = resolveProfileState(invocation, dir);
-    entries.push(renderProfile(invocation, { facts, name, path: dir, pid, port, state }));
+    const { isHeadless, pid, port, state } = resolveProfileState(invocation, dir);
+    entries.push(renderProfile(invocation, { facts, isHeadless, name, path: dir, pid, port, state }));
   }
   writeJson(invocation, { profiles: entries });
 }
@@ -56,18 +56,19 @@ function writeProfilesProse(invocation: Invocation, isStaleOnly: boolean): void 
     const facts = resolveProfileFacts(invocation, dir);
     if (isStaleOnly && facts.stale !== true) continue;
     isFound = true;
-    const { pid = '', port = '', state } = resolveProfileState(invocation, dir);
+    const { isHeadless, pid = '', port = '', state } = resolveProfileState(invocation, dir);
+    const mode = isHeadless === true ? ' headless' : '';
     const derivedPort = deriveRecordedPort(facts);
     const derivedNote = derivedPort === undefined ? '' : ` (derived ${derivedPort})`;
     // A running browser keeps the port that it was launched on, which a later launch would not derive
     const divergence = String(derivedPort) === port ? '' : derivedNote;
     const portClause = derivedPort === undefined ? '' : `, port ${derivedPort}`;
     const descriptions = {
-      debugging: `  ${passed} ${name}: debugging on port ${port}${divergence} (PID ${pid})`,
-      'running-without-port': `  ${warning} ${name}: running (PID ${pid}), no debugging port${derivedNote}`,
+      debugging: `  ${passed} ${name}: debugging${mode} on port ${port}${divergence} (PID ${pid})`,
+      'running-without-port': `  ${warning} ${name}: running${mode} (PID ${pid}), no debugging port${derivedNote}`,
       stopped: `  ${info} ${name}: stopped${portClause}`,
       unknown: `  ${warning} ${name}: state unknown${portClause}`,
-      unresponsive: `  ${warning} ${name}: running (PID ${pid}), port ${port}${divergence} not answering`,
+      unresponsive: `  ${warning} ${name}: running${mode} (PID ${pid}), port ${port}${divergence} not answering`,
     };
     if (state === 'unknown') isUnknown = true;
     const lastUsed = facts.lastUsed === undefined ? '' : `, last used ${formatLocalDate(facts.lastUsed)}`;

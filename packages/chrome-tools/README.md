@@ -22,6 +22,14 @@ Launch the working directory's browser on the page under development. On branch 
 thor-chrome http://localhost:4798
 ```
 
+Start the browser headless, for an agent that needs a page but not a window:
+
+```bash
+thor-chrome --headless http://localhost:4798
+```
+
+No launch brings the browser to the front.
+
 Ask for the endpoint to attach a client to, as one JSON document, whether or not the browser is running:
 
 ```bash

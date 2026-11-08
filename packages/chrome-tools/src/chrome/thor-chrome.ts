@@ -10,6 +10,7 @@ import {
   type ParseSpec,
 } from '@williamthorsen/toolbelt.cli/candidate';
 
+import { openBackgroundPage } from '../portable/open-background-page.ts';
 import { spawnDetached } from '../portable/spawn-detached.ts';
 import type { CommandOutput } from '../shared/output.ts';
 import { runCommand } from '../shared/run-command.ts';
@@ -83,6 +84,7 @@ function createProcessDeps(): ThorChromeDeps {
       process.kill(pid, 'SIGTERM');
     },
     now: () => Date.now(),
+    openPage: openBackgroundPage,
     run: runCommand,
     sleep: async (milliseconds) => {
       await sleep(milliseconds);
@@ -123,6 +125,7 @@ async function dispatchVerb(invocation: Invocation, verb: Verb, args: readonly s
           browser: { type: 'string', description: 'Browser to launch' },
           create: { type: 'boolean', description: 'Permit creating a profile' },
           dryRun: { type: 'boolean', description: 'Print the launch command' },
+          headless: { type: 'boolean', description: 'Start the browser without a window' },
           profile: { type: 'string', description: 'Profile to launch' },
         },
         operands: [{ name: 'urls', description: 'Pages to open', optional: true, variadic: true }],
@@ -131,6 +134,7 @@ async function dispatchVerb(invocation: Invocation, verb: Verb, args: readonly s
         browser: flags.browser,
         isCreate: flags.create,
         isDryRun: flags.dryRun,
+        isHeadless: flags.headless,
         port: flags.port,
         profile: flags.profile,
         urls: operands.urls,

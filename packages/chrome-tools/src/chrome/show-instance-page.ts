@@ -25,7 +25,7 @@ export function showInstancePage(invocation: Invocation, profile: string | undef
     });
   }
 
-  const { pid, port, state } = resolveProfileState(invocation, dir);
+  const { isHeadless, pid, port, state } = resolveProfileState(invocation, dir);
   assertStateKnown(invocation, name, state);
   if (state !== 'debugging' || port === undefined) throw describeUnavailable(invocation, name, state, pid, port);
 
@@ -54,7 +54,7 @@ export function showInstancePage(invocation: Invocation, profile: string | undef
 
   if (invocation.format === 'json') {
     writeJson(invocation, {
-      profile: renderProfile(invocation, { name, path: dir, pid, port, state }),
+      profile: renderProfile(invocation, { isHeadless, name, path: dir, pid, port, state }),
       page: pageFile,
     });
     return 0;

@@ -132,6 +132,19 @@ describe('launch', () => {
       });
     });
 
+    it.each([
+      [false, ['--headless'], "profile 'thrive' is running windowed (PID 4242), so a headless launch cannot use it"],
+      [true, [], "profile 'thrive' is running headless (PID 4242), so a windowed launch cannot use it"],
+    ])('refuses with mode-mismatch when the running browser is headless: %s', async (isHeadless, flags, message) => {
+      const fake = makeRunningFake({ isHeadless, port: '20321' });
+      await expect(run(fake, ['--json', '--profile', 'thrive', ...flags, 'http://x'])).resolves.toBe(1);
+      expect(fake.readReport()).toMatchObject({
+        error: { code: 'mode-mismatch', message },
+        profile: { headless: isHeadless, name: 'thrive' },
+      });
+      expect(fake.opened).toStrictEqual([]);
+    });
+
     it('refuses with endpoint-unresponsive, or policy-denied when the launch log recorded the policy', async () => {
       const fake = makeRunningFake({ port: '20321', results: { curl: { status: 7 } } });
       await expect(run(fake, ['--json', '--dry-run', '--profile', 'thrive'])).resolves.toBe(1);
@@ -224,6 +237,48 @@ describe('launch', () => {
         code: 'launch-timeout',
         log: `${fake.home}/tmp/thor-chrome-thrive.log`,
         message: "profile 'thrive' started but nothing answers on port 20321 after 1s",
+      });
+    });
+
+    it('refuses with page-open-failed at the first page that does not open, opening none after it', async () => {
+      const fake = makeFakeThorChrome({
+        env: { THOR_CHROME_APP: '/bin/sh' },
+        pageFailures: { 'http://b': 'the browser refused: bad URL' },
+      });
+      fake.makeProfile('thrive');
+      await expect(run(fake, ['--profile', 'thrive', 'http://a', 'http://b', 'http://c'])).resolves.toBe(1);
+      expect(fake.opened.map((page) => page.url)).toStrictEqual(['http://a', 'http://b']);
+      expect(fake.captured.stderr()).toBe(
+        "thor-chrome: could not open http://b in profile 'thrive' on port 20321: the browser refused: bad URL\n" +
+          '  The browser is running; open the page again: thor-chrome --profile thrive http://b\n' +
+          '  Check its state: thor-chrome status thrive\n',
+      );
+    });
+
+    it("relaunches a derived profile in the hint with the launch's own options, leaving the profile unnamed", async () => {
+      const fake = makeFakeThorChrome({
+        env: { THOR_CHROME_APP: '/bin/sh' },
+        pageFailures: { 'http://x': 'refused' },
+      });
+      const args = ['--repo', 'widget', '--branch', 'main', '--port', '9500', '--headless', 'http://x'];
+      await expect(run(fake, args)).resolves.toBe(1);
+      expect(fake.captured.stderr()).toContain(
+        '  The browser is running; open the page again: thor-chrome --repo widget --branch main --port 9500 --headless http://x\n',
+      );
+    });
+
+    it('names the page that did not open under --json', async () => {
+      const fake = makeFakeThorChrome({
+        env: { THOR_CHROME_APP: '/bin/sh' },
+        pageFailures: { 'about:blank': 'the browser did not answer within 5000 ms' },
+      });
+      fake.makeProfile('thrive');
+      await expect(run(fake, ['--json', '--profile', 'thrive'])).resolves.toBe(1);
+      expect(readError(fake)).toStrictEqual({
+        code: 'page-open-failed',
+        message:
+          "could not open about:blank in profile 'thrive' on port 20321: the browser did not answer within 5000 ms",
+        url: 'about:blank',
       });
     });
 

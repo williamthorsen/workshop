@@ -95,7 +95,7 @@ describe('list', () => {
     await expect(run(fake, ['list', '--stale', '--json'])).resolves.toBe(0);
     expect(fake.captured.stdout()).toBe(
       "  INFO  widget-9: stopped, port 20009, last used 2026-01-02, stale: branch '9' is gone\n" +
-        `{"profiles":[{"name":"widget-9","path":"${fake.profilesDir}/widget-9","state":"stopped","pid":null,"port":null,` +
+        `{"profiles":[{"name":"widget-9","path":"${fake.profilesDir}/widget-9","state":"stopped","headless":null,"pid":null,"port":null,` +
         '"derivedPort":20009,"devtools":null,"origin":"derived","repo":"widget","branch":"9","stale":true,"lastUsedAt":"2026-01-02T12:00:00Z"}]}\n',
     );
     expect(fs.existsSync(`${fake.profilesDir}/widget-9`)).toBe(true);
@@ -113,19 +113,19 @@ describe('list', () => {
       'a debugging profile with its port and endpoint',
       '9333',
       0,
-      { state: 'debugging', pid: 4242, port: 9333, devtools: 'http://127.0.0.1:9333/json/version' },
+      { state: 'debugging', headless: false, pid: 4242, port: 9333, devtools: 'http://127.0.0.1:9333/json/version' },
     ],
     [
       'a running profile that owns no port',
       undefined,
       0,
-      { state: 'running-without-port', pid: 4242, port: null, devtools: null },
+      { state: 'running-without-port', headless: false, pid: 4242, port: null, devtools: null },
     ],
     [
       'a declared port that does not answer, without an endpoint',
       '9321',
       7,
-      { state: 'unresponsive', pid: 4242, port: 9321, devtools: null },
+      { state: 'unresponsive', headless: false, pid: 4242, port: 9321, devtools: null },
     ],
   ])('reports %s under --json', async (_description, port, curlStatus, expected) => {
     const portFlag = port === undefined ? '' : ` --remote-debugging-port=${port}`;
@@ -141,12 +141,26 @@ describe('list', () => {
     expect(fake.readReport()['profiles']).toMatchObject([{ name: 'thrive', ...expected }]);
   });
 
+  it('names a headless browser in prose and under --json', async () => {
+    const fake = makeFakeThorChrome({
+      results: {
+        pgrep: { stdout: '4242\n' },
+        'ps -o command= -p 4242': { stdout: 'chrome --remote-debugging-port=9333 --headless\n' },
+      },
+    });
+    makeFrozenProfile(fake, 'thrive', { origin: 'named' });
+    await expect(run(fake, ['list'])).resolves.toBe(0);
+    expect(fake.captured.stdout()).toContain('thrive: debugging headless on port 9333 (PID 4242)');
+    await expect(run(fake, ['list', '--json'])).resolves.toBe(0);
+    expect(fake.captured.stdout()).toContain('"state":"debugging","headless":true,');
+  });
+
   it('reports every profile as one JSON document', async () => {
     const fake = makeFakeThorChrome();
     makeFrozenProfile(fake, 'thrive', { origin: 'named' });
     await expect(run(fake, ['list', '--json'])).resolves.toBe(0);
     expect(fake.captured.stdout()).toBe(
-      `{"profiles":[{"name":"thrive","path":"${fake.profilesDir}/thrive","state":"stopped","pid":null,"port":null,` +
+      `{"profiles":[{"name":"thrive","path":"${fake.profilesDir}/thrive","state":"stopped","headless":null,"pid":null,"port":null,` +
         '"derivedPort":null,"devtools":null,"origin":"named","repo":null,"branch":null,"stale":false,"lastUsedAt":"2026-01-02T12:00:00Z"}]}\n',
     );
   });

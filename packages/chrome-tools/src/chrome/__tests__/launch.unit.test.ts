@@ -8,20 +8,20 @@ import { runThorChrome } from '../thor-chrome.ts';
 
 describe('launch', () => {
   describe('dry run', () => {
-    it('prints the command that would launch the derived profile on the derived port, with a blank tab first', async () => {
+    it('prints the command that would launch the derived profile on the derived port, then the pages, a blank tab first', async () => {
       const fake = makeFakeThorChrome({ env: { THOR_CHROME_APP: '/bin/sh' } });
       await expect(run(fake, ['--dry-run'])).resolves.toBe(0);
       const profileDir = `${fake.profilesDir}/widget-321`;
       expect(fake.captured.stdout()).toBe(
         `/bin/sh --remote-debugging-port=20321 --user-data-dir=${profileDir} --disable-search-engine-choice-screen ` +
-          String.raw`--hide-crash-restore-bubble --no-default-browser-check --no-first-run --window-name=widget-321\ ·\ :20321 ` +
-          `about:blank file://${profileDir}/thor-chrome.html\n`,
+          '--hide-crash-restore-bubble --no-default-browser-check --no-first-run --no-startup-window\n' +
+          `Opens: about:blank\nOpens: file://${profileDir}/thor-chrome.html\n`,
       );
       expect(fake.calls.some((call) => call.program === 'thor-git')).toBe(false);
       expect(fs.existsSync(profileDir)).toBe(false);
     });
 
-    it('reports the command as an array under --json', async () => {
+    it('reports the command and the pages as arrays under --json', async () => {
       const fake = makeFakeThorChrome({ env: { THOR_CHROME_APP: '/bin/sh' } });
       fake.makeProfile('thrive');
       await expect(
@@ -37,15 +37,14 @@ describe('launch', () => {
           '--hide-crash-restore-bubble',
           '--no-default-browser-check',
           '--no-first-run',
-          '--window-name=thrive · :9500',
-          'http://x',
-          `file://${profileDir}/thor-chrome.html`,
+          '--no-startup-window',
         ],
+        pages: ['http://x', `file://${profileDir}/thor-chrome.html`],
         dryRun: true,
       });
     });
 
-    it('goes through open -n outside the GUI login session', async () => {
+    it('goes through open -g -n outside the GUI login session', async () => {
       const app = '/Applications/Fake.app/Contents/MacOS/fake';
       const fake = makeFakeThorChrome({
         env: { THOR_CHROME_APP: '/bin/sh' },
@@ -57,7 +56,7 @@ describe('launch', () => {
       const log = `${fake.home}/tmp/thor-chrome-thrive.log`;
       expect(fake.captured.stdout()).toMatch(
         new RegExp(
-          `^open -n -a ${escapeRegExp(appBundle(fake, app))} --stdout ${escapeRegExp(log)} --stderr ${escapeRegExp(log)} --args --remote-debugging-port=20321 `,
+          `^open -g -n -a ${escapeRegExp(appBundle(fake, app))} --stdout ${escapeRegExp(log)} --stderr ${escapeRegExp(log)} --args --remote-debugging-port=20321 `,
         ),
       );
       expect(fake.calls).toContainEqual({ args: ['--display', appBundle(fake, app)], program: 'codesign' });
@@ -74,6 +73,7 @@ describe('launch', () => {
       expect(fake.readReport()).toStrictEqual({
         command: [
           'open',
+          '-g',
           '-n',
           '-a',
           appBundle(fake, app),
@@ -88,12 +88,27 @@ describe('launch', () => {
           '--hide-crash-restore-bubble',
           '--no-default-browser-check',
           '--no-first-run',
-          '--window-name=thrive · :20321',
-          'about:blank',
-          `file://${profileDir}/thor-chrome.html`,
+          '--no-startup-window',
         ],
+        pages: ['about:blank', `file://${profileDir}/thor-chrome.html`],
         dryRun: true,
       });
+    });
+
+    it('adds --headless and starts directly outside the GUI login session for a headless launch', async () => {
+      const fake = makeFakeThorChrome({
+        env: { THOR_CHROME_APP: '/bin/sh' },
+        results: { launchctl: { stdout: 'Background\n' } },
+      });
+      fake.makeProfile('thrive');
+      await expect(run(fake, ['--json', '--dry-run', '--headless', '--profile', 'thrive'])).resolves.toBe(0);
+      const { command } = fake.readReport();
+      expect(Array.isArray(command) ? command.slice(0, 1).concat(command.slice(-2)) : command).toStrictEqual([
+        '/bin/sh',
+        '--no-startup-window',
+        '--headless',
+      ]);
+      expect(fake.calls.some((call) => call.program === 'codesign')).toBe(false);
     });
 
     it('launches directly when launchctl names no session', async () => {
@@ -106,16 +121,16 @@ describe('launch', () => {
       expect(fake.captured.stdout()).toMatch(/^\/bin\/sh --remote-debugging-port=20321 /);
     });
 
-    it('omits the instance page when the profile is already debugging on the port, and opens the URLs there', async () => {
+    it('starts nothing when the profile is already debugging on the port, and opens only the URLs there', async () => {
       const fake = makeRunningFake({ port: '20321' });
       await expect(run(fake, ['--dry-run', '--profile', 'thrive', 'http://x'])).resolves.toBe(0);
-      expect(fake.captured.stdout()).toMatch(/ http:\/\/x\n$/);
+      expect(fake.captured.stdout()).toBe("profile 'thrive' is running on port 20321\nOpens: http://x\n");
     });
 
-    it('opens neither a blank tab nor the instance page when the launch is forwarded without a URL', async () => {
+    it('reports a null command and no pages under --json for a running profile without a URL', async () => {
       const fake = makeRunningFake({ port: '20321' });
-      await expect(run(fake, ['--dry-run', '--profile', 'thrive'])).resolves.toBe(0);
-      expect(fake.captured.stdout()).toMatch(/ --window-name=thrive\\ ·\\ :20321\n$/);
+      await expect(run(fake, ['--json', '--dry-run', '--profile', 'thrive'])).resolves.toBe(0);
+      expect(fake.readReport()).toStrictEqual({ command: null, pages: [], dryRun: true });
     });
 
     it('takes THOR_CHROME_PROFILE as the profile, and --profile over it', async () => {
@@ -124,7 +139,10 @@ describe('launch', () => {
       fake.makeProfile('atlas');
       await run(fake, ['--dry-run']);
       await run(fake, ['--dry-run', '--profile', 'atlas']);
-      const [first = '', second = ''] = fake.captured.stdout().split('\n', 2);
+      // Each dry run prints its command, then one line per page that it would open
+      const lines = fake.captured.stdout().split('\n');
+      const first = lines[0] ?? '';
+      const second = lines[3] ?? '';
       expect(first).toContain(`--user-data-dir=${fake.profilesDir}/thrive `);
       expect(second).toContain(`--user-data-dir=${fake.profilesDir}/atlas `);
     });
@@ -171,9 +189,10 @@ describe('launch', () => {
       expect(fake.spawned).toHaveLength(1);
       expect(fake.spawned[0]?.program).toBe('/bin/sh');
       expect(fake.spawned[0]?.options).toStrictEqual({ logPath: `${fake.home}/tmp/thor-chrome-widget-321.log` });
-      expect(fake.spawned[0]?.args.slice(-2)).toStrictEqual([
-        'http://localhost:4798',
-        `file://${profileDir}/thor-chrome.html`,
+      expect(fake.spawned[0]?.args.at(-1)).toBe('--no-startup-window');
+      expect(fake.opened).toStrictEqual([
+        { port: '20321', url: 'http://localhost:4798' },
+        { port: '20321', url: `file://${profileDir}/thor-chrome.html` },
       ]);
       expect(fs.readFileSync(`${profileDir}/.thor-chrome.record`, 'utf8')).toBe(
         `origin=derived\nbranch=321\nrepo=widget\nrepo_dir=${fake.workRepoDir}\n`,
@@ -184,7 +203,7 @@ describe('launch', () => {
     it('opens a blank tab ahead of the instance page when no URL is given', async () => {
       const fake = makeFakeThorChrome({ env: { THOR_CHROME_APP: '/bin/sh' } });
       await expect(run(fake, [])).resolves.toBe(0);
-      expect(fake.spawned[0]?.args.slice(-2)).toStrictEqual([
+      expect(fake.opened.map((page) => page.url)).toStrictEqual([
         'about:blank',
         `file://${fake.profilesDir}/widget-321/thor-chrome.html`,
       ]);
@@ -251,11 +270,38 @@ describe('launch', () => {
       );
     });
 
-    it('writes no instance page when the profile is already debugging on the port', async () => {
+    it('starts nothing and opens only the URLs when the profile is already debugging on the port', async () => {
       const fake = makeRunningFake({ port: '20321' });
       await expect(run(fake, ['--profile', 'thrive', 'http://x'])).resolves.toBe(0);
       expect(fake.captured.stdout()).toContain("profile 'thrive' on port 20321");
+      expect(fake.spawned).toHaveLength(0);
+      expect(fake.opened).toStrictEqual([{ port: '20321', url: 'http://x' }]);
       expect(fs.existsSync(`${fake.profilesDir}/thrive/thor-chrome.html`)).toBe(false);
+    });
+
+    it('names a headless launch in prose and under --json', async () => {
+      const fake = makeFakeThorChrome({ env: { THOR_CHROME_APP: '/bin/sh' } });
+      fake.makeProfile('thrive');
+      await expect(run(fake, ['--headless', '--profile', 'thrive'])).resolves.toBe(0);
+      expect(fake.captured.stdout()).toContain("chrome: profile 'thrive' on port 20321 (headless)\n");
+      expect(fake.spawned[0]?.args).toContain('--headless');
+      expect(fake.opened.map((page) => page.url)).toStrictEqual([
+        'about:blank',
+        `file://${fake.profilesDir}/thrive/thor-chrome.html`,
+      ]);
+    });
+
+    it('reports the mode of the running browser for a launch that opens its URLs there', async () => {
+      const fake = makeRunningFake({ isHeadless: true, port: '20321' });
+      await expect(run(fake, ['--json', '--headless', '--profile', 'thrive', 'http://x'])).resolves.toBe(0);
+      expect(fake.readReport()).toMatchObject({ profile: { headless: true, state: 'debugging' } });
+    });
+
+    it('opens nothing when the profile is already debugging and no URL is given', async () => {
+      const fake = makeRunningFake({ port: '20321' });
+      await expect(run(fake, ['--profile', 'thrive'])).resolves.toBe(0);
+      expect(fake.spawned).toHaveLength(0);
+      expect(fake.opened).toStrictEqual([]);
     });
 
     it('records a named profile as named and writes no record for an underived one', async () => {
@@ -292,7 +338,8 @@ describe('launch', () => {
       fs.writeFileSync(log, 'earlier output');
       await expect(run(fake, ['--profile', 'thrive'])).resolves.toBe(0);
       expect(fake.spawned).toHaveLength(0);
-      expect(fake.calls.find((call) => call.program === 'open')?.args.slice(0, 3)).toStrictEqual([
+      expect(fake.calls.find((call) => call.program === 'open')?.args.slice(0, 4)).toStrictEqual([
+        '-g',
         '-n',
         '-a',
         appBundle(fake, app),
@@ -307,7 +354,7 @@ describe('launch', () => {
       fake.makeProfile('thrive');
       await expect(run(fake, ['--profile', 'thrive'])).resolves.toBe(0);
       expect(fs.readFileSync(`${fake.profilesDir}/thrive/thor-chrome.html`, 'utf8')).toContain(
-        `<pre>open -n -a ${appBundle(fake, app)} --stdout `,
+        `<pre>open -g -n -a ${appBundle(fake, app)} --stdout `,
       );
     });
 

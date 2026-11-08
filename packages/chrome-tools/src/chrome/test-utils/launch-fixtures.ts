@@ -18,18 +18,23 @@ export function makeExecutable(fake: FakeThorChrome, app: string): string {
   return file;
 }
 
-/** Builds a fake whose profile `thrive` exists and has a running browser that declares the given port. */
+/**
+ * Builds a fake whose profile `thrive` exists and has a running browser that declares the given port, started headless
+ * when `isHeadless` is set.
+ */
 export function makeRunningFake(options: {
+  isHeadless?: boolean;
   port: string | undefined;
   results?: Record<string, { status?: number; stdout?: string }>;
 }): FakeThorChrome {
   const portFlag = options.port === undefined ? '' : ` --remote-debugging-port=${options.port}`;
+  const headlessFlag = options.isHeadless === true ? ' --headless' : '';
   const fake = makeFakeThorChrome({
     env: { THOR_CHROME_APP: '/bin/sh' },
     results: {
       ...options.results,
       pgrep: { stdout: `${RUNNING_PID}\n` },
-      [`ps -o command= -p ${RUNNING_PID}`]: { stdout: `chrome${portFlag} --user-data-dir=/p/thrive\n` },
+      [`ps -o command= -p ${RUNNING_PID}`]: { stdout: `chrome${portFlag}${headlessFlag} --user-data-dir=/p/thrive\n` },
     },
   });
   fake.makeProfile('thrive');

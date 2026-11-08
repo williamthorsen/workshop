@@ -20,8 +20,9 @@ describe(runThorChrome, () => {
     fake.makeProfile('thrive');
     await expect(run(fake, ['http://localhost:4798', '--dry-run', '--profile', 'thrive'])).resolves.toBe(0);
     await expect(run(fake, ['--json', 'list'])).resolves.toBe(0);
-    const [launchLine = '', listLine = ''] = fake.captured.stdout().split('\n', 2);
-    expect(launchLine).toMatch(/^\/bin\/sh .* http:\/\/localhost:4798 file:/);
+    const [launchLine = '', firstPage = '', , listLine = ''] = fake.captured.stdout().split('\n', 4);
+    expect(launchLine).toMatch(/^\/bin\/sh /);
+    expect(firstPage).toBe('Opens: http://localhost:4798');
     expect(listLine).toMatch(/^\{"profiles":\[/);
   });
 
@@ -29,7 +30,9 @@ describe(runThorChrome, () => {
     const fake = makeFakeThorChrome({ env: { THOR_CHROME_APP: '/bin/sh' } });
     fake.makeProfile('thrive');
     await expect(run(fake, ['launch', '--dry-run', '--profile', 'thrive', 'list'])).resolves.toBe(0);
-    expect(fake.captured.stdout()).toContain(` list file://${fake.profilesDir}/thrive/thor-chrome.html\n`);
+    expect(fake.captured.stdout()).toContain(
+      `\nOpens: list\nOpens: file://${fake.profilesDir}/thrive/thor-chrome.html\n`,
+    );
   });
 
   it('refuses an unknown verb with status 2, as prose or as a JSON document', async () => {

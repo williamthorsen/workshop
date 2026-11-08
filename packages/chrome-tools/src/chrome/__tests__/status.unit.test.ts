@@ -10,7 +10,7 @@ describe('status', () => {
     const fake = makeFakeThorChrome();
     await expect(run(fake, ['status', '--json'])).resolves.toBe(0);
     expect(fake.captured.stdout()).toBe(
-      `{"profile":{"name":"widget-321","path":"${fake.profilesDir}/widget-321","state":"stopped","pid":null,"port":null,` +
+      `{"profile":{"name":"widget-321","path":"${fake.profilesDir}/widget-321","state":"stopped","headless":null,"pid":null,"port":null,` +
         '"derivedPort":null,"devtools":null,"origin":null,"repo":null,"branch":null,"stale":null,"lastUsedAt":null},' +
         '"endpoint":"http://127.0.0.1:20321"}\n',
     );
@@ -27,6 +27,21 @@ describe('status', () => {
     fake.makeProfile('thrive');
     await expect(run(fake, ['status', 'thrive'])).resolves.toBe(0);
     expect(fake.captured.stdout()).toBe('thrive: debugging, endpoint http://127.0.0.1:9333\n');
+  });
+
+  it('names a headless browser in prose and under --json', async () => {
+    const fake = makeFakeThorChrome({
+      results: {
+        pgrep: { stdout: '4242\n' },
+        'ps -o command= -p 4242': { stdout: 'chrome --remote-debugging-port=9333 --headless\n' },
+      },
+    });
+    fake.makeProfile('thrive');
+    await expect(run(fake, ['status', 'thrive'])).resolves.toBe(0);
+    await expect(run(fake, ['status', 'thrive', '--json'])).resolves.toBe(0);
+    const [prose = '', json = ''] = fake.captured.stdout().split('\n', 2);
+    expect(prose).toBe('thrive: debugging (headless), endpoint http://127.0.0.1:9333');
+    expect(JSON.parse(json)).toMatchObject({ profile: { headless: true, state: 'debugging' } });
   });
 
   it.each([
