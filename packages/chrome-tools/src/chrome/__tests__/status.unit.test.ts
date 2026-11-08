@@ -12,7 +12,7 @@ describe('status', () => {
     expect(fake.captured.stdout()).toBe(
       `{"profile":{"name":"widget-321","path":"${fake.profilesDir}/widget-321","state":"stopped","pid":null,"port":null,` +
         '"devtools":null,"origin":null,"repo":null,"branch":null,"stale":null,"lastUsedAt":null},' +
-        '"endpoint":"http://127.0.0.1:9321"}\n',
+        '"endpoint":"http://127.0.0.1:20321"}\n',
     );
     expect(fs.existsSync(`${fake.profilesDir}/widget-321`)).toBe(false);
   });
@@ -36,7 +36,7 @@ describe('status', () => {
       'unresponsive',
       'http://127.0.0.1:9333',
     ],
-    ['the derived port for a browser running without one', 'chrome', 'running-without-port', 'http://127.0.0.1:9321'],
+    ['the derived port for a browser running without one', 'chrome', 'running-without-port', 'http://127.0.0.1:20321'],
   ])('reports %s', async (_description, command, state, endpoint) => {
     const fake = makeFakeThorChrome({
       results: {
@@ -66,7 +66,7 @@ describe('status', () => {
   it('reports an unknown state and names the cause', async () => {
     const fake = makeFakeThorChrome({ results: { pgrep: { status: 3 } } });
     await expect(run(fake, ['status', 'thrive'])).resolves.toBe(0);
-    expect(fake.captured.stdout()).toBe('thrive: unknown, endpoint http://127.0.0.1:9321\n');
+    expect(fake.captured.stdout()).toBe('thrive: unknown, endpoint http://127.0.0.1:20321\n');
     expect(fake.captured.stderr()).toContain('  Run thor-chrome status from a terminal outside the sandbox.\n');
   });
 
@@ -76,7 +76,7 @@ describe('status', () => {
     await expect(run(fake, ['status', 'thrive', '--json'])).resolves.toBe(0);
     expect(fake.readReport()).toMatchObject({
       profile: { name: 'thrive', state: 'unknown', pid: null, port: null, devtools: null },
-      endpoint: 'http://127.0.0.1:9321',
+      endpoint: 'http://127.0.0.1:20321',
     });
     expect(fake.captured.stderr()).toBe('');
   });

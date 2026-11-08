@@ -1,6 +1,6 @@
 import { DEFAULT_BROWSER } from './browser.ts';
 import { DEFAULT_LAUNCH_TIMEOUT_SECONDS } from './launch.ts';
-import { DEFAULT_PORT, MAX_DERIVED_PORT, MIN_DERIVED_PORT } from './ports.ts';
+import { DEFAULT_PORT, HASH_PORT_RANGE, TICKET_PORT_RANGE } from './ports.ts';
 import { DEFAULT_PROFILE } from './profiles.ts';
 import { DEFAULT_QUIT_TIMEOUT_SECONDS } from './quit.ts';
 
@@ -56,8 +56,11 @@ Options:
                   without --create, and quit and delete, refuse that fallback
                   when the profile does not exist, naming the profile to pass)
       --port      Remote-debugging port (default: derived from the working
-                  directory's branch within ${MIN_DERIVED_PORT}-${MAX_DERIVED_PORT}, so
-                  branch '321' debugs on 9321; ${DEFAULT_PORT} with no branch)
+                  directory's repository and branch. A branch that encodes a
+                  ticket gets ${TICKET_PORT_RANGE.min} plus the ticket, wrapped within
+                  ${TICKET_PORT_RANGE.min}-${TICKET_PORT_RANGE.max}, so branch '321' debugs on 20321; any
+                  other branch gets a hash of '<repo>/<branch>' within
+                  ${HASH_PORT_RANGE.min}-${HASH_PORT_RANGE.max}; ${DEFAULT_PORT} with no branch)
       --browser   Browser to launch: 'chrome', or 'chrome-for-testing' for the
                   build that Playwright installs, which Chrome's managed
                   preferences do not govern (default: $THOR_CHROME_BROWSER,

@@ -164,7 +164,7 @@ export interface RunningFakeThorChrome extends FakeThorChrome {
 }
 
 export interface RunningFakeThorChromeOptions extends Pick<FakeThorChromeOptions, 'isKillRefused'> {
-  /** Gives each browser a debugging port, 9000 plus its index, as a thor-chrome launch does. */
+  /** Gives each browser a debugging port, 9000 plus its index. */
   hasPorts?: boolean;
 }
 

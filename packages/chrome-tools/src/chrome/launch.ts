@@ -12,7 +12,7 @@ import {
 import { describePortListener, findBrowserPid, probeDevtools, readDebuggingPort } from './browser-process.ts';
 import { composeInstanceLabel, INSTANCE_PAGE_FILE, writeInstancePage } from './instance-page.ts';
 import { type Invocation, PROCESS_LIST_RECOVERY_HINT, refuse, requireCommand, runTolerantly } from './invocation.ts';
-import { assertValidPort, MAX_DERIVED_PORT, MIN_DERIVED_PORT, resolvePort } from './ports.ts';
+import { assertValidPort, resolvePort, TICKET_PORT_RANGE } from './ports.ts';
 import { assertProfileNotUnderived, resolveDefaultProfile, writeProfileRecord } from './profiles.ts';
 import { formatCommandLine, renderProfile, writeJson, writeProse } from './render.ts';
 import { readTimeoutSeconds } from './timeouts.ts';
@@ -71,7 +71,7 @@ export async function launchProfile(invocation: Invocation, options: LaunchOptio
 
   // A derived name contains no typo, so only a name given on the command line has to be confirmed with --create
   if (!isDirectory(profileDir) && !options.isCreate && invocation.origin !== 'derived') {
-    const range = `--min ${MIN_DERIVED_PORT} --max ${MAX_DERIVED_PORT}`;
+    const range = `--min ${TICKET_PORT_RANGE.min} --max ${TICKET_PORT_RANGE.max}`;
     assertProfileNotUnderived(
       invocation,
       // Name the package in a shell comment, which keeps the command pasteable, since thor-chrome does not install it

@@ -84,7 +84,7 @@ describe('launch', () => {
       expect(fake.captured.stderr()).toBe(
         "thor-chrome: no repository or branch resolved from the working directory, so the profile fell back to 'default'\n" +
           '  Name the profile instead:\n' +
-          '    thor-chrome --profile <repo>-<branch> --port "$(thor-git branch-number <branch> --min 9000 --max 9999)"  # thor-git is in @williamthorsen/git-tools\n',
+          '    thor-chrome --profile <repo>-<branch> --port "$(thor-git branch-number <branch> --min 20000 --max 29999)"  # thor-git is in @williamthorsen/git-tools\n',
       );
     });
 
@@ -121,17 +121,17 @@ describe('launch', () => {
       const fake = makeRunningFake({ port: '9333' });
       await expect(run(fake, ['--json', '--dry-run', '--profile', 'thrive'])).resolves.toBe(1);
       expect(fake.readReport()).toMatchObject({
-        error: { code: 'port-mismatch', message: "profile 'thrive' is already debugging on port 9333, not 9321" },
+        error: { code: 'port-mismatch', message: "profile 'thrive' is already debugging on port 9333, not 20321" },
         profile: { name: 'thrive', pid: 4242, port: 9333, state: 'debugging' },
       });
     });
 
     it('refuses with endpoint-unresponsive, or policy-denied when the launch log recorded the policy', async () => {
-      const fake = makeRunningFake({ port: '9321', results: { curl: { status: 7 } } });
+      const fake = makeRunningFake({ port: '20321', results: { curl: { status: 7 } } });
       await expect(run(fake, ['--json', '--dry-run', '--profile', 'thrive'])).resolves.toBe(1);
       expect(readError(fake)).toMatchObject({ code: 'endpoint-unresponsive' });
 
-      const denied = makeRunningFake({ port: '9321', results: { curl: { status: 7 } } });
+      const denied = makeRunningFake({ port: '20321', results: { curl: { status: 7 } } });
       const log = `${denied.home}/tmp/thor-chrome-thrive.log`;
       fs.writeFileSync(log, 'DevTools remote debugging is disallowed by the system admin.\n');
       await expect(run(denied, ['--json', '--dry-run', '--profile', 'thrive'])).resolves.toBe(1);
@@ -143,7 +143,7 @@ describe('launch', () => {
     });
 
     it("names chrome-for-testing rather than a retry when policy blocked the running profile's port", async () => {
-      const fake = makeRunningFake({ port: '9321', results: { curl: { status: 7 } } });
+      const fake = makeRunningFake({ port: '20321', results: { curl: { status: 7 } } });
       fs.writeFileSync(
         `${fake.home}/tmp/thor-chrome-thrive.log`,
         'DevTools remote debugging is disallowed by the system admin.\n',
@@ -164,7 +164,7 @@ describe('launch', () => {
       expect(readError(fake)).toStrictEqual({
         code: 'port-busy',
         listener: 'no"de (PID 4242, user wthorsen)',
-        message: 'port 9321 is held by no"de (PID 4242, user wthorsen)',
+        message: 'port 20321 is held by no"de (PID 4242, user wthorsen)',
       });
       expect(fake.captured.stdout()).toContain(String.raw`"listener":"no\"de (PID 4242, user wthorsen)"`);
     });
@@ -198,7 +198,7 @@ describe('launch', () => {
       expect(readError(fake)).toStrictEqual({
         code: 'launch-timeout',
         log: `${fake.home}/tmp/thor-chrome-thrive.log`,
-        message: "profile 'thrive' started but nothing answers on port 9321 after 1s",
+        message: "profile 'thrive' started but nothing answers on port 20321 after 1s",
       });
     });
 

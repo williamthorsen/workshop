@@ -78,7 +78,7 @@ describe('thor-chrome', () => {
     expect(Object.keys(readRecord(report))).toStrictEqual(['profile', 'endpoint']);
     expect(Object.keys(readRecord(readRecord(report)['profile']))).toStrictEqual(PROFILE_FIELDS);
     expect(report).toMatchObject({
-      endpoint: 'http://127.0.0.1:9960',
+      endpoint: 'http://127.0.0.1:32834',
       profile: {
         name: 'clone-feature',
         path: `${environment.home}/.local/share/thor-chrome/profiles/clone-feature`,
