@@ -8,7 +8,6 @@ import { rdyConfigTemplate, rdyKitTemplate } from '../templates.ts';
 const CONFIG_PATH = '.config/readyup.config.ts';
 const KIT_PATH = '.readyup/kits/default.ts';
 
-// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
   makeFixture(() => createTempTree({}, { prefix: 'rdy-init-' })),

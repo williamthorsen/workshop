@@ -6,7 +6,6 @@ import { describe, expect, it as baseIt } from 'vitest';
 
 import { computeHash, fileMatchesHash, hashToRecordedLength, isRecordedHash } from '../hashing.ts';
 
-// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
   makeFixture(() => createTempTree({}, { prefix: 'rdy-hash-' })),

@@ -49,7 +49,6 @@ import { routeCommand } from '../route.ts';
 import { parsedRunArgs } from '../test-utils/parsedRunArgs.ts';
 import { routeCli } from '../test-utils/routeCli.ts';
 
-// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
   makeFixture(() => createTempTree({}, { prefix: 'rdy-route-' })),

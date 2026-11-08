@@ -18,7 +18,6 @@ import { ListOutputSchema } from '../../schemas/listOutputSchema.ts';
 import { parseConfiguredSource } from '../../sources/parseConfiguredSource.ts';
 import { listCommand } from '../listCommand.ts';
 
-// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
   makeFixture(() =>

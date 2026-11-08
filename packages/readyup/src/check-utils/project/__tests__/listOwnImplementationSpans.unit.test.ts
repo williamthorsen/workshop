@@ -8,7 +8,6 @@ import type { ProjectSource } from '../readTrackedSources.ts';
 const EXPORT_NAMES = ['describeError'];
 const PACKAGE_NAME = '@scope/errors';
 
-// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
   makeFixture(() => createTempTree({}, { prefix: 'rdy-own-impl-' })),

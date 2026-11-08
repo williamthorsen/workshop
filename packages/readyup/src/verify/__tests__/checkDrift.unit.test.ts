@@ -6,7 +6,6 @@ import { computeHash } from '../../check-utils/hashing.ts';
 import { checkDrift } from '../checkDrift.ts';
 import { hashBytes } from '../targetHash.ts';
 
-// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
   makeFixture(() => createTempTree({}, { prefix: 'drift-test-' })),

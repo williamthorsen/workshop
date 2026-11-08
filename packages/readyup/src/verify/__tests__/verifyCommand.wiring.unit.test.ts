@@ -15,7 +15,6 @@ import { verifyCommand } from '../verifyCommand.ts';
 const OK = richFormatter.tokens.passed.text;
 const FAILED = richFormatter.tokens.failedError.text;
 
-// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
   makeFixture(() => createTempTree({}, { prefix: 'verify-integ-' })),

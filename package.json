@@ -25,7 +25,7 @@
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "@vitest/coverage-v8": "catalog:",
     "@vitest/eslint-plugin": "1.6.28",
-    "@williamthorsen/eslint-config-typescript": "20.2.0",
+    "@williamthorsen/eslint-config-typescript": "21.0.0",
     "@williamthorsen/nmr": "catalog:",
     "@williamthorsen/release-kit": "17.0.1",
     "@williamthorsen/strict-lint": "14.2.1",

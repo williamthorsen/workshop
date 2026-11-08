@@ -11,7 +11,6 @@ import type { ResolvedKitEntry } from '../ResolvedKitEntry.ts';
 import { resolveKitSources } from '../resolveKitSources.ts';
 import { runCommand } from '../runCommand.ts';
 
-// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
   makeFixture(() => createTempTree({}, { prefix: 'sources-run-' })),

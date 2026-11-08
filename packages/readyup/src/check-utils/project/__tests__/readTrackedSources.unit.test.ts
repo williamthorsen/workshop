@@ -55,7 +55,6 @@ import { readSourceText, readTrackedSources } from '../readTrackedSources.ts';
 import { withSweepRecorder } from '../sweepRecorder.ts';
 import { createRecorder } from '../test-utils/sweep-recording.ts';
 
-// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
   makeFixture(() => createTempTree({}, { prefix: 'rdy-sources-' })),

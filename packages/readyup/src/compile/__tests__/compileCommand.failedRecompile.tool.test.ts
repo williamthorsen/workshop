@@ -11,7 +11,6 @@ const BUNDLE_PATH = `${KITS_DIR}/demo.js`;
 const MANIFEST_PATH = '.readyup/manifest.json';
 const SOURCE_PATH = `${KITS_DIR}/demo.ts`;
 
-// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
   makeFixture(() =>

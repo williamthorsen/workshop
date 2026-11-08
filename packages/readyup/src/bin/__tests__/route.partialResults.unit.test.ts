@@ -10,7 +10,6 @@ const PASSING_KIT = `export default { checklists: [{ name: 'main', checks: [{ na
 /** A kit whose single error-severity check fails. */
 const FAILING_KIT = `export default { checklists: [{ name: 'main', checks: [{ name: 'nope', check: () => false }] }] };\n`;
 
-// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
   { scope: 'file' },

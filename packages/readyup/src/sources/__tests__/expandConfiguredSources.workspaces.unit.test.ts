@@ -6,7 +6,6 @@ import { createUncachedRemoteContext } from '../../test-utils/createUncachedRemo
 import { expandConfiguredSources, type SourceKit } from '../expandConfiguredSources.ts';
 import { parseConfiguredSource } from '../parseConfiguredSource.ts';
 
-// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
   // A tree per test: Workspace discovery caches its result for the life of the process, keyed by directory.

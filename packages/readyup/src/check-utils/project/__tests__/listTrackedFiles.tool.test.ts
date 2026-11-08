@@ -8,7 +8,6 @@ import { listTrackedFiles } from '../listTrackedFiles.ts';
 
 // Separated from the module's unit suite, which stubs git: Only real git escapes and quotes a path,
 // so only real git can show that `-z` defeats it.
-// eslint-disable-next-line vitest/consistent-test-it -- the rule reads this builder call as a top-level test.
 const it = baseIt.extend(
   'temp',
   makeFixture(() => createTempTree({}, { prefix: 'rdy-tracked-' })),
