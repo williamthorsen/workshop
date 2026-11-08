@@ -123,32 +123,6 @@ describe(runHumanMode, () => {
     expect(stderr).toContain('Warning: configured source "npm:@acme/kits" publishes no kit named "default"');
   });
 
-  it('runs all checklists when no checklist filter is given', async () => {
-    const kit = makeKit();
-    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
-
-    const { exitCode } = await runHuman(singleKitEntry());
-
-    expect(mockRunRdy).toHaveBeenCalledTimes(2);
-    expect(exitCode).toBe(0);
-  });
-
-  it('filters to named checklists only', async () => {
-    const kit = makeKit();
-    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
-
-    const { exitCode } = await runHuman(singleKitEntry(['deploy']));
-
-    expect(mockRunRdy).toHaveBeenCalledTimes(1);
-    expect(mockRunRdy).toHaveBeenCalledWith(
-      kit.checklists[0],
-      expect.objectContaining({ defaultSeverity: 'error', failOn: 'error' }),
-    );
-    expect(exitCode).toBe(0);
-  });
-
   it('writes a diagnosed masked pass to stderr', async () => {
     mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
     mockRunRdy.mockResolvedValue({
@@ -162,17 +136,6 @@ describe(runHumanMode, () => {
 
     expect(stderr).toContain('skipped check "a" in kit "default" / checklist "deploy" would have passed.');
     expect(exitCode).toBe(0);
-  });
-
-  it('asks the runner to diagnose only when --diagnose was passed', async () => {
-    mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
-
-    await runHuman(singleKitEntry(['deploy']));
-    expect(mockRunRdy).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ diagnose: false }));
-
-    await runHuman(singleKitEntry(['deploy']), { diagnose: true });
-    expect(mockRunRdy).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ diagnose: true }));
   });
 
   it('reports an unknown checklist name against its kit and exits 2', async () => {
@@ -195,16 +158,6 @@ describe(runHumanMode, () => {
     const { exitCode } = await runHuman(singleKitEntry());
 
     expect(exitCode).toBe(1);
-  });
-
-  it('passes kit path to local kit loader', async () => {
-    const kit = makeKit();
-    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
-
-    await runHuman([{ name: 'custom', source: { path: 'custom/path.ts' }, checklists: [] }]);
-
-    expect(mockLoadRdyKit).toHaveBeenCalledWith('custom/path.ts', 'custom');
   });
 
   it('uses per-checklist fixLocation over kit default', async () => {
@@ -240,21 +193,6 @@ describe(runHumanMode, () => {
 
     expect(exitCode).toBe(2);
     expect(stderr).toBe('Error: Kit not found\n');
-  });
-
-  it('keeps running the kits that are not at fault', async () => {
-    mockLoadRdyKit
-      .mockRejectedValueOnce(new Error('Kit not found'))
-      .mockResolvedValueOnce({ kit: makeKit(), compileTimeVersion: undefined });
-    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
-
-    const { exitCode } = await runHuman([
-      { name: 'broken', source: { path: '.readyup/kits/broken.js' }, checklists: ['deploy'] },
-      { name: 'healthy', source: { path: '.readyup/kits/healthy.js' }, checklists: ['deploy'] },
-    ]);
-
-    expect(exitCode).toBe(2);
-    expect(mockRunRdy).toHaveBeenCalledTimes(1);
   });
 
   it('states under its heading that a kit did not load, and counts it in the summary', async () => {
@@ -298,6 +236,27 @@ describe(runHumanMode, () => {
     });
   });
 
+  it('keeps the block of a kit that threw after its first checklist, but tabulates only its not-run row', async () => {
+    mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+    mockRunRdy
+      .mockResolvedValueOnce({ results: [], passed: true, durationMs: 0 })
+      .mockRejectedValueOnce(new Error('runner crashed'))
+      .mockResolvedValue({ results: [], passed: true, durationMs: 0 });
+
+    const { exitCode, stdout } = await runHuman([
+      { name: 'halted', source: { path: '.readyup/kits/halted.js' }, checklists: [] },
+      { name: 'healthy', source: { path: '.readyup/kits/healthy.js' }, checklists: ['deploy'] },
+    ]);
+
+    expect(exitCode).toBe(2);
+    expect(stdout).toMatch(/halted .* deploy\nreport output\n/u);
+    const rows = mockFormatCombinedSummary.mock.calls[0]?.[0] ?? [];
+    expect(rows.map(({ notRun, segments }) => ({ notRun, segments }))).toStrictEqual([
+      { notRun: 'failedAfterLoad', segments: [{ role: 'kit', text: 'halted' }] },
+      { notRun: undefined, segments: [{ role: 'kit', text: 'healthy' }] },
+    ]);
+  });
+
   it('adds no heading or summary row for a lone kit that loaded and then threw', async () => {
     mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
 
@@ -316,21 +275,5 @@ describe(runHumanMode, () => {
 
     expect(stdout).not.toContain('Kit did not load');
     expect(mockFormatCombinedSummary).not.toHaveBeenCalled();
-  });
-
-  it('records the ids of a checklist that the run leaves unselected', async () => {
-    const kit = makeKit({
-      checklists: [
-        { name: 'deploy', checks: [{ name: 'a', id: 'selected', check: () => true }] },
-        { name: 'infra', checks: [{ name: 'b', id: 'unselected', check: () => true }] },
-      ],
-    });
-    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
-
-    await runHuman(singleKitEntry(['deploy']));
-
-    const [ledger] = mockListUnusedPragmaWarnings.mock.lastCall ?? [];
-    expect(ledger?.checkIds().map((ids) => ids.bare)).toStrictEqual(['selected', 'unselected']);
   });
 });

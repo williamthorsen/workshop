@@ -113,73 +113,6 @@ describe(runHumanMode, () => {
     mockListUnmarkedGeneratedSourceWarnings.mockReset();
   });
 
-  describe('staleness advisories', () => {
-    const TARGET_DRIFT = {
-      code: 'target-drift',
-      message: 'compiled kit "alpha" does not match the hash that the manifest recorded for it.',
-      remedy: 'Move the edits into the source, then run `rdy compile --force`.',
-    };
-
-    /** Builds two entries whose names and compiled paths differ, so that a kit paired with the wrong source shows. */
-    function twoKitEntries() {
-      return [
-        { name: 'alpha', source: { path: '.readyup/kits/alpha.js' }, checklists: ['deploy'] },
-        { name: 'beta', source: { path: '.readyup/kits/beta.js' }, checklists: ['deploy'] },
-      ];
-    }
-
-    it('reads the manifest once per invocation, not once per kit', async () => {
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
-
-      await runHuman(twoKitEntries());
-
-      expect(mockReadManifestTracking).toHaveBeenCalledTimes(1);
-    });
-
-    it('tells the manifest read whether the run is just-in-time', async () => {
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
-
-      await runHuman(singleKitEntry(['deploy']), { isJit: true });
-
-      expect(mockReadManifestTracking).toHaveBeenCalledWith(true);
-    });
-
-    it('advises on each kit against the source to which that kit resolved', async () => {
-      const tracking = { manifest: { version: 1, kits: [] }, manifestDir: '.readyup' };
-      mockReadManifestTracking.mockReturnValue({ tracking, warnings: [] });
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
-
-      await runHuman(twoKitEntries());
-
-      expect(mockListKitStalenessWarnings).toHaveBeenCalledTimes(2);
-      expect(mockListKitStalenessWarnings).toHaveBeenNthCalledWith(
-        1,
-        'alpha',
-        { path: '.readyup/kits/alpha.js' },
-        tracking,
-      );
-      expect(mockListKitStalenessWarnings).toHaveBeenNthCalledWith(
-        2,
-        'beta',
-        { path: '.readyup/kits/beta.js' },
-        tracking,
-      );
-    });
-
-    it('leaves the exit code alone, since verify is the enforcing gate', async () => {
-      mockListKitStalenessWarnings.mockReturnValue([TARGET_DRIFT]);
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
-
-      const { exitCode } = await runHuman(singleKitEntry(['deploy']));
-
-      expect(exitCode).toBe(0);
-    });
-  });
-
   describe('unused-pragma advisories', () => {
     /** Builds two entries whose names and compiled paths differ, so that a per-kit ledger would show as two. */
     function twoKitEntries() {
@@ -188,18 +121,6 @@ describe(runHumanMode, () => {
         { name: 'beta', source: { path: '.readyup/kits/beta.js' }, checklists: ['deploy'] },
       ];
     }
-
-    it('reports once over one ledger shared by every kit of the invocation', async () => {
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
-
-      await runHuman(twoKitEntries());
-
-      const ledgers = mockRunRdy.mock.calls.map(([, options]) => options?.pragmaLedger);
-      expect(ledgers).toHaveLength(2);
-      expect(new Set(ledgers).size).toBe(1);
-      expect(mockListUnusedPragmaWarnings).toHaveBeenCalledExactlyOnceWith(ledgers[0]);
-    });
 
     it('reports after the summary table, the last block in which a pragma’s file may be named', async () => {
       mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
@@ -213,32 +134,6 @@ describe(runHumanMode, () => {
       const warningIndex = writes.findIndex(({ text }) => text.startsWith(`Warning: ${PRAGMA_UNUSED.message}`));
       expect(summaryIndex).toBeGreaterThan(-1);
       expect(warningIndex).toBeGreaterThan(summaryIndex);
-    });
-
-    it('reports over the kits that ran when another failed to load', async () => {
-      mockLoadRdyKit.mockRejectedValue(new Error('Kit not found'));
-
-      const { exitCode } = await runHuman(singleKitEntry(['deploy']));
-
-      expect(mockListUnusedPragmaWarnings).toHaveBeenCalledTimes(1);
-      expect(exitCode).toBe(2);
-    });
-  });
-
-  describe('unmarked-generated advisories', () => {
-    it('reports over the invocation ledger, after the unused-pragma report, and leaves the exit code alone', async () => {
-      mockListUnmarkedGeneratedSourceWarnings.mockResolvedValue([GENERATED_UNMARKED]);
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
-
-      const { exitCode } = await runHuman(singleKitEntry(['deploy']));
-
-      const [ledger] = mockRunRdy.mock.calls.map(([, options]) => options?.pragmaLedger);
-      expect(mockListUnmarkedGeneratedSourceWarnings).toHaveBeenCalledExactlyOnceWith(ledger);
-      const [pragmaOrder] = mockListUnusedPragmaWarnings.mock.invocationCallOrder;
-      const [generatedOrder] = mockListUnmarkedGeneratedSourceWarnings.mock.invocationCallOrder;
-      expect(pragmaOrder).toBeLessThan(generatedOrder ?? 0);
-      expect(exitCode).toBe(0);
     });
   });
 

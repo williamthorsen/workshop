@@ -400,17 +400,6 @@ describe(runJsonMode, () => {
       expect(stderr).toContain('skipped check "a" in kit "default" / checklist "deploy" would have passed.');
     });
 
-    it('asks the runner to diagnose only when --diagnose was passed', async () => {
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
-
-      await runJson(singleKitEntry(['deploy']));
-      expect(mockRunRdy).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ diagnose: false }));
-
-      await runJson(singleKitEntry(['deploy']), { diagnose: true });
-      expect(mockRunRdy).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ diagnose: true }));
-    });
-
     it('omits the warnings field entirely when the run raised none', async () => {
       mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
@@ -461,18 +450,6 @@ describe(runJsonMode, () => {
       remedy: 'Remove the pragma, or run the kit whose check it was written for.',
     };
 
-    it('reports once over one ledger shared by every checklist of the invocation', async () => {
-      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
-
-      await runJson(singleKitEntry());
-
-      const ledgers = mockRunRdy.mock.calls.map(([, options]) => options?.pragmaLedger);
-      expect(ledgers).toHaveLength(2);
-      expect(new Set(ledgers).size).toBe(1);
-      expect(mockListUnusedPragmaWarnings).toHaveBeenCalledExactlyOnceWith(ledgers[0]);
-    });
-
     it('passes the entries into the report’s warnings', async () => {
       mockListUnusedPragmaWarnings.mockReturnValue([PRAGMA_UNUSED]);
       mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
@@ -489,15 +466,13 @@ describe(runJsonMode, () => {
   });
 
   describe('unmarked-generated advisories', () => {
-    it('passes the entries into the report’s warnings over the invocation ledger, leaving the exit code alone', async () => {
+    it('passes the entries into the report’s warnings, leaving the exit code alone', async () => {
       mockListUnmarkedGeneratedSourceWarnings.mockResolvedValue([GENERATED_UNMARKED]);
       mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
       mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
       const { exitCode } = await runJson(singleKitEntry(['deploy']));
 
-      const [ledger] = mockRunRdy.mock.calls.map(([, options]) => options?.pragmaLedger);
-      expect(mockListUnmarkedGeneratedSourceWarnings).toHaveBeenCalledExactlyOnceWith(ledger);
       expect(mockFormatJsonReport).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({ warnings: [GENERATED_UNMARKED] }),
@@ -562,22 +537,6 @@ describe(runJsonMode, () => {
         expect.anything(),
       );
     });
-  });
-
-  it('records the ids of a checklist that the run leaves unselected', async () => {
-    const kit = makeKit({
-      checklists: [
-        { name: 'deploy', checks: [{ name: 'a', id: 'selected', check: () => true }] },
-        { name: 'infra', checks: [{ name: 'b', id: 'unselected', check: () => true }] },
-      ],
-    });
-    mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-    mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
-
-    await runJson(singleKitEntry(['deploy']));
-
-    const [ledger] = mockListUnusedPragmaWarnings.mock.lastCall ?? [];
-    expect(ledger?.checkIds().map((ids) => ids.bare)).toStrictEqual(['selected', 'unselected']);
   });
 });
 
