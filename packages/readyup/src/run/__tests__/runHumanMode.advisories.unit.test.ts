@@ -71,7 +71,7 @@ vi.mock(import('../kit-staleness.ts'), () => ({
   listKitStalenessWarnings: mockListKitStalenessWarnings,
 }));
 
-// Mocked so that no case reads the sources named by the ledger; what the report itself writes is covered by its
+// Mocked so that no case reads the sources named by the ledger; what the report itself returns is covered by its
 // own tests.
 vi.mock(import('../pragma-report.ts'), () => ({
   listUnusedPragmaWarnings: mockListUnusedPragmaWarnings,
