@@ -5,7 +5,14 @@ import { readRepoDir, readRepoName } from '../git/repos.ts';
 import { toKebabCase } from '../portable/to-kebab-case.ts';
 import { isDirectory } from '../shared/paths.ts';
 import type { ProfileStateName } from './browser-process.ts';
-import { type Invocation, PROCESS_LIST_RECOVERY_HINT, type ProfileRef, refuse, runTolerantly } from './invocation.ts';
+import {
+  type Invocation,
+  PROCESS_LIST_RECOVERY_HINT,
+  type ProfileRef,
+  refuse,
+  runTolerantly,
+  type WorkContext,
+} from './invocation.ts';
 
 /** A profile's provenance and last use. Every field but `lastUsed` is unset for a profile without a record. */
 export interface ProfileFacts {
@@ -16,6 +23,12 @@ export interface ProfileFacts {
   repo: string | undefined;
   repoDir: string | undefined;
   stale: boolean | undefined;
+}
+
+/** Values given on the command line in place of the branch and the repository name that git would report. */
+export interface WorkOverrides {
+  branch?: string | undefined;
+  repo?: string | undefined;
 }
 
 export const DEFAULT_PROFILE = 'default';
@@ -113,12 +126,14 @@ export function listProfileNames(invocation: Invocation): string[] | undefined {
 /**
  * Resolves the profile on which a verb acts and records it, with its origin and the working context, on the
  * invocation: the name given, else `THOR_CHROME_PROFILE`, else the name derived from the working directory's
- * repository and branch, else the default.
+ * repository and branch, or from the overrides that stand in for them, else the default.
  */
-export function resolveDefaultProfile(invocation: Invocation, given: string): ProfileRef {
-  // Both defaults come from the working directory's repository, which is not the one containing this command
-  const { run } = invocation.deps;
-  invocation.work = { branch: readCurrentBranch(run), repo: readRepoName(run), repoDir: readRepoDir(run) };
+export function resolveDefaultProfile(
+  invocation: Invocation,
+  given: string,
+  overrides: WorkOverrides = {},
+): ProfileRef {
+  invocation.work = readWorkContext(invocation, overrides);
   const { branch, repo } = invocation.work;
 
   let name = given === '' ? (invocation.deps.env['THOR_CHROME_PROFILE'] ?? '') : given;
@@ -141,8 +156,7 @@ export function resolveDefaultProfile(invocation: Invocation, given: string): Pr
  * named one. Refuses a working directory from which no name derives.
  */
 export function resolveDerivedProfile(invocation: Invocation, repairCommand: string): ProfileRef {
-  const { run } = invocation.deps;
-  invocation.work = { branch: readCurrentBranch(run), repo: readRepoName(run), repoDir: readRepoDir(run) };
+  invocation.work = readWorkContext(invocation, {});
   const { branch, repo } = invocation.work;
   const name = branch === undefined || repo === undefined ? '' : composeProfileName(repo, branch);
   invocation.origin = name === '' ? 'underived' : 'derived';
@@ -265,6 +279,21 @@ function readRecord(file: string): Array<[string, string]> {
     if (index === -1 || index === line.length - 1) return [];
     return [[line.slice(0, index), line.slice(index + 1)]];
   });
+}
+
+/**
+ * Reads the working context from which the defaults derive, letting each override stand in for the value that git
+ * would report. The repository directory is read only when the repository name came from git: The directory of the
+ * working directory's repository need not be that of a repository named on the command line.
+ */
+function readWorkContext(invocation: Invocation, overrides: WorkOverrides): WorkContext {
+  // The defaults come from the working directory's repository, which is not the one containing this command
+  const { run } = invocation.deps;
+  return {
+    branch: overrides.branch ?? readCurrentBranch(run),
+    repo: overrides.repo ?? readRepoName(run),
+    repoDir: overrides.repo === undefined ? readRepoDir(run) : undefined,
+  };
 }
 
 // endregion | Helpers

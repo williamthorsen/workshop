@@ -84,8 +84,14 @@ describe('launch', () => {
       expect(fake.captured.stderr()).toBe(
         "thor-chrome: no repository or branch resolved from the working directory, so the profile fell back to 'default'\n" +
           '  Name the profile instead:\n' +
-          '    thor-chrome --profile <repo>-<branch> --port "$(thor-git branch-number <branch> --min 20000 --max 29999)"  # thor-git is in @williamthorsen/git-tools\n',
+          '    thor-chrome --repo <repo> --branch <branch>\n',
       );
+    });
+
+    it.each(['--repo', '--branch'])('refuses an empty %s as a usage error', async (flag) => {
+      const fake = makeFakeThorChrome({ env: { THOR_CHROME_APP: '/bin/sh' } });
+      await expect(run(fake, ['--json', flag, ''])).resolves.toBe(2);
+      expect(readError(fake)).toStrictEqual({ code: 'usage', message: `${flag} requires a value` });
     });
 
     it('refuses with process-list-unavailable when pgrep cannot search, writing nothing', async () => {

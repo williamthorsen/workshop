@@ -12,8 +12,13 @@ import {
 import { describePortListener, findBrowserPid, probeDevtools, readDebuggingPort } from './browser-process.ts';
 import { composeInstanceLabel, INSTANCE_PAGE_FILE, writeInstancePage } from './instance-page.ts';
 import { type Invocation, PROCESS_LIST_RECOVERY_HINT, refuse, requireCommand, runTolerantly } from './invocation.ts';
-import { assertValidPort, resolvePort, TICKET_PORT_RANGE } from './ports.ts';
-import { assertProfileNotUnderived, resolveDefaultProfile, writeProfileRecord } from './profiles.ts';
+import { assertValidPort, resolvePort } from './ports.ts';
+import {
+  assertProfileNotUnderived,
+  resolveDefaultProfile,
+  type WorkOverrides,
+  writeProfileRecord,
+} from './profiles.ts';
 import { formatCommandLine, renderProfile, writeJson, writeProse } from './render.ts';
 import { readTimeoutSeconds } from './timeouts.ts';
 
@@ -25,6 +30,7 @@ export interface LaunchOptions {
   port: string | undefined;
   profile: string | undefined;
   urls: readonly string[];
+  work: WorkOverrides;
 }
 
 /**
@@ -58,7 +64,7 @@ const LAUNCH_POLL_INTERVAL_MILLISECONDS = 200;
  */
 export async function launchProfile(invocation: Invocation, options: LaunchOptions): Promise<number> {
   const { output } = invocation;
-  const { dir: profileDir, name: profile } = resolveDefaultProfile(invocation, options.profile ?? '');
+  const { dir: profileDir, name: profile } = resolveDefaultProfile(invocation, options.profile ?? '', options.work);
   if (options.port !== undefined) assertValidPort(invocation, options.port);
 
   requireCommand(invocation, 'curl');
@@ -71,12 +77,7 @@ export async function launchProfile(invocation: Invocation, options: LaunchOptio
 
   // A derived name contains no typo, so only a name given on the command line has to be confirmed with --create
   if (!isDirectory(profileDir) && !options.isCreate && invocation.origin !== 'derived') {
-    const range = `--min ${TICKET_PORT_RANGE.min} --max ${TICKET_PORT_RANGE.max}`;
-    assertProfileNotUnderived(
-      invocation,
-      // Name the package in a shell comment, which keeps the command pasteable, since thor-chrome does not install it
-      `${output.name} --profile <repo>-<branch> --port "$(thor-git branch-number <branch> ${range})"  # thor-git is in @williamthorsen/git-tools`,
-    );
+    assertProfileNotUnderived(invocation, `${output.name} --repo <repo> --branch <branch>`);
     throw refuse(invocation, 'profile-missing', `profile '${profile}' does not exist at ${profileDir}`, {
       hints: [`Pass --create to make it, or list existing profiles: ${output.name} list`],
     });

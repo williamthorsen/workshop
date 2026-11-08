@@ -9,9 +9,10 @@ export function formatUsage(name: string, profilesDir: string): string {
   return `Launch a Chrome-family browser with remote debugging against a named profile.
 
 Usage:
-  ${name} [launch] [--profile <name>] [--port <n>] [--browser <name>] [--create] [--dry-run] [--json] [URL...]
+  ${name} [launch] [--profile <name>] [--port <n>] [--repo <name>] [--branch <name>] [--browser <name>] [--create]
+      [--dry-run] [--json] [URL...]
   ${name} list [--stale] [--json]
-  ${name} status [<profile>] [--port <n>] [--json]
+  ${name} status [<profile>] [--port <n>] [--repo <name>] [--branch <name>] [--json]
   ${name} quit [<profile>...] [--all|--idle <duration>] [--json]
   ${name} delete [<profile>...] [--stale|--all|--derived] [--force] [--dry-run] [--json]
   ${name} show-instance-page [<profile>] [--json]
@@ -61,6 +62,11 @@ Options:
                   ${TICKET_PORT_RANGE.min}-${TICKET_PORT_RANGE.max}, so branch '321' debugs on 20321; any
                   other branch gets a hash of '<repo>/<branch>' within
                   ${HASH_PORT_RANGE.min}-${HASH_PORT_RANGE.max}; ${DEFAULT_PORT} with no branch)
+      --repo      Repository name from which the profile and port derive, in
+                  place of the one that git reports, for a working directory
+                  that git cannot read, such as one that the sandbox denies
+      --branch    Branch from which the profile and port derive, in place of
+                  the one that git reports
       --browser   Browser to launch: 'chrome', or 'chrome-for-testing' for the
                   build that Playwright installs, which Chrome's managed
                   preferences do not govern (default: $THOR_CHROME_BROWSER,
@@ -71,6 +77,8 @@ Options:
       --stale     List only the profiles that delete --stale would select
   status:
       --port      The port that a launch would use, as for launch
+      --repo, --branch
+                  The repository name and branch to derive from, as for launch
   quit:
       --all       Quit every running profile
       --idle      Quit every running browser to which no DevTools client has

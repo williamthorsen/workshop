@@ -1,7 +1,7 @@
 import { resolveProfileState } from './browser-process.ts';
 import { type Invocation, requireCommand } from './invocation.ts';
 import { assertValidPort, resolvePort } from './ports.ts';
-import { assertProfileNotUnderived, resolveDefaultProfile } from './profiles.ts';
+import { assertProfileNotUnderived, resolveDefaultProfile, type WorkOverrides } from './profiles.ts';
 import { renderProfile, warnProcessListUnavailable, writeJson, writeProse } from './render.ts';
 
 /**
@@ -13,13 +13,18 @@ import { renderProfile, warnProcessListUnavailable, writeJson, writeProse } from
  * instance; otherwise it uses the port that a launch would pass. It is reported in every state, unlike the profile's
  * `devtools` field: A caller attaching ahead of a launch needs the address at which the browser will answer.
  */
-export function showStatus(invocation: Invocation, profile: string | undefined, givenPort: string | undefined): number {
-  const { dir, name } = resolveDefaultProfile(invocation, profile ?? '');
+export function showStatus(
+  invocation: Invocation,
+  profile: string | undefined,
+  givenPort: string | undefined,
+  work: WorkOverrides,
+): number {
+  const { dir, name } = resolveDefaultProfile(invocation, profile ?? '', work);
   if (givenPort !== undefined) assertValidPort(invocation, givenPort);
 
   requireCommand(invocation, 'curl');
   requireCommand(invocation, 'pgrep');
-  assertProfileNotUnderived(invocation, `${invocation.output.name} status <repo>-<branch>`);
+  assertProfileNotUnderived(invocation, `${invocation.output.name} status --repo <repo> --branch <branch>`);
   const launchPort = resolvePort(invocation, givenPort);
 
   const { pid, port, state } = resolveProfileState(invocation, dir);

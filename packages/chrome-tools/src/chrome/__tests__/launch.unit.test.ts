@@ -224,6 +224,33 @@ describe('launch', () => {
       );
     });
 
+    it('derives the profile and port from --repo and --branch where git resolves nothing, recording no directory', async () => {
+      const outside = makeFakeThorChrome({
+        env: { THOR_CHROME_APP: '/bin/sh' },
+        results: { 'git branch': { status: 128 }, 'git rev-parse': { status: 128 } },
+      });
+      await expect(run(outside, ['--repo', 'widget', '--branch', 'main'])).resolves.toBe(0);
+      expect(outside.captured.stdout()).toContain("profile 'widget-main' on port 36036");
+      expect(fs.readFileSync(`${outside.profilesDir}/widget-main/.thor-chrome.record`, 'utf8')).toBe(
+        'origin=derived\nbranch=main\nrepo=widget\nrepo_dir=\n',
+      );
+
+      const inside = makeFakeThorChrome({
+        env: { THOR_CHROME_APP: '/bin/sh' },
+        results: { 'git branch --show-current': { stdout: 'main\n' } },
+      });
+      await expect(run(inside, [])).resolves.toBe(0);
+      expect(inside.captured.stdout()).toContain("profile 'widget-main' on port 36036");
+    });
+
+    it('lets --branch stand in for the branch alone, keeping the repository that git reports', async () => {
+      const fake = makeFakeThorChrome({ env: { THOR_CHROME_APP: '/bin/sh' } });
+      await expect(run(fake, ['--branch', 'main'])).resolves.toBe(0);
+      expect(fs.readFileSync(`${fake.profilesDir}/widget-main/.thor-chrome.record`, 'utf8')).toBe(
+        `origin=derived\nbranch=main\nrepo=widget\nrepo_dir=${fake.workRepoDir}\n`,
+      );
+    });
+
     it('writes no instance page when the profile is already debugging on the port', async () => {
       const fake = makeRunningFake({ port: '20321' });
       await expect(run(fake, ['--profile', 'thrive', 'http://x'])).resolves.toBe(0);

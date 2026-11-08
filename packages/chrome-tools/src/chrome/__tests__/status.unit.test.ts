@@ -88,7 +88,13 @@ describe('status', () => {
 
     const prose = makeFakeThorChrome({ results: { 'git branch': { status: 128 }, 'git rev-parse': { status: 128 } } });
     await run(prose, ['status']);
-    expect(prose.captured.stderr()).toContain('    thor-chrome status <repo>-<branch>\n');
+    expect(prose.captured.stderr()).toContain('    thor-chrome status --repo <repo> --branch <branch>\n');
+  });
+
+  it('derives the endpoint from --repo and --branch where git resolves nothing', async () => {
+    const fake = makeFakeThorChrome({ results: { 'git branch': { status: 128 }, 'git rev-parse': { status: 128 } } });
+    await expect(run(fake, ['status', '--repo', 'widget', '--branch', 'main'])).resolves.toBe(0);
+    expect(fake.captured.stdout()).toBe('widget-main: stopped, endpoint http://127.0.0.1:36036\n');
   });
 
   it('refuses a second profile name and an invalid port', async () => {
