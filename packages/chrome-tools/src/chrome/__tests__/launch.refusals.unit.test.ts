@@ -227,6 +227,36 @@ describe('launch', () => {
       });
     });
 
+    it('refuses with page-open-failed at the first page that does not open, opening none after it', async () => {
+      const fake = makeFakeThorChrome({
+        env: { THOR_CHROME_APP: '/bin/sh' },
+        pageFailures: { 'http://b': 'the browser refused: bad URL' },
+      });
+      fake.makeProfile('thrive');
+      await expect(run(fake, ['--profile', 'thrive', 'http://a', 'http://b', 'http://c'])).resolves.toBe(1);
+      expect(fake.opened.map((page) => page.url)).toStrictEqual(['http://a', 'http://b']);
+      expect(fake.captured.stderr()).toBe(
+        "thor-chrome: could not open http://b in profile 'thrive' on port 20321: the browser refused: bad URL\n" +
+          '  The browser is running; open the page again: thor-chrome --profile thrive http://b\n' +
+          '  Check its state: thor-chrome status thrive\n',
+      );
+    });
+
+    it('names the page that did not open under --json', async () => {
+      const fake = makeFakeThorChrome({
+        env: { THOR_CHROME_APP: '/bin/sh' },
+        pageFailures: { 'about:blank': 'the browser did not answer within 5000 ms' },
+      });
+      fake.makeProfile('thrive');
+      await expect(run(fake, ['--json', '--profile', 'thrive'])).resolves.toBe(1);
+      expect(readError(fake)).toStrictEqual({
+        code: 'page-open-failed',
+        message:
+          "could not open about:blank in profile 'thrive' on port 20321: the browser did not answer within 5000 ms",
+        url: 'about:blank',
+      });
+    });
+
     it('refuses with policy-denied when the launched browser declined the port', async () => {
       const fake = makeFakeThorChrome({
         env: { THOR_CHROME_APP: '/bin/sh', THOR_CHROME_LAUNCH_TIMEOUT: '1' },

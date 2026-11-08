@@ -18,6 +18,7 @@ import {
 } from './browser-process.ts';
 import { composeInstanceLabel, INSTANCE_PAGE_FILE, writeInstancePage } from './instance-page.ts';
 import { type Invocation, PROCESS_LIST_RECOVERY_HINT, refuse, requireCommand, runTolerantly } from './invocation.ts';
+import { openPages } from './open-pages.ts';
 import { assertValidPort, resolvePort } from './ports.ts';
 import {
   assertProfileNotUnderived,
@@ -50,6 +51,12 @@ const PROMPT_SUPPRESSION_FLAGS = [
   '--no-first-run',
 ];
 
+/**
+ * Every launch starts the browser without a window and opens its pages through the DevTools endpoint as background
+ * targets, because a browser activates itself whenever it opens a window from its command line, `open -g` or not.
+ */
+const NO_STARTUP_WINDOW_FLAG = '--no-startup-window';
+
 /** Verbatim fragment of the message printed by a browser when the RemoteDebuggingAllowed policy denies the port. */
 const POLICY_DENIAL_MESSAGE = 'disallowed by the system admin';
 
@@ -63,9 +70,13 @@ const LAUNCH_POLL_INTERVAL_MILLISECONDS = 200;
  * RemoteDebuggingAllowed enterprise policy, naming the refusal on its own output, so the launch keeps that output and
  * reads it back rather than reporting an endpoint that will never exist.
  *
+ * No launch brings the browser to the front: The browser starts without a window, and once its endpoint answers, the
+ * launch opens each page as a background target, which creates the window without activating the browser. A launch
+ * against a running profile starts nothing and opens its URLs in that instance the same way.
+ *
  * A browser started directly registers in the launching shell's launchd session, and outside the GUI login session
  * (`launchctl managername` other than Aqua) it gets no Dock icon, no ⌘-Tab entry, and no keyboard input. There the
- * launch goes through `open -n`, which starts it in the console session. Inside it, the launch stays direct, because
+ * launch goes through `open -g -n`, which starts it in the console session. Inside it, the launch stays direct, because
  * the agent sandbox refuses `open`.
  */
 export async function launchProfile(invocation: Invocation, options: LaunchOptions): Promise<number> {
@@ -96,17 +107,17 @@ export async function launchProfile(invocation: Invocation, options: LaunchOptio
     `--remote-debugging-port=${port}`,
     `--user-data-dir=${profileDir}`,
     ...PROMPT_SUPPRESSION_FLAGS,
-    `--window-name=${label}`,
-    ...options.urls,
+    NO_STARTUP_WINDOW_FLAG,
   ];
 
-  // Because the browser forwards a launch against a running profile to that instance and opens no window there, only
-  // a launch that starts one opens the page. It comes after a tab of another kind, because Chromium reports tabs in
-  // creation order and the Playwright MCP server works in the first one
+  // Only a launch that starts the browser opens the instance page. It comes after a tab of another kind, because
+  // Chromium reports targets to a client in the order of the calls that created them, and the Playwright MCP server
+  // works in the first one
   const pageFile = runningPid === undefined ? `${profileDir}/${INSTANCE_PAGE_FILE}` : undefined;
+  const pages = [...options.urls];
   if (pageFile !== undefined) {
-    if (options.urls.length === 0) commandLine.push('about:blank');
-    commandLine.push(`file://${pageFile}`);
+    if (pages.length === 0) pages.push('about:blank');
+    pages.push(`file://${pageFile}`);
   }
 
   // Because the endpoint alone cannot tell a slow start from a policy refusal, the browser's own output is kept for the
@@ -115,19 +126,13 @@ export async function launchProfile(invocation: Invocation, options: LaunchOptio
 
   const session = readLaunchSession(invocation);
   const isOpenLaunch = session !== '' && session !== 'Aqua';
-  let launchCommand = commandLine;
-  if (isOpenLaunch) {
-    const bundle = resolveAppBundle(invocation, browserApp, session);
-    const openOptions = ['-n', '-a', bundle, '--stdout', logFile, '--stderr', logFile, '--args'];
-    launchCommand = ['open', ...openOptions, ...commandLine.slice(1)];
-  }
+  const launchCommand =
+    runningPid === undefined
+      ? composeLaunchCommand(invocation, commandLine, isOpenLaunch ? session : undefined, logFile)
+      : undefined;
 
   if (options.isDryRun) {
-    if (invocation.format === 'json') {
-      writeJson(invocation, { command: launchCommand, dryRun: true });
-    } else {
-      writeProse(invocation, 'stdout', [formatCommandLine(launchCommand)]);
-    }
+    reportDryRun(invocation, { launchCommand, pages, port, profile });
     return 0;
   }
 
@@ -136,14 +141,16 @@ export async function launchProfile(invocation: Invocation, options: LaunchOptio
   // Write no record for an underived profile: The derivation that would say where it came from was lost
   fs.mkdirSync(profileDir, { recursive: true });
   if (invocation.origin !== 'underived') writeProfileRecord(invocation, profileDir);
-  if (pageFile !== undefined) {
-    writeInstancePage(invocation, { browser, browserApp, label, launchCommand, logFile, pageFile, port, profile });
+  if (launchCommand !== undefined) {
+    if (pageFile !== undefined) {
+      writeInstancePage(invocation, { browser, browserApp, label, launchCommand, logFile, pageFile, port, profile });
+    }
+    startBrowser(invocation, launchCommand, logFile, isOpenLaunch ? session : undefined);
+    if (!(await awaitDevtools(invocation, port, timeout.seconds))) {
+      throw describeLaunchFailure(invocation, profile, port, logFile, timeout.text);
+    }
   }
-
-  startBrowser(invocation, launchCommand, logFile, isOpenLaunch ? session : undefined);
-  if (!(await awaitDevtools(invocation, port, timeout.seconds))) {
-    throw describeLaunchFailure(invocation, profile, port, logFile, timeout.text);
-  }
+  await openPages(invocation, profile, port, pages);
 
   if (invocation.format === 'json') {
     const lookup = findBrowserPid(invocation, profileDir);
@@ -265,6 +272,22 @@ async function awaitDevtools(invocation: Invocation, port: string, timeoutSecond
 }
 
 /**
+ * Returns the command that starts the browser: the command line itself, or, given the launchd session outside the GUI
+ * login session that made it necessary, `open` with the command line as its arguments.
+ */
+function composeLaunchCommand(
+  invocation: Invocation,
+  commandLine: readonly string[],
+  openSession: string | undefined,
+  logFile: string,
+): readonly string[] {
+  const [browserApp = '', ...args] = commandLine;
+  if (openSession === undefined) return commandLine;
+  const bundle = resolveAppBundle(invocation, browserApp, openSession);
+  return ['open', '-g', '-n', '-a', bundle, '--stdout', logFile, '--stderr', logFile, '--args', ...args];
+}
+
+/**
  * Returns the refusal that explains a launch that produced no DevTools endpoint, naming the policy refusal when the
  * browser reported one, since no retry can clear it.
  */
@@ -305,6 +328,28 @@ function readFile(file: string): string {
   } catch {
     return '';
   }
+}
+
+/**
+ * Reports what a launch would do: the command that would start the browser, or that the profile is running when
+ * nothing would start, then the pages that it would open.
+ */
+function reportDryRun(
+  invocation: Invocation,
+  plan: { launchCommand: readonly string[] | undefined; pages: readonly string[]; port: string; profile: string },
+): void {
+  const { launchCommand, pages, port, profile } = plan;
+  if (invocation.format === 'json') {
+    writeJson(invocation, {
+      command: launchCommand === undefined ? null : [...launchCommand],
+      pages: [...pages],
+      dryRun: true,
+    });
+    return;
+  }
+  const start =
+    launchCommand === undefined ? `profile '${profile}' is running on port ${port}` : formatCommandLine(launchCommand);
+  writeProse(invocation, 'stdout', [start, ...pages.map((page) => `Opens: ${page}`)]);
 }
 
 /** Returns the path of the file that contains a profile's most recent launch output. */
