@@ -51,6 +51,7 @@ async function waitFor(condition: () => boolean): Promise<void> {
   const deadline = Date.now() + 5000;
   while (!condition()) {
     if (Date.now() > deadline) throw new Error('condition did not hold within 5s');
+    // eslint-disable-next-line sky-pilot/no-real-time-sleep -- polls a real process; fake timers cannot advance it.
     await new Promise((resolve) => setTimeout(resolve, 50));
   }
 }
