@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { KitProvenance } from '../../kits/KitProvenance.ts';
 import type { RdyReport, Severity } from '../../kits/types.ts';
 import { RemoteFetchError } from '../../remote/RemoteFetchError.ts';
+import type { formatJsonReport } from '../../reporting/formatJsonReport.ts';
 import type { RaisedWarning } from '../../schemas/common.ts';
 import type { JsonDetail, JsonKitOrigin } from '../../schemas/reportSchema.ts';
 import type { UnrunSource } from '../KitSelection.ts';
@@ -13,7 +14,7 @@ import type { RunRdyOptions } from '../runRdy.ts';
 
 const mockLoadRdyKit = vi.hoisted(() => vi.fn());
 const mockRunRdy = vi.hoisted(() => vi.fn<(checklist: unknown, options?: RunRdyOptions) => Promise<RdyReport>>());
-const mockFormatJsonReport = vi.hoisted(() => vi.fn());
+const mockFormatJsonReport = vi.hoisted(() => vi.fn<typeof formatJsonReport>());
 const mockReportRdy = vi.hoisted(() => vi.fn());
 const mockFormatCombinedSummary = vi.hoisted(() => vi.fn());
 const mockResolveGitHubToken = vi.hoisted(() => vi.fn());
@@ -502,6 +503,46 @@ describe(runJsonMode, () => {
         expect.objectContaining({ warnings: [GENERATED_UNMARKED] }),
       );
       expect(exitCode).toBe(0);
+    });
+  });
+
+  describe('warning output', () => {
+    it('writes every warning to stderr in the order of the report’s warnings', async () => {
+      mockReadManifestTracking.mockReturnValue({
+        tracking: undefined,
+        warnings: [{ code: 'manifest-unreadable', message: 'manifest unreadable.', remedy: 'Rewrite it.' }],
+      });
+      mockListKitStalenessWarnings.mockReturnValue([
+        { code: 'target-drift', message: 'kit drifted.', remedy: 'Move the edits.' },
+      ]);
+      mockListUnusedPragmaWarnings.mockReturnValue([
+        { code: 'pragma-unused', message: 'pragma unused.', remedy: 'Remove it.' },
+      ]);
+      mockListUnmarkedGeneratedSourceWarnings.mockResolvedValue([GENERATED_UNMARKED]);
+      mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: '999.0.0' });
+      mockRunRdy.mockResolvedValue({
+        results: [],
+        passed: true,
+        durationMs: 0,
+        diagnoses: [{ name: 'a', verdict: 'masked-pass' }],
+      });
+      mockFormatJsonReport.mockReturnValue('{"kits":[]}');
+
+      const { stderr } = await runJson(singleKitEntry(['deploy']), {
+        unrunSources: [{ spelling: 'npm:a', requestedNames: ['default'], publishedNames: ['x'] }],
+      });
+
+      const warnings = mockFormatJsonReport.mock.lastCall?.[1].warnings ?? [];
+      expect(warnings.map(({ code }) => code)).toStrictEqual([
+        'manifest-unreadable',
+        'target-drift',
+        'version-skew',
+        'skip-masks-pass',
+        'pragma-unused',
+        'generated-unmarked',
+        'source-not-run',
+      ]);
+      expect(stderr).toBe(warnings.map(({ message, remedy }) => `Warning: ${message} ${remedy}\n`).join(''));
     });
   });
 
