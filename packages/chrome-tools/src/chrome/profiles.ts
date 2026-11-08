@@ -13,6 +13,7 @@ import {
   runTolerantly,
   type WorkContext,
 } from './invocation.ts';
+import { derivePort } from './ports.ts';
 
 /** A profile's provenance and last use. Every field but `lastUsed` is unset for a profile without a record. */
 export interface ProfileFacts {
@@ -94,6 +95,15 @@ export function assertValidProfileName(invocation: Invocation, profile: string):
  */
 export function composeProfileName(repo: string, branch: string): string {
   return toKebabCase(`${repo}-${branch}`).replaceAll(/[^a-z0-9._-]/g, '');
+}
+
+/**
+ * Returns the port that a derived profile's recorded repository and branch derive, which is the port that a launch
+ * from its worktree would use, or `undefined` for a profile that is not derived or whose record lacks either value.
+ */
+export function deriveRecordedPort(facts: ProfileFacts): number | undefined {
+  if (facts.origin !== 'derived' || facts.repo === undefined || facts.branch === undefined) return undefined;
+  return derivePort(facts.branch, facts.repo);
 }
 
 /**

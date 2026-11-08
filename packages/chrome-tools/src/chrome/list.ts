@@ -2,7 +2,7 @@ import { formatLocalDate } from '../portable/date-formats.ts';
 import { formatStatus, resolvePalette, resolveStreamOutputStyle } from '../shared/output.ts';
 import { resolveProfileState } from './browser-process.ts';
 import { type Invocation, type JsonValue, requireCommand } from './invocation.ts';
-import { listProfileNames, resolveProfileFacts } from './profiles.ts';
+import { deriveRecordedPort, listProfileNames, resolveProfileFacts } from './profiles.ts';
 import { describeProvenance, renderProfile, warnProcessListUnavailable, writeJson, writeProse } from './render.ts';
 
 /** Reports every profile, or every stale one, with its running and debugging state. */
@@ -57,12 +57,15 @@ function writeProfilesProse(invocation: Invocation, isStaleOnly: boolean): void 
     if (isStaleOnly && facts.stale !== true) continue;
     isFound = true;
     const { pid = '', port = '', state } = resolveProfileState(invocation, dir);
+    const derivedPort = deriveRecordedPort(facts);
+    // A running browser keeps the port that it was launched on, which a later launch would not derive
+    const divergence = derivedPort === undefined || String(derivedPort) === port ? '' : ` (derived ${derivedPort})`;
     const descriptions = {
-      debugging: `  ${passed} ${name}: debugging on port ${port} (PID ${pid})`,
+      debugging: `  ${passed} ${name}: debugging on port ${port}${divergence} (PID ${pid})`,
       'running-without-port': `  ${warning} ${name}: running (PID ${pid}), no debugging port`,
-      stopped: `  ${info} ${name}: stopped`,
+      stopped: `  ${info} ${name}: stopped${derivedPort === undefined ? '' : `, port ${derivedPort}`}`,
       unknown: `  ${warning} ${name}: state unknown`,
-      unresponsive: `  ${warning} ${name}: running (PID ${pid}), port ${port} not answering`,
+      unresponsive: `  ${warning} ${name}: running (PID ${pid}), port ${port}${divergence} not answering`,
     };
     if (state === 'unknown') isUnknown = true;
     const lastUsed = facts.lastUsed === undefined ? '' : `, last used ${formatLocalDate(facts.lastUsed)}`;

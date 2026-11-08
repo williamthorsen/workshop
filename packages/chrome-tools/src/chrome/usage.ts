@@ -22,10 +22,10 @@ Commands:
   launch          Launch the browser against the profile, or report the
                   command that would. The default when no command is named;
                   name it to launch a URL that spells a command
-  list            Report each profile's running and debugging state and when
-                  it was last used, marking a profile whose branch or
-                  repository is gone as stale and one with no provenance record
-                  as unrecorded
+  list            Report each profile's running and debugging state, the port
+                  that a derived profile derives, and when it was last used,
+                  marking a profile whose branch or repository is gone as stale
+                  and one with no provenance record as unrecorded
   status          Report the profile's state and the endpoint at which its
                   browser is or would be served: the running browser's port,
                   else the port that a launch would use. Starts and writes
@@ -157,11 +157,13 @@ JSON output:
 
   Every profile object contains "origin" ("derived", "named", or null when the
   profile records neither), the "repo" and "branch" from which a derived profile
-  came, whether it is "stale", and the "lastUsedAt" instant. A profile recording
-  no origin is never stale: null there means unknown, not false. A profile kept
-  by a sweep adds "retained", naming why; the only reason is "running". A
-  profile that delete --force quit, or would quit, reports the "pid" and "port"
-  of that browser.
+  came, whether it is "stale", and the "lastUsedAt" instant. "derivedPort" is
+  the port that a launch from a derived profile's worktree would use, whether
+  or not its browser runs there, and null for any other profile. A profile
+  recording no origin is never stale: null there means unknown, not false. A
+  profile kept by a sweep adds "retained", naming why; the only reason is
+  "running". A profile that delete --force quit, or would quit, reports the
+  "pid" and "port" of that browser.
 
   Profile states:
     debugging, deleted, running-without-port, stopped, unknown, unresponsive

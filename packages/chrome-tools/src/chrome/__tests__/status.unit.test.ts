@@ -11,7 +11,7 @@ describe('status', () => {
     await expect(run(fake, ['status', '--json'])).resolves.toBe(0);
     expect(fake.captured.stdout()).toBe(
       `{"profile":{"name":"widget-321","path":"${fake.profilesDir}/widget-321","state":"stopped","pid":null,"port":null,` +
-        '"devtools":null,"origin":null,"repo":null,"branch":null,"stale":null,"lastUsedAt":null},' +
+        '"derivedPort":null,"devtools":null,"origin":null,"repo":null,"branch":null,"stale":null,"lastUsedAt":null},' +
         '"endpoint":"http://127.0.0.1:20321"}\n',
     );
     expect(fs.existsSync(`${fake.profilesDir}/widget-321`)).toBe(false);

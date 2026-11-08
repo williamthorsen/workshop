@@ -26,6 +26,7 @@ const PROFILE_FIELDS = [
   'state',
   'pid',
   'port',
+  'derivedPort',
   'devtools',
   'origin',
   'repo',

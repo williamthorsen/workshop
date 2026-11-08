@@ -35,6 +35,30 @@ describe('list', () => {
     );
   });
 
+  it("shows a derived profile's port, and the derived one beside a running port that differs from it", async () => {
+    const fake = makeFakeWithBranches(['1', '2', '3', '4'], {
+      'pgrep -f user-data-dir=PROFILES/widget-1': { stdout: '11\n' },
+      'pgrep -f user-data-dir=PROFILES/widget-2': { stdout: '12\n' },
+      'pgrep -f user-data-dir=PROFILES/widget-3': { stdout: '13\n' },
+      'ps -o command= -p 11': { stdout: 'chrome --remote-debugging-port=20001\n' },
+      'ps -o command= -p 12': { stdout: 'chrome --remote-debugging-port=9002\n' },
+      'ps -o command= -p 13': { stdout: 'chrome --remote-debugging-port=9003\n' },
+      'curl --silent --fail --max-time 1 http://127.0.0.1:9003': { status: 7 },
+    });
+    rewritePatterns(fake);
+    for (const branch of ['1', '2', '3', '4']) makeFrozenProfile(fake, `widget-${branch}`, derivedRecord(fake, branch));
+    await expect(run(fake, ['list'])).resolves.toBe(0);
+    expect(fake.captured.stdout()).toBe(
+      [
+        '  PASS  widget-1: debugging on port 20001 (PID 11), last used 2026-01-02',
+        '  PASS  widget-2: debugging on port 9002 (derived 20002) (PID 12), last used 2026-01-02',
+        '  WARN  widget-3: running (PID 13), port 9003 (derived 20003) not answering, last used 2026-01-02',
+        '  INFO  widget-4: stopped, port 20004, last used 2026-01-02',
+        '',
+      ].join('\n'),
+    );
+  });
+
   it('marks an unrecorded profile and a stale one, naming what is gone', async () => {
     const fake = makeFakeThorChrome();
     makeFrozenProfile(fake, 'thrive');
@@ -47,7 +71,7 @@ describe('list', () => {
     await expect(run(fake, ['list'])).resolves.toBe(0);
     expect(fake.captured.stdout()).toBe(
       '  INFO  thrive: stopped, last used 2026-01-02, unrecorded\n' +
-        `  INFO  widget-9: stopped, last used 2026-01-02, stale: repository ${fake.home}/gone is gone\n`,
+        `  INFO  widget-9: stopped, port 20009, last used 2026-01-02, stale: repository ${fake.home}/gone is gone\n`,
     );
   });
 
@@ -66,9 +90,9 @@ describe('list', () => {
     await expect(run(fake, ['list', '--stale'])).resolves.toBe(0);
     await expect(run(fake, ['list', '--stale', '--json'])).resolves.toBe(0);
     expect(fake.captured.stdout()).toBe(
-      "  INFO  widget-9: stopped, last used 2026-01-02, stale: branch '9' is gone\n" +
+      "  INFO  widget-9: stopped, port 20009, last used 2026-01-02, stale: branch '9' is gone\n" +
         `{"profiles":[{"name":"widget-9","path":"${fake.profilesDir}/widget-9","state":"stopped","pid":null,"port":null,` +
-        '"devtools":null,"origin":"derived","repo":"widget","branch":"9","stale":true,"lastUsedAt":"2026-01-02T12:00:00Z"}]}\n',
+        '"derivedPort":20009,"devtools":null,"origin":"derived","repo":"widget","branch":"9","stale":true,"lastUsedAt":"2026-01-02T12:00:00Z"}]}\n',
     );
     expect(fs.existsSync(`${fake.profilesDir}/widget-9`)).toBe(true);
   });
@@ -119,7 +143,7 @@ describe('list', () => {
     await expect(run(fake, ['list', '--json'])).resolves.toBe(0);
     expect(fake.captured.stdout()).toBe(
       `{"profiles":[{"name":"thrive","path":"${fake.profilesDir}/thrive","state":"stopped","pid":null,"port":null,` +
-        '"devtools":null,"origin":"named","repo":null,"branch":null,"stale":false,"lastUsedAt":"2026-01-02T12:00:00Z"}]}\n',
+        '"derivedPort":null,"devtools":null,"origin":"named","repo":null,"branch":null,"stale":false,"lastUsedAt":"2026-01-02T12:00:00Z"}]}\n',
     );
   });
 
@@ -196,7 +220,7 @@ function makeFrozenProfile(fake: FakeThorChrome, name: string, record?: Record<s
  */
 function makeFakeWithBranches(
   branches: readonly string[],
-  results: Record<string, { status?: number }> = {},
+  results: Record<string, { status?: number; stdout?: string }> = {},
 ): FakeThorChrome {
   const fake = makeFakeThorChrome({ results });
   fs.mkdirSync(fake.workRepoDir, { recursive: true });
