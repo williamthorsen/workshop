@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { RdyChecklist } from '../../kits/types.ts';
 import { runRdy } from '../runRdy.ts';
-import { returning } from '../test-utils/untyped-returns.ts';
+import { wrapAsCheck } from '../test-utils/untyped-returns.ts';
 
 describe(runRdy, () => {
   describe('diagnosis', () => {
@@ -45,7 +45,7 @@ describe(runRdy, () => {
     it('reports a skipped check whose findings cannot be read as inconclusive', async () => {
       const checklist: RdyChecklist = {
         name: 'adoption',
-        checks: [{ name: 'malformed', check: returning({ findings: [null] }), skip: () => 'not applicable' }],
+        checks: [{ name: 'malformed', check: wrapAsCheck({ findings: [null] }), skip: () => 'not applicable' }],
       };
 
       const report = await runRdy(checklist, { diagnose: true });
@@ -100,7 +100,7 @@ describe(runRdy, () => {
     it('reports a check that expresses no verdict as inconclusive', async () => {
       const checklist: RdyChecklist = {
         name: 'broken',
-        checks: [{ name: 'no-verdict', check: returning('yes'), skip: () => 'not applicable' }],
+        checks: [{ name: 'no-verdict', check: wrapAsCheck('yes'), skip: () => 'not applicable' }],
       };
 
       const report = await runRdy(checklist, { diagnose: true });
@@ -121,7 +121,7 @@ describe(runRdy, () => {
         checks: [
           {
             name: 'malformed-findings',
-            check: returning({ findings: [{ line: 1, path: 'missing/source.ts' }] }),
+            check: wrapAsCheck({ findings: [{ line: 1, path: 'missing/source.ts' }] }),
             skip: () => 'not applicable',
           },
         ],

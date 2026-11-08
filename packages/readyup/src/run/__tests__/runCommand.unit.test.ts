@@ -4,7 +4,7 @@ import { createUncachedRemoteContext } from '../../test-utils/createUncachedRemo
 import { runCommand } from '../runCommand.ts';
 import type { runHumanMode } from '../runHumanMode.ts';
 import type { runJsonMode } from '../runJsonMode.ts';
-import { singleKitEntry } from '../test-utils/kit-fixtures.ts';
+import { buildSingleKitEntry } from '../test-utils/kit-fixtures.ts';
 
 const remote = createUncachedRemoteContext();
 
@@ -20,21 +20,21 @@ describe(runCommand, () => {
   });
 
   it('sends a JSON run to the JSON mode alone', async () => {
-    await runCommand({ kitEntries: singleKitEntry(), json: true, remote }, false, modes);
+    await runCommand({ kitEntries: buildSingleKitEntry(), json: true, remote }, false, modes);
 
     expect(modes.runJsonMode).toHaveBeenCalledTimes(1);
     expect(modes.runHumanMode).not.toHaveBeenCalled();
   });
 
   it('sends every other run to the human mode alone', async () => {
-    await runCommand({ kitEntries: singleKitEntry(), json: false, remote }, false, modes);
+    await runCommand({ kitEntries: buildSingleKitEntry(), json: false, remote }, false, modes);
 
     expect(modes.runHumanMode).toHaveBeenCalledTimes(1);
     expect(modes.runJsonMode).not.toHaveBeenCalled();
   });
 
   it('hands the mode the entries that it was given', async () => {
-    const kitEntries = singleKitEntry(['deploy']);
+    const kitEntries = buildSingleKitEntry(['deploy']);
 
     await runCommand({ kitEntries, json: false, remote }, false, modes);
 
@@ -42,15 +42,15 @@ describe(runCommand, () => {
   });
 
   it('hands the remote fetch context to either mode', async () => {
-    await runCommand({ kitEntries: singleKitEntry(), json: false, remote }, false, modes);
-    await runCommand({ kitEntries: singleKitEntry(), json: true, remote }, false, modes);
+    await runCommand({ kitEntries: buildSingleKitEntry(), json: false, remote }, false, modes);
+    await runCommand({ kitEntries: buildSingleKitEntry(), json: true, remote }, false, modes);
 
     expect(modes.runHumanMode).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ remote }), false);
     expect(modes.runJsonMode).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ remote }), false);
   });
 
   it('resolves an unrequested detail to the full report', async () => {
-    await runCommand({ kitEntries: singleKitEntry(), json: true, remote }, false, modes);
+    await runCommand({ kitEntries: buildSingleKitEntry(), json: true, remote }, false, modes);
 
     expect(modes.runJsonMode).toHaveBeenCalledWith(
       expect.anything(),
@@ -60,7 +60,7 @@ describe(runCommand, () => {
   });
 
   it('passes through the detail that the invocation requested', async () => {
-    await runCommand({ kitEntries: singleKitEntry(), json: true, remote, detail: 'summary' }, false, modes);
+    await runCommand({ kitEntries: buildSingleKitEntry(), json: true, remote, detail: 'summary' }, false, modes);
 
     expect(modes.runJsonMode).toHaveBeenCalledWith(
       expect.anything(),
@@ -70,7 +70,7 @@ describe(runCommand, () => {
   });
 
   it('resolves an unrequested diagnose to an undiagnosed run', async () => {
-    await runCommand({ kitEntries: singleKitEntry(), json: false, remote }, false, modes);
+    await runCommand({ kitEntries: buildSingleKitEntry(), json: false, remote }, false, modes);
 
     expect(modes.runHumanMode).toHaveBeenCalledWith(
       expect.anything(),
@@ -80,8 +80,8 @@ describe(runCommand, () => {
   });
 
   it('passes the diagnose that the invocation requested through to either mode', async () => {
-    await runCommand({ kitEntries: singleKitEntry(), json: false, remote, diagnose: true }, false, modes);
-    await runCommand({ kitEntries: singleKitEntry(), json: true, remote, diagnose: true }, false, modes);
+    await runCommand({ kitEntries: buildSingleKitEntry(), json: false, remote, diagnose: true }, false, modes);
+    await runCommand({ kitEntries: buildSingleKitEntry(), json: true, remote, diagnose: true }, false, modes);
 
     expect(modes.runHumanMode).toHaveBeenCalledWith(
       expect.anything(),
@@ -96,7 +96,7 @@ describe(runCommand, () => {
   });
 
   it('resolves an unrequested quiet to a loud run', async () => {
-    await runCommand({ kitEntries: singleKitEntry(), json: false, remote }, false, modes);
+    await runCommand({ kitEntries: buildSingleKitEntry(), json: false, remote }, false, modes);
 
     expect(modes.runHumanMode).toHaveBeenCalledWith(
       expect.anything(),
@@ -106,14 +106,14 @@ describe(runCommand, () => {
   });
 
   it('passes through the quiet that the invocation requested', async () => {
-    await runCommand({ kitEntries: singleKitEntry(), json: false, remote, quiet: true }, false, modes);
+    await runCommand({ kitEntries: buildSingleKitEntry(), json: false, remote, quiet: true }, false, modes);
 
     expect(modes.runHumanMode).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ quiet: true }), false);
   });
 
   it('passes the thresholds that the invocation named through to the human mode', async () => {
     await runCommand(
-      { kitEntries: singleKitEntry(), json: false, remote, failOn: 'warn', reportOn: 'error' },
+      { kitEntries: buildSingleKitEntry(), json: false, remote, failOn: 'warn', reportOn: 'error' },
       false,
       modes,
     );
@@ -127,7 +127,7 @@ describe(runCommand, () => {
 
   it('passes the thresholds that the invocation named through to the JSON mode', async () => {
     await runCommand(
-      { kitEntries: singleKitEntry(), json: true, remote, failOn: 'warn', reportOn: 'error' },
+      { kitEntries: buildSingleKitEntry(), json: true, remote, failOn: 'warn', reportOn: 'error' },
       false,
       modes,
     );
@@ -140,13 +140,13 @@ describe(runCommand, () => {
   });
 
   it('reports a run as not just-in-time unless told it is', async () => {
-    await runCommand({ kitEntries: singleKitEntry(), json: false, remote }, false, modes);
+    await runCommand({ kitEntries: buildSingleKitEntry(), json: false, remote }, false, modes);
 
     expect(modes.runHumanMode).toHaveBeenCalledWith(expect.anything(), expect.anything(), false);
   });
 
   it('passes a just-in-time run through to the mode', async () => {
-    await runCommand({ kitEntries: singleKitEntry(), json: true, remote }, true, modes);
+    await runCommand({ kitEntries: buildSingleKitEntry(), json: true, remote }, true, modes);
 
     expect(modes.runJsonMode).toHaveBeenCalledWith(expect.anything(), expect.anything(), true);
   });
@@ -154,7 +154,7 @@ describe(runCommand, () => {
   it('returns the exit code resolved by the mode', async () => {
     modes.runHumanMode.mockResolvedValue(2);
 
-    const exitCode = await runCommand({ kitEntries: singleKitEntry(), json: false, remote }, false, modes);
+    const exitCode = await runCommand({ kitEntries: buildSingleKitEntry(), json: false, remote }, false, modes);
 
     expect(exitCode).toBe(2);
   });

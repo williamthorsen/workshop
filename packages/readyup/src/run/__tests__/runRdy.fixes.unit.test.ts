@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { recordSweep } from '../../check-utils/project/sweepRecorder.ts';
 import type { RdyCheck, RdyChecklist } from '../../kits/types.ts';
 import { runRdy } from '../runRdy.ts';
-import { returning, skipReturning } from '../test-utils/untyped-returns.ts';
+import { wrapAsCheck, wrapAsSkip } from '../test-utils/untyped-returns.ts';
 
 describe(runRdy, () => {
   describe('fix resolution', () => {
@@ -130,8 +130,8 @@ describe(runRdy, () => {
     it.each<[string, Pick<RdyCheck, 'check' | 'skip'>]>([
       ['check throws', { check: throwing }],
       ['skip throws', { check: () => true, skip: throwing }],
-      ['skip returns an uninterpretable value', { check: () => true, skip: skipReturning(true) }],
-      ['check returns an uninterpretable value', { check: returning('yes') }],
+      ['skip returns an uninterpretable value', { check: () => true, skip: wrapAsSkip(true) }],
+      ['check returns an uninterpretable value', { check: wrapAsCheck('yes') }],
     ])('reports no fix and reads no fix accessor when the %s', async (_label, functions) => {
       let hits = 0;
       const checklist: RdyChecklist = {
@@ -238,7 +238,7 @@ describe(runRdy, () => {
         checks: [
           {
             name: 'fails',
-            check: returning({ ok: false, fix: 42 }),
+            check: wrapAsCheck({ ok: false, fix: 42 }),
             severity: 'warn',
             get fix() {
               hits++;

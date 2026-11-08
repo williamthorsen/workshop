@@ -4,7 +4,7 @@ import { kitLoadError } from '../../errors/RdyError.ts';
 import type { KitProvenance } from '../../kits/KitProvenance.ts';
 import { runHumanMode } from '../runHumanMode.ts';
 import { createRunFakes, type RunFakes } from '../test-utils/createRunFakes.ts';
-import { makeKit, singleKitEntry } from '../test-utils/kit-fixtures.ts';
+import { buildSingleKitEntry, makeKit } from '../test-utils/kit-fixtures.ts';
 import { makeFailedResult, makePassedResult } from '../test-utils/result-fixtures.ts';
 import { runHuman } from '../test-utils/runHuman.ts';
 
@@ -30,7 +30,7 @@ describe(runHumanMode, () => {
     fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    const { stdout: allOutput } = await runHuman(singleKitEntry(), {}, fakes);
+    const { stdout: allOutput } = await runHuman(buildSingleKitEntry(), {}, fakes);
 
     expect(allOutput).toContain('\u{2501}\u{2501} \u{1F4CB} deploy');
     expect(allOutput).toContain('\u{2501}\u{2501} \u{1F4CB} infra');
@@ -42,7 +42,7 @@ describe(runHumanMode, () => {
     fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    const { stdout: allOutput } = await runHuman(singleKitEntry(), {}, fakes);
+    const { stdout: allOutput } = await runHuman(buildSingleKitEntry(), {}, fakes);
 
     expect(allOutput).not.toContain(WIDER_GAP);
     expect(allOutput).toContain(`${BLOCK_GAP}\u{2501}\u{2501} \u{1F4CB} infra`);
@@ -56,7 +56,7 @@ describe(runHumanMode, () => {
     fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    const { stdout: allOutput } = await runHuman(singleKitEntry(['deploy']), {}, fakes);
+    const { stdout: allOutput } = await runHuman(buildSingleKitEntry(['deploy']), {}, fakes);
 
     expect(allOutput).not.toContain('\u{2501}\u{2501}');
     expect(allOutput).not.toContain('\u{2500}\u{2500} ');
@@ -181,7 +181,7 @@ describe(runHumanMode, () => {
     fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
     fakes.reportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: false });
 
-    const { stdout: allOutput } = await runHuman(singleKitEntry(), {}, fakes);
+    const { stdout: allOutput } = await runHuman(buildSingleKitEntry(), {}, fakes);
 
     expect(allOutput).not.toContain('report output');
     expect(allOutput).toContain('combined summary');
@@ -193,7 +193,7 @@ describe(runHumanMode, () => {
     fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
     fakes.reportRdy.mockReturnValue({ body: 'report output', hasVisibleResults: false });
 
-    const { stdout: allOutput } = await runHuman(singleKitEntry(), {}, fakes);
+    const { stdout: allOutput } = await runHuman(buildSingleKitEntry(), {}, fakes);
 
     expect(allOutput).toContain('report output');
     expect(fakes.formatCombinedSummary).not.toHaveBeenCalled();
@@ -282,7 +282,7 @@ describe(runHumanMode, () => {
     fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
     fakes.formatCombinedSummary.mockReturnValue('Combined summary');
 
-    await runHuman(singleKitEntry(), {}, fakes);
+    await runHuman(buildSingleKitEntry(), {}, fakes);
 
     expect(fakes.formatCombinedSummary).toHaveBeenCalledTimes(1);
     expect(fakes.formatCombinedSummary.mock.calls[0]?.[0].map((row) => row.segments)).toStrictEqual([
@@ -300,7 +300,7 @@ describe(runHumanMode, () => {
       durationMs: 0,
     });
 
-    await runHuman(singleKitEntry(), { reportOn: 'error' }, fakes);
+    await runHuman(buildSingleKitEntry(), { reportOn: 'error' }, fakes);
 
     expect(fakes.formatCombinedSummary).toHaveBeenCalledWith([
       expect.objectContaining({
@@ -319,7 +319,7 @@ describe(runHumanMode, () => {
     fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    await runHuman(singleKitEntry(['deploy']), {}, fakes);
+    await runHuman(buildSingleKitEntry(['deploy']), {}, fakes);
 
     expect(fakes.formatCombinedSummary).not.toHaveBeenCalled();
   });

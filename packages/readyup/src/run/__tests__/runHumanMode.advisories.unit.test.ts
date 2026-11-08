@@ -9,7 +9,7 @@ import type { UnrunSource } from '../KitSelection.ts';
 import type { ResolvedKitEntry } from '../ResolvedKitEntry.ts';
 import { runHumanMode } from '../runHumanMode.ts';
 import { createRunFakes, type RunFakes } from '../test-utils/createRunFakes.ts';
-import { makeKit, singleKitEntry } from '../test-utils/kit-fixtures.ts';
+import { buildSingleKitEntry, makeKit } from '../test-utils/kit-fixtures.ts';
 import { runHuman } from '../test-utils/runHuman.ts';
 
 /** A warning as the unmarked-generated report returns it. */
@@ -85,7 +85,7 @@ describe(runHumanMode, () => {
         diagnoses: [{ name: 'a', verdict: 'masked-pass' }],
       });
 
-      const writes = await runHumanRecordingWrites(singleKitEntry(['deploy']), fakes, [
+      const writes = await runHumanRecordingWrites(buildSingleKitEntry(['deploy']), fakes, [
         { spelling: 'npm:a', requestedNames: ['default'], publishedNames: ['x'] },
       ]);
 

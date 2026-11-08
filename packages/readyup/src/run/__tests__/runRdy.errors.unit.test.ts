@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import type { RdyChecklist } from '../../kits/types.ts';
 import { asSeverity } from '../../test-utils/asSeverity.ts';
 import { runRdy } from '../runRdy.ts';
-import { returning, skipReturning } from '../test-utils/untyped-returns.ts';
+import { wrapAsCheck, wrapAsSkip } from '../test-utils/untyped-returns.ts';
 
 describe(runRdy, () => {
   describe('thrown checks', () => {
@@ -128,7 +128,7 @@ describe(runRdy, () => {
       ['null', null, 'check() returned null'],
       ['an array', [true], 'check() returned array [true]'],
     ])('fails a check returning %s, naming what came back', async (_label, value, expected) => {
-      const checklist: RdyChecklist = { name: 'authoring', checks: [{ name: 'broken', check: returning(value) }] };
+      const checklist: RdyChecklist = { name: 'authoring', checks: [{ name: 'broken', check: wrapAsCheck(value) }] };
 
       const report = await runRdy(checklist);
 
@@ -137,7 +137,7 @@ describe(runRdy, () => {
     });
 
     it('names what a check was supposed to return', async () => {
-      const checklist: RdyChecklist = { name: 'authoring', checks: [{ name: 'broken', check: returning('yes') }] };
+      const checklist: RdyChecklist = { name: 'authoring', checks: [{ name: 'broken', check: wrapAsCheck('yes') }] };
 
       const report = await runRdy(checklist);
 
@@ -149,7 +149,7 @@ describe(runRdy, () => {
     it('overrides a declared severity so that an uninterpretable return cannot be a soft finding', async () => {
       const checklist: RdyChecklist = {
         name: 'authoring',
-        checks: [{ name: 'broken', check: returning('yes'), severity: 'recommend' }],
+        checks: [{ name: 'broken', check: wrapAsCheck('yes'), severity: 'recommend' }],
       };
 
       const report = await runRdy(checklist);
@@ -164,7 +164,7 @@ describe(runRdy, () => {
         checks: [
           {
             name: 'malformed-findings',
-            check: returning({ findings: [{ line: 1, path: 'missing/source.ts' }] }),
+            check: wrapAsCheck({ findings: [{ line: 1, path: 'missing/source.ts' }] }),
             severity: 'recommend',
           },
         ],
@@ -182,7 +182,7 @@ describe(runRdy, () => {
     it('skips descendants of a check that returned an uninterpretable value', async () => {
       const checklist: RdyChecklist = {
         name: 'authoring',
-        checks: [{ name: 'broken', check: returning(1), checks: [{ name: 'child', check: () => true }] }],
+        checks: [{ name: 'broken', check: wrapAsCheck(1), checks: [{ name: 'child', check: () => true }] }],
       };
 
       const report = await runRdy(checklist);
@@ -200,7 +200,7 @@ describe(runRdy, () => {
     ])('fails a check whose skip returns %s, naming what came back', async (_label, value, expected) => {
       const checklist: RdyChecklist = {
         name: 'authoring',
-        checks: [{ name: 'broken-skip', check: () => true, skip: skipReturning(value) }],
+        checks: [{ name: 'broken-skip', check: () => true, skip: wrapAsSkip(value) }],
       };
 
       const report = await runRdy(checklist);
@@ -213,7 +213,7 @@ describe(runRdy, () => {
     it('names what a skip function was supposed to return', async () => {
       const checklist: RdyChecklist = {
         name: 'authoring',
-        checks: [{ name: 'broken-skip', check: () => true, skip: skipReturning(true) }],
+        checks: [{ name: 'broken-skip', check: () => true, skip: wrapAsSkip(true) }],
       };
 
       const report = await runRdy(checklist);
@@ -234,7 +234,7 @@ describe(runRdy, () => {
               checkCalled = true;
               return true;
             },
-            skip: skipReturning(true),
+            skip: wrapAsSkip(true),
           },
         ],
       };
@@ -251,7 +251,7 @@ describe(runRdy, () => {
           {
             name: 'broken-skip',
             check: () => true,
-            skip: skipReturning(true),
+            skip: wrapAsSkip(true),
             checks: [{ name: 'child', check: () => true }],
           },
         ],

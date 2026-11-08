@@ -5,7 +5,7 @@ import type { KitProvenance } from '../../kits/KitProvenance.ts';
 import type { JsonKitOrigin } from '../../schemas/reportSchema.ts';
 import { runJsonMode } from '../runJsonMode.ts';
 import { createRunFakes, type RunFakes } from '../test-utils/createRunFakes.ts';
-import { makeKit, singleKitEntry } from '../test-utils/kit-fixtures.ts';
+import { buildSingleKitEntry, makeKit } from '../test-utils/kit-fixtures.ts';
 import { runJson } from '../test-utils/runJson.ts';
 
 describe(runJsonMode, () => {
@@ -20,7 +20,7 @@ describe(runJsonMode, () => {
     fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    const { exitCode, stdout } = await runJson(singleKitEntry(), {}, fakes);
+    const { exitCode, stdout } = await runJson(buildSingleKitEntry(), {}, fakes);
 
     expect(fakes.formatJsonReport).toHaveBeenCalledTimes(1);
     expect(stdout).toBe('{"worstSeverity":null}\n');
@@ -34,7 +34,7 @@ describe(runJsonMode, () => {
       .mockResolvedValueOnce({ results: [], passed: true, durationMs: 0 })
       .mockResolvedValueOnce({ results: [], passed: false, durationMs: 0 });
 
-    const { exitCode } = await runJson(singleKitEntry(), {}, fakes);
+    const { exitCode } = await runJson(buildSingleKitEntry(), {}, fakes);
 
     expect(exitCode).toBe(1);
   });
@@ -43,7 +43,7 @@ describe(runJsonMode, () => {
     fakes.loadKit.mockRejectedValue(kitLoadError('Kit not found'));
     fakes.formatJsonReport.mockReturnValue('{}');
 
-    const { exitCode, stderr } = await runJson(singleKitEntry(), {}, fakes);
+    const { exitCode, stderr } = await runJson(buildSingleKitEntry(), {}, fakes);
 
     expect(exitCode).toBe(2);
     expect(fakes.formatJsonReport).toHaveBeenCalledWith(
@@ -58,7 +58,7 @@ describe(runJsonMode, () => {
     fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     fakes.formatJsonReport.mockReturnValue('{}');
 
-    const { exitCode, stderr } = await runJson(singleKitEntry(['nonexistent']), {}, fakes);
+    const { exitCode, stderr } = await runJson(buildSingleKitEntry(['nonexistent']), {}, fakes);
 
     expect(exitCode).toBe(2);
     expect(fakes.formatJsonReport).toHaveBeenCalledWith(
@@ -75,7 +75,7 @@ describe(runJsonMode, () => {
     const report2 = { results: [], passed: true, durationMs: 20 };
     fakes.runRdy.mockResolvedValueOnce(report1).mockResolvedValueOnce(report2);
 
-    await runJson(singleKitEntry(), { detail: 'full' }, fakes);
+    await runJson(buildSingleKitEntry(), { detail: 'full' }, fakes);
 
     expect(fakes.formatJsonReport).toHaveBeenCalledWith(
       [
@@ -120,7 +120,7 @@ describe(runJsonMode, () => {
       fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
       await runJson(
-        singleKitEntry().map((entry) => ({ ...entry, provenance })),
+        buildSingleKitEntry().map((entry) => ({ ...entry, provenance })),
         {},
         fakes,
       );
@@ -134,7 +134,7 @@ describe(runJsonMode, () => {
     fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    await runJson(singleKitEntry(), { detail: 'full' }, fakes);
+    await runJson(buildSingleKitEntry(), { detail: 'full' }, fakes);
 
     expect(fakes.formatJsonReport).toHaveBeenCalledWith(
       [expect.objectContaining({ failOn: 'warn', reportOn: 'error' })],
@@ -147,7 +147,7 @@ describe(runJsonMode, () => {
     fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    await runJson(singleKitEntry(), { failOn: 'recommend' }, fakes);
+    await runJson(buildSingleKitEntry(), { failOn: 'recommend' }, fakes);
 
     expect(fakes.formatJsonReport).toHaveBeenCalledWith(
       [expect.objectContaining({ failOn: 'recommend' })],
@@ -161,7 +161,7 @@ describe(runJsonMode, () => {
     fakes.runRdy.mockRejectedValue(new Error('runner crashed'));
     fakes.formatJsonReport.mockReturnValue('{}');
 
-    const { exitCode } = await runJson(singleKitEntry(['deploy']), {}, fakes);
+    const { exitCode } = await runJson(buildSingleKitEntry(['deploy']), {}, fakes);
 
     expect(exitCode).toBe(2);
     expect(fakes.formatJsonReport).toHaveBeenCalledWith(
@@ -210,7 +210,7 @@ describe(runJsonMode, () => {
     fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
     fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-    const { stdout } = await runJson(singleKitEntry(), {}, fakes);
+    const { stdout } = await runJson(buildSingleKitEntry(), {}, fakes);
     expect(stdout).not.toContain('---');
   });
 
@@ -244,7 +244,7 @@ describe(runJsonMode, () => {
       fakes.loadKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
       fakes.runRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
 
-      await runJson(singleKitEntry(['deploy']), { reportOn: 'error' }, fakes);
+      await runJson(buildSingleKitEntry(['deploy']), { reportOn: 'error' }, fakes);
 
       expect(fakes.formatJsonReport).toHaveBeenCalledWith(
         expect.anything(),

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import type { RdyCheck, RdyChecklist } from '../../kits/types.ts';
 import { createPragmaLedger } from '../PragmaLedger.ts';
 import { runRdy } from '../runRdy.ts';
-import { buildingReturning } from '../test-utils/untyped-returns.ts';
+import { wrapAsChecksBuilder } from '../test-utils/untyped-returns.ts';
 
 describe(runRdy, () => {
   describe('checks built at run time', () => {
@@ -152,14 +152,14 @@ describe(runRdy, () => {
     });
 
     it('reports the parent as an authoring error when its builder returns something other than an array', async () => {
-      const report = await runRdy(builtBy(buildingReturning(undefined)));
+      const report = await runRdy(builtBy(wrapAsChecksBuilder(undefined)));
 
       expect(summarize(report.results)).toStrictEqual([['parent', 'failed', 0]]);
       expect(report.results[0]?.error?.message).toContain('checks: expected an array of checks, got undefined');
     });
 
     it('reports the parent as an authoring error when its builder returns an invalid check', async () => {
-      const report = await runRdy(builtBy(buildingReturning([{ name: 'child', check: () => true }, { name: '' }])));
+      const report = await runRdy(builtBy(wrapAsChecksBuilder([{ name: 'child', check: () => true }, { name: '' }])));
 
       expect(summarize(report.results)).toStrictEqual([['parent', 'failed', 0]]);
       expect(report.results[0]?.error?.message).toContain('checks[1].name: expected a non-empty string');
