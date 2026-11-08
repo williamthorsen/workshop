@@ -158,6 +158,27 @@ describe(runRdy, () => {
       expect(report.passed).toBe(false);
     });
 
+    it('fails a check whose finding lacks a boolean "reported" at error severity rather than passing it', async () => {
+      const checklist: RdyChecklist = {
+        name: 'authoring',
+        checks: [
+          {
+            name: 'malformed-findings',
+            check: returning({ findings: [{ line: 1, path: 'missing/source.ts' }] }),
+            severity: 'recommend',
+          },
+        ],
+      };
+
+      const report = await runRdy(checklist);
+
+      expect(report.results[0]?.status).toBe('failed');
+      expect(report.results[0]?.severity).toBe('error');
+      expect(report.results[0]?.error?.message).toBe(
+        'check() returned findings[0].reported as undefined; expected a boolean.',
+      );
+    });
+
     it('skips descendants of a check that returned an uninterpretable value', async () => {
       const checklist: RdyChecklist = {
         name: 'authoring',

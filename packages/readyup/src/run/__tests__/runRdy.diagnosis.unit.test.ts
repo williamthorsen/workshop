@@ -115,6 +115,29 @@ describe(runRdy, () => {
       ]);
     });
 
+    it('reports a check returning malformed findings as inconclusive rather than as a masked pass', async () => {
+      const checklist: RdyChecklist = {
+        name: 'broken',
+        checks: [
+          {
+            name: 'malformed-findings',
+            check: returning({ findings: [{ line: 1, path: 'missing/source.ts' }] }),
+            skip: () => 'not applicable',
+          },
+        ],
+      };
+
+      const report = await runRdy(checklist, { diagnose: true });
+
+      expect(report.diagnoses).toStrictEqual([
+        {
+          name: 'malformed-findings',
+          verdict: 'inconclusive',
+          reason: 'check() returned findings[0].reported as undefined; expected a boolean.',
+        },
+      ]);
+    });
+
     it('leaves diagnoses absent and runs no skipped check when diagnosis was not asked for', async () => {
       let checkCalled = false;
       const checklist: RdyChecklist = {
