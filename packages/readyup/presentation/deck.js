@@ -964,7 +964,10 @@ ${violations.map((violation) => `- ${violation}`).join("\n")}`);
   var DURATION_FLOOR_MS = 100;
   var HEADING_SIGIL_WIDTH = 2;
   var SEGMENT_SEPARATOR = " / ";
-  var DID_NOT_LOAD_LABEL = "did not load";
+  var NOT_RUN_LABELS = {
+    didNotLoad: "did not load",
+    failedAfterLoad: "did not run"
+  };
   var TABLE_CELL_GAP = "  ";
   var TOTAL_LABEL = "Total:";
   var SUMMARY_HEADING = "Summary";
@@ -1025,12 +1028,12 @@ ${violations.map((violation) => `- ${violation}`).join("\n")}`);
       const nameWidth = Math.max(...named.map((row) => row.name.length));
       const durationWidth = Math.max(
         0,
-        ...named.filter((row) => row.didNotLoad !== true).map((row) => formatDuration(row.durationMs).length)
+        ...named.filter((row) => row.notRun === void 0).map((row) => formatDuration(row.durationMs).length)
       );
       const cells = named.map((row) => ({
         name: row.name,
-        outcome: row.didNotLoad === true ? DID_NOT_LOAD_LABEL : [formatDuration(row.durationMs).padStart(durationWidth), formatCounts(row.counts)].join(TABLE_CELL_GAP),
-        token: row.didNotLoad === true ? "failedError" : resolveWorstToken(row.counts.worstSeverity)
+        outcome: row.notRun === void 0 ? [formatDuration(row.durationMs).padStart(durationWidth), formatCounts(row.counts)].join(TABLE_CELL_GAP) : NOT_RUN_LABELS[row.notRun],
+        token: row.notRun === void 0 ? resolveWorstToken(row.counts.worstSeverity) : "failedError"
       }));
       const oneLine = cells.map((cell) => ({
         lead: token(cell.token),
@@ -1040,7 +1043,7 @@ ${violations.map((violation) => `- ${violation}`).join("\n")}`);
         { lead: token(cell.token), body: cell.name },
         { lead: indent(1), body: cell.outcome }
       ]);
-      const totalToken = rows.some((row) => row.didNotLoad === true) ? "failedError" : resolveWorstToken(totals.worstSeverity);
+      const totalToken = rows.some((row) => row.notRun !== void 0) ? "failedError" : resolveWorstToken(totals.worstSeverity);
       const totalBody = buildCountBody(totals, totalDurationMs);
       const bodyWidth = Math.max(...lines.map((line) => measureWidth(line.body)), measureWidth(totalBody));
       const rule = formatter.paint.rule(formatter.rules.section.repeat(Math.min(gutter + bodyWidth, width)));

@@ -271,8 +271,8 @@ describe(runHumanMode, () => {
     expect(stdout).toMatch(/broken\n\S+ +Kit did not load; the error is on stderr\n/u);
     expect(mockFormatCombinedSummary.mock.calls[0]?.[0][0]).toStrictEqual({
       counts: emptyCounts(),
-      didNotLoad: true,
       durationMs: 0,
+      notRun: 'didNotLoad',
       segments: [{ role: 'kit', text: 'broken' }],
     });
   });

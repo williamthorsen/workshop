@@ -18,8 +18,11 @@ const HEADING_SIGIL_WIDTH = 2;
  */
 export const SEGMENT_SEPARATOR = ' / ';
 
-/** Text standing in a summary-table row for the duration and counts of a kit that did not load. */
-const DID_NOT_LOAD_LABEL = 'did not load';
+/** Text standing in a summary-table row for the duration and counts of a kit that did not run, by reason. */
+const NOT_RUN_LABELS: Readonly<Record<NotRunReason, string>> = {
+  didNotLoad: 'did not load',
+  failedAfterLoad: 'did not run',
+};
 
 /** Columns between one summary-table cell and the next. */
 const TABLE_CELL_GAP = '  ';
@@ -84,11 +87,14 @@ export interface CheckLineInput {
   progress?: string | undefined;
 }
 
+/** Why a kit produced no results: Its module did not load, or it loaded and then threw before its checklists ran. */
+export type NotRunReason = 'didNotLoad' | 'failedAfterLoad';
+
 /** One checklist's row in the combined summary table. */
 export interface SummaryRow {
   counts: SummaryCounts;
-  /** Marks the row of a kit that failed to load, which has neither a duration nor counts to show. */
-  didNotLoad?: true;
+  /** Marks the row of a kit that did not run, which has neither a duration nor counts to show. */
+  notRun?: NotRunReason;
   durationMs: number;
   segments: BreadcrumbSegment[];
 }
@@ -223,23 +229,23 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
    * A row names itself by its breadcrumb without the role glyphs added by the matching heading, because padding
    * counts characters while the terminal lays out display width, and a glyph makes the two disagree.
    *
-   * A kit that did not load fails its row and the total, whatever the rows that loaded found.
+   * A kit that did not run fails its row and the total, whatever the rows that ran found.
    */
   function formatSummaryTable({ rows, totalDurationMs, totals, width = Infinity }: SummaryTableInput): string[] {
     const named = rows.map((row) => ({ ...row, name: formatBreadcrumbLabel(row.segments) }));
     const nameWidth = Math.max(...named.map((row) => row.name.length));
     const durationWidth = Math.max(
       0,
-      ...named.filter((row) => row.didNotLoad !== true).map((row) => formatDuration(row.durationMs).length),
+      ...named.filter((row) => row.notRun === undefined).map((row) => formatDuration(row.durationMs).length),
     );
 
     const cells: Array<{ name: string; outcome: string; token: TokenName }> = named.map((row) => ({
       name: row.name,
       outcome:
-        row.didNotLoad === true
-          ? DID_NOT_LOAD_LABEL
-          : [formatDuration(row.durationMs).padStart(durationWidth), formatCounts(row.counts)].join(TABLE_CELL_GAP),
-      token: row.didNotLoad === true ? 'failedError' : resolveWorstToken(row.counts.worstSeverity),
+        row.notRun === undefined
+          ? [formatDuration(row.durationMs).padStart(durationWidth), formatCounts(row.counts)].join(TABLE_CELL_GAP)
+          : NOT_RUN_LABELS[row.notRun],
+      token: row.notRun === undefined ? resolveWorstToken(row.counts.worstSeverity) : 'failedError',
     }));
 
     // Every line follows a gutter, either a token or an indent, so its width is the gutter plus its body.
@@ -254,7 +260,7 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
           { lead: indent(1), body: cell.outcome },
         ]);
 
-    const totalToken = rows.some((row) => row.didNotLoad === true)
+    const totalToken = rows.some((row) => row.notRun !== undefined)
       ? 'failedError'
       : resolveWorstToken(totals.worstSeverity);
     const totalBody = buildCountBody(totals, totalDurationMs);

@@ -104,7 +104,7 @@ export async function runHumanMode(
         const layout = getLayout();
         const status = `${layout.token('failedError')}${DID_NOT_LOAD_STATUS}`;
         writeBlock(`${layout.formatBreadcrumb(kitSegments, 'kit')}\n${status}`);
-        rows.push({ counts: emptyCounts(), didNotLoad: true, durationMs: 0, segments: kitSegments });
+        rows.push({ counts: emptyCounts(), durationMs: 0, notRun: 'didNotLoad', segments: kitSegments });
       }
 
       // A lone kit needs no label: nothing to disambiguate, and its source is already in the message.
