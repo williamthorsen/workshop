@@ -2,33 +2,20 @@ import path from 'node:path';
 import process from 'node:process';
 
 import { EXIT_OK } from '../bin/exitCodes.ts';
-import { toRdyError } from '../errors/RdyError.ts';
+import type { RdyError } from '../errors/RdyError.ts';
 import { formatRepositoryLabel, type KitProvenance } from '../kits/KitProvenance.ts';
-import type { LoadedRdyKit } from '../kits/loadRdyKit.ts';
-import type { FixLocation, RdyChecklist, RdyKit, RdyReport, RdyStagedChecklist, Severity } from '../kits/types.ts';
+import type { FixLocation, RdyChecklist, RdyReport, RdyStagedChecklist, Severity } from '../kits/types.ts';
 import { getLayout } from '../layout/engine.ts';
 import type { BreadcrumbSegment, NotRunReason, SummaryRow } from '../layout/layoutEngine.ts';
 import { writeWarnings } from '../output/writeWarnings.ts';
-import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
 import { formatCombinedSummary } from '../reporting/formatCombinedSummary.ts';
 import { formatRunVerdict, type KitThreshold, type WithheldFailures } from '../reporting/formatRunVerdict.ts';
 import { countResults, emptyCounts, reportRdy, selectVisibleResults } from '../reporting/reportRdy.ts';
 import { meetsThreshold } from '../severity/meetsThreshold.ts';
-import { listUnmarkedGeneratedSourceWarnings } from './generated-report.ts';
-import { listKitStalenessWarnings, readManifestTracking } from './kit-staleness.ts';
-import type { UnrunSource } from './KitSelection.ts';
-import { loadKit } from './loadKit.ts';
-import { listUnusedPragmaWarnings } from './pragma-report.ts';
-import { createPragmaLedger, type PragmaLedger } from './PragmaLedger.ts';
-import { recordKitCheckIds } from './recordKitCheckIds.ts';
 import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
 import { resolveRunExitCode } from './resolveRunExitCode.ts';
-import { resolveThresholds } from './resolveThresholds.ts';
-import { runRdy } from './runRdy.ts';
-import { selectChecklists } from './selectChecklists.ts';
-import { listMaskedSkipWarnings } from './skip-diagnosis.ts';
+import { type KitRunEvent, type KitRunSettings, runKitEntries } from './runKitEntries.ts';
 import { formatEmptySelection, listUnrunSourceWarnings } from './source-report.ts';
-import { listVersionSkewWarnings } from './version-skew.ts';
 
 /** The line under the heading of a kit that did not run, for each reason; the error itself is written to stderr. */
 const NOT_RUN_STATUSES: Readonly<Record<NotRunReason, string>> = {
@@ -36,21 +23,15 @@ const NOT_RUN_STATUSES: Readonly<Record<NotRunReason, string>> = {
   failedAfterLoad: 'Kit did not run; the error is on stderr',
 };
 
-interface HumanRunSettings {
-  diagnose: boolean;
-  failOn: Severity | undefined;
+interface HumanRunSettings extends KitRunSettings {
   quiet: boolean;
-  remote: RemoteFetchContext;
-  reportOn: Severity | undefined;
-  unrunSources: readonly UnrunSource[];
 }
 
 /**
  * Runs all kit entries in human-readable mode.
  *
- * Uses the same per-kit boundary as JSON mode, reporting the failure on stderr so that it stays
- * distinguishable from a failed check, which prints into the stdout report and means a different
- * exit code.
+ * Reports the error of a kit that did not run on stderr, so that it stays distinguishable from a failed check,
+ * which prints into the stdout report and means a different exit code.
  */
 export async function runHumanMode(
   kitEntries: ResolvedKitEntry[],
@@ -66,72 +47,64 @@ export async function runHumanMode(
   }
 
   const isMultiKit = kitEntries.length > 1;
-  const { tracking, warnings: manifestWarnings } = readManifestTracking(isJit);
-  writeWarnings(manifestWarnings);
-  const pragmaLedger = createPragmaLedger();
   const writeBlock = createBlockWriter();
   const rows: SummaryRow[] = [];
   const kitThresholds: KitThreshold[] = [];
-  let allPassed = true;
   let anyBlockDropped = false;
-  let missingKitCount = 0;
   let withheld: WithheldFailures | undefined;
+  // A kit's contributions to the summary are committed only once it finishes, so that a kit that throws partway
+  // through leaves its not-run row alone in the table.
+  let currentKit: KitInProgress | undefined;
 
-  for (const entry of kitEntries) {
-    const kitSegments = buildKitSegments(entry, isMultiKit);
+  for await (const event of runKitEntries(kitEntries, settings, isJit)) {
+    switch (event.kind) {
+      case 'runStarted':
+        writeWarnings(event.warnings);
+        break;
+      case 'kitLoaded':
+        writeWarnings(event.warnings);
+        currentKit = startKit(event, isMultiKit);
+        break;
+      case 'checklistReported':
+        if (currentKit !== undefined) reportChecklist(event.checklist, event.report, currentKit, settings, writeBlock);
+        // Warn after the block, so that the reader has just seen the skipped line that the warning is about.
+        writeWarnings(event.warnings);
+        break;
+      case 'kitFinished':
+        if (currentKit !== undefined) {
+          rows.push(...currentKit.rows);
+          kitThresholds.push({ kitName: event.entry.name, failOn: currentKit.thresholds.failOn });
+          if (currentKit.hasDroppedBlock) anyBlockDropped = true;
+          if (currentKit.withheldCount > 0) {
+            withheld = addWithheld(withheld, currentKit.withheldCount, currentKit.thresholds.failOn);
+          }
+        }
+        currentKit = undefined;
+        break;
+      case 'kitFailed':
+        writeWarnings(event.warnings);
+        rows.push(...reportUnrunKit(event.error, event.reason, buildKitSegments(event.entry, isMultiKit), writeBlock));
+        currentKit = undefined;
+        break;
+      case 'runFinished': {
+        // Tally after the last kit rather than inside one, so a kit that failed to load still leaves the table
+        // covering the checklists that did run. Because a dropped block is reported by its row alone, one dropped
+        // block justifies the table even when the table has only a single row to show.
+        if (rows.length > 1 || anyBlockDropped) writeBlock(formatCombinedSummary(rows));
 
-    let loaded: LoadedRdyKit;
-    try {
-      loaded = await loadKit(entry, settings.remote);
-    } catch (error: unknown) {
-      rows.push(...reportUnrunKit(error, 'didNotLoad', kitSegments, writeBlock));
-      missingKitCount++;
-      continue;
-    }
+        // Warn after the summary table, the last block in which a reported file may have been named.
+        writeWarnings(event.warnings);
 
-    const { kit, compileTimeVersion } = loaded;
-    try {
-      recordKitCheckIds(kit, pragmaLedger, entry.provenance);
+        // Close with the verdict, after the warnings on stderr, so that it is the last line of a merged CI log.
+        const missingKitCount = event.failedKitCount;
+        writeBlock(formatRunVerdict({ kitThresholds, missingKitCount, passed: event.allPassed, withheld }));
 
-      writeWarnings([
-        ...listKitStalenessWarnings(entry.name, entry.source, tracking),
-        ...listVersionSkewWarnings(entry.name, kit, compileTimeVersion, entry.provenance),
-      ]);
-
-      const kitResult = await runKit(kit, entry.checklists, settings, {
-        entry,
-        isMultiKit,
-        kitSegments,
-        pragmaLedger,
-        writeBlock,
-      });
-      rows.push(...kitResult.rows);
-      kitThresholds.push({ kitName: entry.name, failOn: kitResult.failOn });
-      if (kitResult.hasDroppedBlock) anyBlockDropped = true;
-      if (!kitResult.passed) allPassed = false;
-      if (kitResult.withheldCount > 0) withheld = addWithheld(withheld, kitResult.withheldCount, kitResult.failOn);
-    } catch (error: unknown) {
-      rows.push(...reportUnrunKit(error, 'failedAfterLoad', kitSegments, writeBlock));
-      missingKitCount++;
+        return resolveRunExitCode(missingKitCount > 0, event.allPassed);
+      }
     }
   }
 
-  // Tally after the last kit rather than inside one, so a kit that failed to load still leaves the table
-  // covering the checklists that did run. Because a dropped block is reported by its row alone, one dropped
-  // block justifies the table even when the table has only a single row to show.
-  if (rows.length > 1 || anyBlockDropped) writeBlock(formatCombinedSummary(rows));
-
-  // Warn after the summary table, the last block in which a reported file may have been named.
-  writeWarnings([
-    ...listUnusedPragmaWarnings(pragmaLedger),
-    ...(await listUnmarkedGeneratedSourceWarnings(pragmaLedger)),
-    ...listUnrunSourceWarnings(settings.unrunSources),
-  ]);
-
-  // Close with the verdict, after the warnings on stderr, so that it is the last line of a merged CI log.
-  writeBlock(formatRunVerdict({ kitThresholds, missingKitCount, passed: allPassed, withheld }));
-
-  return resolveRunExitCode(missingKitCount > 0, allPassed);
+  throw new Error('The run ended without a runFinished event');
 }
 
 // region | Helpers
@@ -216,6 +189,49 @@ function describeKitProvenance(provenance: KitProvenance | undefined): Breadcrum
   return { role: 'sourcePackage', text: `${provenance.packageName}${version}` };
 }
 
+/** What a kit's blocks need from the kit, and what its checklists add to the run's summary once it finishes. */
+interface KitInProgress {
+  fixLocation: FixLocation | undefined;
+  hasDroppedBlock: boolean;
+  kitSegments: BreadcrumbSegment[];
+  rows: SummaryRow[];
+  showChecklistSegment: boolean;
+  thresholds: { failOn: Severity; reportOn: Severity };
+  willTabulate: boolean;
+  /** Failed checks that meet the failure threshold but not the reporting threshold. */
+  withheldCount: number;
+}
+
+/** Renders one checklist's report as a block, and adds its row and withheld failures to the kit in progress. */
+function reportChecklist(
+  checklist: RdyChecklist | RdyStagedChecklist,
+  report: RdyReport,
+  kit: KitInProgress,
+  settings: HumanRunSettings,
+  writeBlock: BlockWriter,
+): void {
+  const { failOn, reportOn } = kit.thresholds;
+  const { body, hasVisibleResults } = reportRdy(report, {
+    fixLocation: resolveFixLocation(checklist, kit.fixLocation),
+    quiet: settings.quiet,
+    reportOn,
+  });
+
+  const segments: BreadcrumbSegment[] = kit.showChecklistSegment
+    ? [...kit.kitSegments, { role: 'checklist', text: checklist.name }]
+    : kit.kitSegments;
+
+  if (hasVisibleResults || !kit.willTabulate) {
+    const heading = segments.length > 0 ? `${getLayout().formatBreadcrumb(segments, 'kit')}\n` : '';
+    writeBlock(heading + body);
+  } else {
+    kit.hasDroppedBlock = true;
+  }
+
+  kit.withheldCount += countWithheldFailures(report, failOn, reportOn);
+  kit.rows.push(toSummaryRow(segments, report));
+}
+
 /**
  * Reports a kit that threw before it finished, and returns its summary rows: one, or none for a lone kit.
  *
@@ -223,7 +239,7 @@ function describeKitProvenance(provenance: KitProvenance | undefined): Breadcrum
  * asked for and states which of them did not run and why.
  */
 function reportUnrunKit(
-  error: unknown,
+  rdyError: RdyError,
   reason: NotRunReason,
   kitSegments: BreadcrumbSegment[],
   writeBlock: BlockWriter,
@@ -239,7 +255,6 @@ function reportUnrunKit(
 
   // A lone kit needs no label: nothing to disambiguate, and its source is already in the message.
   const label = kitSegments.length > 0 ? ` [${layout.formatBreadcrumbLabel(kitSegments)}]` : '';
-  const rdyError = toRdyError(error);
   process.stderr.write(`Error${label}: ${rdyError.message}\n`);
   if (rdyError.hint !== undefined) {
     process.stderr.write(layout.formatHint(rdyError.hint) + '\n');
@@ -253,85 +268,21 @@ function resolveFixLocation(checklist: RdyChecklist | RdyStagedChecklist, kitDef
   return checklist.fixLocation ?? kitDefault ?? 'end';
 }
 
-/** What a kit's checklists need from the run to which they belong. */
-interface KitBlockContext {
-  entry: ResolvedKitEntry;
-  isMultiKit: boolean;
-  kitSegments: BreadcrumbSegment[];
-  pragmaLedger: PragmaLedger;
-  writeBlock: BlockWriter;
-}
-
-/**
- * A kit's verdict and failure threshold, alongside the rows that its checklists contribute to the run's summary
- * table.
- */
-interface KitRunResult {
-  failOn: Severity;
-  hasDroppedBlock: boolean;
-  passed: boolean;
-  rows: SummaryRow[];
-  /** Failed checks that meet the failure threshold but not the reporting threshold. */
-  withheldCount: number;
-}
-
-/** Runs the checklists of a single kit in human-readable mode. */
-async function runKit(
-  kit: RdyKit,
-  checklistFilter: string[],
-  settings: HumanRunSettings,
-  { entry, isMultiKit, kitSegments, pragmaLedger, writeBlock }: KitBlockContext,
-): Promise<KitRunResult> {
-  const checklists = selectChecklists(kit, checklistFilter);
-  const thresholds = resolveThresholds(kit, settings.failOn, settings.reportOn);
-  const showChecklistSegment = checklists.length > 1;
-  // A block may go unwritten only when the summary table will show the row that it leaves behind. A run of
-  // one checklist tabulates nothing, so its block is written however little it has to say.
-  const willTabulate = isMultiKit || checklists.length > 1;
-  const rows: SummaryRow[] = [];
-  let allPassed = true;
-  let hasDroppedBlock = false;
-  let withheldCount = 0;
-
-  for (const checklist of checklists) {
-    const report = await runRdy(checklist, {
-      defaultSeverity: thresholds.defaultSeverity,
-      diagnose: settings.diagnose,
-      failOn: thresholds.failOn,
-      pragmaLedger,
-      provenance: entry.provenance,
-    });
-    const fixLocation = resolveFixLocation(checklist, kit.fixLocation);
-    const { body, hasVisibleResults } = reportRdy(report, {
-      fixLocation,
-      quiet: settings.quiet,
-      reportOn: thresholds.reportOn,
-    });
-
-    const segments: BreadcrumbSegment[] = showChecklistSegment
-      ? [...kitSegments, { role: 'checklist', text: checklist.name }]
-      : kitSegments;
-
-    if (hasVisibleResults || !willTabulate) {
-      const heading = segments.length > 0 ? `${getLayout().formatBreadcrumb(segments, 'kit')}\n` : '';
-      writeBlock(heading + body);
-    } else {
-      hasDroppedBlock = true;
-    }
-
-    // Warn after the block, so that the reader has just seen the skipped line that the warning is about.
-    writeWarnings(listMaskedSkipWarnings(entry, checklist.name, report.diagnoses));
-
-    if (!report.passed) {
-      allPassed = false;
-    }
-
-    withheldCount += countWithheldFailures(report, thresholds.failOn, thresholds.reportOn);
-
-    rows.push(toSummaryRow(segments, report));
-  }
-
-  return { failOn: thresholds.failOn, hasDroppedBlock, passed: allPassed, rows, withheldCount };
+/** Returns the state of a kit whose checklists are about to report, before any of its blocks is written. */
+function startKit(event: Extract<KitRunEvent, { kind: 'kitLoaded' }>, isMultiKit: boolean): KitInProgress {
+  const { checklists, entry, kit, thresholds } = event;
+  return {
+    fixLocation: kit.fixLocation,
+    hasDroppedBlock: false,
+    kitSegments: buildKitSegments(entry, isMultiKit),
+    rows: [],
+    showChecklistSegment: checklists.length > 1,
+    thresholds,
+    // A block may go unwritten only when the summary table will show the row that it leaves behind. A run of
+    // one checklist tabulates nothing, so its block is written however little it has to say.
+    willTabulate: isMultiKit || checklists.length > 1,
+    withheldCount: 0,
+  };
 }
 
 /** Builds a summary row from a report, named by the breadcrumb heading of the block into which the report renders. */

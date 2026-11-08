@@ -91,16 +91,6 @@ describe(runHumanMode, () => {
   });
 
   describe('resolved thresholds', () => {
-    it('passes failOn to runRdy', async () => {
-      const kit = makeKit({ failOn: 'recommend' });
-      mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
-      mockRunRdy.mockResolvedValue({ results: [], passed: true, durationMs: 0 });
-
-      await runHuman(singleKitEntry(['deploy']));
-
-      expect(mockRunRdy).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ failOn: 'recommend' }));
-    });
-
     it('passes reportOn to reportRdy', async () => {
       const kit = makeKit();
       mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });

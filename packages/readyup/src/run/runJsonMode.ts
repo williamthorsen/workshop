@@ -1,133 +1,93 @@
 import process from 'node:process';
 
-import { toRdyError } from '../errors/RdyError.ts';
 import type { KitProvenance } from '../kits/KitProvenance.ts';
-import type { RdyReport, Severity } from '../kits/types.ts';
+import type { RdyReport } from '../kits/types.ts';
 import { writeWarnings } from '../output/writeWarnings.ts';
-import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
-import { formatJsonReport, type KitInput } from '../reporting/formatJsonReport.ts';
+import { formatJsonReport, type KitInput, type KitResultInput } from '../reporting/formatJsonReport.ts';
 import type { JsonWarning } from '../schemas/common.ts';
 import type { JsonDetail, JsonKitOrigin } from '../schemas/reportSchema.ts';
-import { listUnmarkedGeneratedSourceWarnings } from './generated-report.ts';
-import { listKitStalenessWarnings, readManifestTracking } from './kit-staleness.ts';
-import type { UnrunSource } from './KitSelection.ts';
-import { loadKit } from './loadKit.ts';
-import { listUnusedPragmaWarnings } from './pragma-report.ts';
-import { createPragmaLedger } from './PragmaLedger.ts';
-import { recordKitCheckIds } from './recordKitCheckIds.ts';
 import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
 import { resolveRunExitCode } from './resolveRunExitCode.ts';
-import { resolveThresholds } from './resolveThresholds.ts';
-import { runRdy } from './runRdy.ts';
-import { selectChecklists } from './selectChecklists.ts';
-import { listMaskedSkipWarnings } from './skip-diagnosis.ts';
-import { listUnrunSourceWarnings } from './source-report.ts';
-import { listVersionSkewWarnings } from './version-skew.ts';
+import { type KitRunSettings, runKitEntries } from './runKitEntries.ts';
 
-interface JsonRunSettings {
+interface JsonRunSettings extends KitRunSettings {
   detail: JsonDetail;
-  diagnose: boolean;
-  failOn: Severity | undefined;
-  remote: RemoteFetchContext;
-  reportOn: Severity | undefined;
-  unrunSources: readonly UnrunSource[];
 }
 
 /**
  * Runs all kit entries in JSON mode, producing a single JSON report.
  *
- * Each iteration is its own error boundary: Once the run has dispatched, anything the loop body
- * throws is attributable to that kit alone, so the run records it as an entry in the report rather
- * than discarding the kits that already ran. The scope is positional rather than keyed on `RdyErrorCode`
- * -- a consumer cannot predict which codes would escape, and a new code would silently pick a branch.
+ * A kit that did not run becomes an error entry in the report rather than discarding the kits that already ran.
  */
 export async function runJsonMode(
   kitEntries: ResolvedKitEntry[],
   settings: JsonRunSettings,
   isJit: boolean,
 ): Promise<number> {
-  const { detail, diagnose, failOn, remote, reportOn, unrunSources } = settings;
+  const { detail, failOn, reportOn } = settings;
   const kitInputs: KitInput[] = [];
   const warnings: JsonWarning[] = [];
-  /** Adds a batch of warnings to the report and writes them to stderr, so that the two outputs always agree. */
-  function recordWarnings(batch: readonly JsonWarning[]): void {
-    warnings.push(...batch);
-    writeWarnings(batch);
-  }
+  let kitReports: Array<{ name: string; report: RdyReport }> = [];
+  let currentKit: Omit<KitResultInput, 'entries'> | undefined;
 
-  const { tracking, warnings: manifestWarnings } = readManifestTracking(isJit);
-  recordWarnings(manifestWarnings);
-  const pragmaLedger = createPragmaLedger();
-  let allPassed = true;
-  let anyKitFailed = false;
+  for await (const event of runKitEntries(kitEntries, settings, isJit)) {
+    // Add each batch of warnings to the report and write it to stderr, so that the two outputs always agree.
+    if ('warnings' in event) {
+      warnings.push(...event.warnings);
+      writeWarnings(event.warnings);
+    }
 
-  for (const entry of kitEntries) {
-    try {
-      const { kit, compileTimeVersion } = await loadKit(entry, remote);
-      recordKitCheckIds(kit, pragmaLedger, entry.provenance);
-
-      recordWarnings([
-        ...listKitStalenessWarnings(entry.name, entry.source, tracking),
-        ...listVersionSkewWarnings(entry.name, kit, compileTimeVersion, entry.provenance),
-      ]);
-
-      const thresholds = resolveThresholds(kit, failOn, reportOn);
-      const checklists = selectChecklists(kit, entry.checklists);
-
-      const entries: Array<{ name: string; report: RdyReport }> = [];
-
-      for (const checklist of checklists) {
-        const report = await runRdy(checklist, {
-          defaultSeverity: thresholds.defaultSeverity,
-          diagnose,
+    switch (event.kind) {
+      case 'kitLoaded': {
+        const { compileTimeVersion, entry, thresholds } = event;
+        kitReports = [];
+        currentKit = {
+          name: entry.name,
+          ...toJsonOriginField(entry.provenance),
+          ...(compileTimeVersion !== undefined && { compiledWith: compileTimeVersion }),
           failOn: thresholds.failOn,
-          pragmaLedger,
-          provenance: entry.provenance,
-        });
-        entries.push({ name: checklist.name, report });
-        recordWarnings(listMaskedSkipWarnings(entry, checklist.name, report.diagnoses));
-        if (!report.passed) allPassed = false;
+          reportOn: thresholds.reportOn,
+        };
+        break;
       }
-
-      kitInputs.push({
-        name: entry.name,
-        ...toJsonOriginField(entry.provenance),
-        ...(compileTimeVersion !== undefined && { compiledWith: compileTimeVersion }),
-        entries,
-        failOn: thresholds.failOn,
-        reportOn: thresholds.reportOn,
-      });
-    } catch (error: unknown) {
-      // An entry built here has no `compiledWith`: A kit that produced no results has nothing
-      // for a compile-time version to explain.
-      const { code, hint, message } = toRdyError(error);
-      kitInputs.push({
-        name: entry.name,
-        ...toJsonOriginField(entry.provenance),
-        error: { code, message, ...(hint !== undefined && { hint }) },
-      });
-      anyKitFailed = true;
+      case 'checklistReported':
+        kitReports.push({ name: event.checklist.name, report: event.report });
+        break;
+      case 'kitFinished':
+        if (currentKit !== undefined) kitInputs.push({ ...currentKit, entries: kitReports });
+        currentKit = undefined;
+        break;
+      case 'kitFailed': {
+        // An entry built here has no `compiledWith`: A kit that produced no results has nothing for a
+        // compile-time version to explain.
+        const { code, hint, message } = event.error;
+        kitInputs.push({
+          name: event.entry.name,
+          ...toJsonOriginField(event.entry.provenance),
+          error: { code, message, ...(hint !== undefined && { hint }) },
+        });
+        currentKit = undefined;
+        break;
+      }
+      case 'runFinished': {
+        // The top-level thresholds say what the invocation asked for: An absent flag stays absent rather than
+        // being reported as a default that nobody requested. What governed each kit, including a threshold
+        // declared by the kit for itself, appears on that kit's entry.
+        const output = formatJsonReport(kitInputs, {
+          detail,
+          ...(failOn !== undefined && { failOn }),
+          ...(reportOn !== undefined && { reportOn }),
+          ...(warnings.length > 0 && { warnings }),
+        });
+        process.stdout.write(output + '\n');
+        return resolveRunExitCode(event.failedKitCount > 0, event.allPassed);
+      }
+      case 'runStarted':
+        break;
     }
   }
 
-  recordWarnings([
-    ...listUnusedPragmaWarnings(pragmaLedger),
-    ...(await listUnmarkedGeneratedSourceWarnings(pragmaLedger)),
-    ...listUnrunSourceWarnings(unrunSources),
-  ]);
-
-  // The top-level thresholds say what the invocation asked for: An absent flag stays absent
-  // rather than being reported as a default that nobody requested. What governed each kit, including
-  // a threshold declared by the kit for itself, appears on that kit's entry.
-  const output = formatJsonReport(kitInputs, {
-    detail,
-    ...(failOn !== undefined && { failOn }),
-    ...(reportOn !== undefined && { reportOn }),
-    ...(warnings.length > 0 && { warnings }),
-  });
-  process.stdout.write(output + '\n');
-
-  return resolveRunExitCode(anyKitFailed, allPassed);
+  throw new Error('The run ended without a runFinished event');
 }
 
 // region | Helpers
