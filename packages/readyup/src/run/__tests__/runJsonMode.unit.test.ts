@@ -265,6 +265,37 @@ describe(runJsonMode, () => {
     );
   });
 
+  it('discards the results of a kit that threw after its first checklist, and reports the next kit in full', async () => {
+    mockLoadRdyKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
+    const passing = { results: [], passed: true, durationMs: 0 };
+    mockRunRdy
+      .mockResolvedValueOnce(passing)
+      .mockRejectedValueOnce(new Error('runner crashed'))
+      .mockResolvedValue(passing);
+
+    const { exitCode } = await runJson([
+      { name: 'kit1', source: { path: '.readyup/kits/kit1.js' }, checklists: [] },
+      { name: 'kit2', source: { path: '.readyup/kits/kit2.js' }, checklists: [] },
+    ]);
+
+    expect(exitCode).toBe(2);
+    expect(mockFormatJsonReport).toHaveBeenCalledWith(
+      [
+        { name: 'kit1', error: { code: 'internal', message: 'runner crashed' } },
+        {
+          name: 'kit2',
+          entries: [
+            { name: 'deploy', report: passing },
+            { name: 'infra', report: passing },
+          ],
+          failOn: 'error',
+          reportOn: 'recommend',
+        },
+      ],
+      expect.anything(),
+    );
+  });
+
   it('does not write headers in JSON mode', async () => {
     const kit = makeKit();
     mockLoadRdyKit.mockResolvedValue({ kit, compileTimeVersion: undefined });
