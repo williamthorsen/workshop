@@ -8,11 +8,23 @@ import type { JsonWarning } from '../schemas/common.ts';
 import type { JsonDetail, JsonKitOrigin } from '../schemas/reportSchema.ts';
 import type { ResolvedKitEntry } from './ResolvedKitEntry.ts';
 import { resolveRunExitCode } from './resolveRunExitCode.ts';
-import { type KitRunSettings, runKitEntries } from './runKitEntries.ts';
+import {
+  defaultKitRunDependencies,
+  type KitRunDependencies,
+  type KitRunSettings,
+  runKitEntries,
+} from './runKitEntries.ts';
 
 interface JsonRunSettings extends KitRunSettings {
   detail: JsonDetail;
 }
+
+/** The collaborators of a JSON-mode run: the run steps' own, and the formatter of the report. */
+export interface JsonRunDependencies extends KitRunDependencies {
+  formatJsonReport: typeof formatJsonReport;
+}
+
+const defaultJsonRunDependencies: JsonRunDependencies = { ...defaultKitRunDependencies, formatJsonReport };
 
 /**
  * Runs all kit entries in JSON mode, producing a single JSON report.
@@ -23,6 +35,7 @@ export async function runJsonMode(
   kitEntries: ResolvedKitEntry[],
   settings: JsonRunSettings,
   isJit: boolean,
+  dependencies: JsonRunDependencies = defaultJsonRunDependencies,
 ): Promise<number> {
   const { detail, failOn, reportOn } = settings;
   const kitInputs: KitInput[] = [];
@@ -30,7 +43,7 @@ export async function runJsonMode(
   let kitReports: Array<{ name: string; report: RdyReport }> = [];
   let currentKit: Omit<KitResultInput, 'entries'> | undefined;
 
-  for await (const event of runKitEntries(kitEntries, settings, isJit)) {
+  for await (const event of runKitEntries(kitEntries, settings, isJit, dependencies)) {
     // Add each batch of warnings to the report and write it to stderr, so that the two outputs always agree.
     if ('warnings' in event) {
       warnings.push(...event.warnings);
@@ -73,7 +86,7 @@ export async function runJsonMode(
         // The top-level thresholds say what the invocation asked for: An absent flag stays absent rather than
         // being reported as a default that nobody requested. What governed each kit, including a threshold
         // declared by the kit for itself, appears on that kit's entry.
-        const output = formatJsonReport(kitInputs, {
+        const output = dependencies.formatJsonReport(kitInputs, {
           detail,
           ...(failOn !== undefined && { failOn }),
           ...(reportOn !== undefined && { reportOn }),
