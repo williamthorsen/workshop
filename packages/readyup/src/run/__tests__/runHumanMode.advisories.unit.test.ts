@@ -2,10 +2,15 @@ import process from 'node:process';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { kitLoadError } from '../../errors/RdyError.ts';
 import type { RaisedWarning } from '../../schemas/common.ts';
 import { createUncachedRemoteContext } from '../../test-utils/createUncachedRemoteContext.ts';
 import type { UnrunSource } from '../KitSelection.ts';
 import type { ResolvedKitEntry } from '../ResolvedKitEntry.ts';
+import { runHumanMode } from '../runHumanMode.ts';
+import { createRunFakes, type RunFakes } from '../test-utils/createRunFakes.ts';
+import { makeKit, singleKitEntry } from '../test-utils/kit-fixtures.ts';
+import { runHuman } from '../test-utils/runHuman.ts';
 
 /** A warning as the unmarked-generated report returns it. */
 const GENERATED_UNMARKED: RaisedWarning = {
@@ -21,12 +26,6 @@ const TARGET_DRIFT_DEFAULT: RaisedWarning = {
   message: 'compiled kit "default" does not match the hash that the manifest recorded for it.',
   remedy: 'Move the edits into the source, then run `rdy compile --force`.',
 };
-
-import { kitLoadError } from '../../errors/RdyError.ts';
-import { runHumanMode } from '../runHumanMode.ts';
-import { createRunFakes, type RunFakes } from '../test-utils/createRunFakes.ts';
-import { makeKit, singleKitEntry } from '../test-utils/kit-fixtures.ts';
-import { runHuman } from '../test-utils/runHuman.ts';
 
 /** A warning as the unused-pragma report returns it. */
 const PRAGMA_UNUSED: RaisedWarning = { code: 'pragma-unused', message: 'pragma unused.', remedy: 'Remove it.' };
