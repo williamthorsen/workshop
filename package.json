@@ -27,7 +27,7 @@
     "@vitest/eslint-plugin": "1.6.28",
     "@williamthorsen/eslint-config-typescript": "20.2.0",
     "@williamthorsen/nmr": "catalog:",
-    "@williamthorsen/release-kit": "16.1.2",
+    "@williamthorsen/release-kit": "17.0.1",
     "@williamthorsen/strict-lint": "14.2.1",
     "@williamthorsen/toolbelt.errors": "catalog:",
     "@williamthorsen/toolbelt.vitest": "catalog:",
@@ -39,7 +39,7 @@
     "prettier": "3.9.10",
     "readyup": "workspace:*",
     "typescript": "catalog:",
-    "v11y-check": "0.20.1",
+    "v11y-check": "1.0.0",
     "vite": "catalog:",
     "vitest": "catalog:",
     "zod": "catalog:"

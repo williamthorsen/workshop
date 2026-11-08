@@ -952,7 +952,7 @@ ${violations.map((violation) => `- ${violation}`).join("\n")}`);
     return `${style.open}${text}${style.close}`;
   }
 
-  // ../../node_modules/.pnpm/@williamthorsen+toolbelt.strings@8.2.0/node_modules/@williamthorsen/toolbelt.strings/dist/esm/4-release/pluralize.js
+  // ../../node_modules/.pnpm/@williamthorsen+toolbelt.strings@8.2.1/node_modules/@williamthorsen/toolbelt.strings/dist/esm/4-release/pluralize.js
   function pluralize(count, singular, plural = `${singular}s`) {
     return Math.abs(count) === 1 ? singular : plural;
   }
