@@ -1,6 +1,6 @@
 import { DEFAULT_BROWSER } from './browser.ts';
 import { DEFAULT_LAUNCH_TIMEOUT_SECONDS } from './launch.ts';
-import { DEFAULT_PORT, MAX_DERIVED_PORT, MIN_DERIVED_PORT } from './ports.ts';
+import { DEFAULT_PORT, HASH_PORT_RANGE, TICKET_PORT_RANGE } from './ports.ts';
 import { DEFAULT_PROFILE } from './profiles.ts';
 import { DEFAULT_QUIT_TIMEOUT_SECONDS } from './quit.ts';
 
@@ -9,9 +9,10 @@ export function formatUsage(name: string, profilesDir: string): string {
   return `Launch a Chrome-family browser with remote debugging against a named profile.
 
 Usage:
-  ${name} [launch] [--profile <name>] [--port <n>] [--browser <name>] [--create] [--dry-run] [--json] [URL...]
+  ${name} [launch] [--profile <name>] [--port <n>] [--repo <name>] [--branch <name>] [--browser <name>] [--create]
+      [--dry-run] [--json] [URL...]
   ${name} list [--stale] [--json]
-  ${name} status [<profile>] [--port <n>] [--json]
+  ${name} status [<profile>] [--port <n>] [--repo <name>] [--branch <name>] [--json]
   ${name} quit [<profile>...] [--all|--idle <duration>] [--json]
   ${name} delete [<profile>...] [--stale|--all|--derived] [--force] [--dry-run] [--json]
   ${name} show-instance-page [<profile>] [--json]
@@ -21,10 +22,10 @@ Commands:
   launch          Launch the browser against the profile, or report the
                   command that would. The default when no command is named;
                   name it to launch a URL that spells a command
-  list            Report each profile's running and debugging state and when
-                  it was last used, marking a profile whose branch or
-                  repository is gone as stale and one with no provenance record
-                  as unrecorded
+  list            Report each profile's running and debugging state, the port
+                  that a derived profile derives, and when it was last used,
+                  marking a profile whose branch or repository is gone as stale
+                  and one with no provenance record as unrecorded
   status          Report the profile's state and the endpoint at which its
                   browser is or would be served: the running browser's port,
                   else the port that a launch would use. Starts and writes
@@ -54,10 +55,18 @@ Options:
                   working directory's repository and branch, as in
                   'macos-321'; '${DEFAULT_PROFILE}' with no branch. A launch
                   without --create, and quit and delete, refuse that fallback
-                  when the profile does not exist, naming the profile to pass)
+                  when the profile does not exist, naming what to pass)
       --port      Remote-debugging port (default: derived from the working
-                  directory's branch within ${MIN_DERIVED_PORT}-${MAX_DERIVED_PORT}, so
-                  branch '321' debugs on 9321; ${DEFAULT_PORT} with no branch)
+                  directory's repository and branch. A branch that encodes a
+                  ticket gets ${TICKET_PORT_RANGE.min} plus the ticket, wrapped within
+                  ${TICKET_PORT_RANGE.min}-${TICKET_PORT_RANGE.max}, so branch '321' debugs on 20321; any
+                  other branch gets a hash of '<repo>/<branch>' within
+                  ${HASH_PORT_RANGE.min}-${HASH_PORT_RANGE.max}; ${DEFAULT_PORT} with no branch)
+      --repo      Repository name from which the profile and port derive, in
+                  place of the one that git reports, for a working directory
+                  that git cannot read, such as one that the sandbox denies
+      --branch    Branch from which the profile and port derive, in place of
+                  the one that git reports
       --browser   Browser to launch: 'chrome', or 'chrome-for-testing' for the
                   build that Playwright installs, which Chrome's managed
                   preferences do not govern (default: $THOR_CHROME_BROWSER,
@@ -68,6 +77,8 @@ Options:
       --stale     List only the profiles that delete --stale would select
   status:
       --port      The port that a launch would use, as for launch
+      --repo, --branch
+                  The repository name and branch to derive from, as for launch
   quit:
       --all       Quit every running profile
       --idle      Quit every running browser to which no DevTools client has
@@ -146,11 +157,13 @@ JSON output:
 
   Every profile object contains "origin" ("derived", "named", or null when the
   profile records neither), the "repo" and "branch" from which a derived profile
-  came, whether it is "stale", and the "lastUsedAt" instant. A profile recording
-  no origin is never stale: null there means unknown, not false. A profile kept
-  by a sweep adds "retained", naming why; the only reason is "running". A
-  profile that delete --force quit, or would quit, reports the "pid" and "port"
-  of that browser.
+  came, whether it is "stale", and the "lastUsedAt" instant. "derivedPort" is
+  the port that a launch from a derived profile's worktree would use, whether
+  or not its browser runs there, and null for any other profile. A profile
+  recording no origin is never stale: null there means unknown, not false. A
+  profile kept by a sweep adds "retained", naming why; the only reason is
+  "running". A profile that delete --force quit, or would quit, reports the
+  "pid" and "port" of that browser.
 
   Profile states:
     debugging, deleted, running-without-port, stopped, unknown, unresponsive

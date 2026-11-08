@@ -3,6 +3,12 @@ import { type Invocation, runTolerantly } from './invocation.ts';
 /** What a search of the process list found for a profile. */
 export type BrowserLookup = { isReadable: false } | { isReadable: true; pid: string | undefined };
 
+/** The process listening on a port: its PID, and a description of it as `name (PID n, user u)`. */
+export interface PortListener {
+  description: string;
+  pid: string;
+}
+
 /** A profile's state as read from its browser process. */
 export interface ProfileState {
   pid: string | undefined;
@@ -13,13 +19,13 @@ export interface ProfileState {
 /** `unknown` when the process list cannot be read; the PID and the port are set only for the states that include them. */
 export type ProfileStateName = 'debugging' | 'running-without-port' | 'stopped' | 'unknown' | 'unresponsive';
 
-/** Returns the listening process on a port as `name (PID n, user u)`, or an empty string when the port is free. */
-export function describePortListener(invocation: Invocation, port: string): string {
+/** Returns the process listening on a port, or `undefined` when the port is free. */
+export function describePortListener(invocation: Invocation, port: string): PortListener | undefined {
   const result = runTolerantly(invocation, 'lsof', ['-i', `TCP:${port}`, '-s', 'TCP:LISTEN', '-n', '-P']);
   const line = result.stdout.replace(/\n+$/, '').split('\n', 2)[1];
-  if (line === undefined) return '';
+  if (line === undefined) return undefined;
   const [command = '', pid = '', user = ''] = line.trim().split(/\s+/, 3);
-  return `${command} (PID ${pid}, user ${user})`;
+  return { description: `${command} (PID ${pid}, user ${user})`, pid };
 }
 
 /**
@@ -41,6 +47,19 @@ export function findBrowserPid(invocation: Invocation, profileDir: string): Brow
     if (!readCommandLine(invocation, pid.trim()).includes('--type=')) return { isReadable: true, pid: pid.trim() };
   }
   return { isReadable: true, pid: undefined };
+}
+
+/**
+ * Returns the name of the profile whose browser a process is, read from the `--user-data-dir` in its command line, or
+ * `undefined` for a process that runs no profile under the profiles directory. The match is anchored past the
+ * directory, as in `findBrowserPid`.
+ */
+export function findProcessProfile(invocation: Invocation, pid: string): string | undefined {
+  const prefix = `--user-data-dir=${invocation.profilesDir}/`;
+  const commandLine = readCommandLine(invocation, pid);
+  const start = commandLine.indexOf(prefix);
+  if (start === -1) return undefined;
+  return /^[^\s/]+(?=\s|$)/.exec(commandLine.slice(start + prefix.length))?.[0];
 }
 
 /** Reports whether a Chrome DevTools endpoint answers on a port. */

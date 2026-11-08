@@ -347,6 +347,9 @@ importers:
       '@williamthorsen/toolbelt.git':
         specifier: 'catalog:'
         version: 0.7.1
+      '@williamthorsen/toolbelt.strings':
+        specifier: 'catalog:'
+        version: 8.2.0
       '@williamthorsen/toolbelt.terminal':
         specifier: 'catalog:'
         version: 0.3.0

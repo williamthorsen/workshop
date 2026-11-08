@@ -13,8 +13,8 @@ describe('launch', () => {
       await expect(run(fake, ['--dry-run'])).resolves.toBe(0);
       const profileDir = `${fake.profilesDir}/widget-321`;
       expect(fake.captured.stdout()).toBe(
-        `/bin/sh --remote-debugging-port=9321 --user-data-dir=${profileDir} --disable-search-engine-choice-screen ` +
-          String.raw`--hide-crash-restore-bubble --no-default-browser-check --no-first-run --window-name=widget-321\ ·\ :9321 ` +
+        `/bin/sh --remote-debugging-port=20321 --user-data-dir=${profileDir} --disable-search-engine-choice-screen ` +
+          String.raw`--hide-crash-restore-bubble --no-default-browser-check --no-first-run --window-name=widget-321\ ·\ :20321 ` +
           `about:blank file://${profileDir}/thor-chrome.html\n`,
       );
       expect(fake.calls.some((call) => call.program === 'thor-git')).toBe(false);
@@ -57,7 +57,7 @@ describe('launch', () => {
       const log = `${fake.home}/tmp/thor-chrome-thrive.log`;
       expect(fake.captured.stdout()).toMatch(
         new RegExp(
-          `^open -n -a ${escapeRegExp(appBundle(fake, app))} --stdout ${escapeRegExp(log)} --stderr ${escapeRegExp(log)} --args --remote-debugging-port=9321 `,
+          `^open -n -a ${escapeRegExp(appBundle(fake, app))} --stdout ${escapeRegExp(log)} --stderr ${escapeRegExp(log)} --args --remote-debugging-port=20321 `,
         ),
       );
       expect(fake.calls).toContainEqual({ args: ['--display', appBundle(fake, app)], program: 'codesign' });
@@ -82,13 +82,13 @@ describe('launch', () => {
           '--stderr',
           log,
           '--args',
-          '--remote-debugging-port=9321',
+          '--remote-debugging-port=20321',
           `--user-data-dir=${profileDir}`,
           '--disable-search-engine-choice-screen',
           '--hide-crash-restore-bubble',
           '--no-default-browser-check',
           '--no-first-run',
-          '--window-name=thrive · :9321',
+          '--window-name=thrive · :20321',
           'about:blank',
           `file://${profileDir}/thor-chrome.html`,
         ],
@@ -103,19 +103,19 @@ describe('launch', () => {
       });
       fake.makeProfile('thrive');
       await run(fake, ['--dry-run', '--profile', 'thrive']);
-      expect(fake.captured.stdout()).toMatch(/^\/bin\/sh --remote-debugging-port=9321 /);
+      expect(fake.captured.stdout()).toMatch(/^\/bin\/sh --remote-debugging-port=20321 /);
     });
 
     it('omits the instance page when the profile is already debugging on the port, and opens the URLs there', async () => {
-      const fake = makeRunningFake({ port: '9321' });
+      const fake = makeRunningFake({ port: '20321' });
       await expect(run(fake, ['--dry-run', '--profile', 'thrive', 'http://x'])).resolves.toBe(0);
       expect(fake.captured.stdout()).toMatch(/ http:\/\/x\n$/);
     });
 
     it('opens neither a blank tab nor the instance page when the launch is forwarded without a URL', async () => {
-      const fake = makeRunningFake({ port: '9321' });
+      const fake = makeRunningFake({ port: '20321' });
       await expect(run(fake, ['--dry-run', '--profile', 'thrive'])).resolves.toBe(0);
-      expect(fake.captured.stdout()).toMatch(/ --window-name=thrive\\ ·\\ :9321\n$/);
+      expect(fake.captured.stdout()).toMatch(/ --window-name=thrive\\ ·\\ :20321\n$/);
     });
 
     it('takes THOR_CHROME_PROFILE as the profile, and --profile over it', async () => {
@@ -166,7 +166,7 @@ describe('launch', () => {
       await expect(run(fake, ['http://localhost:4798'])).resolves.toBe(0);
       const profileDir = `${fake.profilesDir}/widget-321`;
       expect(fake.captured.stdout()).toBe(
-        "chrome: profile 'widget-321' on port 9321\nDevTools: http://127.0.0.1:9321/json/version\n",
+        "chrome: profile 'widget-321' on port 20321\nDevTools: http://127.0.0.1:20321/json/version\n",
       );
       expect(fake.spawned).toHaveLength(1);
       expect(fake.spawned[0]?.program).toBe('/bin/sh');
@@ -178,7 +178,7 @@ describe('launch', () => {
       expect(fs.readFileSync(`${profileDir}/.thor-chrome.record`, 'utf8')).toBe(
         `origin=derived\nbranch=321\nrepo=widget\nrepo_dir=${fake.workRepoDir}\n`,
       );
-      expect(fs.readFileSync(`${profileDir}/thor-chrome.html`, 'utf8')).toContain('<title>widget-321 · :9321</title>');
+      expect(fs.readFileSync(`${profileDir}/thor-chrome.html`, 'utf8')).toContain('<title>widget-321 · :20321</title>');
     });
 
     it('opens a blank tab ahead of the instance page when no URL is given', async () => {
@@ -206,7 +206,7 @@ describe('launch', () => {
       await expect(run(fake, ['--profile', 'thrive', '--browser', 'chrome-for-testing'])).resolves.toBe(0);
       await expect(run(fake, ['--json', '--profile', 'thrive', '--browser', 'chrome-for-testing'])).resolves.toBe(0);
       const [prose = '', , json = ''] = fake.captured.stdout().split('\n', 3);
-      expect(prose).toBe("chrome-for-testing: profile 'thrive' on port 9321");
+      expect(prose).toBe("chrome-for-testing: profile 'thrive' on port 20321");
       expect(JSON.parse(json)).toMatchObject({ browser: 'chrome-for-testing' });
     });
 
@@ -224,10 +224,37 @@ describe('launch', () => {
       );
     });
 
+    it('derives the profile and port from --repo and --branch where git resolves nothing, recording no directory', async () => {
+      const outside = makeFakeThorChrome({
+        env: { THOR_CHROME_APP: '/bin/sh' },
+        results: { 'git branch': { status: 128 }, 'git rev-parse': { status: 128 } },
+      });
+      await expect(run(outside, ['--repo', 'widget', '--branch', 'main'])).resolves.toBe(0);
+      expect(outside.captured.stdout()).toContain("profile 'widget-main' on port 36036");
+      expect(fs.readFileSync(`${outside.profilesDir}/widget-main/.thor-chrome.record`, 'utf8')).toBe(
+        'origin=derived\nbranch=main\nrepo=widget\nrepo_dir=\n',
+      );
+
+      const inside = makeFakeThorChrome({
+        env: { THOR_CHROME_APP: '/bin/sh' },
+        results: { 'git branch --show-current': { stdout: 'main\n' } },
+      });
+      await expect(run(inside, [])).resolves.toBe(0);
+      expect(inside.captured.stdout()).toContain("profile 'widget-main' on port 36036");
+    });
+
+    it('lets --branch stand in for the branch alone, keeping the repository that git reports', async () => {
+      const fake = makeFakeThorChrome({ env: { THOR_CHROME_APP: '/bin/sh' } });
+      await expect(run(fake, ['--branch', 'main'])).resolves.toBe(0);
+      expect(fs.readFileSync(`${fake.profilesDir}/widget-main/.thor-chrome.record`, 'utf8')).toBe(
+        `origin=derived\nbranch=main\nrepo=widget\nrepo_dir=${fake.workRepoDir}\n`,
+      );
+    });
+
     it('writes no instance page when the profile is already debugging on the port', async () => {
-      const fake = makeRunningFake({ port: '9321' });
+      const fake = makeRunningFake({ port: '20321' });
       await expect(run(fake, ['--profile', 'thrive', 'http://x'])).resolves.toBe(0);
-      expect(fake.captured.stdout()).toContain("profile 'thrive' on port 9321");
+      expect(fake.captured.stdout()).toContain("profile 'thrive' on port 20321");
       expect(fs.existsSync(`${fake.profilesDir}/thrive/thor-chrome.html`)).toBe(false);
     });
 
@@ -252,7 +279,7 @@ describe('launch', () => {
       await expect(run(fake, ['--json', '--profile', 'thrive'])).resolves.toBe(0);
       expect(fake.readReport()).toMatchObject({
         browser: 'chrome',
-        profile: { devtools: 'http://127.0.0.1:9321/json/version', name: 'thrive', port: 9321, state: 'debugging' },
+        profile: { devtools: 'http://127.0.0.1:20321/json/version', name: 'thrive', port: 20_321, state: 'debugging' },
       });
     });
 

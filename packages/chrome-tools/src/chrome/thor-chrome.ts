@@ -37,6 +37,10 @@ const VERB_NAMES: ReadonlySet<string> = new Set(VERBS);
 
 const JSON_FLAG = { json: { type: 'boolean', description: 'Report as one JSON document on stdout' } } as const;
 const PORT_FLAG = { port: { type: 'string', description: 'Remote-debugging port' } } as const;
+const WORK_FLAGS = {
+  branch: { type: 'string', description: 'Branch to derive the profile and port from, in place of git' },
+  repo: { type: 'string', description: 'Repository name to derive the profile and port from, in place of git' },
+} as const;
 const PROFILES_OPERAND = [{ name: 'profiles', description: 'Profile names', optional: true, variadic: true }] as const;
 
 /**
@@ -115,6 +119,7 @@ async function dispatchVerb(invocation: Invocation, verb: Verb, args: readonly s
         flags: {
           ...JSON_FLAG,
           ...PORT_FLAG,
+          ...WORK_FLAGS,
           browser: { type: 'string', description: 'Browser to launch' },
           create: { type: 'boolean', description: 'Permit creating a profile' },
           dryRun: { type: 'boolean', description: 'Print the launch command' },
@@ -129,6 +134,7 @@ async function dispatchVerb(invocation: Invocation, verb: Verb, args: readonly s
         port: flags.port,
         profile: flags.profile,
         urls: operands.urls,
+        work: { branch: flags.branch, repo: flags.repo },
       });
     }
     case 'list': {
@@ -177,14 +183,14 @@ async function dispatchVerb(invocation: Invocation, verb: Verb, args: readonly s
     }
     case 'status': {
       const { flags, operands } = parseVerbArgs(invocation, verb, args, {
-        flags: { ...JSON_FLAG, ...PORT_FLAG },
+        flags: { ...JSON_FLAG, ...PORT_FLAG, ...WORK_FLAGS },
         operands: PROFILES_OPERAND,
       });
       const [first, second] = operands.profiles;
       if (second !== undefined) {
         throw refuse(invocation, USAGE_CODE, `status takes one profile name (got '${first ?? ''}' and '${second}')`);
       }
-      return showStatus(invocation, first, flags.port);
+      return showStatus(invocation, first, flags.port, { branch: flags.branch, repo: flags.repo });
     }
   }
 }

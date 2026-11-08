@@ -23,7 +23,7 @@ export interface InstancePageFacts {
 }
 
 /**
- * Returns the label that names a launched instance: the profile and the port, as in `macos-321 · :9321`. The window
+ * Returns the label that names a launched instance: the profile and the port, as in `macos-321 · :20321`. The window
  * name and the instance page's title both render it, so a window is called the same thing wherever it is listed.
  */
 export function composeInstanceLabel(profile: string, port: string): string {

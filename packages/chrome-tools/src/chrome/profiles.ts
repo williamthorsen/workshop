@@ -5,7 +5,15 @@ import { readRepoDir, readRepoName } from '../git/repos.ts';
 import { toKebabCase } from '../portable/to-kebab-case.ts';
 import { isDirectory } from '../shared/paths.ts';
 import type { ProfileStateName } from './browser-process.ts';
-import { type Invocation, PROCESS_LIST_RECOVERY_HINT, type ProfileRef, refuse, runTolerantly } from './invocation.ts';
+import {
+  type Invocation,
+  PROCESS_LIST_RECOVERY_HINT,
+  type ProfileRef,
+  refuse,
+  runTolerantly,
+  type WorkContext,
+} from './invocation.ts';
+import { derivePort } from './ports.ts';
 
 /** A profile's provenance and last use. Every field but `lastUsed` is unset for a profile without a record. */
 export interface ProfileFacts {
@@ -18,6 +26,12 @@ export interface ProfileFacts {
   stale: boolean | undefined;
 }
 
+/** Values given on the command line in place of the branch and the repository name that git would report. */
+export interface WorkOverrides {
+  branch?: string | undefined;
+  repo?: string | undefined;
+}
+
 export const DEFAULT_PROFILE = 'default';
 
 /**
@@ -28,7 +42,8 @@ export const PROFILE_RECORD_FILE = '.thor-chrome.record';
 
 /**
  * Refuses when the profile is the default reached by a lost derivation rather than by a caller's choice, naming what
- * was lost. `--create` cannot produce the profile that the caller wanted, so the repair names the profile instead.
+ * was lost. `--create` cannot produce the profile that the caller wanted, so the repair names the command that
+ * reaches it: one naming the profile, or the repository and branch from which it derives.
  */
 export function assertProfileNotUnderived(invocation: Invocation, repairCommand: string): void {
   if (invocation.origin !== 'underived') return;
@@ -36,7 +51,7 @@ export function assertProfileNotUnderived(invocation: Invocation, repairCommand:
     invocation,
     'underived-profile',
     `no repository or branch resolved from the working directory, so the profile fell back to '${DEFAULT_PROFILE}'`,
-    { hints: ['Name the profile instead:', `  ${repairCommand}`] },
+    { hints: ['Run instead:', `  ${repairCommand}`] },
   );
 }
 
@@ -84,6 +99,15 @@ export function composeProfileName(repo: string, branch: string): string {
 }
 
 /**
+ * Returns the port that a derived profile's recorded repository and branch derive, which is the port that a launch
+ * from its worktree would use, or `undefined` for a profile that is not derived or whose record lacks either value.
+ */
+export function deriveRecordedPort(facts: ProfileFacts): number | undefined {
+  if (facts.origin !== 'derived' || facts.repo === undefined || facts.branch === undefined) return undefined;
+  return derivePort(facts.branch, facts.repo);
+}
+
+/**
  * Reports whether the branch recorded by a derived profile is gone, which makes that profile stale.
  *
  * Every verdict is proven rather than assumed, since a sweep deletes on it. A repository directory counts as gone only
@@ -113,12 +137,14 @@ export function listProfileNames(invocation: Invocation): string[] | undefined {
 /**
  * Resolves the profile on which a verb acts and records it, with its origin and the working context, on the
  * invocation: the name given, else `THOR_CHROME_PROFILE`, else the name derived from the working directory's
- * repository and branch, else the default.
+ * repository and branch, or from the overrides that stand in for them, else the default.
  */
-export function resolveDefaultProfile(invocation: Invocation, given: string): ProfileRef {
-  // Both defaults come from the working directory's repository, which is not the one containing this command
-  const { run } = invocation.deps;
-  invocation.work = { branch: readCurrentBranch(run), repo: readRepoName(run), repoDir: readRepoDir(run) };
+export function resolveDefaultProfile(
+  invocation: Invocation,
+  given: string,
+  overrides: WorkOverrides = {},
+): ProfileRef {
+  invocation.work = readWorkContext(invocation, overrides);
   const { branch, repo } = invocation.work;
 
   let name = given === '' ? (invocation.deps.env['THOR_CHROME_PROFILE'] ?? '') : given;
@@ -141,8 +167,7 @@ export function resolveDefaultProfile(invocation: Invocation, given: string): Pr
  * named one. Refuses a working directory from which no name derives.
  */
 export function resolveDerivedProfile(invocation: Invocation, repairCommand: string): ProfileRef {
-  const { run } = invocation.deps;
-  invocation.work = { branch: readCurrentBranch(run), repo: readRepoName(run), repoDir: readRepoDir(run) };
+  invocation.work = readWorkContext(invocation, {});
   const { branch, repo } = invocation.work;
   const name = branch === undefined || repo === undefined ? '' : composeProfileName(repo, branch);
   invocation.origin = name === '' ? 'underived' : 'derived';
@@ -265,6 +290,21 @@ function readRecord(file: string): Array<[string, string]> {
     if (index === -1 || index === line.length - 1) return [];
     return [[line.slice(0, index), line.slice(index + 1)]];
   });
+}
+
+/**
+ * Reads the working context from which the defaults derive, letting each override stand in for the value that git
+ * would report. The repository directory is read only when the repository name came from git: The directory of the
+ * working directory's repository need not be that of a repository named on the command line.
+ */
+function readWorkContext(invocation: Invocation, overrides: WorkOverrides): WorkContext {
+  // The defaults come from the working directory's repository, which is not the one containing this command
+  const { run } = invocation.deps;
+  return {
+    branch: overrides.branch ?? readCurrentBranch(run),
+    repo: overrides.repo ?? readRepoName(run),
+    repoDir: overrides.repo === undefined ? readRepoDir(run) : undefined,
+  };
 }
 
 // endregion | Helpers

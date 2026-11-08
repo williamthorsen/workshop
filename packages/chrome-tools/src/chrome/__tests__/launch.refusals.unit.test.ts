@@ -75,7 +75,7 @@ describe('launch', () => {
       });
     });
 
-    it('refuses with underived-profile outside a repository, naming the profile to pass', async () => {
+    it('refuses with underived-profile outside a repository, naming --repo and --branch', async () => {
       const fake = makeFakeThorChrome({
         env: { THOR_CHROME_APP: '/bin/sh' },
         results: { 'git branch': { status: 128 }, 'git rev-parse': { status: 128 } },
@@ -83,9 +83,15 @@ describe('launch', () => {
       await expect(run(fake, ['--dry-run'])).resolves.toBe(1);
       expect(fake.captured.stderr()).toBe(
         "thor-chrome: no repository or branch resolved from the working directory, so the profile fell back to 'default'\n" +
-          '  Name the profile instead:\n' +
-          '    thor-chrome --profile <repo>-<branch> --port "$(thor-git branch-number <branch> --min 9000 --max 9999)"  # thor-git is in @williamthorsen/git-tools\n',
+          '  Run instead:\n' +
+          '    thor-chrome --repo <repo> --branch <branch>\n',
       );
+    });
+
+    it.each(['--repo', '--branch'])('refuses an empty %s as a usage error', async (flag) => {
+      const fake = makeFakeThorChrome({ env: { THOR_CHROME_APP: '/bin/sh' } });
+      await expect(run(fake, ['--json', flag, ''])).resolves.toBe(2);
+      expect(readError(fake)).toStrictEqual({ code: 'usage', message: `${flag} requires a value` });
     });
 
     it('refuses with process-list-unavailable when pgrep cannot search, writing nothing', async () => {
@@ -121,17 +127,17 @@ describe('launch', () => {
       const fake = makeRunningFake({ port: '9333' });
       await expect(run(fake, ['--json', '--dry-run', '--profile', 'thrive'])).resolves.toBe(1);
       expect(fake.readReport()).toMatchObject({
-        error: { code: 'port-mismatch', message: "profile 'thrive' is already debugging on port 9333, not 9321" },
+        error: { code: 'port-mismatch', message: "profile 'thrive' is already debugging on port 9333, not 20321" },
         profile: { name: 'thrive', pid: 4242, port: 9333, state: 'debugging' },
       });
     });
 
     it('refuses with endpoint-unresponsive, or policy-denied when the launch log recorded the policy', async () => {
-      const fake = makeRunningFake({ port: '9321', results: { curl: { status: 7 } } });
+      const fake = makeRunningFake({ port: '20321', results: { curl: { status: 7 } } });
       await expect(run(fake, ['--json', '--dry-run', '--profile', 'thrive'])).resolves.toBe(1);
       expect(readError(fake)).toMatchObject({ code: 'endpoint-unresponsive' });
 
-      const denied = makeRunningFake({ port: '9321', results: { curl: { status: 7 } } });
+      const denied = makeRunningFake({ port: '20321', results: { curl: { status: 7 } } });
       const log = `${denied.home}/tmp/thor-chrome-thrive.log`;
       fs.writeFileSync(log, 'DevTools remote debugging is disallowed by the system admin.\n');
       await expect(run(denied, ['--json', '--dry-run', '--profile', 'thrive'])).resolves.toBe(1);
@@ -143,7 +149,7 @@ describe('launch', () => {
     });
 
     it("names chrome-for-testing rather than a retry when policy blocked the running profile's port", async () => {
-      const fake = makeRunningFake({ port: '9321', results: { curl: { status: 7 } } });
+      const fake = makeRunningFake({ port: '20321', results: { curl: { status: 7 } } });
       fs.writeFileSync(
         `${fake.home}/tmp/thor-chrome-thrive.log`,
         'DevTools remote debugging is disallowed by the system admin.\n',
@@ -164,9 +170,28 @@ describe('launch', () => {
       expect(readError(fake)).toStrictEqual({
         code: 'port-busy',
         listener: 'no"de (PID 4242, user wthorsen)',
-        message: 'port 9321 is held by no"de (PID 4242, user wthorsen)',
+        message: 'port 20321 is held by no"de (PID 4242, user wthorsen)',
       });
       expect(fake.captured.stdout()).toContain(String.raw`"listener":"no\"de (PID 4242, user wthorsen)"`);
+    });
+
+    it('names the profile whose browser holds the port, and its quit command', async () => {
+      const fake = makeFakeThorChrome({
+        env: { THOR_CHROME_APP: '/bin/sh' },
+        results: { lsof: { stdout: 'COMMAND PID USER FD TYPE\nGoogle 4242 wthorsen 23u IPv4\n' } },
+      });
+      fake.makeProfile('thrive');
+      const { run: runCommand } = fake.deps;
+      const holder = `chrome --remote-debugging-port=20321 --user-data-dir=${fake.profilesDir}/soulforge-321 --no-first-run\n`;
+      fake.deps.run = (program, args, options) =>
+        program === 'ps' && args.at(-1) === '4242'
+          ? { status: 0, stderr: '', stdout: holder }
+          : runCommand(program, args, options);
+      await expect(run(fake, ['--dry-run', '--profile', 'thrive'])).resolves.toBe(1);
+      expect(fake.captured.stderr()).toBe(
+        "thor-chrome: port 20321 is held by profile 'soulforge-321': Google (PID 4242, user wthorsen)\n" +
+          '  Pick another port with --port, or quit that profile: thor-chrome quit soulforge-321\n',
+      );
     });
 
     it('hints at freeing a busy port without naming a command', async () => {
@@ -198,7 +223,7 @@ describe('launch', () => {
       expect(readError(fake)).toStrictEqual({
         code: 'launch-timeout',
         log: `${fake.home}/tmp/thor-chrome-thrive.log`,
-        message: "profile 'thrive' started but nothing answers on port 9321 after 1s",
+        message: "profile 'thrive' started but nothing answers on port 20321 after 1s",
       });
     });
 

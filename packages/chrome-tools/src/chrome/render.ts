@@ -3,7 +3,7 @@ import { quoteBashArgument } from '../portable/shell-quote.ts';
 import { isDirectory } from '../shared/paths.ts';
 import { type ProfileStateName, resolveProfileState } from './browser-process.ts';
 import { type Invocation, type JsonValue, type ThorChromeRefusal, USAGE_CODE } from './invocation.ts';
-import { type ProfileFacts, resolveProfileFacts } from './profiles.ts';
+import { deriveRecordedPort, type ProfileFacts, resolveProfileFacts } from './profiles.ts';
 
 /** What a profile's JSON object reports, besides what `resolveProfileFacts` reads from the profile itself. */
 export interface ProfileReport {
@@ -68,6 +68,7 @@ export function renderProfile(invocation: Invocation, report: ProfileReport): { 
     state: report.state,
     pid: toNumber(report.pid),
     port: toNumber(report.port),
+    derivedPort: deriveRecordedPort(facts) ?? null,
     devtools: devtools ?? null,
     origin: facts.origin ?? null,
     repo: facts.repo ?? null,
