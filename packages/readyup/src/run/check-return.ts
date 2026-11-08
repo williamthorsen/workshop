@@ -43,6 +43,9 @@ export function isFindingOutcome(raw: unknown): raw is FindingOutcome {
  * When the caller keeps a ledger, it passes the ledger to the resolution; that is how a run records what its
  * checks examined and suppressed, while a diagnosis, passing none, leaves no trace of a check that did not run.
  * A `recorder` receives the check's `scanned` paths in place of the ledger.
+ *
+ * Throws when a set of findings does not match its declared shape: A kit runs as JavaScript, so a finding
+ * without a boolean `reported` would otherwise count as unreported and let a broken check pass.
  */
 export function resolveCheckReturn(
   raw: unknown,
@@ -53,5 +56,58 @@ export function resolveCheckReturn(
 ): unknown {
   if (!isFindingOutcome(raw)) return raw;
 
+  const malformed = describeMalformedFindings(raw);
+  if (malformed !== undefined) throw new Error(malformed);
+
   return resolveFindingOutcome(raw, resolveCheckIds(check.id, provenance)?.accepted ?? [], ledger, recorder);
 }
+
+// region | Helpers
+
+/** Describes the first field of one finding that does not match `OutcomeFinding`, if any. */
+function describeMalformedFinding(finding: unknown, location: string): string | undefined {
+  if (!isRecord(finding)) {
+    return describeMismatch(location, finding, 'an object with string "path", number "line", and boolean "reported"');
+  }
+
+  const { line, path, reported, symbol } = finding;
+  if (typeof path !== 'string') return describeMismatch(`${location}.path`, path, 'a string');
+  if (typeof line !== 'number') return describeMismatch(`${location}.line`, line, 'a number');
+  if (typeof reported !== 'boolean') return describeMismatch(`${location}.reported`, reported, 'a boolean');
+  if (symbol !== undefined && typeof symbol !== 'string') {
+    return describeMismatch(`${location}.symbol`, symbol, 'a string or nothing');
+  }
+
+  return undefined;
+}
+
+/** Describes the first field of a set of findings that does not match its declared shape, if any. */
+function describeMalformedFindings(outcome: FindingOutcome): string | undefined {
+  // Widened to `unknown`: The declared types do not hold for a value returned by a kit.
+  const findings: readonly unknown[] = outcome.findings;
+  for (const [index, finding] of findings.entries()) {
+    const malformed = describeMalformedFinding(finding, `findings[${index}]`);
+    if (malformed !== undefined) return malformed;
+  }
+
+  const adoptedCount: unknown = outcome.adoptedCount;
+  if (adoptedCount !== undefined && typeof adoptedCount !== 'number') {
+    return describeMismatch('adoptedCount', adoptedCount, 'a number or nothing');
+  }
+
+  const scanned: unknown = outcome.scanned;
+  if (scanned === undefined) return undefined;
+  if (!Array.isArray(scanned)) return describeMismatch('scanned', scanned, 'an array of strings or nothing');
+  for (const [index, path] of scanned.entries()) {
+    if (typeof path !== 'string') return describeMismatch(`scanned[${index}]`, path, 'a string');
+  }
+
+  return undefined;
+}
+
+/** Composes the message for one field of a `check` return value that has the wrong type. */
+function describeMismatch(field: string, value: unknown, expected: string): string {
+  return `check() returned ${field} as ${describeValue(value)}; expected ${expected}.`;
+}
+
+// endregion | Helpers
