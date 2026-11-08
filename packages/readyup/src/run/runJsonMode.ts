@@ -49,9 +49,14 @@ export async function runJsonMode(
   const { detail, diagnose, failOn, remote, reportOn, unrunSources } = settings;
   const kitInputs: KitInput[] = [];
   const warnings: JsonWarning[] = [];
+  /** Adds a batch of warnings to the report and writes them to stderr, so that the two outputs always agree. */
+  function recordWarnings(batch: readonly JsonWarning[]): void {
+    warnings.push(...batch);
+    writeWarnings(batch);
+  }
+
   const { tracking, warnings: manifestWarnings } = readManifestTracking(isJit);
-  warnings.push(...manifestWarnings);
-  writeWarnings(manifestWarnings);
+  recordWarnings(manifestWarnings);
   const pragmaLedger = createPragmaLedger();
   let allPassed = true;
   let anyKitFailed = false;
@@ -61,12 +66,10 @@ export async function runJsonMode(
       const { kit, compileTimeVersion } = await loadKit(entry, remote);
       recordKitCheckIds(kit, pragmaLedger, entry.provenance);
 
-      const kitWarnings = [
+      recordWarnings([
         ...listKitStalenessWarnings(entry.name, entry.source, tracking),
         ...listVersionSkewWarnings(entry.name, kit, compileTimeVersion, entry.provenance),
-      ];
-      warnings.push(...kitWarnings);
-      writeWarnings(kitWarnings);
+      ]);
 
       const thresholds = resolveThresholds(kit, failOn, reportOn);
       const checklists = selectChecklists(kit, entry.checklists);
@@ -82,9 +85,7 @@ export async function runJsonMode(
           provenance: entry.provenance,
         });
         entries.push({ name: checklist.name, report });
-        const skipWarnings = listMaskedSkipWarnings(entry, checklist.name, report.diagnoses);
-        warnings.push(...skipWarnings);
-        writeWarnings(skipWarnings);
+        recordWarnings(listMaskedSkipWarnings(entry, checklist.name, report.diagnoses));
         if (!report.passed) allPassed = false;
       }
 
@@ -109,13 +110,11 @@ export async function runJsonMode(
     }
   }
 
-  const runWarnings = [
+  recordWarnings([
     ...listUnusedPragmaWarnings(pragmaLedger),
     ...(await listUnmarkedGeneratedSourceWarnings(pragmaLedger)),
     ...listUnrunSourceWarnings(unrunSources),
-  ];
-  warnings.push(...runWarnings);
-  writeWarnings(runWarnings);
+  ]);
 
   // The top-level thresholds say what the invocation asked for: An absent flag stays absent
   // rather than being reported as a default that nobody requested. What governed each kit, including
