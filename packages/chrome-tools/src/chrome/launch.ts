@@ -140,7 +140,8 @@ export async function launchProfile(invocation: Invocation, options: LaunchOptio
       throw describeLaunchFailure(invocation, profile, port, logFile, timeout.text);
     }
   }
-  await openPages(invocation, profile, port, pages);
+  const relaunchOptions = composeRelaunchOptions(invocation, { ...options, isHeadless }, profile);
+  await openPages(invocation, { port, profile, relaunchOptions }, pages);
   reportLaunch(invocation, { browser, isHeadless, port, profile, profileDir });
   return 0;
 }
@@ -173,6 +174,20 @@ async function awaitDevtools(invocation: Invocation, port: string, timeoutSecond
     await deps.sleep(LAUNCH_POLL_INTERVAL_MILLISECONDS);
   }
   return true;
+}
+
+/**
+ * Returns the launch options that select the same instance again: the profile only when it was named, since naming a
+ * derived profile records it as named, and the work overrides, the port, and the mode as this launch was given them.
+ */
+function composeRelaunchOptions(invocation: Invocation, options: LaunchOptions, profile: string): string[] {
+  return [
+    ...(invocation.origin === 'named' ? ['--profile', profile] : []),
+    ...(options.work.repo === undefined ? [] : ['--repo', options.work.repo]),
+    ...(options.work.branch === undefined ? [] : ['--branch', options.work.branch]),
+    ...(options.port === undefined ? [] : ['--port', options.port]),
+    ...(options.isHeadless ? ['--headless'] : []),
+  ];
 }
 
 /**

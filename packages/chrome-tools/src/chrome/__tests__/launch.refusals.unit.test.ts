@@ -255,6 +255,18 @@ describe('launch', () => {
       );
     });
 
+    it("relaunches a derived profile in the hint with the launch's own options, leaving the profile unnamed", async () => {
+      const fake = makeFakeThorChrome({
+        env: { THOR_CHROME_APP: '/bin/sh' },
+        pageFailures: { 'http://x': 'refused' },
+      });
+      const args = ['--repo', 'widget', '--branch', 'main', '--port', '9500', '--headless', 'http://x'];
+      await expect(run(fake, args)).resolves.toBe(1);
+      expect(fake.captured.stderr()).toContain(
+        '  The browser is running; open the page again: thor-chrome --repo widget --branch main --port 9500 --headless http://x\n',
+      );
+    });
+
     it('names the page that did not open under --json', async () => {
       const fake = makeFakeThorChrome({
         env: { THOR_CHROME_APP: '/bin/sh' },

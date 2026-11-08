@@ -23,7 +23,11 @@ export interface ProfileReport {
 }
 
 /** The states in which a profile has a running browser, whose mode a report names. */
-const RUNNING_STATES: ReadonlySet<string> = new Set(['debugging', 'running-without-port', 'unresponsive']);
+const RUNNING_STATES: ReadonlySet<ProfileReport['state']> = new Set([
+  'debugging',
+  'running-without-port',
+  'unresponsive',
+]);
 
 /** Returns a count of profiles with its noun, so that a summary reads `1 profile` rather than `1 profiles`. */
 export function describeProfileCount(count: number): string {
