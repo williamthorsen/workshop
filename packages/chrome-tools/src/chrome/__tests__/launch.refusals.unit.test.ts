@@ -175,6 +175,25 @@ describe('launch', () => {
       expect(fake.captured.stdout()).toContain(String.raw`"listener":"no\"de (PID 4242, user wthorsen)"`);
     });
 
+    it('names the profile whose browser holds the port, and its quit command', async () => {
+      const fake = makeFakeThorChrome({
+        env: { THOR_CHROME_APP: '/bin/sh' },
+        results: { lsof: { stdout: 'COMMAND PID USER FD TYPE\nGoogle 4242 wthorsen 23u IPv4\n' } },
+      });
+      fake.makeProfile('thrive');
+      const { run: runCommand } = fake.deps;
+      const holder = `chrome --remote-debugging-port=20321 --user-data-dir=${fake.profilesDir}/soulforge-321 --no-first-run\n`;
+      fake.deps.run = (program, args, options) =>
+        program === 'ps' && args.at(-1) === '4242'
+          ? { status: 0, stderr: '', stdout: holder }
+          : runCommand(program, args, options);
+      await expect(run(fake, ['--dry-run', '--profile', 'thrive'])).resolves.toBe(1);
+      expect(fake.captured.stderr()).toBe(
+        "thor-chrome: port 20321 is held by profile 'soulforge-321': Google (PID 4242, user wthorsen)\n" +
+          '  Pick another port with --port, or quit that profile: thor-chrome quit soulforge-321\n',
+      );
+    });
+
     it('hints at freeing a busy port without naming a command', async () => {
       const fake = makeFakeThorChrome({
         env: { THOR_CHROME_APP: '/bin/sh' },

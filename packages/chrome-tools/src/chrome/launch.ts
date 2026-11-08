@@ -9,7 +9,13 @@ import {
   SESSION_RECOVERY,
   SESSION_RECOVERY_HINT,
 } from './browser.ts';
-import { describePortListener, findBrowserPid, probeDevtools, readDebuggingPort } from './browser-process.ts';
+import {
+  describePortListener,
+  findBrowserPid,
+  findProcessProfile,
+  probeDevtools,
+  readDebuggingPort,
+} from './browser-process.ts';
 import { composeInstanceLabel, INSTANCE_PAGE_FILE, writeInstancePage } from './instance-page.ts';
 import { type Invocation, PROCESS_LIST_RECOVERY_HINT, refuse, requireCommand, runTolerantly } from './invocation.ts';
 import { assertValidPort, resolvePort } from './ports.ts';
@@ -230,9 +236,17 @@ function assertPortAvailable(invocation: Invocation, profile: string, profileDir
   }
 
   const listener = describePortListener(invocation, port);
-  if (listener !== '') {
-    throw refuse(invocation, 'port-busy', `port ${port} is held by ${listener}`, {
-      extra: { listener },
+  if (listener !== undefined) {
+    const holder = findProcessProfile(invocation, listener.pid);
+    const { description } = listener;
+    if (holder !== undefined) {
+      throw refuse(invocation, 'port-busy', `port ${port} is held by profile '${holder}': ${description}`, {
+        extra: { listener: description },
+        hints: [`Pick another port with --port, or quit that profile: ${name} quit ${holder}`],
+      });
+    }
+    throw refuse(invocation, 'port-busy', `port ${port} is held by ${description}`, {
+      extra: { listener: description },
       hints: ['Pick another port with --port, or stop the process that holds it.'],
     });
   }
