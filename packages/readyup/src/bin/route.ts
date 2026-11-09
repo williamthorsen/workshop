@@ -9,8 +9,9 @@ import { describeInvalidOutputStyle, resolveOutputStyle } from '@williamthorsen/
 import { compileCommand } from '../compile/compileCommand.ts';
 import { loadConfig } from '../config/loadConfig.ts';
 import { extractHint } from '../errors/error-handling.ts';
+import { extractStackFrames } from '../errors/extractStackFrames.ts';
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
-import { configError, internalError, toRdyError, usageError } from '../errors/RdyError.ts';
+import { configError, internalError, RdyError, toRdyError, usageError } from '../errors/RdyError.ts';
 import { HELP_FLAGS, helpCommand, writeHelp } from '../help/helpCommand.ts';
 import { COMPILE_HELP, HELP, INIT_HELP, LIST_HELP, RUN_HELP, VERIFY_HELP } from '../help/helpText.ts';
 import { initCommand } from '../init/initCommand.ts';
@@ -82,19 +83,27 @@ export async function routeCommand(args: string[]): Promise<number> {
 /**
  * Renders a failure that no awaited call observed, and returns its exit code.
  *
- * The escape is itself the defect, so the failure is classified `internal` whatever the escaped value's own
- * classification, and its message is kept in the text.
+ * The escape is itself the defect, so the failure is a crash classified `internal` whatever the escaped
+ * value's own classification, and its message is kept in the text.
  */
 export function reportEscapedFailure(error: unknown, json: boolean): number {
   const escaped = internalError(`Nothing awaited this failure: ${describeError(error)}`, {
     cause: error,
     hint: 'A check that starts async work must await it or return it.',
   });
-  return reportFailure(escaped, json);
+  if (json) {
+    process.stdout.write(formatJsonError(escaped) + '\n');
+  } else {
+    writeCrash(escaped.message, error, escaped.hint);
+  }
+  return EXIT_TOOL_FAILURE;
 }
 
 /**
  * Renders a failed invocation and returns its exit code.
+ *
+ * A failure that rdy anticipated prints as `rdy: <message>`; any other value is a crash, which prints as
+ * `rdy: internal error: <message>` followed by its stack frames. `--json` reports both as the error envelope.
  *
  * Exported so that the runner's outer boundary reports a failure that escaped `routeCommand`
  * through the same channel.
@@ -103,11 +112,11 @@ export function reportFailure(error: unknown, json: boolean): number {
   const rdyError = toRdyError(error);
   if (json) {
     process.stdout.write(formatJsonError(rdyError) + '\n');
-  } else {
+  } else if (isAnticipated(error)) {
     writeError(rdyError.message);
-    if (rdyError.hint !== undefined) {
-      process.stderr.write(getLayout().formatHint(rdyError.hint) + '\n');
-    }
+    writeHint(rdyError.hint);
+  } else {
+    writeCrash(rdyError.message, error);
   }
   return EXIT_TOOL_FAILURE;
 }
@@ -361,4 +370,29 @@ function hasSourceFlag(args: string[]): boolean {
     if (SOURCE_FLAGS.has(flag)) return true;
   }
   return false;
+}
+
+/**
+ * Reports whether rdy anticipated a failure: an `RdyError`, or a value carrying a hint.
+ *
+ * The `internal` code does not decide it, because rdy also raises `internal` for failures that it diagnoses.
+ */
+function isAnticipated(error: unknown): boolean {
+  return error instanceof RdyError || extractHint(error) !== undefined;
+}
+
+/** Writes a crash to stderr as `rdy: internal error: <message>`, then the stack frames of `error`, then any hint. */
+function writeCrash(message: string, error: unknown, hint?: string): void {
+  writeError(message, 'internal error');
+  for (const frame of extractStackFrames(error)) {
+    process.stderr.write(frame + '\n');
+  }
+  writeHint(hint);
+}
+
+/** Writes a remediation hint to stderr through the selected style, when there is one. */
+function writeHint(hint: string | undefined): void {
+  if (hint !== undefined) {
+    process.stderr.write(getLayout().formatHint(hint) + '\n');
+  }
 }

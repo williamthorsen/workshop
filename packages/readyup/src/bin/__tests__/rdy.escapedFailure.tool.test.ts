@@ -29,16 +29,20 @@ const ESCAPED_FAILURES = [
 
 // Drives the real CLI, because a test runner in the same process installs its own listeners for these events.
 describe('rdy, spawned, when a failure escapes every awaited call', () => {
-  it.for(ESCAPED_FAILURES)('reports $label as prose on stderr and exits 2', ({ kit, message }) => {
-    using tree = createTempTree({ 'kit.js': kit }, { prefix: 'readyup-escaped-failure-' });
+  it.for(ESCAPED_FAILURES)(
+    'reports $label as an internal error with its stack frames and exits 2',
+    ({ kit, message }) => {
+      using tree = createTempTree({ 'kit.js': kit }, { prefix: 'readyup-escaped-failure-' });
 
-    const result = spawnRdy(['run', '--file', tree.resolve('kit.js')], tree.dir);
+      const result = spawnRdy(['run', '--file', tree.resolve('kit.js')], tree.dir);
 
-    expect(result.status).toBe(2);
-    expect(result.stderr).toContain(`rdy: Nothing awaited this failure: ${message}\n`);
-    expect(result.stderr).toContain(HINT);
-    expect(result.stderr).not.toMatch(/^\s+at /m);
-  });
+      expect(result.status).toBe(2);
+      const crash = result.stderr.slice(result.stderr.indexOf('rdy: internal error: ')).trimEnd().split('\n');
+      expect(crash[0]).toBe(`rdy: internal error: Nothing awaited this failure: ${message}`);
+      expect(crash[1]).toMatch(/^\s+at /);
+      expect(crash.at(-1)).toContain(HINT);
+    },
+  );
 
   it.for(ESCAPED_FAILURES)('reports $label as one error envelope under --json and exits 2', ({ kit, message }) => {
     using tree = createTempTree({ 'kit.js': kit }, { prefix: 'readyup-escaped-failure-' });
