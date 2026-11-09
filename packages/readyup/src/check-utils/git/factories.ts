@@ -34,12 +34,20 @@ interface RemoteRefSyncCheckOptions {
 
 /** Returns a check that verifies two local refs point at the same commit. */
 export function makeLocalRefSyncCheck(options: LocalRefSyncCheckOptions): RdyCheck {
+  return makeLocalRefSyncCheckWith({ compareLocalRefs }, options);
+}
+
+/** Returns a check that verifies two local refs point at the same commit, comparing them through `dependencies`. */
+export function makeLocalRefSyncCheckWith(
+  dependencies: { compareLocalRefs: typeof compareLocalRefs },
+  options: LocalRefSyncCheckOptions,
+): RdyCheck {
   const { name, path, refA, refB, fix: customFix, severity } = options;
 
   const check: RdyCheck = {
     name,
     async check() {
-      const result = await compareLocalRefs(path, refA, refB);
+      const result = await dependencies.compareLocalRefs(path, refA, refB);
       if (result.status === 'match') return true;
       return { ok: false, detail: formatLocalResult(result, refA, refB, path) };
     },
@@ -56,13 +64,21 @@ export function makeLocalRefSyncCheck(options: LocalRefSyncCheckOptions): RdyChe
  * times the check is evaluated.
  */
 export function makeRemoteRefSyncCheck(options: RemoteRefSyncCheckOptions): RdyCheck {
+  return makeRemoteRefSyncCheckWith({ compareRefToRemote }, options);
+}
+
+/** Returns a check that verifies a local ref matches its remote counterpart, comparing them through `dependencies`. */
+export function makeRemoteRefSyncCheckWith(
+  dependencies: { compareRefToRemote: typeof compareRefToRemote },
+  options: RemoteRefSyncCheckOptions,
+): RdyCheck {
   const { name, path, ref, remote = 'origin', fix: customFix, severity } = options;
 
   let probe: Promise<RemoteRefCompareResult> | undefined;
 
   function getProbe(): Promise<RemoteRefCompareResult> {
     if (probe === undefined) {
-      probe = compareRefToRemote(path, ref, remote);
+      probe = dependencies.compareRefToRemote(path, ref, remote);
     }
     return probe;
   }
