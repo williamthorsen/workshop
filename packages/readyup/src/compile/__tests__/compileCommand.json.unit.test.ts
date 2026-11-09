@@ -11,7 +11,7 @@ const mockPicomatch = vi.hoisted(() => vi.fn());
 const mockWriteManifest = vi.hoisted(() => vi.fn());
 const mockReadManifest = vi.hoisted(() => vi.fn());
 const mockCheckDrift = vi.hoisted(() => vi.fn());
-const mockWarnOnUnrecordedBundles = vi.hoisted(() => vi.fn());
+const mockListUnrecordedBundleWarnings = vi.hoisted(() => vi.fn());
 
 vi.mock(import('../compileConfig.ts'), () => ({
   compileConfig: mockCompileConfig,
@@ -49,8 +49,8 @@ vi.mock(import('../../verify/checkDrift.ts'), () => ({
 }));
 
 // The output directory is scanned through the real filesystem, which these tests replace with sweep-shaped stubs.
-vi.mock(import('../warnOnUnrecordedBundles.ts'), () => ({
-  warnOnUnrecordedBundles: mockWarnOnUnrecordedBundles,
+vi.mock(import('../listUnrecordedBundleWarnings.ts'), () => ({
+  listUnrecordedBundleWarnings: mockListUnrecordedBundleWarnings,
 }));
 
 import { ManifestNotFoundError } from '../../manifest/readManifest.ts';
@@ -65,7 +65,7 @@ describe(compileCommand, () => {
       compile: { srcDir: SRC_DIR, outDir: SRC_DIR, include: undefined, exclude: [] },
     });
     mockCheckDrift.mockReturnValue({ kind: 'unverified' });
-    mockWarnOnUnrecordedBundles.mockReturnValue([]);
+    mockListUnrecordedBundleWarnings.mockReturnValue([]);
     // No path named by these tests contains a symlink, so a real path is the path itself.
     mockRealpathSync.mockImplementation((target: string) => target);
   });
@@ -81,7 +81,7 @@ describe(compileCommand, () => {
     mockWriteManifest.mockReset();
     mockReadManifest.mockReset();
     mockCheckDrift.mockReset();
-    mockWarnOnUnrecordedBundles.mockReset();
+    mockListUnrecordedBundleWarnings.mockReset();
   });
 
   describe('--json', () => {

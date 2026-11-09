@@ -12,6 +12,7 @@ import { deriveKitNameFromBundle } from '../kits/deriveKitName.ts';
 import type { ResolvedRdyConfig } from '../kits/types.ts';
 import { writeError } from '../output/writeError.ts';
 import { writeHuman } from '../output/writeHuman.ts';
+import { writeWarnings } from '../output/writeWarnings.ts';
 import type { JsonCompileKitEntry } from '../schemas/compileOutputSchema.ts';
 import {
   deriveClosureFields,
@@ -32,8 +33,8 @@ import { compileConfig } from './compileConfig.ts';
 import { compileProject } from './compileProject.ts';
 import { compileRecursive } from './compileRecursive.ts';
 import { deriveJsPath } from './deriveJsPath.ts';
-import { warnOnDirectoryDependentChecks } from './warnOnDirectoryDependentChecks.ts';
-import { warnOnInlinedJson } from './warnOnInlinedJson.ts';
+import { listDirectoryDependenceWarnings } from './listDirectoryDependenceWarnings.ts';
+import { listInlinedJsonWarnings } from './listInlinedJsonWarnings.ts';
 
 const compileOptions = {
   config: { type: 'string' },
@@ -203,9 +204,10 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
   const relOutput = path.relative(process.cwd(), result.outputPath);
   writeHuman(formatResultLine(relInput, relOutput, result.changed), json);
   const warnings = [
-    ...warnOnInlinedJson(kitName, result.inlinedJson),
-    ...warnOnDirectoryDependentChecks(kitName, result.metadata.directoryDependence),
+    ...listInlinedJsonWarnings(kitName, result.inlinedJson),
+    ...listDirectoryDependenceWarnings(kitName, result.metadata.directoryDependence),
   ];
+  writeWarnings(warnings);
 
   if (!skipManifest) {
     try {
