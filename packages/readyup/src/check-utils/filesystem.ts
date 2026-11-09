@@ -14,6 +14,18 @@ export function fileExists(filePath: string): boolean {
 }
 
 /**
+ * Reports whether a path names a regular file, following symlinks. Any stat error reads as `false`, as it does for
+ * `existsSync`.
+ */
+export function isRegularFile(absolutePath: string): boolean {
+  try {
+    return statSync(absolutePath).isFile();
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Reads a file, resolving a relative path against the working directory. Returns `undefined` if the path is missing
  * or, after following symlinks, is not a regular file, such as a directory or a submodule's gitlink.
  */
@@ -64,18 +76,6 @@ export function commandExists(name: string): boolean {
 }
 
 // region | Helpers
-
-/**
- * Reports whether a path names a regular file, following symlinks. Any stat error reads as `false`, as it does for
- * `existsSync`.
- */
-function isRegularFile(absolutePath: string): boolean {
-  try {
-    return statSync(absolutePath).isFile();
-  } catch {
-    return false;
-  }
-}
 
 /** Reports whether content contains a literal substring or matches a regex. */
 function matchesPattern(content: string, pattern: string | RegExp): boolean {
