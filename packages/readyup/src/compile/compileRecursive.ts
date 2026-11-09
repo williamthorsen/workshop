@@ -3,8 +3,10 @@ import process from 'node:process';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 import { pluralizeWithCount } from '@williamthorsen/toolbelt.strings';
 
+import { extractHint } from '../errors/error-handling.ts';
 import { RdyError } from '../errors/RdyError.ts';
 import { writeError } from '../output/writeError.ts';
+import { writeHint } from '../output/writeHint.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import { discoverKitProjects, type Project } from '../projects/project-discovery.ts';
 import type { RaisedWarning } from '../schemas/common.ts';
@@ -48,7 +50,7 @@ export async function compileRecursive(args: CompileRecursiveArgs): Promise<numb
 
   for (const project of projects) {
     if (project.configError !== undefined) {
-      projectEntries.push(reportProjectFailure(project.dir, describeError(project.configError)));
+      projectEntries.push(reportProjectFailure(project.dir, project.configError));
       continue;
     }
 
@@ -113,13 +115,15 @@ async function compileSweptProject(project: Project, args: CompileSweptProjectAr
     };
   } catch (error: unknown) {
     if (!(error instanceof RdyError)) throw error;
-    return { kits: [], entry: reportProjectFailure(project.dir, error.message), removed: [], warnings: [] };
+    return { kits: [], entry: reportProjectFailure(project.dir, error), removed: [], warnings: [] };
   }
 }
 
-/** Writes the failure of a project that could not be compiled at all, and returns the project's entry. */
-function reportProjectFailure(dir: string, message: string): JsonCompileProjectEntry {
+/** Writes the failure of a project that could not be compiled at all, with its hint, and returns the project's entry. */
+function reportProjectFailure(dir: string, error: Error): JsonCompileProjectEntry {
+  const message = describeError(error);
   writeError(message, dir);
+  writeHint(extractHint(error));
   return { project: dir, passed: false, error: message };
 }
 

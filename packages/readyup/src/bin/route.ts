@@ -16,11 +16,12 @@ import { HELP_FLAGS, helpCommand, writeHelp } from '../help/helpCommand.ts';
 import { COMPILE_HELP, HELP, INIT_HELP, LIST_HELP, RUN_HELP, VERIFY_HELP } from '../help/helpText.ts';
 import { initCommand } from '../init/initCommand.ts';
 import type { ResolvedRdyConfig } from '../kits/types.ts';
-import { getLayout, setColor, setStyle, setWidth } from '../layout/engine.ts';
+import { setColor, setStyle, setWidth } from '../layout/engine.ts';
 import { resolveOutputColor } from '../layout/resolveOutputColor.ts';
 import { resolveOutputWidth } from '../layout/resolveOutputWidth.ts';
 import { listCommand } from '../list/listCommand.ts';
 import { writeError } from '../output/writeError.ts';
+import { writeHint } from '../output/writeHint.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import { findNearestWord } from '../portable/findNearestWord.ts';
 import { createRemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
@@ -388,11 +389,4 @@ function writeCrash(message: string, error: unknown, hint?: string): void {
     process.stderr.write(frame + '\n');
   }
   writeHint(hint);
-}
-
-/** Writes a remediation hint to stderr through the selected style, when there is one. */
-function writeHint(hint: string | undefined): void {
-  if (hint !== undefined) {
-    process.stderr.write(getLayout().formatHint(hint) + '\n');
-  }
 }
