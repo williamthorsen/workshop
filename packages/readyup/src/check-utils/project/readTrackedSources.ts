@@ -75,9 +75,17 @@ export function readSourceText(path: string): string | undefined {
  * to have its sweep recorded, and a sweep that it reads in `skip` counts as much as one that it reads in `check`.
  */
 export async function readTrackedSources(filter?: PathFilter): Promise<readonly ProjectSource[] | undefined> {
-  const tracked = await listTrackedFiles();
+  return readTrackedSourcesWith({ listForeignPaths, listTrackedFiles }, filter);
+}
+
+/** Reads the tracked sources that `filter` selects, taking the listing and foreign paths from `dependencies`. */
+export async function readTrackedSourcesWith(
+  dependencies: { listForeignPaths: typeof listForeignPaths; listTrackedFiles: typeof listTrackedFiles },
+  filter?: PathFilter,
+): Promise<readonly ProjectSource[] | undefined> {
+  const tracked = await dependencies.listTrackedFiles();
   if (tracked === undefined) return undefined;
-  const foreign = await listForeignPaths();
+  const foreign = await dependencies.listForeignPaths();
 
   const sources: ProjectSource[] = [];
   for (const path of tracked) {
