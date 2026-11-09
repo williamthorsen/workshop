@@ -20,14 +20,16 @@ Each utility's doc comment states its edge cases and the reasons for its rules. 
 
 ## Filesystem
 
-| Function                            | Returns                                               |
-| ----------------------------------- | ----------------------------------------------------- |
-| `fileExists(path)`                  | File exists                                           |
-| `filesExist(paths, options?)`       | `CheckOutcome` over several paths                     |
-| `readFile(path)`                    | Contents, or `undefined` if missing                   |
-| `fileContains(path, pattern)`       | File contains a substring or matches a `RegExp`       |
-| `fileDoesNotContain(path, pattern)` | File does not contain a substring or match a `RegExp` |
-| `commandExists(name)`               | Command is on `PATH`                                  |
+| Function                            | Returns                                                   |
+| ----------------------------------- | --------------------------------------------------------- |
+| `fileExists(path)`                  | File exists                                               |
+| `filesExist(paths, options?)`       | `CheckOutcome` over several paths                         |
+| `readFile(path)`                    | Contents, or `undefined` if missing or not a regular file |
+| `fileContains(path, pattern)`       | File contains a substring or matches a `RegExp`           |
+| `fileDoesNotContain(path, pattern)` | File does not contain a substring or match a `RegExp`     |
+| `commandExists(name)`               | Command is on `PATH`                                      |
+
+`readFile` treats a path that names a directory, or anything else that is not a regular file after following symlinks, as missing. Every helper that reads a file through it does the same: `fileContains` and `fileMatchesHash` return `false`, `fileDoesNotContain` returns `true`, and `readJsonFile`, `hasJsonField`, `readPackageJson`, and `readToolVersionsNode` return what they return for a missing file.
 
 ## JSON
 
