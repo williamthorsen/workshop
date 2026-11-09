@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 const ENTRY_POINT = path.join(import.meta.dirname, '../thor-npm.ts');
@@ -21,6 +22,19 @@ describe('thor-npm over a pipe', () => {
 
     expect(stderr).toContain('needs a terminal on stdin and stdout');
     expect(stderr).toMatch(/exit:2\n$/);
+  });
+
+  it("lists the working directory's workspace packages without cutting lines when stdout is a pipe", () => {
+    const description = `A description longer than any terminal line, ${'repeated '.repeat(20)}`.trimEnd();
+    using tree = createTempTree({
+      'pnpm-workspace.yaml': "packages:\n  - 'packages/*'\n",
+      'packages/alpha/package.json': JSON.stringify({ name: 'alpha', version: '1.0.0', description }),
+    });
+
+    const { status, stdout } = runPipeline(`cd ${quoteForShell(tree.dir)} && ${buildCommand(['list-packages'])} | cat`);
+
+    expect(status).toBe(0);
+    expect(stdout).toContain(`yes      alpha  1.0.0    alpha      ${description}\n`);
   });
 });
 

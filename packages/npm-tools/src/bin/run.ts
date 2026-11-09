@@ -1,10 +1,24 @@
 import { createCli, runCli, UsageError, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
+import { type ListPackagesEffects, runListPackages } from './runListPackages.ts';
 import { type MoveTrustEffects, runMoveTrust } from './runMoveTrust.ts';
 import { type PublishPlaceholderEffects, runPublishPlaceholder } from './runPublishPlaceholder.ts';
 
 const { defineCommand, defineGroup } = createCli<RunEffects>();
+
+const LIST_PACKAGES_DESCRIPTION = `List the packages of the pnpm workspace that contains the working directory: whether each one can be
+published, its name, its version, its directory, and its description. A package can be published unless its
+manifest sets "private" to true. The workspace's root package is left out.
+
+The directory column leaves out the parent directory that every package shares, when there is one. On a terminal,
+each line is cut to 120 columns, or to the terminal's width when that is narrower; piped output is never cut. Under
+--json, each package's directory is relative to the workspace root, and a field that its manifest does not set is
+null.`;
+
+const LIST_PACKAGES_EPILOG = `Examples:
+  thor-npm list-packages
+  thor-npm list-packages --json | jq --raw-output '.packages[] | select(.private | not) | .name'`;
 
 const MOVE_TRUST_DESCRIPTION = `Move the trusted publisher of <package-name> from one GitHub repository to another. The new trust keeps the
 old one's workflow file, unless --file names another, its environment, and its permissions.
@@ -38,13 +52,23 @@ Examples:
   thor-npm publish-placeholder @scope/new-package`;
 
 const ROOT = defineGroup({
-  summary: 'Run npm registry chores.',
+  summary: 'Run npm package and registry chores.',
   epilog: `Exit codes:
   0    The command succeeded, or help or version was printed
   1    A check failed, the publish or the move failed, or the confirmation was declined
   2    Usage or validation error
   127  npm is not on PATH`,
   commands: {
+    'list-packages': defineCommand({
+      summary: "List a pnpm workspace's packages and whether each can be published",
+      description: LIST_PACKAGES_DESCRIPTION,
+      epilog: LIST_PACKAGES_EPILOG,
+      flags: {
+        json: { type: 'boolean', description: 'Print the packages as JSON' },
+      },
+      run: ({ context, flags, stderr, stdout }) =>
+        reportFailures(stderr, () => Promise.resolve(runListPackages(flags, context, { stderr, stdout }))),
+    }),
     'move-trust': defineCommand({
       summary: "Move a package's trusted publisher to another GitHub repository",
       description: MOVE_TRUST_DESCRIPTION,
@@ -105,7 +129,7 @@ export async function run(args: readonly string[], effects: RunEffects, streams:
 }
 
 /** The effects deferred to the entry point, which keeps the runner free of process I/O. */
-export interface RunEffects extends MoveTrustEffects, PublishPlaceholderEffects {
+export interface RunEffects extends ListPackagesEffects, MoveTrustEffects, PublishPlaceholderEffects {
   readonly resolveVersion: () => string;
 }
 
