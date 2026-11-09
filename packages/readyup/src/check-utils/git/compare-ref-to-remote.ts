@@ -1,5 +1,6 @@
 import type { RemoteRefCompareResult } from '../../kits/types.ts';
 import { toError } from '../../portable/toError.ts';
+import { countAheadBehind } from './count-ahead-behind.ts';
 import { isRefMissingError, runGit } from './run-git.ts';
 
 /** Returns how a local ref relates to its counterpart on a remote, read via `ls-remote` without fetching. */
@@ -28,7 +29,7 @@ export async function compareRefToRemote(
     return { status: 'in-sync', localSha, remoteSha };
   }
 
-  const aheadBehind = await resolveAheadBehind(path, ref, remote);
+  const aheadBehind = await countAheadBehind(path, ref, `${remote}/${ref}`);
 
   return { status: 'out-of-sync', localSha, remoteSha, ...(aheadBehind && { aheadBehind }) };
 }
@@ -53,24 +54,4 @@ async function resolveRemoteRef(path: string, ref: string, remote: string): Prom
   if (!output) return undefined;
   const sha = output.split('\t', 1)[0];
   return sha;
-}
-
-/** Returns the ahead/behind counts from the local tracking ref, or `undefined` when they cannot be computed. */
-async function resolveAheadBehind(
-  path: string,
-  ref: string,
-  remote: string,
-): Promise<{ ahead: number; behind: number } | undefined> {
-  try {
-    const output = await runGit(path, 'rev-list', '--count', '--left-right', `${ref}...${remote}/${ref}`);
-    const aheadStr = output.split('\t', 1)[0];
-    const behindStr = output.split('\t', 2)[1];
-    if (aheadStr === undefined || behindStr === undefined) return undefined;
-    const ahead = Number(aheadStr);
-    const behind = Number(behindStr);
-    if (!Number.isFinite(ahead) || !Number.isFinite(behind)) return undefined;
-    return { ahead, behind };
-  } catch {
-    return undefined;
-  }
 }
