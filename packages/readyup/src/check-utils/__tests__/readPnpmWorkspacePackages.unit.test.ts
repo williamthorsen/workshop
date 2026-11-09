@@ -93,10 +93,10 @@ describe(readPnpmWorkspacePackages, () => {
     expect(readPnpmWorkspacePackages(yamlPath)).toStrictEqual(['packages/*']);
   });
 
-  it('returns null when the `packages` key is absent', () => {
+  it('returns undefined when the `packages` key is absent', () => {
     const yamlPath = writeYaml(['onlyBuiltDependencies:', '  - esbuild', ''].join('\n'));
 
-    expect(readPnpmWorkspacePackages(yamlPath)).toBeNull();
+    expect(readPnpmWorkspacePackages(yamlPath)).toBeUndefined();
   });
 
   it('returns an empty array when `packages` key has no sequence items', () => {
@@ -189,7 +189,7 @@ describe(readPnpmWorkspacePackages, () => {
   it('includes the offending line number and line text in the error message', () => {
     const yamlPath = writeYaml(['packages:', '  - packages/*', '  - [flow, sequence]', ''].join('\n'));
 
-    const attempt = (): string[] | null => readPnpmWorkspacePackages(yamlPath);
+    const attempt = (): string[] | undefined => readPnpmWorkspacePackages(yamlPath);
     expect(attempt).toThrow(/pnpm-workspace\.yaml:3/);
     expect(attempt).toThrow(/\[flow, sequence]/);
   });

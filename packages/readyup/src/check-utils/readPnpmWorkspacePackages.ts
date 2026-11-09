@@ -10,27 +10,27 @@ import {
 } from './yaml-line-scanners.ts';
 
 /**
- * Returns the pattern strings in a `pnpm-workspace.yaml` file's `packages` block-sequence, or `null`
- * when the `packages` key is absent.
+ * Returns the pattern strings in a `pnpm-workspace.yaml` file's `packages` block-sequence, or
+ * `undefined` when the `packages` key is absent.
  *
  * Throws a pathful, line-pointing error on a multi-document stream marker anywhere in the file, and,
  * within the `packages` block, on a value that is not a block sequence, inconsistent item indentation,
  * an item opening an anchor, alias, flow collection, or block scalar, a `!!` tag, an empty item, an
  * unterminated quoted item, or a negation pattern. Other top-level keys are not checked.
  */
-export function readPnpmWorkspacePackages(absolutePath: string): string[] | null {
+export function readPnpmWorkspacePackages(absolutePath: string): string[] | undefined {
   const content = readFileSync(absolutePath, 'utf8');
   const lines = content.split(/\r?\n/);
 
   rejectStreamMarkers(absolutePath, lines);
 
   const packagesLineIndex = findTopLevelKeyLine(lines, 'packages');
-  if (packagesLineIndex === -1) return null;
+  if (packagesLineIndex === -1) return undefined;
 
   const packagesLine = lines[packagesLineIndex] ?? '';
   const inlineValue = extractInlineValue(packagesLine);
 
-  if (inlineValue !== null && inlineValue.length > 0) {
+  if (inlineValue !== undefined && inlineValue.length > 0) {
     throwUnsupported(absolutePath, packagesLineIndex, packagesLine, 'non-list value for `packages:`');
   }
 
@@ -46,7 +46,7 @@ export function readPnpmWorkspacePackages(absolutePath: string): string[] | null
  */
 function collectSequenceItems(absolutePath: string, lines: string[], packagesLineIndex: number): string[] {
   const items: string[] = [];
-  let sequenceIndent: number | null = null;
+  let sequenceIndent: number | undefined;
 
   for (let index = packagesLineIndex + 1; index < lines.length; index += 1) {
     const line = lines[index] ?? '';
@@ -63,7 +63,7 @@ function collectSequenceItems(absolutePath: string, lines: string[], packagesLin
       throwUnsupported(absolutePath, index, line, 'non-list value for `packages:`');
     }
 
-    if (sequenceIndent === null) {
+    if (sequenceIndent === undefined) {
       sequenceIndent = leadingSpaces;
     } else if (leadingSpaces !== sequenceIndent) {
       throwUnsupported(absolutePath, index, line, 'inconsistent indentation in `packages:` sequence');
@@ -91,10 +91,10 @@ function collectSequenceItems(absolutePath: string, lines: string[], packagesLin
   return items;
 }
 
-/** Returns the trimmed value after a `key:` on the same line, or `null` when there is no inline value. */
-function extractInlineValue(line: string): string | null {
+/** Returns the trimmed value after a `key:` on the same line, or `undefined` when there is no inline value. */
+function extractInlineValue(line: string): string | undefined {
   const colonIndex = line.indexOf(':');
-  if (colonIndex === -1) return null;
+  if (colonIndex === -1) return undefined;
   const rest = line.slice(colonIndex + 1);
   const commentStripped = stripInlineComment(rest);
   const trimmed = commentStripped.trim();
