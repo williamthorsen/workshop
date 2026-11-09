@@ -134,13 +134,8 @@ export function resolveManifestPath(flagValue: string | undefined): string {
   return path.resolve(process.cwd(), flagValue ?? DEFAULT_MANIFEST_PATH);
 }
 
-/** Upserts a kit entry into the manifest at `manifestPath`, writing the result back. */
-export function upsertManifest(
-  manifestPath: string,
-  kitName: string,
-  metadata: KitMetadata,
-  compileFields: KitCompileFields,
-): void {
+/** Replaces the manifest's entry for the kit that `entry` records, or adds it, and writes the manifest back. */
+export function upsertManifest(manifestPath: string, entry: RdyManifestKit): void {
   let existingKits: RdyManifestKit[] = [];
   try {
     const existing = readManifest(manifestPath);
@@ -153,10 +148,7 @@ export function upsertManifest(
     }
   }
 
-  const entry = buildManifestKit(kitName, metadata, compileFields);
-
-  // Replace existing entry for this kit name, or append.
-  const filtered = existingKits.filter((k) => k.name !== kitName);
+  const filtered = existingKits.filter((k) => k.name !== entry.name);
   const kits = [...filtered, entry].toSorted((a, b) => a.name.localeCompare(b.name));
 
   writeManifest(manifestPath, { version: 1, kits });

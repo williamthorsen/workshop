@@ -1,3 +1,4 @@
+import assert from 'node:assert';
 import path from 'node:path';
 import process from 'node:process';
 import { parseArgs as nodeParseArgs } from 'node:util';
@@ -10,31 +11,14 @@ import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { configError, usageError } from '../errors/RdyError.ts';
 import { deriveKitNameFromBundle } from '../kits/deriveKitName.ts';
 import type { ResolvedRdyConfig } from '../kits/types.ts';
-import { writeError } from '../output/writeError.ts';
 import { writeHuman } from '../output/writeHuman.ts';
-import { writeWarnings } from '../output/writeWarnings.ts';
-import type { JsonCompileKitEntry } from '../schemas/compileOutputSchema.ts';
-import {
-  deriveClosureFields,
-  detectDrift,
-  loadExistingKitsByName,
-  resolveManifestPath,
-  upsertManifest,
-} from './compile-manifest.ts';
+import { loadExistingKitsByName, resolveManifestPath, upsertManifest } from './compile-manifest.ts';
 import { finishCompile } from './compile-outcome.ts';
-import {
-  formatDriftLine,
-  formatDriftReason,
-  formatDriftRemedy,
-  formatResultLine,
-  formatSectionHeading,
-} from './compile-report.ts';
-import { compileConfig } from './compileConfig.ts';
+import { formatDriftRemedy, formatSectionHeading } from './compile-report.ts';
+import { compileKit } from './compileKit.ts';
 import { compileProject } from './compileProject.ts';
 import { compileRecursive } from './compileRecursive.ts';
 import { deriveJsPath } from './deriveJsPath.ts';
-import { listDirectoryDependenceWarnings } from './listDirectoryDependenceWarnings.ts';
-import { listInlinedJsonWarnings } from './listInlinedJsonWarnings.ts';
 
 const compileOptions = {
   config: { type: 'string' },
@@ -179,56 +163,42 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
 
   writeHuman(formatSectionHeading('Compiling kit'), json);
 
-  const existingKit = skipManifest ? undefined : loadExistingKitsByName(manifestPath).get(kitName);
-  const drift = detectDrift({ skipManifest, force, existingKit, manifestDir });
-  if (drift !== undefined) {
-    writeHuman(formatDriftLine(relInput, drift.status), json);
+  const outcome = await compileKit({
+    describeFailure: describeError,
+    displayInput: relInput,
+    existingKit: skipManifest ? undefined : loadExistingKitsByName(manifestPath).get(kitName),
+    failureSubject: undefined,
+    force,
+    formatOutput: (writtenPath) => path.relative(process.cwd(), writtenPath),
+    inputPath,
+    json,
+    kitName,
+    manifestDir,
+    outputPath,
+    project: undefined,
+    resolvedInputPath,
+    skipManifest,
+  });
+
+  if (outcome.kit.status === 'skipped') {
     writeHuman(`\n${formatDriftRemedy({ hasOrphan: false, hasSourced: true })}\n`, json);
-    const kits: JsonCompileKitEntry[] = [{ name: kitName, status: 'skipped', error: formatDriftReason(drift.status) }];
-    return finishCompile({ kits, removed: [], warnings: [] }, json);
   }
 
-  let result;
-  try {
-    result = await compileConfig(inputPath, outputPath);
-  } catch (error: unknown) {
-    // A kit that fails to compile is a problem with the kit, not with the invocation.
-    const message = describeError(error);
-    writeError(message);
-    return finishCompile(
-      { kits: [{ name: kitName, status: 'failed', error: message }], removed: [], warnings: [] },
-      json,
-    );
+  if (outcome.kit.status !== 'compiled') {
+    return finishCompile({ kits: [outcome.kit], removed: [], warnings: [] }, json);
   }
-
-  const relOutput = path.relative(process.cwd(), result.outputPath);
-  writeHuman(formatResultLine(relInput, relOutput, result.changed), json);
-  const warnings = [
-    ...listInlinedJsonWarnings(kitName, result.inlinedJson),
-    ...listDirectoryDependenceWarnings(kitName, result.metadata.directoryDependence),
-  ];
-  writeWarnings(warnings);
 
   if (!skipManifest) {
+    const { entry } = outcome;
+    assert.ok(entry !== undefined, 'A compiled kit has a manifest entry');
     try {
-      const relOutputPath = path.relative(manifestDir, path.resolve(result.outputPath));
-      const relSourcePath = path.relative(manifestDir, resolvedInputPath);
-      const closure = deriveClosureFields(result.inputs, resolvedInputPath, manifestDir);
-      upsertManifest(manifestPath, kitName, result.metadata, {
-        bundledDependencies: result.bundledDependencies,
-        esbuildVersion: result.esbuildVersion,
-        inputs: closure.inputs,
-        path: relOutputPath,
-        source: relSourcePath,
-        sourceHash: closure.sourceHash,
-        targetHash: result.targetHash,
-      });
+      upsertManifest(manifestPath, entry);
     } catch (error: unknown) {
       throw configError(`Cannot write manifest: ${describeError(error)}`, { cause: error });
     }
   }
 
-  return finishCompile({ kits: [{ name: kitName, status: 'compiled' }], removed: [], warnings }, json);
+  return finishCompile({ kits: [outcome.kit], removed: [], warnings: outcome.warnings }, json);
 }
 
 /** Loads the config that a single-file compile reads, reporting a config that cannot be evaluated as a config error. */
