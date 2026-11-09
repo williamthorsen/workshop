@@ -1,3 +1,4 @@
+import assert from 'node:assert';
 import path from 'node:path';
 import process from 'node:process';
 import { parseArgs as nodeParseArgs } from 'node:util';
@@ -187,9 +188,11 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
     return finishCompile({ kits: [outcome.kit], removed: [], warnings: [] }, json);
   }
 
-  if (!skipManifest && outcome.entry !== undefined) {
+  if (!skipManifest) {
+    const { entry } = outcome;
+    assert.ok(entry !== undefined, 'A compiled kit has a manifest entry');
     try {
-      upsertManifest(manifestPath, outcome.entry);
+      upsertManifest(manifestPath, entry);
     } catch (error: unknown) {
       throw configError(`Cannot write manifest: ${describeError(error)}`, { cause: error });
     }
