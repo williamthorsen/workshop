@@ -41,9 +41,11 @@
     "prepare": "nmr-compile"
   },
   "dependencies": {
+    "@williamthorsen/nmr-core": "0.16.0",
     "@williamthorsen/toolbelt.cli": "catalog:",
     "@williamthorsen/toolbelt.errors": "catalog:",
     "@williamthorsen/toolbelt.packaging": "catalog:",
+    "@williamthorsen/toolbelt.terminal": "catalog:",
     "validate-npm-package-name": "^8.0.0"
   },
   "devDependencies": {
@@ -53,7 +55,7 @@
     "vitest": "catalog:"
   },
   "engines": {
-    "node": ">=24"
+    "node": ">=24.16.0"
   },
   "publishConfig": {
     "access": "public"
