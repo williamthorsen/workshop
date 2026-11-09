@@ -86,11 +86,6 @@ describe(createForeignPathsLister, () => {
 
 // region | Helpers
 
-/** Returns a foreign-paths lister over `git`, reading its tracked paths from a tracked lister over the same fake. */
-function createListerOver(git: FakeGit): () => Promise<ReadonlySet<string>> {
-  return createForeignPathsLister(git, createTrackedFilesLister(git));
-}
-
 /** Returns a fake git whose working tree tracks `paths` and declares `DECLARED` for them. */
 function createGitTracking(paths: readonly string[]): FakeGit {
   return createFakeGit({
@@ -98,6 +93,11 @@ function createGitTracking(paths: readonly string[]): FakeGit {
     'ls-files': paths.map((path) => `${path}\0`).join(''),
     'check-attr': DECLARED,
   });
+}
+
+/** Returns a foreign-paths lister over `git`, reading its tracked paths from a tracked lister over the same fake. */
+function createListerOver(git: FakeGit): () => Promise<ReadonlySet<string>> {
+  return createForeignPathsLister(git, createTrackedFilesLister(git));
 }
 
 /** Renders a `check-attr -z` response declaring the given `linguist-generated` value for each path. */

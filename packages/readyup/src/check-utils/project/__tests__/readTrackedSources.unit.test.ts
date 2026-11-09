@@ -311,11 +311,6 @@ describe('readTrackedSources.ts', () => {
 
 // region | Helpers
 
-/** Declares the given paths generated, as a project's own `.gitattributes` would. */
-function declareForeign(...paths: string[]): void {
-  for (const path of paths) foreignPaths.add(path);
-}
-
 /** Counts the filesystem stat probes made for a directory-relative path. */
 function countProbes(relativePath: string): number {
   return statProbes.filter((probed) => probed.endsWith(`/${relativePath}`)).length;
@@ -324,6 +319,11 @@ function countProbes(relativePath: string): number {
 /** Counts the reads made of a directory-relative path. */
 function countReads(relativePath: string): number {
   return readPaths.filter((read) => read.endsWith(`/${relativePath}`)).length;
+}
+
+/** Declares the given paths generated, as a project's own `.gitattributes` would. */
+function declareForeign(...paths: string[]): void {
+  for (const path of paths) foreignPaths.add(path);
 }
 
 /** Sets the tracked listing to the given paths. */

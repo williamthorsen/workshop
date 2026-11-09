@@ -401,6 +401,11 @@ describe('workspaces.ts', () => {
 
 // region | Helpers
 
+/** Writes the pnpm workspace manifest, which takes precedence over the `workspaces` field. */
+function writePnpmWorkspaceYaml(temp: TempTree, content: string): void {
+  temp.write('pnpm-workspace.yaml', content);
+}
+
 /** Writes the root manifest that declares the workspace globs. */
 function writeRootPackageJson(temp: TempTree, content: Record<string, unknown>): void {
   temp.writeJson('package.json', content);
@@ -409,11 +414,6 @@ function writeRootPackageJson(temp: TempTree, content: Record<string, unknown>):
 /** Writes a package manifest at a root-relative directory. */
 function writeWorkspacePackage(temp: TempTree, relDir: string, content: Record<string, unknown>): void {
   temp.writeJson(join(relDir, 'package.json'), content);
-}
-
-/** Writes the pnpm workspace manifest, which takes precedence over the `workspaces` field. */
-function writePnpmWorkspaceYaml(temp: TempTree, content: string): void {
-  temp.write('pnpm-workspace.yaml', content);
 }
 
 // endregion | Helpers
