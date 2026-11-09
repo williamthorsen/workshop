@@ -30,7 +30,8 @@ import {
   type OrphanReport,
   resolveWorkspaceAnchor,
 } from './compile-report.ts';
-import { compileSource, type SourceOutcome, type SourceSweepContext } from './compileSource.ts';
+import type { SourceOutcome } from './compileKit.ts';
+import { compileSource, type SourceSweepContext } from './compileSource.ts';
 import { deriveJsPath } from './deriveJsPath.ts';
 import { listUnrecordedBundleWarnings, type ListUnrecordedBundleWarningsArgs } from './listUnrecordedBundleWarnings.ts';
 import { type OrphanOutcome, pruneOrphanedEntries } from './pruneOrphanedEntries.ts';
