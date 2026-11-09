@@ -234,7 +234,7 @@ describe(compileCommand, () => {
 
       expect(exitCode).toBe(1);
       expect(mockCompileConfig).toHaveBeenCalledTimes(2);
-      expect(stderr).toContain('Error compiling alpha.ts');
+      expect(stderr).toContain('rdy: cannot compile alpha.ts');
       expect(stdout).toContain('beta.ts');
     });
 
@@ -302,7 +302,7 @@ describe(compileCommand, () => {
       const { exitCode, stderr } = await compile([]);
 
       expect(exitCode).toBe(1);
-      expect(stderr).toContain('Error compiling alpha.ts');
+      expect(stderr).toContain('rdy: cannot compile alpha.ts');
     });
   });
 

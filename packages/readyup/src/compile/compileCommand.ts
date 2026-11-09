@@ -10,6 +10,7 @@ import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { configError, usageError } from '../errors/RdyError.ts';
 import { deriveKitNameFromBundle } from '../kits/deriveKitName.ts';
 import type { ResolvedRdyConfig } from '../kits/types.ts';
+import { writeError } from '../output/writeError.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import type { JsonCompileKitEntry } from '../schemas/compileOutputSchema.ts';
 import {
@@ -192,7 +193,7 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
   } catch (error: unknown) {
     // A kit that fails to compile is a problem with the kit, not with the invocation.
     const message = describeError(error);
-    process.stderr.write(`Error: ${message}\n`);
+    writeError(message);
     return finishCompile(
       { kits: [{ name: kitName, status: 'failed', error: message }], removed: [], warnings: [] },
       json,
@@ -221,7 +222,7 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
         targetHash: result.targetHash,
       });
     } catch (error: unknown) {
-      throw configError(`Error writing manifest: ${describeError(error)}`, { cause: error });
+      throw configError(`Cannot write manifest: ${describeError(error)}`, { cause: error });
     }
   }
 

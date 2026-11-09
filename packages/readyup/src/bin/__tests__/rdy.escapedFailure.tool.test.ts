@@ -35,7 +35,7 @@ describe('rdy, spawned, when a failure escapes every awaited call', () => {
     const result = spawnRdy(['run', '--file', tree.resolve('kit.js')], tree.dir);
 
     expect(result.status).toBe(2);
-    expect(result.stderr).toContain(`Error: Nothing awaited this failure: ${message}\n`);
+    expect(result.stderr).toContain(`rdy: Nothing awaited this failure: ${message}\n`);
     expect(result.stderr).toContain(HINT);
     expect(result.stderr).not.toMatch(/^\s+at /m);
   });

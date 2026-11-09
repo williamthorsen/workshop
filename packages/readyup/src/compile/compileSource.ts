@@ -1,8 +1,8 @@
 import path from 'node:path';
-import process from 'node:process';
 
 import { deriveKitName } from '../kits/deriveKitName.ts';
 import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
+import { writeError } from '../output/writeError.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import type { RaisedWarning } from '../schemas/common.ts';
 import type { JsonCompileKitEntry } from '../schemas/compileOutputSchema.ts';
@@ -88,7 +88,7 @@ export async function compileSource(fileName: string, context: SourceSweepContex
     // goes on. Because the sweep replaces the whole manifest, this returns the kit's prior record to keep it
     // there. That record still describes the tree, because a failed compile leaves the previous output in place.
     const message = describeSweepFailure(error);
-    process.stderr.write(`Error compiling ${describeSource(fileName, srcDir, sweepRoot)}: ${message}\n`);
+    writeError(message, `cannot compile ${describeSource(fileName, srcDir, sweepRoot)}`);
     return {
       entry: existingKit,
       kit: { name: kitName, ...projectField, status: 'failed', error: message },

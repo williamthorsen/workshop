@@ -155,7 +155,7 @@ describe('compile handling bundles that no source compiles to', () => {
 
       expect(exitCode).toBe(1);
       expect(manifestKitNames(tree)).toStrictEqual(['deploy', 'legacy']);
-      expect(stderr).toMatch(/^Error removing \.readyup\/kits\/legacy\.js: .+$/m);
+      expect(stderr).toMatch(/^rdy: cannot remove \.readyup\/kits\/legacy\.js: .+$/m);
       expect(stdout).toContain('1 of 2 kits could not be removed.\n');
     });
 

@@ -97,7 +97,7 @@ describe(routeCommand, () => {
       const { exitCode, stderr } = await routeCli(['onboarding']);
 
       expect(exitCode).toBe(2);
-      expect(stderr).toContain("Error: 'onboarding' is neither a command nor a kit.");
+      expect(stderr).toContain("rdy: 'onboarding' is neither a command nor a kit.");
       expect(stderr).toContain("Run 'rdy --help' to list commands, or 'rdy list' to list kits.");
       expect(stderr).not.toContain('Did you mean');
       expect(mockRunCommand).not.toHaveBeenCalled();

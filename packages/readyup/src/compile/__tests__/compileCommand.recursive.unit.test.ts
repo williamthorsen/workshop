@@ -195,7 +195,7 @@ describe('compile --recursive', () => {
 
       expect(exitCode).toBe(1);
       expect(compiledSources()).toContain('packages/tooling/kit-sources/lint.ts');
-      expect(stderr).toContain('Error compiling packages/api/.readyup/kits/deploy.ts: bundle failed');
+      expect(stderr).toContain('rdy: cannot compile packages/api/.readyup/kits/deploy.ts: bundle failed');
       expect(stdout).toContain('\nProblems in 1 of 5 projects: packages/api\n');
     });
 
@@ -293,7 +293,7 @@ describe('compile --recursive', () => {
 
       const { stderr } = await compile(['--recursive']);
 
-      expect(stderr).toMatch(/^Error in packages\/broken: .+$/m);
+      expect(stderr).toMatch(/^rdy: packages\/broken: .+$/m);
       expect(compiledSources().some((source) => source.startsWith('packages/broken/'))).toBe(false);
       expect(readFileSync(manifestPath, 'utf8')).toBe(manifestBefore);
     });
@@ -308,7 +308,7 @@ describe('compile --recursive', () => {
     it('reports a project whose manifest cannot be written, and still compiles the projects before it', async () => {
       const { stderr } = await compile(['--recursive']);
 
-      expect(stderr).toMatch(/^Error in packages\/unwritable: Error writing manifest: .+$/m);
+      expect(stderr).toMatch(/^rdy: packages\/unwritable: Cannot write manifest: .+$/m);
       expect(compiledSources()).toContain('packages/sound/.readyup/kits/ok.ts');
     });
 
@@ -323,7 +323,7 @@ describe('compile --recursive', () => {
         { project: 'packages/broken', passed: false, error: expect.any(String) },
         { project: 'packages/drifted', passed: false },
         { project: 'packages/sound', passed: true },
-        { project: 'packages/unwritable', passed: false, error: expect.stringContaining('Error writing manifest') },
+        { project: 'packages/unwritable', passed: false, error: expect.stringContaining('Cannot write manifest') },
       ]);
     });
   });

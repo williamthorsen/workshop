@@ -265,7 +265,7 @@ describe(routeCommand, () => {
     const { exitCode, stderrChunks } = await routeCli(['--style', 'plain', 'run', '--bad']);
 
     expect(exitCode).toBe(2);
-    expect(stderrChunks).toStrictEqual(['Error: nothing found\n', 'Hint: Set GITHUB_TOKEN.\n']);
+    expect(stderrChunks).toStrictEqual(['rdy: nothing found\n', 'Hint: Set GITHUB_TOKEN.\n']);
   });
 
   it('renders the hint through the rich style', async () => {

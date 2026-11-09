@@ -68,7 +68,7 @@ describe(runHumanMode, () => {
     const { exitCode, stderr } = await runHuman(buildSingleKitEntry(['nonexistent']), {}, fakes);
 
     expect(exitCode).toBe(2);
-    expect(stderr).toContain('Error: Unknown name(s): nonexistent');
+    expect(stderr).toContain('rdy: Unknown name(s): nonexistent');
   });
 
   it('returns exit code 1 when any checklist fails', async () => {
@@ -115,7 +115,7 @@ describe(runHumanMode, () => {
     const { exitCode, stderr } = await runHuman(buildSingleKitEntry(), {}, fakes);
 
     expect(exitCode).toBe(2);
-    expect(stderr).toBe('Error: Kit not found\n');
+    expect(stderr).toBe('rdy: Kit not found\n');
   });
 
   it('states under its heading that a kit did not load, and counts it in the summary', async () => {
@@ -158,7 +158,7 @@ describe(runHumanMode, () => {
     expect(exitCode).toBe(2);
     expect(stdout).toMatch(/halted\n\S+ +Kit did not run; the error is on stderr\n/u);
     expect(stdout).not.toContain('Kit did not load');
-    expect(stderr).toMatch(/^Error \[halted\]: .*missing/u);
+    expect(stderr).toMatch(/^rdy: halted: .*missing/u);
     expect(fakes.formatCombinedSummary.mock.calls[0]?.[0][0]).toStrictEqual({
       counts: emptyCounts(),
       durationMs: 0,
@@ -199,7 +199,7 @@ describe(runHumanMode, () => {
 
     expect(exitCode).toBe(2);
     expect(stdout).not.toContain('Kit did not run');
-    expect(stderr).toMatch(/^Error: .*missing/u);
+    expect(stderr).toMatch(/^rdy: .*missing/u);
     expect(fakes.formatCombinedSummary).not.toHaveBeenCalled();
   });
 

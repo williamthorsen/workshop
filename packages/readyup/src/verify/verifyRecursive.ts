@@ -7,6 +7,7 @@ import { pluralizeWithCount } from '@williamthorsen/toolbelt.strings';
 
 import { RdyError } from '../errors/RdyError.ts';
 import type { RdyManifest } from '../manifest/manifestSchema.ts';
+import { writeError } from '../output/writeError.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import { discoverKitProjects, type Project } from '../projects/project-discovery.ts';
 import type {
@@ -118,7 +119,7 @@ function loadSweptProject(
 
 /** Writes the failure of a project that could not be verified at all, and returns the project's entry. */
 function reportProjectFailure(dir: string, message: string): JsonVerifyProjectEntry {
-  process.stderr.write(`Error in ${dir}: ${message}\n`);
+  writeError(message, dir);
   return { project: dir, passed: false, error: message };
 }
 

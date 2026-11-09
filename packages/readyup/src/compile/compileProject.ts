@@ -9,6 +9,7 @@ import type { ResolvedRdyConfig } from '../kits/types.ts';
 import { getLayout } from '../layout/engine.ts';
 import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
 import { writeManifest } from '../manifest/writeManifest.ts';
+import { writeError } from '../output/writeError.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import type { RaisedWarning } from '../schemas/common.ts';
 import { collectSourceFiles } from './collectSourceFiles.ts';
@@ -163,7 +164,7 @@ export async function compileProject(args: CompileProjectArgs): Promise<ProjectC
       kitEntries.sort((a, b) => a.name.localeCompare(b.name));
       writeManifest(manifestPath, { version: 1, kits: kitEntries });
     } catch (error: unknown) {
-      throw configError(`Error writing manifest: ${describeError(error)}`, { cause: error });
+      throw configError(`Cannot write manifest: ${describeError(error)}`, { cause: error });
     }
   }
 
@@ -245,7 +246,7 @@ function reportOrphans(orphans: OrphanOutcome[], args: ReportOrphansArgs): Orpha
         report.skippedCount += 1;
         break;
       case 'failed':
-        process.stderr.write(`Error removing ${path.relative(process.cwd(), bundlePath)}: ${orphan.message}\n`);
+        writeError(orphan.message, `cannot remove ${path.relative(process.cwd(), bundlePath)}`);
         report.kits.push({ name, ...projectField, status: 'failed', error: orphan.message });
         report.failedCount += 1;
         break;

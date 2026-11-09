@@ -69,7 +69,7 @@ The sweep considers the same directories as [`rdy list --recursive`](running-che
 
 Every project is compiled by the readyup that runs the sweep, and by that readyup's esbuild, so every manifest records the same `readyupVersion` and `esbuildVersion`. `pnpm -r exec rdy compile` instead runs each workspace's own installed readyup, and the two agree unless the workspaces install different versions of readyup.
 
-The sweep runs to completion across projects as well as kits. A project that cannot be compiled at all is reported as `Error in <directory>: <message>`, and the sweep moves on to the next project: This covers a config that cannot be evaluated, a source directory that cannot be read, and a manifest that cannot be written. A project whose config cannot be evaluated compiles nothing, rather than compiling under default settings. When any project has a failed kit, a drifted kit, or a failure of its own, the run ends with a line naming those projects and exits 1:
+The sweep runs to completion across projects as well as kits. A project that cannot be compiled at all is reported as `rdy: <directory>: <message>`, and the sweep moves on to the next project: This covers a config that cannot be evaluated, a source directory that cannot be read, and a manifest that cannot be written. A project whose config cannot be evaluated compiles nothing, rather than compiling under default settings. When any project has a failed kit, a drifted kit, or a failure of its own, the run ends with a line naming those projects and exits 1:
 
 ```
 Problems in 2 of 5 projects: packages/api, packages/broken
@@ -356,14 +356,14 @@ The directory in which the command runs is not one of them. `rdy verify --rebuil
    🔧 Move the edits into the source, then run `rdy compile --force`.
 
 1 of 1 kits failed verification.
-Error in packages/ui: No manifest at packages/ui/.readyup/manifest.json. Run `rdy compile` in packages/ui to create it.
+rdy: packages/ui: No manifest at packages/ui/.readyup/manifest.json. Run `rdy compile` in packages/ui to create it.
 
 Problems in 2 of 3 projects: packages/api, packages/ui
 ```
 
 The sweep visits the same projects as [`rdy compile --recursive`](#compiling-a-whole-repository), which considers the directories that [`rdy list --recursive`](running-checks.md#listing-a-whole-repository) considers, so a package that starts authoring kits is verified without a change to the CI step. Each project is verified exactly as `rdy verify` run from its own directory would verify it.
 
-The sweep runs to completion across projects. A project that cannot be verified at all is reported as `Error in <directory>: <message>`, and the sweep moves on to the next project: This covers a config that cannot be evaluated, a manifest that cannot be read, and a project that contains kits but no manifest, whose remedy is to run `rdy compile` in its directory. A project whose config cannot be evaluated is not verified, rather than verified under default settings. When any project has a failed kit, an uncompiled kit source, or a failure of its own, the run ends with a line naming those projects and exits 1.
+The sweep runs to completion across projects. A project that cannot be verified at all is reported as `rdy: <directory>: <message>`, and the sweep moves on to the next project: This covers a config that cannot be evaluated, a manifest that cannot be read, and a project that contains kits but no manifest, whose remedy is to run `rdy compile` in its directory. A project whose config cannot be evaluated is not verified, rather than verified under default settings. When any project has a failed kit, an uncompiled kit source, or a failure of its own, the run ends with a line naming those projects and exits 1.
 
 A sweep that finds no kit project prints `No kit projects found.` and exits 0. `--recursive` works with `--rebuild` and `--json`, and cannot be combined with `--manifest` or `--config`, each of which names a single project's file: Each project is verified under its own config.
 
