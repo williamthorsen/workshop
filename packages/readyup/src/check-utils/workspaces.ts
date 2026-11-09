@@ -80,7 +80,7 @@ function buildWorkspaces(rootDir: string): Workspace[] {
   const rootWorkspace = buildWorkspaceFromPackageJson('.', rootDir, rootPackageJson);
 
   const patternResult = resolveWorkspacePatterns(rootDir, rootPackageJson);
-  if (patternResult === null) return [rootWorkspace];
+  if (patternResult === undefined) return [rootWorkspace];
 
   // `matchedDirs` is already sorted ascending by `expandPatterns` and contains no `.`, and each workspace's
   // `dir` equals its entry in that list: The root leads a sorted result without an extra pass.
@@ -98,45 +98,48 @@ function buildWorkspaces(rootDir: string): Workspace[] {
 
 /**
  * Resolves the workspace pattern list for the repo at `rootDir`, whose parsed root manifest is `rootPackageJson`.
- * Returns `null` to signal single-workspace fallback, or `{ patterns, source }` for a monorepo.
+ * Returns `undefined` to signal single-workspace fallback, or `{ patterns, source }` for a monorepo.
  */
 function resolveWorkspacePatterns(
   rootDir: string,
   rootPackageJson: Record<string, unknown>,
-): { patterns: string[]; source: WorkspacePatternSource } | null {
+): { patterns: string[]; source: WorkspacePatternSource } | undefined {
   const pnpmWorkspacePath = join(rootDir, 'pnpm-workspace.yaml');
   if (existsSync(pnpmWorkspacePath)) {
     const patterns = readPnpmWorkspacePackages(pnpmWorkspacePath);
-    if (patterns !== null) {
+    if (patterns !== undefined) {
       return { patterns, source: 'pnpm-workspace.yaml' };
     }
     // `packages` key absent -- fall through to npm/single detection.
   }
 
   const npmPatterns = extractNpmWorkspacePatterns(rootPackageJson['workspaces']);
-  if (npmPatterns !== null) {
+  if (npmPatterns !== undefined) {
     return { patterns: npmPatterns, source: 'package.json' };
   }
 
-  return null;
+  return undefined;
 }
 
-/** Extracts workspace patterns from the `workspaces` field of a root `package.json`. */
-function extractNpmWorkspacePatterns(workspaces: unknown): string[] | null {
+/**
+ * Extracts workspace patterns from the `workspaces` field of a root `package.json`, or returns `undefined` when the
+ * field is absent, is neither an array nor a `packages` array, or contains a non-string entry.
+ */
+function extractNpmWorkspacePatterns(workspaces: unknown): string[] | undefined {
   if (Array.isArray(workspaces)) {
     const strings = workspaces.filter((entry): entry is string => typeof entry === 'string');
-    if (strings.length !== workspaces.length) return null;
+    if (strings.length !== workspaces.length) return undefined;
     return strings;
   }
   if (isRecord(workspaces)) {
     const nested = workspaces['packages'];
     if (Array.isArray(nested)) {
       const strings = nested.filter((entry): entry is string => typeof entry === 'string');
-      if (strings.length !== nested.length) return null;
+      if (strings.length !== nested.length) return undefined;
       return strings;
     }
   }
-  return null;
+  return undefined;
 }
 
 /**
