@@ -6,10 +6,10 @@ import type { Workspace } from '../buildWorkspaceFromPackageJson.ts';
 import { discoverWorkspaces } from '../workspaces.ts';
 
 /**
- * The `node:fs` functions on which a repoint can be armed: `existsSync` fires on the root manifest read,
+ * The `node:fs` functions on which a repoint can be armed: `statSync` fires on the root manifest read,
  * discovery's first filesystem call after it snapshots the cwd, and `readdirSync` on the directory walk.
  */
-type FsTrigger = 'existsSync' | 'readdirSync';
+type FsTrigger = 'readdirSync' | 'statSync';
 
 // Hoisted alongside the `vi.mock` factory below, which runs before this module's own bindings initialize.
 const { repoint } = vi.hoisted(() => {
@@ -30,13 +30,13 @@ vi.mock('node:fs', async (importOriginal) => {
 
   return {
     ...actual,
-    existsSync: (...args: Parameters<typeof actual.existsSync>) => {
-      applyRepoint('existsSync');
-      return actual.existsSync(...args);
-    },
     readdirSync: (...args: Parameters<typeof actual.readdirSync>) => {
       applyRepoint('readdirSync');
       return actual.readdirSync(...args);
+    },
+    statSync: (...args: Parameters<typeof actual.statSync>) => {
+      applyRepoint('statSync');
+      return actual.statSync(...args);
     },
   };
 });
@@ -60,7 +60,7 @@ describe(`${discoverWorkspaces.name} cwd reconciliation`, () => {
     temp.writeJson('packages/alpha/package.json', { name: 'alpha' });
     const decoyDir = writeDecoyRoot(temp);
 
-    const workspaces = discoverWithCwdRepointedAt(decoyDir, 'existsSync');
+    const workspaces = discoverWithCwdRepointedAt(decoyDir, 'statSync');
 
     expect(workspaces.map((workspace) => workspace.name)).toStrictEqual(['root', 'alpha']);
   });
@@ -69,7 +69,7 @@ describe(`${discoverWorkspaces.name} cwd reconciliation`, () => {
     temp.writeJson('package.json', { name: 'root', private: true });
     const decoyDir = writeDecoyRoot(temp);
 
-    const workspaces = discoverWithCwdRepointedAt(decoyDir, 'existsSync');
+    const workspaces = discoverWithCwdRepointedAt(decoyDir, 'statSync');
 
     expect(workspaces.map((workspace) => workspace.name)).toStrictEqual(['root']);
   });
@@ -97,7 +97,10 @@ function discoverWithCwdRepointedAt(decoyDir: string, fsFunction: FsTrigger): Wo
   repoint.on = fsFunction;
   repoint.to = decoyDir;
   try {
-    return discoverWorkspaces();
+    const workspaces = discoverWorkspaces();
+    // A trigger that discovery never calls leaves the cwd in place, and the test would then pass vacuously.
+    if (repoint.on !== undefined) throw new Error(`discovery never called ${fsFunction}`);
+    return workspaces;
   } finally {
     repoint.on = undefined;
     process.cwd = () => rootDir;

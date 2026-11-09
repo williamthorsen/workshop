@@ -4,11 +4,11 @@ import { createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/can
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { beforeEach, describe, expect, it as baseIt, vi } from 'vitest';
 
-const { existsProbes, foreignPaths, readPaths } = vi.hoisted(() => {
-  const existsProbes: string[] = [];
+const { foreignPaths, readPaths, statProbes } = vi.hoisted(() => {
   const foreignPaths = new Set<string>();
   const readPaths: string[] = [];
-  return { existsProbes, foreignPaths, readPaths };
+  const statProbes: string[] = [];
+  return { foreignPaths, readPaths, statProbes };
 });
 
 const execFileAsync = vi.hoisted(() =>
@@ -40,13 +40,13 @@ vi.mock('node:fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs')>();
   return {
     ...actual,
-    existsSync: (...args: Parameters<typeof actual.existsSync>) => {
-      existsProbes.push(String(args[0]));
-      return actual.existsSync(...args);
-    },
     readFileSync: (...args: Parameters<typeof actual.readFileSync>) => {
       readPaths.push(String(args[0]));
       return actual.readFileSync(...args);
+    },
+    statSync: (...args: Parameters<typeof actual.statSync>) => {
+      statProbes.push(String(args[0]));
+      return actual.statSync(...args);
     },
   };
 });
@@ -69,7 +69,7 @@ describe('readTrackedSources.ts', () => {
 
   describe(readTrackedSources, () => {
     beforeEach(() => {
-      existsProbes.length = 0;
+      statProbes.length = 0;
       foreignPaths.clear();
       readPaths.length = 0;
     });
@@ -199,8 +199,9 @@ describe('readTrackedSources.ts', () => {
       trackPaths('docs', 'src/present.ts');
 
       await expect(readTrackedSources()).resolves.toStrictEqual([{ path: 'src/present.ts', text: 'present' }]);
-      // The read tells a directory from a source, so a fixture never listed by git would pass this vacuously.
-      expect(countReads('docs')).toBe(1);
+      // The probe tells a directory from a source, so a fixture never listed by git would pass this vacuously.
+      expect(countProbes('docs')).toBe(1);
+      expect(countReads('docs')).toBe(0);
     });
 
     it('returns undefined outside a git working tree', async ({ temp }) => {
@@ -257,7 +258,7 @@ describe('readTrackedSources.ts', () => {
 
   describe(readSourceText, () => {
     beforeEach(() => {
-      existsProbes.length = 0;
+      statProbes.length = 0;
       foreignPaths.clear();
       readPaths.length = 0;
     });
@@ -309,9 +310,9 @@ function declareForeign(...paths: string[]): void {
   for (const path of paths) foreignPaths.add(path);
 }
 
-/** Counts the filesystem existence probes made for a directory-relative path. */
+/** Counts the filesystem stat probes made for a directory-relative path. */
 function countProbes(relativePath: string): number {
-  return existsProbes.filter((probed) => probed.endsWith(`/${relativePath}`)).length;
+  return statProbes.filter((probed) => probed.endsWith(`/${relativePath}`)).length;
 }
 
 /** Counts the reads made of a directory-relative path. */

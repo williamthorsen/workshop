@@ -53,6 +53,12 @@ describe('filesystem.ts', () => {
       expect(fileContains('missing.txt', /anything/)).toBe(false);
     });
 
+    it('returns false when the path names a directory', ({ temp }) => {
+      temp.write('dir/inner.txt', 'anything');
+
+      expect(fileContains('dir', /anything/)).toBe(false);
+    });
+
     it('matches a string as a literal substring', ({ temp }) => {
       temp.write('data.txt', 'import @.agents/PROJECT.md');
 
@@ -90,6 +96,12 @@ describe('filesystem.ts', () => {
 
     it('returns true when the file does not exist', () => {
       expect(fileDoesNotContain('missing.txt', /anything/)).toBe(true);
+    });
+
+    it('returns true when the path names a directory', ({ temp }) => {
+      temp.write('dir/inner.txt', 'anything');
+
+      expect(fileDoesNotContain('dir', /anything/)).toBe(true);
     });
 
     it('returns false when the file contains the string', ({ temp }) => {
@@ -198,6 +210,26 @@ describe('filesystem.ts', () => {
       temp.write('hello.txt', 'hello world');
 
       expect(readFile(join(temp.dir, 'hello.txt'))).toBe('hello world');
+    });
+
+    it('returns undefined for a directory', ({ temp }) => {
+      temp.write('dir/inner.txt', 'inner');
+
+      expect(readFile('dir')).toBeUndefined();
+    });
+
+    it('returns undefined for a symlink to a directory', ({ temp }) => {
+      temp.write('target/inner.txt', 'inner');
+      temp.symlink('link', 'target');
+
+      expect(readFile('link')).toBeUndefined();
+    });
+
+    it('reads a symlink to a file', ({ temp }) => {
+      temp.write('target.txt', 'linked');
+      temp.symlink('link.txt', 'target.txt');
+
+      expect(readFile('link.txt')).toBe('linked');
     });
   });
 });
