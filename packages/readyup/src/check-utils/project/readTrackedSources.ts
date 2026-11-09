@@ -99,8 +99,9 @@ export async function readTrackedSources(filter?: PathFilter): Promise<readonly 
 /**
  * Reads a tracked path as text, returning `undefined` when it contains none.
  *
- * `git ls-files` names entries that are not files: a symlink to a directory, and the gitlink of a checked-out
- * submodule. Both exist, so only the read itself can tell them from a source.
+ * `readFile` already returns `undefined` for an entry that is not a regular file, such as a symlink to a directory
+ * or a submodule's gitlink; a regular file whose read fails, such as on `EACCES`, is omitted from the sweep rather
+ * than failing it.
  */
 function readText(path: string): string | undefined {
   try {

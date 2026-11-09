@@ -1,4 +1,4 @@
-import { readFileSync, statSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
 
@@ -6,6 +6,7 @@ import { parse as parseJsonc } from 'jsonc-parser';
 
 import { resolvePackageRoot } from '../installed-packages/resolvePackageRoot.ts';
 import { isRecord } from '../portable/isRecord.ts';
+import { isRegularFile } from './filesystem.ts';
 
 /** A tsconfig's `extends` chain, resolved to the configs that it reaches. */
 export interface TsconfigChain {
@@ -116,15 +117,6 @@ function hasSubpath(specifier: string): boolean {
   return segmentCount > (specifier.startsWith('@') ? 2 : 1);
 }
 
-/** Reports whether a path exists and is a regular file. */
-function isFile(absolutePath: string): boolean {
-  try {
-    return statSync(absolutePath).isFile();
-  } catch {
-    return false;
-  }
-}
-
 /** Normalizes an `extends` value to a list of specifiers, dropping non-string entries. */
 function readExtends(value: unknown): string[] {
   if (typeof value === 'string') return [value];
@@ -134,7 +126,7 @@ function readExtends(value: unknown): string[] {
 
 /** Reads and JSONC-parses a JSON file. Returns `undefined` when the file is unreadable or is not an object. */
 function readJsonFile(absolutePath: string): Record<string, unknown> | undefined {
-  if (!isFile(absolutePath)) return undefined;
+  if (!isRegularFile(absolutePath)) return undefined;
   let content: string;
   try {
     content = readFileSync(absolutePath, 'utf8');
@@ -218,9 +210,9 @@ function resolvePackageSpecifier(specifier: string, configDir: string): string |
  */
 function resolvePathSpecifier(specifier: string, baseDir: string): string | undefined {
   const candidate = resolve(baseDir, specifier);
-  if (isFile(candidate)) return candidate;
+  if (isRegularFile(candidate)) return candidate;
   const withJsonSuffix = `${candidate}.json`;
-  if (isFile(withJsonSuffix)) return withJsonSuffix;
+  if (isRegularFile(withJsonSuffix)) return withJsonSuffix;
   return undefined;
 }
 

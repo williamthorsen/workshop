@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import type { CheckOutcome } from '../kits/types.ts';
@@ -14,12 +14,24 @@ export function fileExists(filePath: string): boolean {
 }
 
 /**
- * Reads a file, resolving a relative path against the working directory.
- * Returns `undefined` if it doesn't exist.
+ * Reports whether a path names a regular file, following symlinks. Any stat error reads as `false`, as it does for
+ * `existsSync`.
+ */
+export function isRegularFile(absolutePath: string): boolean {
+  try {
+    return statSync(absolutePath).isFile();
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Reads a file, resolving a relative path against the working directory. Returns `undefined` if the path is missing
+ * or, after following symlinks, is not a regular file, such as a directory or a submodule's gitlink.
  */
 export function readFile(filePath: string): string | undefined {
   const fullPath = resolve(process.cwd(), filePath);
-  if (!existsSync(fullPath)) return undefined;
+  if (!isRegularFile(fullPath)) return undefined;
   return readFileSync(fullPath, 'utf8');
 }
 
