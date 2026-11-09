@@ -75,7 +75,7 @@ function readWorkspacePackage(root: string, dir: string): WorkspacePackage {
     directory: path.relative(root, dir).split(path.sep).join('/'),
     name: readString(manifest, 'name'),
     // npm refuses to publish only when the manifest sets `private` to `true`.
-    private: manifest.private === true,
+    private: manifest['private'] === true,
     version: readString(manifest, 'version'),
   };
 }
