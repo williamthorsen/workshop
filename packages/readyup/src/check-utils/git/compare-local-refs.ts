@@ -1,4 +1,5 @@
 import type { LocalRefsCompareResult } from '../../kits/types.ts';
+import { countAheadBehind } from './count-ahead-behind.ts';
 import { isRefMissingError, runGit } from './run-git.ts';
 
 /** Returns how two local git refs relate, as a discriminated union. */
@@ -14,7 +15,7 @@ export async function compareLocalRefs(path: string, refA: string, refB: string)
     return { status: 'match', shaA, shaB };
   }
 
-  const aheadBehind = await resolveAheadBehind(path, refA, refB);
+  const aheadBehind = await countAheadBehind(path, refA, refB);
 
   return { status: 'mismatch', shaA, shaB, ...(aheadBehind && { aheadBehind }) };
 }
@@ -35,25 +36,5 @@ async function refExists(path: string, ref: string): Promise<boolean> {
   } catch (error: unknown) {
     if (isRefMissingError(error)) return false;
     throw error;
-  }
-}
-
-/** Returns the ahead/behind counts between two refs, or `undefined` when they cannot be computed. */
-async function resolveAheadBehind(
-  path: string,
-  refA: string,
-  refB: string,
-): Promise<{ ahead: number; behind: number } | undefined> {
-  try {
-    const output = await runGit(path, 'rev-list', '--count', '--left-right', `${refA}...${refB}`);
-    const aheadStr = output.split('\t', 1)[0];
-    const behindStr = output.split('\t', 2)[1];
-    if (aheadStr === undefined || behindStr === undefined) return undefined;
-    const ahead = Number(aheadStr);
-    const behind = Number(behindStr);
-    if (!Number.isFinite(ahead) || !Number.isFinite(behind)) return undefined;
-    return { ahead, behind };
-  } catch {
-    return undefined;
   }
 }
