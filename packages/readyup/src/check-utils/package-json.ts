@@ -1,7 +1,7 @@
 import { isRecord } from '../portable/isRecord.ts';
 import { readFile } from './filesystem.ts';
+import { findPnpmCatalogVersion } from './findPnpmCatalogVersion.ts';
 import { hasJsonField, readJsonFile } from './json.ts';
-import { findPnpmCatalogVersion } from './pnpmWorkspaceYaml.ts';
 import { compareVersions } from './semver.ts';
 
 /**
