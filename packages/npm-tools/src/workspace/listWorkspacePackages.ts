@@ -19,7 +19,7 @@ export function listWorkspacePackages(cwd: string): WorkspaceListing {
   const packages = resolution.packageDirs
     .filter((dir) => dir !== root)
     .map((dir) => readWorkspacePackage(root, dir))
-    .sort((left, right) => left.directory.localeCompare(right.directory));
+    .toSorted((left, right) => left.directory.localeCompare(right.directory));
 
   return { kind: 'packages', root, packages };
 }

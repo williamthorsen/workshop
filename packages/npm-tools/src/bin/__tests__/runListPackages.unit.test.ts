@@ -33,7 +33,7 @@ describe('thor-npm list-packages', () => {
 
     const { stdout } = await runInTree(tree, ['list-packages'], { columns: 60, isTty: true });
 
-    expect(stdout.split('\n')[1]).toHaveLength(60);
+    expect(stdout.split('\n', 2)[1]).toHaveLength(60);
   });
 
   it('leaves table lines whole when stdout is not a terminal', async () => {
