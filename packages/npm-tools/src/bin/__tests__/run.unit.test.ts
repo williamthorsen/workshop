@@ -9,6 +9,9 @@ const EFFECTS: RunEffects = {
   createTempDir: () => {
     throw new Error('Unexpected createTempDir call');
   },
+  cwd: () => {
+    throw new Error('Unexpected cwd call');
+  },
   isStdinTty: () => true,
   isStdoutTty: () => true,
   npm: {
@@ -21,6 +24,7 @@ const EFFECTS: RunEffects = {
   },
   readAnswer: () => Promise.resolve(undefined),
   resolveVersion: () => VERSION,
+  stdoutColumns: () => undefined,
 };
 
 describe(run, () => {
@@ -31,6 +35,7 @@ describe(run, () => {
       expect(exitCode).toBe(0);
       expect(stderr).toBe('');
       expect(stdout).toContain('Usage: thor-npm [options] <command>');
+      expect(stdout).toContain('list-packages');
       expect(stdout).toContain('move-trust');
       expect(stdout).toContain('publish-placeholder');
       expect(stdout).toContain('Exit codes:');

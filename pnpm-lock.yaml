@@ -494,6 +494,9 @@ importers:
 
   packages/npm-tools:
     dependencies:
+      '@williamthorsen/nmr-core':
+        specifier: 0.16.0
+        version: 0.16.0
       '@williamthorsen/toolbelt.cli':
         specifier: 'catalog:'
         version: 0.8.0
@@ -503,6 +506,9 @@ importers:
       '@williamthorsen/toolbelt.packaging':
         specifier: 'catalog:'
         version: 0.7.0
+      '@williamthorsen/toolbelt.terminal':
+        specifier: 'catalog:'
+        version: 0.3.0
       validate-npm-package-name:
         specifier: ^8.0.0
         version: 8.0.0

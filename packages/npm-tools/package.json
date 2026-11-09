@@ -2,13 +2,15 @@
   "name": "@williamthorsen/npm-tools",
   "version": "0.1.0",
   "private": false,
-  "description": "Run npm registry chores",
+  "description": "Run npm package and registry chores",
   "keywords": [
     "cli",
+    "monorepo",
     "npm",
     "npm-tools",
     "registry",
-    "trusted-publishing"
+    "trusted-publishing",
+    "workspace"
   ],
   "homepage": "https://github.com/williamthorsen/workshop/tree/main/packages/npm-tools#readme",
   "bugs": {
@@ -41,9 +43,11 @@
     "prepare": "nmr-compile"
   },
   "dependencies": {
+    "@williamthorsen/nmr-core": "0.16.0",
     "@williamthorsen/toolbelt.cli": "catalog:",
     "@williamthorsen/toolbelt.errors": "catalog:",
     "@williamthorsen/toolbelt.packaging": "catalog:",
+    "@williamthorsen/toolbelt.terminal": "catalog:",
     "validate-npm-package-name": "^8.0.0"
   },
   "devDependencies": {
@@ -53,7 +57,7 @@
     "vitest": "catalog:"
   },
   "engines": {
-    "node": ">=24"
+    "node": ">=24.16.0"
   },
   "publishConfig": {
     "access": "public"

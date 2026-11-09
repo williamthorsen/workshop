@@ -2,7 +2,7 @@
 
 # @williamthorsen/npm-tools
 
-A CLI that runs npm registry chores. It publishes the placeholder that a new package needs before `npm trust` can be configured for it, and moves a package's trusted publisher to another GitHub repository.
+A CLI that runs npm package and registry chores. It lists a pnpm workspace's packages and whether each can be published, publishes the placeholder that a new package needs before `npm trust` can be configured for it, and moves a package's trusted publisher to another GitHub repository.
 
 <!-- section:release-notes --><!-- /section:release-notes -->
 
@@ -12,9 +12,23 @@ A CLI that runs npm registry chores. It publishes the placeholder that a new pac
 pnpm add -g @williamthorsen/npm-tools
 ```
 
-Node 24 or later is required, and the `npm` CLI must be on PATH and logged in.
+Node 24.16 or later is required. The registry commands also need the `npm` CLI on PATH and logged in.
 
 ## Usage
+
+List the packages of the pnpm workspace that contains the working directory, and whether each can be published:
+
+```bash
+thor-npm list-packages
+```
+
+```
+PUBLISH  NAME                             VERSION  DIRECTORY        DESCRIPTION
+yes      @williamthorsen/atlassian-tools  0.1.3    atlassian-tools  Work with Jira Cloud from the command line
+no       @williamthorsen/compositor       0.5.6    compositor       Resolve declared content across precedence-ordered sources …
+```
+
+`--json` prints every field in full, for a script to read. `thor-npm list-packages --help` describes the columns.
 
 npm configures trusted publishing only for a name that the registry already has. Once per new package, publish a `0.0.0` placeholder that holds only `package.json` and `README.md`, then configure `npm trust`; every later version is published through trusted publishing.
 
