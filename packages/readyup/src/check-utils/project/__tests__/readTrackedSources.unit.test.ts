@@ -4,11 +4,12 @@ import { createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/can
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { beforeEach, describe, expect, it as baseIt, vi } from 'vitest';
 
-const { foreignPaths, readPaths, statProbes } = vi.hoisted(() => {
+const { foreignPaths, readPaths, statProbes, unreadablePaths } = vi.hoisted(() => {
   const foreignPaths = new Set<string>();
   const readPaths: string[] = [];
   const statProbes: string[] = [];
-  return { foreignPaths, readPaths, statProbes };
+  const unreadablePaths = new Set<string>();
+  return { foreignPaths, readPaths, statProbes, unreadablePaths };
 });
 
 const execFileAsync = vi.hoisted(() =>
@@ -41,7 +42,11 @@ vi.mock('node:fs', async (importOriginal) => {
   return {
     ...actual,
     readFileSync: (...args: Parameters<typeof actual.readFileSync>) => {
-      readPaths.push(String(args[0]));
+      const path = String(args[0]);
+      readPaths.push(path);
+      if ([...unreadablePaths].some((unreadable) => path.endsWith(`/${unreadable}`))) {
+        throw Object.assign(new Error(`EACCES: permission denied, open '${path}'`), { code: 'EACCES' });
+      }
       return actual.readFileSync(...args);
     },
     statSync: (...args: Parameters<typeof actual.statSync>) => {
@@ -69,9 +74,10 @@ describe('readTrackedSources.ts', () => {
 
   describe(readTrackedSources, () => {
     beforeEach(() => {
-      statProbes.length = 0;
       foreignPaths.clear();
       readPaths.length = 0;
+      statProbes.length = 0;
+      unreadablePaths.clear();
     });
 
     it('reads each file once across calls passing different filters', async ({ temp }) => {
@@ -192,6 +198,16 @@ describe('readTrackedSources.ts', () => {
       expect(countProbes('src/deleted.ts')).toBe(1);
     });
 
+    it('omits a tracked file whose read fails, and returns the others', async ({ temp }) => {
+      temp.write('src/locked.ts', 'locked');
+      temp.write('src/present.ts', 'present');
+      trackPaths('src/locked.ts', 'src/present.ts');
+      unreadablePaths.add('src/locked.ts');
+
+      await expect(readTrackedSources()).resolves.toStrictEqual([{ path: 'src/present.ts', text: 'present' }]);
+      expect(countReads('src/locked.ts')).toBe(1);
+    });
+
     it('omits a tracked path that resolves to a directory', async ({ temp }) => {
       temp.write('website/docs/page.md', 'page');
       temp.symlink('docs', 'website/docs');
@@ -258,9 +274,10 @@ describe('readTrackedSources.ts', () => {
 
   describe(readSourceText, () => {
     beforeEach(() => {
-      statProbes.length = 0;
       foreignPaths.clear();
       readPaths.length = 0;
+      statProbes.length = 0;
+      unreadablePaths.clear();
     });
 
     it('returns the text that a sweep read, reading the file no second time', async ({ temp }) => {
