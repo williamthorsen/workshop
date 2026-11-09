@@ -30,6 +30,8 @@ export async function compareLocalRefsWith(
   return { status: 'mismatch', shaA, shaB, ...(aheadBehind && { aheadBehind }) };
 }
 
+// region | Helpers
+
 /** Returns the name of the first ref that does not exist, or `undefined` when both exist. */
 async function findMissingRef(git: Git, path: string, refA: string, refB: string): Promise<string | undefined> {
   const [existsA, existsB] = await Promise.all([refExists(git, path, refA), refExists(git, path, refB)]);
@@ -48,3 +50,5 @@ async function refExists(git: Git, path: string, ref: string): Promise<boolean> 
     throw error;
   }
 }
+
+// endregion | Helpers

@@ -44,6 +44,8 @@ export async function compareRefToRemoteWith(
   return { status: 'out-of-sync', localSha, remoteSha, ...(aheadBehind && { aheadBehind }) };
 }
 
+// region | Helpers
+
 /**
  * Returns a local ref's SHA, or `undefined` when the ref does not exist, rethrowing errors that mean anything else.
  */
@@ -65,3 +67,5 @@ async function resolveRemoteRef(git: Git, path: string, ref: string, remote: str
   const sha = output.split('\t', 1)[0];
   return sha;
 }
+
+// endregion | Helpers
