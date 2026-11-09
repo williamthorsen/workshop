@@ -1,111 +1,93 @@
-import { promisify } from 'node:util';
+import { createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { describe, expect, it as baseIt } from 'vitest';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createFakeGit, type FakeGit } from '../../git/test-utils/fake-git.ts';
+import { createTrackedFilesLister } from '../listTrackedFiles.ts';
 
-const execFileAsync = vi.hoisted(() =>
-  vi.fn<(file: string, args: string[]) => Promise<{ stdout: string; stderr: string }>>(),
+const it = baseIt.extend(
+  'temp',
+  makeFixture(() => createTempTree({}, { prefix: 'rdy-tracked-' })),
 );
 
-vi.mock('node:child_process', () => {
-  const stub = Object.assign(vi.fn(), { [promisify.custom]: execFileAsync });
-  return { execFile: stub };
-});
+describe(createTrackedFilesLister, () => {
+  // The lister probes `process.cwd()` for existence before asking git, so `cwd` must name a real directory.
+  it.aroundEach(async (runTest, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir);
 
-vi.mock(import('node:fs'), () => ({
-  existsSync: () => true,
-}));
-
-import { listTrackedFiles } from '../listTrackedFiles.ts';
-
-describe(listTrackedFiles, () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    // Each test claims a `cwd` of its own, so the module's per-`cwd` memoization starts empty for every case.
-    vi.spyOn(process, 'cwd').mockReturnValue(`/repo/${expect.getState().currentTestName}`);
+    await runTest();
   });
 
   it('returns undefined outside a git working tree', async () => {
-    respondWith({ isRepo: false });
+    const git = createFakeGit({
+      'rev-parse --git-dir': Object.assign(new Error('fatal: not a git repository'), { code: 128 }),
+    });
 
-    await expect(listTrackedFiles()).resolves.toBeUndefined();
+    await expect(createTrackedFilesLister(git)()).resolves.toBeUndefined();
   });
 
   it('returns an empty list inside a working tree that tracks nothing', async () => {
-    respondWith({ trackedOutput: '' });
+    const git = createGitTracking('');
 
-    await expect(listTrackedFiles()).resolves.toStrictEqual([]);
+    await expect(createTrackedFilesLister(git)()).resolves.toStrictEqual([]);
   });
 
   it('splits the listing on NUL and drops the trailing empty entry', async () => {
-    respondWith({ trackedOutput: 'src/index.ts\0src/check-utils/json.ts\0' });
+    const git = createGitTracking('src/index.ts\0src/check-utils/json.ts\0');
 
-    await expect(listTrackedFiles()).resolves.toStrictEqual(['src/index.ts', 'src/check-utils/json.ts']);
+    await expect(createTrackedFilesLister(git)()).resolves.toStrictEqual(['src/index.ts', 'src/check-utils/json.ts']);
   });
 
   it('keeps the leading whitespace of the first path', async () => {
-    respondWith({ trackedOutput: ' leading-space.txt\0normal.txt\0' });
+    const git = createGitTracking(' leading-space.txt\0normal.txt\0');
 
-    await expect(listTrackedFiles()).resolves.toStrictEqual([' leading-space.txt', 'normal.txt']);
+    await expect(createTrackedFilesLister(git)()).resolves.toStrictEqual([' leading-space.txt', 'normal.txt']);
   });
 
-  it('lists with `-z`, so git neither escapes nor quotes a path', async () => {
-    respondWith({ trackedOutput: 'src/index.ts\0' });
+  it('lists untrimmed with `-z`, so git neither escapes nor quotes a path', async () => {
+    const git = createGitTracking('src/index.ts\0');
 
-    await listTrackedFiles();
+    await createTrackedFilesLister(git)();
 
-    expect(execFileAsync).toHaveBeenCalledWith('git', ['-C', process.cwd(), 'ls-files', '-z']);
+    expect(git.runGitRaw).toHaveBeenCalledWith(process.cwd(), 'ls-files', '-z');
   });
 
   it('invokes git once for calls that run concurrently', async () => {
-    respondWith({ trackedOutput: 'src/index.ts\0' });
+    const git = createGitTracking('src/index.ts\0');
+    const listTrackedFiles = createTrackedFilesLister(git);
 
     const [first, second] = await Promise.all([listTrackedFiles(), listTrackedFiles()]);
 
     expect(first).toStrictEqual(['src/index.ts']);
     expect(second).toStrictEqual(['src/index.ts']);
-    expect(listInvocationCount()).toBe(1);
+    expect(git.runGitRaw).toHaveBeenCalledTimes(1);
   });
 
   it('invokes git once for a later call, which reads the memoized listing', async () => {
-    respondWith({ trackedOutput: 'src/index.ts\0' });
+    const git = createGitTracking('src/index.ts\0');
+    const listTrackedFiles = createTrackedFilesLister(git);
 
     await listTrackedFiles();
     await listTrackedFiles();
 
-    expect(listInvocationCount()).toBe(1);
+    expect(git.runGitRaw).toHaveBeenCalledTimes(1);
   });
 
   it('does not memoize a rejected listing', async () => {
-    execFileAsync.mockImplementation((_file, args) => {
-      if (args.includes('rev-parse')) return Promise.resolve({ stdout: '.git\n', stderr: '' });
-      return Promise.reject(new Error('fatal: unable to read index'));
-    });
+    const git = createGitTracking('src/index.ts\0');
+    git.runGitRaw.mockRejectedValueOnce(new Error('fatal: unable to read index'));
+    const listTrackedFiles = createTrackedFilesLister(git);
 
     await expect(listTrackedFiles()).rejects.toThrow('unable to read index');
-
-    respondWith({ trackedOutput: 'src/index.ts\0' });
     await expect(listTrackedFiles()).resolves.toStrictEqual(['src/index.ts']);
   });
 });
 
 // region | Helpers
 
-/** Counts the `ls-files` invocations made so far, ignoring the repo probe that precedes each listing. */
-function listInvocationCount(): number {
-  return execFileAsync.mock.calls.filter(([, args]) => args.includes('ls-files')).length;
-}
-
-/** Stubs the repo probe and the listing that follows it, defaulting the probe to a working tree. */
-function respondWith(options: { isRepo?: boolean; trackedOutput?: string }): void {
-  const { isRepo = true, trackedOutput = '' } = options;
-  execFileAsync.mockImplementation((_file, args) => {
-    if (args.includes('rev-parse')) {
-      return isRepo
-        ? Promise.resolve({ stdout: '.git\n', stderr: '' })
-        : Promise.reject(Object.assign(new Error('fatal: not a git repository'), { code: 128 }));
-    }
-    return Promise.resolve({ stdout: trackedOutput, stderr: '' });
-  });
+/** Returns a fake git whose working tree tracks the paths in `listing`, a `ls-files -z` output. */
+function createGitTracking(listing: string): FakeGit {
+  return createFakeGit({ 'rev-parse --git-dir': '.git', 'ls-files': listing });
 }
 
 // endregion | Helpers

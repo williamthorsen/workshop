@@ -1,8 +1,8 @@
-import { isGitRepo } from '../git/repo-predicates.ts';
-import { runGitRaw } from '../git/run-git.ts';
+import { isGitRepoWith } from '../git/repo-predicates.ts';
+import { type Git, realGit } from '../git/run-git.ts';
 
-/** Tracked-path listings by the `cwd` against which they were resolved, kept for the life of the process. */
-const listingsByCwd = new Map<string, Promise<readonly string[] | undefined>>();
+/** The lister behind `listTrackedFiles`, whose cache every caller in the process shares. */
+const defaultTrackedFilesLister = createTrackedFilesLister(realGit);
 
 /**
  * Lists the paths tracked by git under the working directory, or `undefined` when it is not a git working tree.
@@ -26,26 +26,35 @@ const listingsByCwd = new Map<string, Promise<readonly string[] | undefined>>();
  * failure is retried rather than remembered.
  */
 export function listTrackedFiles(): Promise<readonly string[] | undefined> {
-  const cwd = process.cwd();
+  return defaultTrackedFilesLister();
+}
 
-  let listing = listingsByCwd.get(cwd);
-  if (listing === undefined) {
-    listing = readTrackedPaths(cwd);
-    listingsByCwd.set(cwd, listing);
-    void listing.catch(() => listingsByCwd.delete(cwd));
-  }
+/** Returns a `listTrackedFiles` that reaches git through `git`, with a per-`cwd` cache of its own. */
+export function createTrackedFilesLister(git: Git): () => Promise<readonly string[] | undefined> {
+  const listingsByCwd = new Map<string, Promise<readonly string[] | undefined>>();
 
-  return listing;
+  return function listTrackedFiles() {
+    const cwd = process.cwd();
+
+    let listing = listingsByCwd.get(cwd);
+    if (listing === undefined) {
+      listing = readTrackedPaths(git, cwd);
+      listingsByCwd.set(cwd, listing);
+      void listing.catch(() => listingsByCwd.delete(cwd));
+    }
+
+    return listing;
+  };
 }
 
 // region | Helpers
 
 /** Reads the tracked paths of the working tree at `cwd`, or `undefined` when `cwd` is outside one. */
-async function readTrackedPaths(cwd: string): Promise<readonly string[] | undefined> {
-  if (!(await isGitRepo(cwd))) return undefined;
+async function readTrackedPaths(git: Git, cwd: string): Promise<readonly string[] | undefined> {
+  if (!(await isGitRepoWith(git, cwd))) return undefined;
 
   // Read stdout untrimmed, which keeps the first path's leading space or tab that a trim would remove.
-  const tracked = await runGitRaw(cwd, 'ls-files', '-z');
+  const tracked = await git.runGitRaw(cwd, 'ls-files', '-z');
   return tracked.split('\0').filter((path) => path !== '');
 }
 

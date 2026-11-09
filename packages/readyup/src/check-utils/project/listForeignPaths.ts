@@ -1,4 +1,4 @@
-import { runGitWithInput } from '../git/run-git.ts';
+import { type Git, realGit } from '../git/run-git.ts';
 import { listTrackedFiles } from './listTrackedFiles.ts';
 
 /** The attributes by which a project declares a tracked file to be code that is not its own to change. */
@@ -7,8 +7,8 @@ const FOREIGN_ATTRIBUTES = ['linguist-generated', 'linguist-vendored'];
 /** The values that leave a file in the sweep: git's two spellings of "not declared", and an explicit opt-out. */
 const UNDECLARED_VALUES = new Set(['false', 'unset', 'unspecified']);
 
-/** Foreign-path sets by the `cwd` against which they were resolved, kept for the life of the process. */
-const setsByCwd = new Map<string, Promise<ReadonlySet<string>>>();
+/** The lister behind `listForeignPaths`, over the shared tracked listing, whose cache every caller shares. */
+const defaultForeignPathsLister = createForeignPathsLister(realGit, listTrackedFiles);
 
 /**
  * Names the tracked paths that the project declares `linguist-generated` or `linguist-vendored`, which are
@@ -28,16 +28,31 @@ const setsByCwd = new Map<string, Promise<ReadonlySet<string>>>();
  * retried rather than remembered.
  */
 export function listForeignPaths(): Promise<ReadonlySet<string>> {
-  const cwd = process.cwd();
+  return defaultForeignPathsLister();
+}
 
-  let foreign = setsByCwd.get(cwd);
-  if (foreign === undefined) {
-    foreign = readForeignPaths(cwd);
-    setsByCwd.set(cwd, foreign);
-    void foreign.catch(() => setsByCwd.delete(cwd));
-  }
+/**
+ * Returns a `listForeignPaths` that reaches git through `git` and reads the tracked paths from `listTracked`, with a
+ * per-`cwd` cache of its own.
+ */
+export function createForeignPathsLister(
+  git: Git,
+  listTracked: typeof listTrackedFiles,
+): () => Promise<ReadonlySet<string>> {
+  const setsByCwd = new Map<string, Promise<ReadonlySet<string>>>();
 
-  return foreign;
+  return function listForeignPaths() {
+    const cwd = process.cwd();
+
+    let foreign = setsByCwd.get(cwd);
+    if (foreign === undefined) {
+      foreign = readForeignPaths(git, listTracked, cwd);
+      setsByCwd.set(cwd, foreign);
+      void foreign.catch(() => setsByCwd.delete(cwd));
+    }
+
+    return foreign;
+  };
 }
 
 // region | Helpers
@@ -69,12 +84,16 @@ function collectDeclaredPaths(reported: string): ReadonlySet<string> {
  * Both `git ls-files` and `git check-attr` work in paths relative to the directory in which they run, so a sweep
  * from a subdirectory matches a declaration made in the repository root.
  */
-async function readForeignPaths(cwd: string): Promise<ReadonlySet<string>> {
-  const tracked = await listTrackedFiles();
+async function readForeignPaths(
+  git: Git,
+  listTracked: typeof listTrackedFiles,
+  cwd: string,
+): Promise<ReadonlySet<string>> {
+  const tracked = await listTracked();
   if (tracked === undefined || tracked.length === 0) return new Set();
 
   const paths = tracked.map((path) => `${path}\0`).join('');
-  const reported = await runGitWithInput(cwd, paths, 'check-attr', '-z', '--stdin', ...FOREIGN_ATTRIBUTES);
+  const reported = await git.runGitWithInput(cwd, paths, 'check-attr', '-z', '--stdin', ...FOREIGN_ATTRIBUTES);
 
   return collectDeclaredPaths(reported);
 }
