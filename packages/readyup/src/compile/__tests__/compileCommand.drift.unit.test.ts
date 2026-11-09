@@ -1,219 +1,155 @@
-import assert from 'node:assert';
-
+import { createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { RdyManifest } from '../../manifest/manifestSchema.ts';
+const mockCompileConfig = vi.hoisted(() => vi.fn<(inputPath: string, outputPath?: string) => Promise<CompileResult>>());
 
-const mockCompileConfig = vi.hoisted(() => vi.fn());
-const mockLoadConfig = vi.hoisted(() => vi.fn());
-const mockExistsSync = vi.hoisted(() => vi.fn());
-const mockReaddirSync = vi.hoisted(() => vi.fn());
-const mockRealpathSync = vi.hoisted(() => Object.assign(vi.fn(), { native: vi.fn() }));
-const mockPicomatch = vi.hoisted(() => vi.fn());
-const mockWriteManifest = vi.hoisted(() => vi.fn());
-const mockReadManifest = vi.hoisted(() => vi.fn());
-const mockCheckDrift = vi.hoisted(() => vi.fn());
-const mockListUnrecordedBundleWarnings = vi.hoisted(() => vi.fn());
-
+// The bundler and the import of its output are mocked; configs, manifests, and the drift gate read the tree.
 vi.mock(import('../compileConfig.ts'), () => ({
   compileConfig: mockCompileConfig,
 }));
 
-vi.mock(import('../../config/loadConfig.ts'), async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../config/loadConfig.ts')>();
-  return { ...actual, loadConfig: mockLoadConfig };
-});
-
-vi.mock(import('node:fs'), () => ({
-  existsSync: mockExistsSync,
-  readdirSync: mockReaddirSync,
-  realpathSync: mockRealpathSync,
-}));
-
-vi.mock('picomatch', () => ({
-  default: mockPicomatch,
-}));
-
-vi.mock(import('../../manifest/writeManifest.ts'), () => ({
-  writeManifest: mockWriteManifest,
-}));
-
-vi.mock(import('../../manifest/readManifest.ts'), async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../manifest/readManifest.ts')>();
-  return {
-    ManifestNotFoundError: actual.ManifestNotFoundError,
-    readManifest: mockReadManifest,
-  };
-});
-
-vi.mock(import('../../verify/checkDrift.ts'), () => ({
-  checkDrift: mockCheckDrift,
-}));
-
-// The output directory is scanned through the real filesystem, which these tests replace with sweep-shaped stubs.
-vi.mock(import('../listUnrecordedBundleWarnings.ts'), () => ({
-  listUnrecordedBundleWarnings: mockListUnrecordedBundleWarnings,
-}));
-
 import { richFormatter } from '../../layout/formatter.ts';
 import { compileCommand } from '../compileCommand.ts';
-import { compileResult, kitSource, SRC_DIR } from '../test-utils/compile-result-fixtures.ts';
+import type { CompileResult } from '../compileConfig.ts';
+import { buildCompileResult, COMPILED, hashOf, SOURCE_HASH } from '../test-utils/compile-result-fixtures.ts';
 import { compile } from '../test-utils/compile-runners.ts';
+import { readTreeManifest } from '../test-utils/readTreeManifest.ts';
 
 const ICON_DRIFT = richFormatter.tokens.failedWarn.text;
 
+/** Contents of a bundle edited by hand after the manifest recorded the hash of `COMPILED`. */
+const EDITED = 'export default { edited: true };';
+
+/** A single-file project whose bundle has been edited since the manifest recorded its hash. */
+const DRIFTED_SINGLE_TREE = {
+  'deploy.js': EDITED,
+  'deploy.ts': COMPILED,
+  '.readyup/manifest.json': JSON.stringify({
+    version: 1,
+    kits: [{ name: 'deploy', path: '../deploy.js', targetHash: hashOf(COMPILED) }],
+  }),
+};
+
 describe(compileCommand, () => {
   beforeEach(() => {
-    mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: SRC_DIR, outDir: SRC_DIR, include: undefined, exclude: [] },
-    });
-    mockCheckDrift.mockReturnValue({ kind: 'unverified' });
-    mockListUnrecordedBundleWarnings.mockReturnValue([]);
-    // No path named by these tests contains a symlink, so a real path is the path itself.
-    mockRealpathSync.mockImplementation((target: string) => target);
+    mockCompileConfig.mockImplementation(buildCompileResult);
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
     mockCompileConfig.mockReset();
-    mockLoadConfig.mockReset();
-    mockExistsSync.mockReset();
-    mockReaddirSync.mockReset();
-    mockRealpathSync.mockReset();
-    mockPicomatch.mockReset();
-    mockWriteManifest.mockReset();
-    mockReadManifest.mockReset();
-    mockCheckDrift.mockReset();
-    mockListUnrecordedBundleWarnings.mockReset();
   });
 
   // Drift-gate tests
   it('skips single-file compile with drift and returns 1 without invoking compileConfig', async () => {
-    mockReadManifest.mockReturnValue({
-      version: 1,
-      kits: [{ name: 'deploy', path: 'deploy.js', targetHash: 'aaaa1111' }],
-    });
-    mockCheckDrift.mockReturnValue({
-      kind: 'drift',
-      expected: 'aaaa1111',
-      actual: 'bbbb2222',
-      resolvedPath: '/abs/deploy.js',
-    });
+    using tree = createTempTree(DRIFTED_SINGLE_TREE, { prefix: 'rdy-compile-drift-' });
+    using _cwd = pointCwdAt(tree.dir);
+    const manifestBefore = tree.read('.readyup/manifest.json');
 
     const { exitCode, stdout } = await compile(['deploy.ts']);
 
     expect(exitCode).toBe(1);
     expect(mockCompileConfig).not.toHaveBeenCalled();
-    expect(mockWriteManifest).not.toHaveBeenCalled();
-    expect(stdout).toContain(`${ICON_DRIFT} deploy.ts\n   drift in deploy.js: expected aaaa1111, got bbbb2222\n`);
+    expect(tree.read('.readyup/manifest.json')).toBe(manifestBefore);
+    expect(tree.read('deploy.js')).toBe(EDITED);
+    expect(stdout).toContain(
+      `${ICON_DRIFT} deploy.ts\n   drift in deploy.js: expected ${hashOf(COMPILED)}, got ${hashOf(EDITED)}\n`,
+    );
     expect(stdout).toContain('Re-run with --force');
   });
 
   it('bypasses drift gate with --force on single-file compile', async () => {
-    mockCompileConfig.mockResolvedValue(
-      compileResult('deploy.ts', { outputPath: '/abs/deploy.js', changed: true, targetHash: 'bbbb2222' }),
-    );
-    mockReadManifest.mockReturnValue({
-      version: 1,
-      kits: [{ name: 'deploy', path: 'deploy.js', targetHash: 'aaaa1111' }],
-    });
-    mockCheckDrift.mockReturnValue({
-      kind: 'drift',
-      expected: 'aaaa1111',
-      actual: 'bbbb2222',
-      resolvedPath: '/abs/deploy.js',
-    });
+    using tree = createTempTree(DRIFTED_SINGLE_TREE, { prefix: 'rdy-compile-drift-' });
+    using _cwd = pointCwdAt(tree.dir);
 
-    const { exitCode } = await compile(['deploy.ts', '--force']);
+    const { exitCode, stdout } = await compile(['deploy.ts', '--force']);
 
     expect(exitCode).toBe(0);
-    expect(mockCheckDrift).not.toHaveBeenCalled();
+    expect(stdout).not.toContain('drift in');
     expect(mockCompileConfig).toHaveBeenCalledTimes(1);
-    expect(mockWriteManifest).toHaveBeenCalledTimes(1);
+    expect(tree.read('deploy.js')).toBe(COMPILED);
+    expect(readTreeManifest(tree).kits).toStrictEqual([
+      expect.objectContaining({ name: 'deploy', source: '../deploy.ts', sourceHash: SOURCE_HASH }),
+    ]);
   });
 
   it('skips drifted kits during batch compile and preserves their manifest entries', async () => {
-    mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
-    });
-    mockExistsSync.mockReturnValue(true);
-    mockReaddirSync.mockReturnValue(['alpha.ts', 'beta.ts']);
-    mockReadManifest.mockReturnValue({
-      version: 1,
-      kits: [
-        { name: 'alpha', path: 'alpha.js', source: 'alpha.ts', targetHash: 'aaaa1111' },
-        { name: 'beta', path: 'beta.js', source: 'beta.ts', targetHash: 'bbbb0000' },
-      ],
-    });
     // alpha drifts; beta is ok.
-    mockCheckDrift
-      .mockReturnValueOnce({
-        kind: 'drift',
-        expected: 'aaaa1111',
-        actual: 'aaaa9999',
-        resolvedPath: '/abs/alpha.js',
-      })
-      .mockReturnValueOnce({ kind: 'ok', targetHash: 'bbbb0000' });
-    mockCompileConfig.mockResolvedValueOnce(
-      compileResult(kitSource('beta.ts'), { outputPath: '/abs/beta.js', changed: true, targetHash: 'bbbb2222' }),
+    using tree = createTempTree(
+      {
+        '.readyup/kits/alpha.js': EDITED,
+        '.readyup/kits/alpha.ts': COMPILED,
+        '.readyup/kits/beta.js': COMPILED,
+        '.readyup/kits/beta.ts': COMPILED,
+        '.readyup/manifest.json': JSON.stringify({
+          version: 1,
+          kits: [
+            { name: 'alpha', path: 'kits/alpha.js', source: 'kits/alpha.ts', targetHash: hashOf(COMPILED) },
+            { name: 'beta', path: 'kits/beta.js', source: 'kits/beta.ts', targetHash: hashOf(COMPILED) },
+          ],
+        }),
+      },
+      { prefix: 'rdy-compile-drift-' },
     );
+    using _cwd = pointCwdAt(tree.dir);
 
     const { exitCode, stdout } = await compile([]);
 
     expect(exitCode).toBe(1);
     expect(mockCompileConfig).toHaveBeenCalledTimes(1); // only beta compiled
+    expect(mockCompileConfig).toHaveBeenCalledWith(tree.resolve('.readyup/kits/beta.ts'), expect.any(String));
     expect(stdout).toContain(`${ICON_DRIFT} alpha.ts\n   drift in alpha.js:`);
     expect(stdout).toContain('1 of 2 kits skipped due to drift');
+    expect(tree.read('.readyup/kits/alpha.js')).toBe(EDITED);
 
-    const [writeManifestCall] = mockWriteManifest.mock.calls;
-    assert.ok(writeManifestCall);
-    const writtenManifest: RdyManifest = writeManifestCall[1];
-    const alphaEntry = writtenManifest.kits.find((k) => k.name === 'alpha');
-    assert.ok(alphaEntry, 'Expected alpha entry to remain in manifest');
-    expect(alphaEntry.targetHash).toBe('aaaa1111');
-    const betaEntry = writtenManifest.kits.find((k) => k.name === 'beta');
-    assert.ok(betaEntry, 'Expected beta entry to be present');
-    expect(betaEntry.targetHash).toBe('bbbb2222');
+    const [alphaEntry, betaEntry] = readTreeManifest(tree).kits;
+    // The recompiled entry gains the fields that a compile records; the preserved one keeps only its prior fields.
+    expect(alphaEntry).toStrictEqual({
+      name: 'alpha',
+      path: 'kits/alpha.js',
+      source: 'kits/alpha.ts',
+      targetHash: hashOf(COMPILED),
+    });
+    expect(betaEntry).toStrictEqual(
+      expect.objectContaining({ name: 'beta', sourceHash: SOURCE_HASH, targetHash: hashOf(COMPILED) }),
+    );
   });
 
   it('compiles all kits when --force is passed during batch compile with drift', async () => {
-    mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
-    });
-    mockExistsSync.mockReturnValue(true);
-    mockReaddirSync.mockReturnValue(['alpha.ts']);
-    mockReadManifest.mockReturnValue({
-      version: 1,
-      kits: [{ name: 'alpha', path: 'alpha.js', source: 'alpha.ts', targetHash: 'aaaa1111' }],
-    });
-    mockCheckDrift.mockReturnValue({
-      kind: 'drift',
-      expected: 'aaaa1111',
-      actual: 'aaaa9999',
-      resolvedPath: '/abs/alpha.js',
-    });
-    mockCompileConfig.mockResolvedValue(
-      compileResult(kitSource('alpha.ts'), { outputPath: '/abs/alpha.js', changed: true, targetHash: 'aaaa9999' }),
+    using tree = createTempTree(
+      {
+        '.readyup/kits/alpha.js': EDITED,
+        '.readyup/kits/alpha.ts': COMPILED,
+        '.readyup/manifest.json': JSON.stringify({
+          version: 1,
+          kits: [{ name: 'alpha', path: 'kits/alpha.js', source: 'kits/alpha.ts', targetHash: hashOf(COMPILED) }],
+        }),
+      },
+      { prefix: 'rdy-compile-drift-' },
     );
+    using _cwd = pointCwdAt(tree.dir);
 
     const { exitCode, stdout } = await compile(['--force']);
 
     expect(exitCode).toBe(0);
-    expect(mockCheckDrift).not.toHaveBeenCalled();
+    expect(stdout).not.toContain('drift in');
     expect(mockCompileConfig).toHaveBeenCalledTimes(1);
     expect(stdout).not.toContain('skipped due to drift');
+    expect(tree.read('.readyup/kits/alpha.js')).toBe(COMPILED);
   });
 
   it('does not emit drift footer when no kits were skipped', async () => {
-    mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: [] },
-    });
-    mockExistsSync.mockReturnValue(true);
-    mockReaddirSync.mockReturnValue(['a.ts']);
-    mockCheckDrift.mockReturnValue({ kind: 'ok', targetHash: 'aaaa1111' });
-    mockCompileConfig.mockResolvedValue(
-      compileResult(kitSource('a.ts'), { outputPath: '/abs/a.js', changed: true, targetHash: 'aaaa1111' }),
+    using tree = createTempTree(
+      {
+        '.readyup/kits/a.js': COMPILED,
+        '.readyup/kits/a.ts': COMPILED,
+        '.readyup/manifest.json': JSON.stringify({
+          version: 1,
+          kits: [{ name: 'a', path: 'kits/a.js', source: 'kits/a.ts', targetHash: hashOf(COMPILED) }],
+        }),
+      },
+      { prefix: 'rdy-compile-drift-' },
     );
+    using _cwd = pointCwdAt(tree.dir);
 
     const { stdout } = await compile([]);
 
