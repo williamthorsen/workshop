@@ -124,7 +124,7 @@ describe('rdy help', () => {
     const { exitCode, stderr } = await route(args);
 
     expect(exitCode).toBe(2);
-    expect(stderr).toContain('Error:');
+    expect(stderr).toContain('rdy: ');
   });
 
   it('names the accepted shape when given a second subject', async () => {

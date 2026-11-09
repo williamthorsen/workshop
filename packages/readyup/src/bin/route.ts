@@ -19,6 +19,7 @@ import { getLayout, setColor, setStyle, setWidth } from '../layout/engine.ts';
 import { resolveOutputColor } from '../layout/resolveOutputColor.ts';
 import { resolveOutputWidth } from '../layout/resolveOutputWidth.ts';
 import { listCommand } from '../list/listCommand.ts';
+import { writeError } from '../output/writeError.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import { findNearestWord } from '../portable/findNearestWord.ts';
 import { createRemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
@@ -103,7 +104,7 @@ export function reportFailure(error: unknown, json: boolean): number {
   if (json) {
     process.stdout.write(formatJsonError(rdyError) + '\n');
   } else {
-    process.stderr.write(`Error: ${rdyError.message}\n`);
+    writeError(rdyError.message);
     if (rdyError.hint !== undefined) {
       process.stderr.write(getLayout().formatHint(rdyError.hint) + '\n');
     }

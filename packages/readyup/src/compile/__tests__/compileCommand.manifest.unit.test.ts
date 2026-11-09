@@ -368,7 +368,7 @@ describe(compileCommand, () => {
     const { error } = await compileRaising([]);
 
     expect(error.code).toBe('config');
-    expect(error.message).toContain('Error writing manifest');
+    expect(error.message).toContain('Cannot write manifest');
     expect(error.message).toContain('EACCES');
   });
 

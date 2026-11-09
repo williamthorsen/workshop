@@ -7,6 +7,7 @@ import { formatRepositoryLabel, type KitProvenance } from '../kits/KitProvenance
 import type { FixLocation, RdyChecklist, RdyReport, RdyStagedChecklist, Severity } from '../kits/types.ts';
 import { getLayout } from '../layout/engine.ts';
 import type { BreadcrumbSegment, NotRunReason, SummaryRow } from '../layout/layoutEngine.ts';
+import { writeError } from '../output/writeError.ts';
 import { writeWarnings } from '../output/writeWarnings.ts';
 import { formatCombinedSummary } from '../reporting/formatCombinedSummary.ts';
 import { formatRunVerdict, type KitThreshold, type WithheldFailures } from '../reporting/formatRunVerdict.ts';
@@ -276,8 +277,8 @@ function reportUnrunKit(
   }
 
   // A lone kit needs no label: nothing to disambiguate, and its source is already in the message.
-  const label = kitSegments.length > 0 ? ` [${layout.formatBreadcrumbLabel(kitSegments)}]` : '';
-  process.stderr.write(`Error${label}: ${rdyError.message}\n`);
+  const label = kitSegments.length > 0 ? layout.formatBreadcrumbLabel(kitSegments) : undefined;
+  writeError(rdyError.message, label);
   if (rdyError.hint !== undefined) {
     process.stderr.write(layout.formatHint(rdyError.hint) + '\n');
   }

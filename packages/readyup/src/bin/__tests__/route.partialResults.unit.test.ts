@@ -78,7 +78,7 @@ describe('partial results when a kit fails after dispatch', () => {
       const { exitCode, stderr, stdout } = await routeCli(['run', 'absent', 'passing']);
 
       expect(exitCode).toBe(2);
-      expect(stderr).toContain('Error [absent]:');
+      expect(stderr).toContain('rdy: absent: ');
       expect(stdout).toContain('ok');
     });
 
@@ -92,13 +92,13 @@ describe('partial results when a kit fails after dispatch', () => {
     it('keeps the failure off stdout, where a failed check would appear', async () => {
       const { stdout } = await routeCli(['passing', 'absent']);
 
-      expect(stdout).not.toContain('Error [absent]:');
+      expect(stdout).not.toContain('rdy: absent: ');
     });
 
     it('drops the kit label when a lone kit leaves nothing to disambiguate', async () => {
       const { stderr } = await routeCli(['absent']);
 
-      expect(stderr).toMatch(/^Error: /);
+      expect(stderr).toMatch(/^rdy: /);
     });
   });
 });

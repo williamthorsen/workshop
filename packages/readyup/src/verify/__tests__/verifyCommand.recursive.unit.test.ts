@@ -138,10 +138,10 @@ describe('verify --recursive', () => {
     it('reports each project that cannot be verified against its directory', async () => {
       const { stderr } = await verify(['--recursive']);
 
-      expect(stderr).toContain('Error in packages/broken: ');
-      expect(stderr).toContain('Error in packages/invalid: ');
+      expect(stderr).toContain('rdy: packages/broken: ');
+      expect(stderr).toContain('rdy: packages/invalid: ');
       expect(stderr).toContain(
-        'Error in packages/uncompiled: No manifest at packages/uncompiled/.readyup/manifest.json. Run `rdy compile` in packages/uncompiled to create it.\n',
+        'rdy: packages/uncompiled: No manifest at packages/uncompiled/.readyup/manifest.json. Run `rdy compile` in packages/uncompiled to create it.\n',
       );
     });
 

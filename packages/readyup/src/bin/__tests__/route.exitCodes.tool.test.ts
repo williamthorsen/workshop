@@ -156,7 +156,7 @@ describe('route.ts', () => {
       const exitCode = await routeCommand(['--bogus']);
 
       expect(exitCode).toBe(2);
-      expect(io.stderr).toContain('Error:');
+      expect(io.stderr).toContain('rdy: ');
       expect(io.stdout).toBe('');
     });
 
@@ -170,7 +170,7 @@ describe('route.ts', () => {
 
       expect(exitCode).toBe(2);
       expect(io.stdout).toBe('');
-      expect(io.stderr).toContain('Error:');
+      expect(io.stderr).toContain('rdy: ');
     });
   });
 

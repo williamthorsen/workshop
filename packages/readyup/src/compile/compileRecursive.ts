@@ -4,6 +4,7 @@ import { describeError } from '@williamthorsen/toolbelt.errors';
 import { pluralizeWithCount } from '@williamthorsen/toolbelt.strings';
 
 import { RdyError } from '../errors/RdyError.ts';
+import { writeError } from '../output/writeError.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import { discoverKitProjects, type Project } from '../projects/project-discovery.ts';
 import type { RaisedWarning } from '../schemas/common.ts';
@@ -118,7 +119,7 @@ async function compileSweptProject(project: Project, args: CompileSweptProjectAr
 
 /** Writes the failure of a project that could not be compiled at all, and returns the project's entry. */
 function reportProjectFailure(dir: string, message: string): JsonCompileProjectEntry {
-  process.stderr.write(`Error in ${dir}: ${message}\n`);
+  writeError(message, dir);
   return { project: dir, passed: false, error: message };
 }
 
