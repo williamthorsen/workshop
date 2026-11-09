@@ -2,7 +2,8 @@ import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { disposeOnTestFinished } from '@williamthorsen/toolbelt.vitest/candidate';
 import { describe, expect, it } from 'vitest';
 
-import { findPnpmCatalogVersion, readPnpmWorkspacePackages } from '../pnpmWorkspaceYaml.ts';
+import { findPnpmCatalogVersion } from '../findPnpmCatalogVersion.ts';
+import { readPnpmWorkspacePackages } from '../readPnpmWorkspacePackages.ts';
 
 describe(findPnpmCatalogVersion, () => {
   it('resolves a package from the default catalog', () => {

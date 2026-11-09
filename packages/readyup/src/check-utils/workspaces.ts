@@ -5,7 +5,7 @@ import { isRecord } from '../portable/isRecord.ts';
 import { walkDirectories } from '../portable/walkDirectories.ts';
 import { buildWorkspaceFromPackageJson, type Workspace } from './buildWorkspaceFromPackageJson.ts';
 import { readJsonFile } from './json.ts';
-import { readPnpmWorkspacePackages } from './pnpmWorkspaceYaml.ts';
+import { readPnpmWorkspacePackages } from './readPnpmWorkspacePackages.ts';
 
 /** Options for `discoverWorkspaces`. */
 export interface DiscoverWorkspacesOptions {
