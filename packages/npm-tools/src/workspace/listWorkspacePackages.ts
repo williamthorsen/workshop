@@ -14,7 +14,9 @@ export function listWorkspacePackages(cwd: string): WorkspaceListing {
 
   const resolution = resolveWorkspace(root);
   if (resolution.kind === 'not-a-workspace') return { kind: 'not-a-workspace' };
-  if (resolution.kind === 'empty') return { kind: 'empty', root, cause: resolution.cause };
+  if (resolution.kind === 'empty') {
+    return { kind: 'empty', root, cause: resolution.cause, patterns: resolution.patterns };
+  }
 
   const packages = resolution.packageDirs
     .filter((dir) => dir !== root)
@@ -36,7 +38,13 @@ export interface WorkspacePackage {
 
 /** What listing a directory's workspace found. */
 export type WorkspaceListing =
-  | { readonly kind: 'empty'; readonly root: string; readonly cause: EmptyWorkspaceCause }
+  | {
+      readonly kind: 'empty';
+      readonly root: string;
+      readonly cause: EmptyWorkspaceCause;
+      /** The patterns that the workspace manifest declares, empty when it does not yield a pattern list. */
+      readonly patterns: readonly string[];
+    }
   | { readonly kind: 'not-a-workspace' }
   | { readonly kind: 'packages'; readonly root: string; readonly packages: readonly WorkspacePackage[] };
 

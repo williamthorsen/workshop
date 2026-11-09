@@ -1,3 +1,6 @@
+import path from 'node:path';
+
+import type { EmptyWorkspaceCause } from '@williamthorsen/nmr-core/workspace';
 import type { Writer } from '@williamthorsen/toolbelt.cli/candidate';
 
 import { listWorkspacePackages } from '../workspace/listWorkspacePackages.ts';
@@ -29,7 +32,12 @@ export function runListPackages(
     return EXIT_FAILED;
   }
   if (listing.kind === 'empty') {
-    streams.stderr.write(`${PREFIX} the workspace at ${listing.root} has no packages (${listing.cause})\n`);
+    const { isBroken, reason } = describeEmptyWorkspace(listing.cause, listing.patterns, listing.root);
+    if (isBroken) {
+      streams.stderr.write(`${PREFIX} ${reason}; fix it, then run this again\n`);
+      return EXIT_FAILED;
+    }
+    streams.stderr.write(`${PREFIX} the workspace at ${listing.root} has no packages: ${reason}\n`);
   }
 
   const packages = listing.kind === 'packages' ? listing.packages : [];
@@ -53,6 +61,36 @@ export interface ListPackagesOptions {
 }
 
 // region | Helpers
+
+/**
+ * Explains why a workspace resolves to no packages, quoting the patterns that its manifest declares. A manifest that
+ * cannot be read is broken rather than empty.
+ */
+function describeEmptyWorkspace(
+  cause: EmptyWorkspaceCause,
+  patterns: readonly string[],
+  root: string,
+): { readonly isBroken: boolean; readonly reason: string } {
+  const manifestPath = path.join(root, 'pnpm-workspace.yaml');
+  const quoted = patterns.map((pattern) => `'${pattern}'`).join(', ');
+  switch (cause) {
+    case 'all-excluded':
+      return { isBroken: false, reason: `its exclusions remove every package that its patterns ${quoted} match` };
+    case 'no-package':
+      return { isBroken: false, reason: `its patterns ${quoted} do not match any directory containing a package.json` };
+    case 'no-packages-list':
+      return { isBroken: false, reason: 'pnpm-workspace.yaml does not declare a packages list' };
+    case 'no-pattern':
+      return {
+        isBroken: false,
+        reason: `its packages list ${quoted} does not contain a pattern that includes directories`,
+      };
+    case 'unreadable-manifest':
+      return { isBroken: true, reason: `${manifestPath} cannot be read or parsed as YAML` };
+    case 'unreadable-packages':
+      return { isBroken: true, reason: `the packages value in ${manifestPath} is not a list of strings` };
+  }
+}
 
 /** Returns the width to which table lines are cut: none off a terminal, and at most 120 columns on one. */
 function resolveMaxWidth(effects: ListPackagesEffects): number | undefined {

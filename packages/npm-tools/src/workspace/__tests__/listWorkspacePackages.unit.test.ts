@@ -48,6 +48,7 @@ describe(listWorkspacePackages, () => {
       kind: 'empty',
       root: expect.any(String),
       cause: 'no-package',
+      patterns: ['packages/*'],
     });
   });
 

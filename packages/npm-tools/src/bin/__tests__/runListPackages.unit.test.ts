@@ -85,8 +85,49 @@ describe('thor-npm list-packages', () => {
     });
 
     expect(exitCode).toBe(0);
-    expect(stderr).toMatch(/^thor-npm list-packages: the workspace at .* has no packages \(no-package\)\n$/);
+    expect(stderr).toMatch(
+      /^thor-npm list-packages: the workspace at .* has no packages: its patterns 'packages\/\*' do not match any directory containing a package\.json\n$/,
+    );
     expect(JSON.parse(stdout)).toStrictEqual({ packages: [] });
+  });
+
+  it('names the patterns when exclusions remove every package', async () => {
+    using tree = createTempTree({
+      'pnpm-workspace.yaml': "packages:\n  - 'packages/*'\n  - '!packages/alpha'\n",
+      'packages/alpha/package.json': '{ "name": "alpha" }\n',
+    });
+
+    const { exitCode, stderr } = await runInTree(tree, ['list-packages'], { columns: 80, isTty: true });
+
+    expect(exitCode).toBe(0);
+    expect(stderr).toContain(
+      "has no packages: its exclusions remove every package that its patterns 'packages/*', '!packages/alpha' match\n",
+    );
+  });
+
+  it('reports a workspace manifest that does not parse and exits 1 without printing a list', async () => {
+    using tree = createTempTree({ 'pnpm-workspace.yaml': 'packages: [\n' });
+
+    const { exitCode, stderr, stdout } = await runInTree(tree, ['list-packages', '--json'], {
+      columns: 80,
+      isTty: true,
+    });
+
+    expect(exitCode).toBe(1);
+    expect(stdout).toBe('');
+    expect(stderr).toMatch(
+      /^thor-npm list-packages: .*pnpm-workspace\.yaml cannot be read or parsed as YAML; fix it, then run this again\n$/,
+    );
+  });
+
+  it('reports a packages value that is not a list of strings and exits 1', async () => {
+    using tree = createTempTree({ 'pnpm-workspace.yaml': 'packages: packages/*\n' });
+
+    const { exitCode, stderr, stdout } = await runInTree(tree, ['list-packages'], { columns: 80, isTty: true });
+
+    expect(exitCode).toBe(1);
+    expect(stdout).toBe('');
+    expect(stderr).toMatch(/the packages value in .*pnpm-workspace\.yaml is not a list of strings; fix it/);
   });
 
   it('reports a manifest that does not parse and exits 1', async () => {
