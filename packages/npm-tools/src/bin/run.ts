@@ -55,7 +55,7 @@ const ROOT = defineGroup({
   summary: 'Run npm package and registry chores.',
   epilog: `Exit codes:
   0    The command succeeded, or help or version was printed
-  1    A check failed, the publish or the move failed, or the confirmation was declined
+  1    A check failed, the listing, the publish, or the move failed, or the confirmation was declined
   2    Usage or validation error
   127  npm is not on PATH`,
   commands: {
