@@ -1,29 +1,24 @@
+import { realpathSync } from 'node:fs';
+
 import { describeError } from '@williamthorsen/toolbelt.errors';
-import { captureError, captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { captureError, captureStdio, createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { RdyManifestKit } from '../../manifest/manifestSchema.ts';
 
-const mockCompileConfig = vi.hoisted(() => vi.fn());
-const mockRealpathSync = vi.hoisted(() => Object.assign(vi.fn(), { native: vi.fn() }));
-const mockCheckDrift = vi.hoisted(() => vi.fn());
+const mockCompileConfig = vi.hoisted(() => vi.fn<(inputPath: string, outputPath?: string) => Promise<CompileResult>>());
 
+// The bundler and the import of its output are mocked; the drift gate reads the bundles in the tree.
 vi.mock(import('../compileConfig.ts'), () => ({
   compileConfig: mockCompileConfig,
 }));
 
-vi.mock(import('node:fs'), () => ({
-  realpathSync: mockRealpathSync,
-}));
-
-vi.mock(import('../../verify/checkDrift.ts'), () => ({
-  checkDrift: mockCheckDrift,
-}));
-
 import { RdyError } from '../../errors/RdyError.ts';
+import type { CompileResult } from '../compileConfig.ts';
 import { compileKit, type CompileKitArgs } from '../compileKit.ts';
-import { compileResult, hashOf, SOURCE_HASH } from '../test-utils/compile-result-fixtures.ts';
+import { buildCompileResult, COMPILED, SOURCE_HASH } from '../test-utils/compile-result-fixtures.ts';
 
+/** An entry whose recorded hash no bundle matches, so that it reads as drift wherever its bundle exists. */
 const PRIOR_ENTRY: RdyManifestKit = {
   esbuildVersion: '0.1.0',
   inputs: [],
@@ -35,30 +30,28 @@ const PRIOR_ENTRY: RdyManifestKit = {
   targetHash: 'old',
 };
 
-describe(compileKit, () => {
-  beforeEach(() => {
-    mockCheckDrift.mockReturnValue({ kind: 'unverified' });
-    // No path named by these tests contains a symlink, so a real path is the path itself.
-    mockRealpathSync.mockImplementation((target: string) => target);
-  });
+/** An entry that records no hash, so that the drift gate lets its kit compile. */
+const UNVERIFIED_ENTRY: RdyManifestKit = {
+  esbuildVersion: '0.1.0',
+  inputs: [],
+  name: 'deploy',
+  path: 'kits/deploy.js',
+  readyupVersion: '0.0.0',
+  source: 'kits/deploy.ts',
+  sourceHash: 'old',
+};
 
+describe(compileKit, () => {
   afterEach(() => {
     mockCompileConfig.mockReset();
-    mockRealpathSync.mockReset();
-    mockCheckDrift.mockReset();
   });
 
   it('returns the compiled kit with its manifest entry and writes the result line', async () => {
-    mockCompileConfig.mockResolvedValue(
-      compileResult('/repo/kits/deploy.ts', {
-        outputPath: '/repo/kits/deploy.js',
-        changed: true,
-        targetHash: hashOf('bundle'),
-      }),
-    );
+    using tree = createTempTree({ 'kits/deploy.ts': COMPILED }, { prefix: 'rdy-compile-kit-' });
+    mockCompileConfig.mockImplementation(buildCompileResult);
     using io = captureStdio();
 
-    const outcome = await compileKit(buildArgs({ project: 'packages/app' }));
+    const outcome = await compileKit(buildArgs(tree, { project: 'packages/app' }));
 
     expect(outcome.kit).toStrictEqual({ name: 'deploy', project: 'packages/app', status: 'compiled' });
     expect(outcome.entry).toMatchObject({
@@ -73,15 +66,13 @@ describe(compileKit, () => {
   });
 
   it('skips a drifted kit and returns its prior entry without compiling', async () => {
-    mockCheckDrift.mockReturnValue({
-      kind: 'drift',
-      expected: 'old',
-      actual: 'new',
-      resolvedPath: '/repo/kits/deploy.js',
-    });
+    using tree = createTempTree(
+      { 'kits/deploy.js': 'export default { edited: true };', 'kits/deploy.ts': COMPILED },
+      { prefix: 'rdy-compile-kit-' },
+    );
     using io = captureStdio();
 
-    const outcome = await compileKit(buildArgs({ existingKit: PRIOR_ENTRY }));
+    const outcome = await compileKit(buildArgs(tree, { existingKit: PRIOR_ENTRY }));
 
     expect(mockCompileConfig).not.toHaveBeenCalled();
     expect(outcome.entry).toBe(PRIOR_ENTRY);
@@ -90,29 +81,32 @@ describe(compileKit, () => {
   });
 
   it('reports a failed compile under its subject and returns the prior entry', async () => {
+    using tree = createTempTree({ 'kits/deploy.ts': COMPILED }, { prefix: 'rdy-compile-kit-' });
     mockCompileConfig.mockRejectedValue(new Error('syntax error'));
     using io = captureStdio();
 
     const outcome = await compileKit(
-      buildArgs({ existingKit: PRIOR_ENTRY, failureSubject: 'cannot compile deploy.ts' }),
+      buildArgs(tree, { existingKit: UNVERIFIED_ENTRY, failureSubject: 'cannot compile deploy.ts' }),
     );
 
-    expect(outcome.entry).toBe(PRIOR_ENTRY);
+    expect(outcome.entry).toBe(UNVERIFIED_ENTRY);
     expect(outcome.kit).toStrictEqual({ name: 'deploy', status: 'failed', error: 'described: syntax error' });
     expect(io.stderr).toContain('cannot compile deploy.ts: described: syntax error');
   });
 
   it('raises an internal error when the compile records no input for its entry point', async () => {
-    mockCompileConfig.mockResolvedValue(
-      compileResult('/repo/kits/other.ts', {
-        outputPath: '/repo/kits/deploy.js',
-        changed: true,
-        targetHash: hashOf('bundle'),
-      }),
+    using tree = createTempTree(
+      { 'kits/deploy.ts': COMPILED, 'kits/other.ts': COMPILED },
+      { prefix: 'rdy-compile-kit-' },
     );
+    // Report a closure built from another module, so that it records no input for the entry point.
+    mockCompileConfig.mockImplementation(async (inputPath, outputPath) => ({
+      ...(await buildCompileResult(inputPath, outputPath)),
+      inputs: [{ hash: SOURCE_HASH, kind: 'module', path: tree.resolve('kits/other.ts') }],
+    }));
     using _io = captureStdio();
 
-    const error = await captureError(RdyError, () => compileKit(buildArgs({ existingKit: PRIOR_ENTRY })));
+    const error = await captureError(RdyError, () => compileKit(buildArgs(tree, { existingKit: UNVERIFIED_ENTRY })));
 
     expect(error.code).toBe('internal');
     expect(error.message).toContain('Compile recorded no input for its entry point');
@@ -121,8 +115,9 @@ describe(compileKit, () => {
 
 // region | Helpers
 
-/** Returns the arguments of a compile of `/repo/kits/deploy.ts` against a manifest in `/repo`, with overrides. */
-function buildArgs(overrides: Partial<CompileKitArgs> = {}): CompileKitArgs {
+/** Returns the arguments of a compile of the tree's `kits/deploy.ts` against a manifest at its root, with overrides. */
+function buildArgs(tree: TempTree, overrides: Partial<CompileKitArgs> = {}): CompileKitArgs {
+  const inputPath = tree.resolve('kits/deploy.ts');
   return {
     describeFailure: (error: unknown) => `described: ${describeError(error)}`,
     displayInput: 'deploy.ts',
@@ -130,13 +125,13 @@ function buildArgs(overrides: Partial<CompileKitArgs> = {}): CompileKitArgs {
     failureSubject: undefined,
     force: false,
     formatOutput: (outputPath: string) => `<${outputPath.split('/').at(-1)}>`,
-    inputPath: '/repo/kits/deploy.ts',
+    inputPath,
     json: false,
     kitName: 'deploy',
-    manifestDir: '/repo',
+    manifestDir: realpathSync(tree.dir),
     outputPath: undefined,
     project: undefined,
-    resolvedInputPath: '/repo/kits/deploy.ts',
+    resolvedInputPath: realpathSync(inputPath),
     skipManifest: false,
     ...overrides,
   };
