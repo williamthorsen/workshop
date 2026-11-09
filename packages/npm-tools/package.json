@@ -2,13 +2,15 @@
   "name": "@williamthorsen/npm-tools",
   "version": "0.1.0",
   "private": false,
-  "description": "Run npm registry chores",
+  "description": "Run npm package and registry chores",
   "keywords": [
     "cli",
+    "monorepo",
     "npm",
     "npm-tools",
     "registry",
-    "trusted-publishing"
+    "trusted-publishing",
+    "workspace"
   ],
   "homepage": "https://github.com/williamthorsen/workshop/tree/main/packages/npm-tools#readme",
   "bugs": {

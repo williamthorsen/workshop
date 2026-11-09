@@ -14,7 +14,7 @@ Open-source utilities by [William Thorsen](https://github.com/williamthorsen).
 | [`git-tools`](packages/git-tools)             | Utilities for working with git                                                  |
 | [`launchd-agent`](packages/launchd-agent)     | Install, replace, restart, inspect, and remove per-user launchd agents on macOS |
 | [`nodejs-tools`](packages/nodejs-tools)       | Inspect Node.js toolchains, prune node_modules, and resolve asdf's node binary  |
-| [`npm-tools`](packages/npm-tools)             | Run npm registry chores                                                         |
+| [`npm-tools`](packages/npm-tools)             | Run npm package and registry chores                                             |
 | [`overlay`](packages/overlay)                 | Idempotent overlay of a canonical scaffolding file set, backed by chezmoi       |
 | [`readyup`](packages/readyup)                 | Pre-deployment verification checks with TypeScript kits                         |
 | [`repo-tools`](packages/repo-tools)           | Act on the repositories indexed by a machine-local repo registry                |
