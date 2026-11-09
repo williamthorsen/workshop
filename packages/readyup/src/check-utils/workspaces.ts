@@ -69,6 +69,14 @@ function applyFilter(workspaces: Workspace[], filter: DiscoverWorkspacesOptions[
   return workspaces.filter(filter);
 }
 
+/** Builds a `Workspace` for a relative directory; returns `undefined` if its `package.json` is missing or malformed. */
+function buildWorkspace(rootDir: string, relDir: string): Workspace | undefined {
+  const absoluteDir = resolve(rootDir, relDir);
+  const packageJson = readJsonFile(join(absoluteDir, 'package.json'));
+  if (packageJson === undefined) return undefined;
+  return buildWorkspaceFromPackageJson(relDir, absoluteDir, packageJson);
+}
+
 /** Builds the unfiltered workspace list for the repo at `rootDir`, the root entry leading it. */
 function buildWorkspaces(rootDir: string): Workspace[] {
   // The root is reported in every repo shape, so its manifest MUST be readable in every shape.
@@ -94,52 +102,6 @@ function buildWorkspaces(rootDir: string): Workspace[] {
   }
 
   return workspaces;
-}
-
-/**
- * Resolves the workspace pattern list for the repo at `rootDir`, whose parsed root manifest is `rootPackageJson`.
- * Returns `undefined` to signal single-workspace fallback, or `{ patterns, source }` for a monorepo.
- */
-function resolveWorkspacePatterns(
-  rootDir: string,
-  rootPackageJson: Record<string, unknown>,
-): { patterns: string[]; source: WorkspacePatternSource } | undefined {
-  const pnpmWorkspacePath = join(rootDir, 'pnpm-workspace.yaml');
-  if (existsSync(pnpmWorkspacePath)) {
-    const patterns = readPnpmWorkspacePackages(pnpmWorkspacePath);
-    if (patterns !== undefined) {
-      return { patterns, source: 'pnpm-workspace.yaml' };
-    }
-    // `packages` key absent -- fall through to npm/single detection.
-  }
-
-  const npmPatterns = extractNpmWorkspacePatterns(rootPackageJson['workspaces']);
-  if (npmPatterns !== undefined) {
-    return { patterns: npmPatterns, source: 'package.json' };
-  }
-
-  return undefined;
-}
-
-/**
- * Extracts workspace patterns from the `workspaces` field of a root `package.json`, or returns `undefined` when the
- * field is absent, is neither an array nor a `packages` array, or contains a non-string entry.
- */
-function extractNpmWorkspacePatterns(workspaces: unknown): string[] | undefined {
-  if (Array.isArray(workspaces)) {
-    const strings = workspaces.filter((entry): entry is string => typeof entry === 'string');
-    if (strings.length !== workspaces.length) return undefined;
-    return strings;
-  }
-  if (isRecord(workspaces)) {
-    const nested = workspaces['packages'];
-    if (Array.isArray(nested)) {
-      const strings = nested.filter((entry): entry is string => typeof entry === 'string');
-      if (strings.length !== nested.length) return undefined;
-      return strings;
-    }
-  }
-  return undefined;
 }
 
 /**
@@ -172,6 +134,27 @@ function expandPatterns(rootDir: string, patterns: string[], source: WorkspacePa
 }
 
 /**
+ * Extracts workspace patterns from the `workspaces` field of a root `package.json`, or returns `undefined` when the
+ * field is absent, is neither an array nor a `packages` array, or contains a non-string entry.
+ */
+function extractNpmWorkspacePatterns(workspaces: unknown): string[] | undefined {
+  if (Array.isArray(workspaces)) {
+    const strings = workspaces.filter((entry): entry is string => typeof entry === 'string');
+    if (strings.length !== workspaces.length) return undefined;
+    return strings;
+  }
+  if (isRecord(workspaces)) {
+    const nested = workspaces['packages'];
+    if (Array.isArray(nested)) {
+      const strings = nested.filter((entry): entry is string => typeof entry === 'string');
+      if (strings.length !== nested.length) return undefined;
+      return strings;
+    }
+  }
+  return undefined;
+}
+
+/**
  * Normalizes a workspace pattern.
  * Strips a trailing `/`, which would otherwise double the separator when the manifest name is appended.
  */
@@ -180,12 +163,29 @@ function normalizePattern(pattern: string): string {
   return pattern;
 }
 
-/** Builds a `Workspace` for a relative directory; returns `undefined` if its `package.json` is missing or malformed. */
-function buildWorkspace(rootDir: string, relDir: string): Workspace | undefined {
-  const absoluteDir = resolve(rootDir, relDir);
-  const packageJson = readJsonFile(join(absoluteDir, 'package.json'));
-  if (packageJson === undefined) return undefined;
-  return buildWorkspaceFromPackageJson(relDir, absoluteDir, packageJson);
+/**
+ * Resolves the workspace pattern list for the repo at `rootDir`, whose parsed root manifest is `rootPackageJson`.
+ * Returns `undefined` to signal single-workspace fallback, or `{ patterns, source }` for a monorepo.
+ */
+function resolveWorkspacePatterns(
+  rootDir: string,
+  rootPackageJson: Record<string, unknown>,
+): { patterns: string[]; source: WorkspacePatternSource } | undefined {
+  const pnpmWorkspacePath = join(rootDir, 'pnpm-workspace.yaml');
+  if (existsSync(pnpmWorkspacePath)) {
+    const patterns = readPnpmWorkspacePackages(pnpmWorkspacePath);
+    if (patterns !== undefined) {
+      return { patterns, source: 'pnpm-workspace.yaml' };
+    }
+    // `packages` key absent -- fall through to npm/single detection.
+  }
+
+  const npmPatterns = extractNpmWorkspacePatterns(rootPackageJson['workspaces']);
+  if (npmPatterns !== undefined) {
+    return { patterns: npmPatterns, source: 'package.json' };
+  }
+
+  return undefined;
 }
 
 // endregion | Helpers

@@ -107,6 +107,8 @@ export function makeRemoteRefSyncCheckWith(
   return rdyCheck;
 }
 
+// region | Helpers
+
 /** Returns a human-readable detail message for a local ref comparison failure. */
 function formatLocalResult(
   result: Exclude<LocalRefsCompareResult, { status: 'match' }>,
@@ -161,3 +163,5 @@ function formatRemoteResult(
   }
   return `${ref} is ahead of ${remote}/${ref} by ${ahead} commit${ahead === 1 ? '' : 's'} in ${path}`;
 }
+
+// endregion | Helpers
