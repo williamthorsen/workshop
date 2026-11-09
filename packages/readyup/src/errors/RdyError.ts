@@ -9,7 +9,9 @@ import { extractHint } from './error-handling.ts';
  *   combination of arguments.
  * - `config`: Repo configuration or a kit manifest could not be read, written, or parsed.
  * - `kit-load`: A kit could not be resolved, fetched, or evaluated.
- * - `internal`: Anything else -- a defect in rdy or an unexpected environment failure.
+ * - `internal`: Anything else -- a defect in rdy or an unexpected environment failure. The code does not
+ *   say whether rdy anticipated the failure: An `RdyError` that rdy raises prints as a handled error, and a
+ *   value coerced by `toRdyError` without a hint prints as a crash.
  */
 export type RdyErrorCode = 'config' | 'internal' | 'kit-load' | 'usage';
 
@@ -66,9 +68,9 @@ export function internalError(message: string, options?: RdyErrorOptions): RdyEr
  * Coerces an unknown thrown value into an `RdyError`.
  *
  * Anything not already classified is `internal`: A value that escapes the command boundary undiagnosed
- * is by definition a defect rather than a known failure mode. The coercion keeps any hint that the value
- * has, so a throw site can attach one without every boundary between it and the
- * output having to forward it.
+ * is by definition a defect rather than a known failure mode, so the human report renders it as a crash
+ * unless it carries a hint. The coercion keeps that hint, so a throw site can attach one without every
+ * boundary between it and the output having to forward it.
  */
 export function toRdyError(error: unknown): RdyError {
   if (error instanceof RdyError) return error;
