@@ -25,7 +25,7 @@ import { compile, compileRaising } from '../test-utils/compile-runners.ts';
 import { readTreeManifest } from '../test-utils/readTreeManifest.ts';
 import type { KitMetadata } from '../validateCompiledOutput.ts';
 
-/** A single-file project holding one kit source beside the default manifest location, which is empty. */
+/** A single-file project holding one kit source, without a manifest at the default location. */
 const SINGLE_TREE = { 'deploy.ts': COMPILED };
 
 /** A batch project holding two kit sources in the default source directory, never compiled. */
