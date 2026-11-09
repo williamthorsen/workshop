@@ -13,7 +13,7 @@ vi.mock(import('../compileConfig.ts'), () => ({
   compileConfig: mockCompileConfig,
 }));
 
-import { setStyle } from '../../layout/engine.ts';
+import { getLayout, setStyle } from '../../layout/engine.ts';
 import { CompileOutputSchema } from '../../schemas/compileOutputSchema.ts';
 import type { CompileResult } from '../compileConfig.ts';
 import { buildCompileResult } from '../test-utils/compile-result-fixtures.ts';
@@ -73,6 +73,11 @@ const FIXTURE_TREE = {
   // Sorts after the broken and drifted projects, so the sweep reaching it shows that they did not end the run.
   'faulty/packages/sound/package.json': JSON.stringify({ name: 'sound' }),
   'faulty/packages/sound/.readyup/kits/ok.ts': 'export default {};',
+
+  // A config importing a package that is not installed: Its failure carries an install hint.
+  'faulty/packages/unresolved/package.json': JSON.stringify({ name: 'unresolved' }),
+  'faulty/packages/unresolved/.config/readyup.config.ts': "import 'rdy-test-absent-package';\nexport default {};",
+  'faulty/packages/unresolved/.readyup/kits/probe.ts': 'export default {};',
 
   // A directory where the manifest file belongs: Writing the manifest fails.
   'faulty/packages/unwritable/package.json': JSON.stringify({ name: 'unwritable' }),
@@ -282,7 +287,7 @@ describe('compile --recursive', () => {
 
       expect(exitCode).toBe(1);
       expect(stdout).toContain(
-        '\nProblems in 3 of 4 projects: packages/broken, packages/drifted, packages/unwritable\n',
+        '\nProblems in 4 of 5 projects: packages/broken, packages/drifted, packages/unresolved, packages/unwritable\n',
       );
     });
 
@@ -297,6 +302,15 @@ describe('compile --recursive', () => {
       expect(stderr).toMatch(/^rdy: packages\/broken: .+$/m);
       expect(compiledSources().some((source) => source.startsWith('packages/broken/'))).toBe(false);
       expect(readFileSync(manifestPath, 'utf8')).toBe(manifestBefore);
+    });
+
+    it("writes the hint of a project's config failure beneath its error line", async () => {
+      const { stderr } = await compile(['--recursive']);
+
+      const hintLine = readLineAfter(stderr, "rdy: packages/unresolved: Cannot resolve 'rdy-test-absent-package'");
+      expect(hintLine).toContain(getLayout().formatHint('Install it with: '));
+      expect(hintLine).toContain('rdy-test-absent-package');
+      expect(readLineAfter(stderr, 'rdy: packages/broken: ')).not.toContain(getLayout().formatHint(''));
     });
 
     it('skips a drifted kit and counts it against the run', async () => {
@@ -324,6 +338,7 @@ describe('compile --recursive', () => {
         { project: 'packages/broken', passed: false, error: expect.any(String) },
         { project: 'packages/drifted', passed: false },
         { project: 'packages/sound', passed: true },
+        { project: 'packages/unresolved', passed: false, error: expect.stringContaining('rdy-test-absent-package') },
         { project: 'packages/unwritable', passed: false, error: expect.stringContaining('Cannot write manifest') },
       ]);
     });
@@ -377,6 +392,13 @@ describe('compile --recursive', () => {
 /** Returns the sources handed to the bundler, relative to the working directory, in the order compiled. */
 function compiledSources(): string[] {
   return mockCompileConfig.mock.calls.map(([inputPath]) => path.relative(process.cwd(), inputPath));
+}
+
+/** Returns the line of `output` following the first line that starts with `prefix`. */
+function readLineAfter(output: string, prefix: string): string | undefined {
+  const lines = output.split('\n');
+  const index = lines.findIndex((line) => line.startsWith(prefix));
+  return index === -1 ? undefined : lines[index + 1];
 }
 
 // endregion | Helpers
