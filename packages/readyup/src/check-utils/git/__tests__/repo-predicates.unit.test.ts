@@ -1,118 +1,82 @@
 import { homedir } from 'node:os';
-import { promisify } from 'node:util';
+import { join } from 'node:path';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { describe, expect, it as baseIt } from 'vitest';
 
-const execFileAsync = vi.hoisted(() =>
-  vi.fn<(file: string, args: string[]) => Promise<{ stdout: string; stderr: string }>>(),
+import { isAtRepoRootWith, isGitRepoWith } from '../repo-predicates.ts';
+import { createFakeGit } from '../test-utils/fake-git.ts';
+
+const it = baseIt.extend(
+  'temp',
+  makeFixture(() => createTempTree({}, { prefix: 'rdy-repo-predicates-' })),
 );
-const existsSyncMock = vi.hoisted(() => vi.fn<(path: import('node:fs').PathLike) => boolean>());
 
-vi.mock('node:child_process', () => {
-  const stub = Object.assign(vi.fn(), { [promisify.custom]: execFileAsync });
-  return { execFile: stub };
-});
+const NOT_A_REPO = Object.assign(new Error('fatal: not a git repository'), { code: 128 });
 
-vi.mock(import('node:fs'), () => ({
-  existsSync: existsSyncMock,
-}));
+describe(isGitRepoWith, () => {
+  it('returns false when the path does not exist, invoking git for nothing', async ({ temp }) => {
+    const git = createFakeGit({ 'rev-parse --git-dir': '.git' });
 
-import { isAtRepoRoot, isGitRepo } from '../repo-predicates.ts';
-
-describe(isGitRepo, () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    existsSyncMock.mockReturnValue(true);
+    await expect(isGitRepoWith(git, join(temp.dir, 'missing'))).resolves.toBe(false);
+    expect(git.runGit).not.toHaveBeenCalled();
   });
 
-  it('returns false when the path does not exist', async () => {
-    existsSyncMock.mockReturnValue(false);
+  it('returns true when `rev-parse --git-dir` succeeds', async ({ temp }) => {
+    const git = createFakeGit({ 'rev-parse --git-dir': '.git' });
 
-    await expect(isGitRepo('/missing')).resolves.toBe(false);
-    expect(execFileAsync).not.toHaveBeenCalled();
+    await expect(isGitRepoWith(git, temp.dir)).resolves.toBe(true);
+    expect(git.runGit).toHaveBeenCalledWith(temp.dir, 'rev-parse', '--git-dir');
   });
 
-  it('returns true when `rev-parse --git-dir` succeeds at a repo root', async () => {
-    execFileAsync.mockResolvedValue({ stdout: '.git\n', stderr: '' });
+  it('returns false when `rev-parse --git-dir` fails on a non-repo directory', async ({ temp }) => {
+    const git = createFakeGit({ 'rev-parse --git-dir': NOT_A_REPO });
 
-    await expect(isGitRepo('/repo')).resolves.toBe(true);
-    expect(execFileAsync).toHaveBeenCalledWith('git', ['-C', '/repo', 'rev-parse', '--git-dir']);
+    await expect(isGitRepoWith(git, temp.dir)).resolves.toBe(false);
   });
 
-  it('returns true inside a subdirectory of a repo', async () => {
-    execFileAsync.mockResolvedValue({ stdout: '/repo/.git\n', stderr: '' });
+  it('expands `~` in the path before invoking git', async () => {
+    const git = createFakeGit({ 'rev-parse --git-dir': '.git' });
 
-    await expect(isGitRepo('/repo/src/sub')).resolves.toBe(true);
-  });
+    await isGitRepoWith(git, '~');
 
-  it('returns true for a worktree root (git resolves worktrees natively)', async () => {
-    execFileAsync.mockResolvedValue({ stdout: '/repo/.git/worktrees/feature\n', stderr: '' });
-
-    await expect(isGitRepo('/repo.wt-feature')).resolves.toBe(true);
-  });
-
-  it('returns false when `rev-parse --git-dir` fails on a non-repo directory', async () => {
-    execFileAsync.mockRejectedValue(Object.assign(new Error('fatal: not a git repository'), { code: 128 }));
-
-    await expect(isGitRepo('/not-a-repo')).resolves.toBe(false);
-  });
-
-  it('expands `~/` in the path before checking existence and invoking git', async () => {
-    execFileAsync.mockResolvedValue({ stdout: '.git\n', stderr: '' });
-
-    await isGitRepo('~/projects/repo');
-
-    const expanded = `${homedir()}/projects/repo`;
-    expect(existsSyncMock).toHaveBeenCalledWith(expanded);
-    expect(execFileAsync).toHaveBeenCalledWith('git', ['-C', expanded, 'rev-parse', '--git-dir']);
+    expect(git.runGit).toHaveBeenCalledWith(homedir(), 'rev-parse', '--git-dir');
   });
 });
 
-describe(isAtRepoRoot, () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    existsSyncMock.mockReturnValue(true);
+describe(isAtRepoRootWith, () => {
+  it('returns false when the path does not exist, invoking git for nothing', async ({ temp }) => {
+    const git = createFakeGit({ 'rev-parse --show-cdup': '' });
+
+    await expect(isAtRepoRootWith(git, join(temp.dir, 'missing'))).resolves.toBe(false);
+    expect(git.runGit).not.toHaveBeenCalled();
   });
 
-  it('returns false when the path does not exist', async () => {
-    existsSyncMock.mockReturnValue(false);
+  it('returns true when `rev-parse --show-cdup` returns an empty string', async ({ temp }) => {
+    const git = createFakeGit({ 'rev-parse --show-cdup': '' });
 
-    await expect(isAtRepoRoot('/missing')).resolves.toBe(false);
-    expect(execFileAsync).not.toHaveBeenCalled();
+    await expect(isAtRepoRootWith(git, temp.dir)).resolves.toBe(true);
+    expect(git.runGit).toHaveBeenCalledWith(temp.dir, 'rev-parse', '--show-cdup');
   });
 
-  it('returns true when `rev-parse --show-cdup` returns empty string', async () => {
-    execFileAsync.mockResolvedValue({ stdout: '\n', stderr: '' });
+  it('returns false inside a subdirectory of a repo (cdup is non-empty)', async ({ temp }) => {
+    const git = createFakeGit({ 'rev-parse --show-cdup': '../' });
 
-    await expect(isAtRepoRoot('/repo')).resolves.toBe(true);
-    expect(execFileAsync).toHaveBeenCalledWith('git', ['-C', '/repo', 'rev-parse', '--show-cdup']);
+    await expect(isAtRepoRootWith(git, temp.dir)).resolves.toBe(false);
   });
 
-  it('returns true for a worktree root', async () => {
-    execFileAsync.mockResolvedValue({ stdout: '\n', stderr: '' });
+  it('returns false on a non-repo directory', async ({ temp }) => {
+    const git = createFakeGit({ 'rev-parse --show-cdup': NOT_A_REPO });
 
-    await expect(isAtRepoRoot('/repo.wt-feature')).resolves.toBe(true);
+    await expect(isAtRepoRootWith(git, temp.dir)).resolves.toBe(false);
   });
 
-  it('returns false inside a subdirectory of a repo (cdup is non-empty)', async () => {
-    execFileAsync.mockResolvedValue({ stdout: '../\n', stderr: '' });
+  it('expands `~` in the path before invoking git', async () => {
+    const git = createFakeGit({ 'rev-parse --show-cdup': '' });
 
-    await expect(isAtRepoRoot('/repo/sub')).resolves.toBe(false);
-  });
+    await isAtRepoRootWith(git, '~');
 
-  it('returns false on a non-repo directory', async () => {
-    execFileAsync.mockRejectedValue(Object.assign(new Error('fatal: not a git repository'), { code: 128 }));
-
-    await expect(isAtRepoRoot('/not-a-repo')).resolves.toBe(false);
-  });
-
-  it('expands `~/` in the path before checking existence and invoking git', async () => {
-    execFileAsync.mockResolvedValue({ stdout: '\n', stderr: '' });
-
-    await isAtRepoRoot('~/projects/repo');
-
-    const expanded = `${homedir()}/projects/repo`;
-    expect(existsSyncMock).toHaveBeenCalledWith(expanded);
-    expect(execFileAsync).toHaveBeenCalledWith('git', ['-C', expanded, 'rev-parse', '--show-cdup']);
+    expect(git.runGit).toHaveBeenCalledWith(homedir(), 'rev-parse', '--show-cdup');
   });
 });

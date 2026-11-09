@@ -1,11 +1,16 @@
 import type { AheadBehind } from '../../kits/types.ts';
-import { runGit } from './run-git.ts';
+import type { Git } from './run-git.ts';
 
 /** Returns how many commits `left` is ahead of and behind `right`, or `undefined` when they cannot be computed. */
-export async function countAheadBehind(path: string, left: string, right: string): Promise<AheadBehind | undefined> {
+export async function countAheadBehind(
+  git: Git,
+  path: string,
+  left: string,
+  right: string,
+): Promise<AheadBehind | undefined> {
   let output: string;
   try {
-    output = await runGit(path, 'rev-list', '--count', '--left-right', `${left}...${right}`);
+    output = await git.runGit(path, 'rev-list', '--count', '--left-right', `${left}...${right}`);
   } catch {
     return undefined;
   }

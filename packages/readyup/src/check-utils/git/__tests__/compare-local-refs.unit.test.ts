@@ -1,35 +1,21 @@
 import assert from 'node:assert';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { compareLocalRefs } from '../compare-local-refs.ts';
-import * as runGitModule from '../run-git.ts';
+import { compareLocalRefsWith } from '../compare-local-refs.ts';
+import { createFakeGit, makeRefMissingError } from '../test-utils/fake-git.ts';
 
-vi.mock(import('../run-git.ts'), async (importOriginal) => {
-  const original = await importOriginal<typeof import('../run-git.ts')>();
-  return {
-    ...original,
-    runGit: vi.fn(),
-  };
-});
-
-const runGit = vi.mocked(runGitModule.runGit);
-
-describe(compareLocalRefs, () => {
-  beforeEach(() => {
-    vi.restoreAllMocks();
-  });
-
+describe(compareLocalRefsWith, () => {
   it('returns match when both refs resolve to the same SHA', async () => {
     const sha = 'abc123def456abc123def456abc123def456abc1';
-    stubRunGit({
+    const git = createFakeGit({
       'rev-parse --verify refA': sha,
       'rev-parse --verify refB': sha,
       'rev-parse refA': sha,
       'rev-parse refB': sha,
     });
 
-    const result = await compareLocalRefs('/repo', 'refA', 'refB');
+    const result = await compareLocalRefsWith(git, '/repo', 'refA', 'refB');
 
     expect(result.status).toBe('match');
     assert.ok(result.status === 'match');
@@ -38,7 +24,7 @@ describe(compareLocalRefs, () => {
   });
 
   it('returns mismatch with ahead count when refA is ahead', async () => {
-    stubRunGit({
+    const git = createFakeGit({
       'rev-parse --verify refA': 'aaa',
       'rev-parse --verify refB': 'bbb',
       'rev-parse refA': 'aaa111',
@@ -46,7 +32,7 @@ describe(compareLocalRefs, () => {
       'rev-list --count --left-right': '3\t0',
     });
 
-    const result = await compareLocalRefs('/repo', 'refA', 'refB');
+    const result = await compareLocalRefsWith(git, '/repo', 'refA', 'refB');
 
     expect(result.status).toBe('mismatch');
     assert.ok(result.status === 'mismatch');
@@ -56,7 +42,7 @@ describe(compareLocalRefs, () => {
   });
 
   it('returns mismatch with behind count when refA is behind', async () => {
-    stubRunGit({
+    const git = createFakeGit({
       'rev-parse --verify refA': 'aaa',
       'rev-parse --verify refB': 'bbb',
       'rev-parse refA': 'aaa111',
@@ -64,7 +50,7 @@ describe(compareLocalRefs, () => {
       'rev-list --count --left-right': '0\t2',
     });
 
-    const result = await compareLocalRefs('/repo', 'refA', 'refB');
+    const result = await compareLocalRefsWith(git, '/repo', 'refA', 'refB');
 
     expect(result.status).toBe('mismatch');
     assert.ok(result.status === 'mismatch');
@@ -72,7 +58,7 @@ describe(compareLocalRefs, () => {
   });
 
   it('returns mismatch with both counts when refs have diverged', async () => {
-    stubRunGit({
+    const git = createFakeGit({
       'rev-parse --verify refA': 'aaa',
       'rev-parse --verify refB': 'bbb',
       'rev-parse refA': 'aaa111',
@@ -80,7 +66,7 @@ describe(compareLocalRefs, () => {
       'rev-list --count --left-right': '2\t3',
     });
 
-    const result = await compareLocalRefs('/repo', 'refA', 'refB');
+    const result = await compareLocalRefsWith(git, '/repo', 'refA', 'refB');
 
     expect(result.status).toBe('mismatch');
     assert.ok(result.status === 'mismatch');
@@ -88,23 +74,23 @@ describe(compareLocalRefs, () => {
   });
 
   it('returns ref-missing when refA does not exist', async () => {
-    stubRunGit({
+    const git = createFakeGit({
       'rev-parse --verify refA': makeRefMissingError('refA'),
       'rev-parse --verify refB': 'exists',
     });
 
-    const result = await compareLocalRefs('/repo', 'refA', 'refB');
+    const result = await compareLocalRefsWith(git, '/repo', 'refA', 'refB');
 
     expect(result).toStrictEqual({ status: 'ref-missing', ref: 'refA' });
   });
 
   it('returns ref-missing when refB does not exist', async () => {
-    stubRunGit({
+    const git = createFakeGit({
       'rev-parse --verify refA': 'exists',
       'rev-parse --verify refB': makeRefMissingError('refB'),
     });
 
-    const result = await compareLocalRefs('/repo', 'refA', 'refB');
+    const result = await compareLocalRefsWith(git, '/repo', 'refA', 'refB');
 
     expect(result).toStrictEqual({ status: 'ref-missing', ref: 'refB' });
   });
@@ -114,15 +100,15 @@ describe(compareLocalRefs, () => {
       code: 128,
       stderr: 'fatal: not a git repository (or any of the parent directories): .git',
     });
-    stubRunGit({
+    const git = createFakeGit({
       'rev-parse --verify refA': infraError,
     });
 
-    await expect(compareLocalRefs('/repo', 'refA', 'refB')).rejects.toThrow('not a git repo');
+    await expect(compareLocalRefsWith(git, '/repo', 'refA', 'refB')).rejects.toThrow('not a git repo');
   });
 
   it('omits aheadBehind when rev-list output is malformed', async () => {
-    stubRunGit({
+    const git = createFakeGit({
       'rev-parse --verify refA': 'aaa',
       'rev-parse --verify refB': 'bbb',
       'rev-parse refA': 'aaa111',
@@ -130,7 +116,7 @@ describe(compareLocalRefs, () => {
       'rev-list --count --left-right': 'garbage',
     });
 
-    const result = await compareLocalRefs('/repo', 'refA', 'refB');
+    const result = await compareLocalRefsWith(git, '/repo', 'refA', 'refB');
 
     expect(result.status).toBe('mismatch');
     assert.ok(result.status === 'mismatch');
@@ -138,7 +124,7 @@ describe(compareLocalRefs, () => {
   });
 
   it('omits aheadBehind when rev-list fails', async () => {
-    stubRunGit({
+    const git = createFakeGit({
       'rev-parse --verify refA': 'aaa',
       'rev-parse --verify refB': 'bbb',
       'rev-parse refA': 'aaa111',
@@ -146,32 +132,10 @@ describe(compareLocalRefs, () => {
       'rev-list --count --left-right': new Error('rev-list failed'),
     });
 
-    const result = await compareLocalRefs('/repo', 'refA', 'refB');
+    const result = await compareLocalRefsWith(git, '/repo', 'refA', 'refB');
 
     expect(result.status).toBe('mismatch');
     assert.ok(result.status === 'mismatch');
     expect(result.aheadBehind).toBeUndefined();
   });
 });
-
-/** Builds the error shape produced by git for a ref that does not resolve. */
-function makeRefMissingError(ref: string): Error {
-  return Object.assign(new Error(`unknown revision: ${ref}`), {
-    code: 128,
-    stderr: `fatal: ambiguous argument '${ref}': unknown revision or path not in the working tree.`,
-  });
-}
-
-/** Stubs `runGit` to route calls by git subcommand and arguments. */
-function stubRunGit(routes: Record<string, string | Error>): void {
-  runGit.mockImplementation((_path: string, ...args: string[]) => {
-    const key = args.join(' ');
-    for (const [pattern, value] of Object.entries(routes)) {
-      if (key.includes(pattern)) {
-        if (value instanceof Error) return Promise.reject(value);
-        return Promise.resolve(value);
-      }
-    }
-    return Promise.reject(new Error(`Unexpected runGit call: git ${args.join(' ')}`));
-  });
-}

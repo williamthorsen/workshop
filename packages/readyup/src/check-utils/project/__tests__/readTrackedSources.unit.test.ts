@@ -1,39 +1,12 @@
-import { promisify } from 'node:util';
-
 import { createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { beforeEach, describe, expect, it as baseIt, vi } from 'vitest';
 
-const { foreignPaths, readPaths, statProbes, unreadablePaths } = vi.hoisted(() => {
-  const foreignPaths = new Set<string>();
+const { readPaths, statProbes, unreadablePaths } = vi.hoisted(() => {
   const readPaths: string[] = [];
   const statProbes: string[] = [];
   const unreadablePaths = new Set<string>();
-  return { foreignPaths, readPaths, statProbes, unreadablePaths };
-});
-
-const execFileAsync = vi.hoisted(() =>
-  vi.fn<(file: string, args: string[]) => Promise<{ stdout: string; stderr: string }>>(),
-);
-
-// `execFileAsync` provides the promisified form used by every git helper but `runGitWithInput`; the stub provides
-// the callback form that one calls, reporting each queried path as declared or not.
-vi.mock('node:child_process', async () => {
-  const { createExecFileStub } = await import('../../../test-utils/createExecFileStub.ts');
-  const stub = createExecFileStub((input) => ({
-    stdout: input
-      .split('\0')
-      .flatMap((path) =>
-        path === ''
-          ? []
-          : [
-              `${path}\0linguist-generated\0${foreignPaths.has(path) ? 'true' : 'unspecified'}\0`,
-              `${path}\0linguist-vendored\0unspecified\0`,
-            ],
-      )
-      .join(''),
-  }));
-  return { execFile: Object.assign(stub, { [promisify.custom]: execFileAsync }) };
+  return { readPaths, statProbes, unreadablePaths };
 });
 
 // The modules under test bind their `node:fs` functions at import, so a spy on the namespace never reaches them.
@@ -56,9 +29,19 @@ vi.mock('node:fs', async (importOriginal) => {
   };
 });
 
-import { readSourceText, readTrackedSources } from '../readTrackedSources.ts';
+import { readSourceText, readTrackedSourcesWith } from '../readTrackedSources.ts';
 import { withSweepRecorder } from '../sweepRecorder.ts';
 import { createRecorder } from '../test-utils/sweep-recording.ts';
+
+const foreignPaths = new Set<string>();
+
+/** The tracked listing that the fake lister reports, `undefined` standing for a directory outside a working tree. */
+const tracked: { paths: readonly string[] | undefined } = { paths: [] };
+
+const listers = {
+  listForeignPaths: () => Promise.resolve(new Set(foreignPaths)),
+  listTrackedFiles: () => Promise.resolve(tracked.paths),
+};
 
 const it = baseIt.extend(
   'temp',
@@ -72,9 +55,10 @@ describe('readTrackedSources.ts', () => {
     await runTest();
   });
 
-  describe(readTrackedSources, () => {
+  describe(readTrackedSourcesWith, () => {
     beforeEach(() => {
       foreignPaths.clear();
+      tracked.paths = [];
       readPaths.length = 0;
       statProbes.length = 0;
       unreadablePaths.clear();
@@ -86,8 +70,8 @@ describe('readTrackedSources.ts', () => {
       temp.write('src/second.ts', 'second');
       trackPaths('src/first.ts', 'src/second.ts', 'src/shared.ts');
 
-      const first = await readTrackedSources((path) => path !== 'src/second.ts');
-      const second = await readTrackedSources((path) => path !== 'src/first.ts');
+      const first = await readTrackedSourcesWith(listers, (path) => path !== 'src/second.ts');
+      const second = await readTrackedSourcesWith(listers, (path) => path !== 'src/first.ts');
 
       expect(first).toStrictEqual([
         { path: 'src/first.ts', text: 'first' },
@@ -111,8 +95,8 @@ describe('readTrackedSources.ts', () => {
       // The cache's check-and-set runs without yielding, so whichever sweep reaches a path first is the only one that
       // reads it, however the two interleave.
       const [first, second] = await Promise.all([
-        readTrackedSources((path) => path !== 'src/second.ts'),
-        readTrackedSources((path) => path !== 'src/first.ts'),
+        readTrackedSourcesWith(listers, (path) => path !== 'src/second.ts'),
+        readTrackedSourcesWith(listers, (path) => path !== 'src/first.ts'),
       ]);
 
       expect(first).toStrictEqual([
@@ -131,7 +115,7 @@ describe('readTrackedSources.ts', () => {
       temp.write('src/rejected.ts', 'rejected');
       trackPaths('src/kept.ts', 'src/rejected.ts');
 
-      await readTrackedSources((path) => path === 'src/kept.ts');
+      await readTrackedSourcesWith(listers, (path) => path === 'src/kept.ts');
 
       expect(countReads('src/rejected.ts')).toBe(0);
       expect(countProbes('src/rejected.ts')).toBe(0);
@@ -143,7 +127,7 @@ describe('readTrackedSources.ts', () => {
       temp.write('.readyup/kits/default.js', 'bundle');
       trackPaths('.readyup/kits/default.js', 'node_modules/dependency/index.js', 'src/kept.ts');
 
-      const sources = await readTrackedSources(() => true);
+      const sources = await readTrackedSourcesWith(listers, () => true);
 
       expect(sources).toStrictEqual([{ path: 'src/kept.ts', text: 'kept' }]);
       expect(countReads('node_modules/dependency/index.js')).toBe(0);
@@ -159,7 +143,7 @@ describe('readTrackedSources.ts', () => {
       trackPaths('bundles/skill.mjs', 'src/hand.ts', 'vendor/jquery.js');
       declareForeign('bundles/skill.mjs', 'vendor/jquery.js');
 
-      const sources = await readTrackedSources(() => true);
+      const sources = await readTrackedSourcesWith(listers, () => true);
 
       expect(sources).toStrictEqual([{ path: 'src/hand.ts', text: 'hand-written' }]);
       expect(countReads('bundles/skill.mjs')).toBe(0);
@@ -173,7 +157,7 @@ describe('readTrackedSources.ts', () => {
       declareForeign('bundles/skill.mjs');
       const { recorder, scanned } = createRecorder();
 
-      await withSweepRecorder(recorder, () => readTrackedSources());
+      await withSweepRecorder(recorder, () => readTrackedSourcesWith(listers));
 
       expect(scanned).toStrictEqual([['src/hand.ts']]);
     });
@@ -182,7 +166,7 @@ describe('readTrackedSources.ts', () => {
       temp.write('.readyup/kits/default.ts', 'kit source');
       trackPaths('.readyup/kits/default.ts');
 
-      await expect(readTrackedSources(() => true)).resolves.toStrictEqual([
+      await expect(readTrackedSourcesWith(listers, () => true)).resolves.toStrictEqual([
         { path: '.readyup/kits/default.ts', text: 'kit source' },
       ]);
     });
@@ -191,8 +175,8 @@ describe('readTrackedSources.ts', () => {
       temp.write('src/present.ts', 'present');
       trackPaths('src/deleted.ts', 'src/present.ts');
 
-      const first = await readTrackedSources();
-      await readTrackedSources();
+      const first = await readTrackedSourcesWith(listers);
+      await readTrackedSourcesWith(listers);
 
       expect(first).toStrictEqual([{ path: 'src/present.ts', text: 'present' }]);
       expect(countProbes('src/deleted.ts')).toBe(1);
@@ -204,7 +188,9 @@ describe('readTrackedSources.ts', () => {
       trackPaths('src/locked.ts', 'src/present.ts');
       unreadablePaths.add('src/locked.ts');
 
-      await expect(readTrackedSources()).resolves.toStrictEqual([{ path: 'src/present.ts', text: 'present' }]);
+      await expect(readTrackedSourcesWith(listers)).resolves.toStrictEqual([
+        { path: 'src/present.ts', text: 'present' },
+      ]);
       expect(countReads('src/locked.ts')).toBe(1);
     });
 
@@ -214,7 +200,9 @@ describe('readTrackedSources.ts', () => {
       temp.write('src/present.ts', 'present');
       trackPaths('docs', 'src/present.ts');
 
-      await expect(readTrackedSources()).resolves.toStrictEqual([{ path: 'src/present.ts', text: 'present' }]);
+      await expect(readTrackedSourcesWith(listers)).resolves.toStrictEqual([
+        { path: 'src/present.ts', text: 'present' },
+      ]);
       // The probe tells a directory from a source, so a fixture never listed by git would pass this vacuously.
       expect(countProbes('docs')).toBe(1);
       expect(countReads('docs')).toBe(0);
@@ -222,9 +210,9 @@ describe('readTrackedSources.ts', () => {
 
     it('returns undefined outside a git working tree', async ({ temp }) => {
       temp.write('src/present.ts', 'present');
-      execFileAsync.mockRejectedValue(Object.assign(new Error('fatal: not a git repository'), { code: 128 }));
+      tracked.paths = undefined;
 
-      await expect(readTrackedSources()).resolves.toBeUndefined();
+      await expect(readTrackedSourcesWith(listers)).resolves.toBeUndefined();
     });
 
     it('reports the paths that it returns to the recorder in scope', async ({ temp }) => {
@@ -233,7 +221,7 @@ describe('readTrackedSources.ts', () => {
       trackPaths('src/kept.ts', 'src/rejected.ts');
       const { recorder, scanned } = createRecorder();
 
-      await withSweepRecorder(recorder, () => readTrackedSources((path) => path === 'src/kept.ts'));
+      await withSweepRecorder(recorder, () => readTrackedSourcesWith(listers, (path) => path === 'src/kept.ts'));
 
       expect(scanned).toStrictEqual([['src/kept.ts']]);
     });
@@ -243,7 +231,7 @@ describe('readTrackedSources.ts', () => {
       trackPaths('src/deleted.ts', 'src/present.ts');
       const { recorder, scanned } = createRecorder();
 
-      await withSweepRecorder(recorder, () => readTrackedSources());
+      await withSweepRecorder(recorder, () => readTrackedSourcesWith(listers));
 
       expect(scanned).toStrictEqual([['src/present.ts']]);
     });
@@ -254,8 +242,8 @@ describe('readTrackedSources.ts', () => {
       const { recorder, scanned } = createRecorder();
 
       await withSweepRecorder(recorder, async () => {
-        await readTrackedSources();
-        await readTrackedSources();
+        await readTrackedSourcesWith(listers);
+        await readTrackedSourcesWith(listers);
       });
 
       expect(scanned).toStrictEqual([['src/kept.ts'], ['src/kept.ts']]);
@@ -263,10 +251,10 @@ describe('readTrackedSources.ts', () => {
 
     it('reports nothing to the recorder outside a git working tree', async ({ temp }) => {
       temp.write('src/present.ts', 'present');
-      execFileAsync.mockRejectedValue(Object.assign(new Error('fatal: not a git repository'), { code: 128 }));
+      tracked.paths = undefined;
       const { recorder, scanned } = createRecorder();
 
-      await withSweepRecorder(recorder, () => readTrackedSources());
+      await withSweepRecorder(recorder, () => readTrackedSourcesWith(listers));
 
       expect(scanned).toStrictEqual([]);
     });
@@ -275,6 +263,7 @@ describe('readTrackedSources.ts', () => {
   describe(readSourceText, () => {
     beforeEach(() => {
       foreignPaths.clear();
+      tracked.paths = [];
       readPaths.length = 0;
       statProbes.length = 0;
       unreadablePaths.clear();
@@ -283,7 +272,7 @@ describe('readTrackedSources.ts', () => {
     it('returns the text that a sweep read, reading the file no second time', async ({ temp }) => {
       temp.write('src/swept.ts', 'swept');
       trackPaths('src/swept.ts');
-      await readTrackedSources();
+      await readTrackedSourcesWith(listers);
 
       expect(readSourceText('src/swept.ts')).toBe('swept');
       expect(countReads('src/swept.ts')).toBe(1);
@@ -337,12 +326,9 @@ function countReads(relativePath: string): number {
   return readPaths.filter((read) => read.endsWith(`/${relativePath}`)).length;
 }
 
-/** Stubs the repo probe with a working tree, and the listing with the given paths. */
+/** Sets the tracked listing to the given paths. */
 function trackPaths(...paths: string[]): void {
-  execFileAsync.mockImplementation((_file, args) => {
-    if (args.includes('rev-parse')) return Promise.resolve({ stdout: '.git\n', stderr: '' });
-    return Promise.resolve({ stdout: `${paths.join('\0')}\0`, stderr: '' });
-  });
+  tracked.paths = paths;
 }
 
 // endregion | Helpers

@@ -1,22 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { LocalRefsCompareResult, RemoteRefCompareResult } from '../../../kits/types.ts';
-import * as compareLocalRefsModule from '../compare-local-refs.ts';
-import * as compareRefToRemoteModule from '../compare-ref-to-remote.ts';
-import { makeLocalRefSyncCheck, makeRemoteRefSyncCheck } from '../factories.ts';
+import type { compareLocalRefs } from '../compare-local-refs.ts';
+import type { compareRefToRemote } from '../compare-ref-to-remote.ts';
+import { makeLocalRefSyncCheckWith, makeRemoteRefSyncCheckWith } from '../factories.ts';
 
-vi.mock(import('../compare-local-refs.ts'), () => ({
-  compareLocalRefs: vi.fn(),
-}));
+const mockCompareLocalRefs = vi.fn<typeof compareLocalRefs>();
+const mockCompareRefToRemote = vi.fn<typeof compareRefToRemote>();
 
-vi.mock(import('../compare-ref-to-remote.ts'), () => ({
-  compareRefToRemote: vi.fn(),
-}));
-
-const mockCompareLocalRefs = vi.mocked(compareLocalRefsModule.compareLocalRefs);
-const mockCompareRefToRemote = vi.mocked(compareRefToRemoteModule.compareRefToRemote);
-
-describe(makeLocalRefSyncCheck, () => {
+describe(makeLocalRefSyncCheckWith, () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -25,7 +17,10 @@ describe(makeLocalRefSyncCheck, () => {
     const result: LocalRefsCompareResult = { status: 'match', shaA: 'aaa', shaB: 'aaa' };
     mockCompareLocalRefs.mockResolvedValue(result);
 
-    const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'main', refB: 'feature' });
+    const check = makeLocalRefSyncCheckWith(
+      { compareLocalRefs: mockCompareLocalRefs },
+      { name: 'sync', path: '/repo', refA: 'main', refB: 'feature' },
+    );
 
     await expect(check.check()).resolves.toBe(true);
   });
@@ -39,7 +34,10 @@ describe(makeLocalRefSyncCheck, () => {
     };
     mockCompareLocalRefs.mockResolvedValue(result);
 
-    const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'main', refB: 'feature' });
+    const check = makeLocalRefSyncCheckWith(
+      { compareLocalRefs: mockCompareLocalRefs },
+      { name: 'sync', path: '/repo', refA: 'main', refB: 'feature' },
+    );
     const outcome = await check.check();
 
     expect(outcome).toMatchObject({ ok: false, detail: expect.stringContaining('ahead') });
@@ -54,7 +52,10 @@ describe(makeLocalRefSyncCheck, () => {
     };
     mockCompareLocalRefs.mockResolvedValue(result);
 
-    const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'main', refB: 'feature' });
+    const check = makeLocalRefSyncCheckWith(
+      { compareLocalRefs: mockCompareLocalRefs },
+      { name: 'sync', path: '/repo', refA: 'main', refB: 'feature' },
+    );
     const outcome = await check.check();
 
     expect(outcome).toMatchObject({ ok: false, detail: expect.stringContaining('behind') });
@@ -70,7 +71,10 @@ describe(makeLocalRefSyncCheck, () => {
     };
     mockCompareLocalRefs.mockResolvedValue(result);
 
-    const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'main', refB: 'feature' });
+    const check = makeLocalRefSyncCheckWith(
+      { compareLocalRefs: mockCompareLocalRefs },
+      { name: 'sync', path: '/repo', refA: 'main', refB: 'feature' },
+    );
     const outcome = await check.check();
 
     expect(outcome).toMatchObject({ ok: false, detail: expect.stringContaining('diverged') });
@@ -80,7 +84,10 @@ describe(makeLocalRefSyncCheck, () => {
     const result: LocalRefsCompareResult = { status: 'mismatch', shaA: 'aaa', shaB: 'bbb' };
     mockCompareLocalRefs.mockResolvedValue(result);
 
-    const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'main', refB: 'feature' });
+    const check = makeLocalRefSyncCheckWith(
+      { compareLocalRefs: mockCompareLocalRefs },
+      { name: 'sync', path: '/repo', refA: 'main', refB: 'feature' },
+    );
     const outcome = await check.check();
 
     expect(outcome).toMatchObject({ ok: false, detail: expect.stringContaining('diverged') });
@@ -90,7 +97,10 @@ describe(makeLocalRefSyncCheck, () => {
     const result: LocalRefsCompareResult = { status: 'ref-missing', ref: 'nonexistent' };
     mockCompareLocalRefs.mockResolvedValue(result);
 
-    const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'nonexistent', refB: 'HEAD' });
+    const check = makeLocalRefSyncCheckWith(
+      { compareLocalRefs: mockCompareLocalRefs },
+      { name: 'sync', path: '/repo', refA: 'nonexistent', refB: 'HEAD' },
+    );
     const outcome = await check.check();
 
     expect(outcome).toMatchObject({ ok: false, detail: expect.stringContaining('nonexistent') });
@@ -105,37 +115,52 @@ describe(makeLocalRefSyncCheck, () => {
   ])('names the repository in the detail reporting $ahead ahead and $behind behind', async (aheadBehind) => {
     mockCompareLocalRefs.mockResolvedValue({ status: 'mismatch', shaA: 'aaa', shaB: 'bbb', aheadBehind });
 
-    const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'main', refB: 'feature' });
+    const check = makeLocalRefSyncCheckWith(
+      { compareLocalRefs: mockCompareLocalRefs },
+      { name: 'sync', path: '/repo', refA: 'main', refB: 'feature' },
+    );
 
     await expect(check.check()).resolves.toMatchObject({ detail: expect.stringContaining('in /repo') });
   });
 
   it('uses custom fix when provided', () => {
-    const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'a', refB: 'b', fix: 'custom fix' });
+    const check = makeLocalRefSyncCheckWith(
+      { compareLocalRefs: mockCompareLocalRefs },
+      { name: 'sync', path: '/repo', refA: 'a', refB: 'b', fix: 'custom fix' },
+    );
 
     expect(check.fix).toBe('custom fix');
   });
 
   it('falls back to a default fix naming the refs to bring into sync', () => {
-    const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'a', refB: 'b' });
+    const check = makeLocalRefSyncCheckWith(
+      { compareLocalRefs: mockCompareLocalRefs },
+      { name: 'sync', path: '/repo', refA: 'a', refB: 'b' },
+    );
 
     expect(check.fix).toBe('Make a and b point at the same commit in /repo');
   });
 
   it('forwards severity to the check', () => {
-    const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'a', refB: 'b', severity: 'warn' });
+    const check = makeLocalRefSyncCheckWith(
+      { compareLocalRefs: mockCompareLocalRefs },
+      { name: 'sync', path: '/repo', refA: 'a', refB: 'b', severity: 'warn' },
+    );
 
     expect(check.severity).toBe('warn');
   });
 
   it('omits severity when not provided', () => {
-    const check = makeLocalRefSyncCheck({ name: 'sync', path: '/repo', refA: 'a', refB: 'b' });
+    const check = makeLocalRefSyncCheckWith(
+      { compareLocalRefs: mockCompareLocalRefs },
+      { name: 'sync', path: '/repo', refA: 'a', refB: 'b' },
+    );
 
     expect(check.severity).toBeUndefined();
   });
 });
 
-describe(makeRemoteRefSyncCheck, () => {
+describe(makeRemoteRefSyncCheckWith, () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -144,7 +169,10 @@ describe(makeRemoteRefSyncCheck, () => {
     const result: RemoteRefCompareResult = { status: 'in-sync', localSha: 'aaa', remoteSha: 'aaa' };
     mockCompareRefToRemote.mockResolvedValue(result);
 
-    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: '/repo', ref: 'main' });
+    const check = makeRemoteRefSyncCheckWith(
+      { compareRefToRemote: mockCompareRefToRemote },
+      { name: 'remote-sync', path: '/repo', ref: 'main' },
+    );
     const skipResult = await check.skip?.();
     expect(skipResult).toBe(false);
 
@@ -160,7 +188,10 @@ describe(makeRemoteRefSyncCheck, () => {
     };
     mockCompareRefToRemote.mockResolvedValue(result);
 
-    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: '/repo', ref: 'main' });
+    const check = makeRemoteRefSyncCheckWith(
+      { compareRefToRemote: mockCompareRefToRemote },
+      { name: 'remote-sync', path: '/repo', ref: 'main' },
+    );
     const outcome = await check.check();
 
     expect(outcome).toMatchObject({ ok: false, detail: expect.stringContaining('ahead') });
@@ -175,7 +206,10 @@ describe(makeRemoteRefSyncCheck, () => {
     };
     mockCompareRefToRemote.mockResolvedValue(result);
 
-    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: '/repo', ref: 'main' });
+    const check = makeRemoteRefSyncCheckWith(
+      { compareRefToRemote: mockCompareRefToRemote },
+      { name: 'remote-sync', path: '/repo', ref: 'main' },
+    );
     const outcome = await check.check();
 
     expect(outcome).toMatchObject({ ok: false, detail: expect.stringContaining('behind') });
@@ -191,7 +225,10 @@ describe(makeRemoteRefSyncCheck, () => {
     };
     mockCompareRefToRemote.mockResolvedValue(result);
 
-    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: '/repo', ref: 'main' });
+    const check = makeRemoteRefSyncCheckWith(
+      { compareRefToRemote: mockCompareRefToRemote },
+      { name: 'remote-sync', path: '/repo', ref: 'main' },
+    );
     const outcome = await check.check();
 
     expect(outcome).toMatchObject({ ok: false, detail: expect.stringContaining('diverged') });
@@ -201,7 +238,10 @@ describe(makeRemoteRefSyncCheck, () => {
     const result: RemoteRefCompareResult = { status: 'ref-missing', ref: 'origin/feature' };
     mockCompareRefToRemote.mockResolvedValue(result);
 
-    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: '/repo', ref: 'feature' });
+    const check = makeRemoteRefSyncCheckWith(
+      { compareRefToRemote: mockCompareRefToRemote },
+      { name: 'remote-sync', path: '/repo', ref: 'feature' },
+    );
     const outcome = await check.check();
 
     expect(outcome).toMatchObject({ ok: false, detail: "ref 'origin/feature' does not exist in /repo" });
@@ -219,7 +259,10 @@ describe(makeRemoteRefSyncCheck, () => {
       aheadBehind,
     });
 
-    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: '/repo', ref: 'main' });
+    const check = makeRemoteRefSyncCheckWith(
+      { compareRefToRemote: mockCompareRefToRemote },
+      { name: 'remote-sync', path: '/repo', ref: 'main' },
+    );
 
     await expect(check.check()).resolves.toMatchObject({ detail: expect.stringContaining('in /repo') });
   });
@@ -228,7 +271,10 @@ describe(makeRemoteRefSyncCheck, () => {
     const result: RemoteRefCompareResult = { status: 'unreachable', error: new Error('network') };
     mockCompareRefToRemote.mockResolvedValue(result);
 
-    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: '/repo', ref: 'main' });
+    const check = makeRemoteRefSyncCheckWith(
+      { compareRefToRemote: mockCompareRefToRemote },
+      { name: 'remote-sync', path: '/repo', ref: 'main' },
+    );
     const skipResult = await check.skip?.();
 
     expect(skipResult).toBe("remote 'origin' is unreachable");
@@ -238,7 +284,10 @@ describe(makeRemoteRefSyncCheck, () => {
     const result: RemoteRefCompareResult = { status: 'unreachable', error: new Error('network') };
     mockCompareRefToRemote.mockResolvedValue(result);
 
-    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: '/repo', ref: 'main' });
+    const check = makeRemoteRefSyncCheckWith(
+      { compareRefToRemote: mockCompareRefToRemote },
+      { name: 'remote-sync', path: '/repo', ref: 'main' },
+    );
 
     await expect(check.check()).resolves.toBe(true);
   });
@@ -247,7 +296,10 @@ describe(makeRemoteRefSyncCheck, () => {
     const result: RemoteRefCompareResult = { status: 'in-sync', localSha: 'aaa', remoteSha: 'aaa' };
     mockCompareRefToRemote.mockResolvedValue(result);
 
-    const check = makeRemoteRefSyncCheck({ name: 'remote-sync', path: '/repo', ref: 'main' });
+    const check = makeRemoteRefSyncCheckWith(
+      { compareRefToRemote: mockCompareRefToRemote },
+      { name: 'remote-sync', path: '/repo', ref: 'main' },
+    );
     await check.skip?.();
     await check.check();
 
@@ -255,25 +307,37 @@ describe(makeRemoteRefSyncCheck, () => {
   });
 
   it('uses custom fix when provided', () => {
-    const check = makeRemoteRefSyncCheck({ name: 'sync', path: '/repo', ref: 'main', fix: 'run git pull' });
+    const check = makeRemoteRefSyncCheckWith(
+      { compareRefToRemote: mockCompareRefToRemote },
+      { name: 'sync', path: '/repo', ref: 'main', fix: 'run git pull' },
+    );
 
     expect(check.fix).toBe('run git pull');
   });
 
   it('falls back to a default fix naming the local and remote refs to bring into sync', () => {
-    const check = makeRemoteRefSyncCheck({ name: 'sync', path: '/repo', ref: 'main' });
+    const check = makeRemoteRefSyncCheckWith(
+      { compareRefToRemote: mockCompareRefToRemote },
+      { name: 'sync', path: '/repo', ref: 'main' },
+    );
 
     expect(check.fix).toBe('Make main and origin/main point at the same commit in /repo');
   });
 
   it('forwards severity to the check', () => {
-    const check = makeRemoteRefSyncCheck({ name: 'sync', path: '/repo', ref: 'main', severity: 'recommend' });
+    const check = makeRemoteRefSyncCheckWith(
+      { compareRefToRemote: mockCompareRefToRemote },
+      { name: 'sync', path: '/repo', ref: 'main', severity: 'recommend' },
+    );
 
     expect(check.severity).toBe('recommend');
   });
 
   it('omits severity when not provided', () => {
-    const check = makeRemoteRefSyncCheck({ name: 'sync', path: '/repo', ref: 'main' });
+    const check = makeRemoteRefSyncCheckWith(
+      { compareRefToRemote: mockCompareRefToRemote },
+      { name: 'sync', path: '/repo', ref: 'main' },
+    );
 
     expect(check.severity).toBeUndefined();
   });

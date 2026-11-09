@@ -13,6 +13,16 @@ const execFileAsync = promisify(execFile);
  */
 const MAX_OUTPUT_BYTES = 64 * 1024 * 1024;
 
+/** The git runners through which check-utils reaches git, so that a test can pass a fake. */
+export interface Git {
+  runGit: typeof runGit;
+  runGitRaw: typeof runGitRaw;
+  runGitWithInput: typeof runGitWithInput;
+}
+
+/** The adapter that runs the installed git. */
+export const realGit: Git = { runGit, runGitRaw, runGitWithInput };
+
 /** Returns a git command's stdout, trimmed, from a run in the given directory. */
 export async function runGit(path: string, ...args: string[]): Promise<string> {
   return (await runGitRaw(path, ...args)).trim();
