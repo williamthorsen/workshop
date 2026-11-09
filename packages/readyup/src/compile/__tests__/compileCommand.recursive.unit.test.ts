@@ -2,7 +2,7 @@ import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
-import { captureError, captureStdio, createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { afterEach, beforeEach, describe, expect, it as baseIt, vi } from 'vitest';
 
@@ -13,11 +13,12 @@ vi.mock(import('../compileConfig.ts'), () => ({
   compileConfig: mockCompileConfig,
 }));
 
-import { RdyError } from '../../errors/RdyError.ts';
 import { setStyle } from '../../layout/engine.ts';
 import { CompileOutputSchema } from '../../schemas/compileOutputSchema.ts';
-import { compileCommand } from '../compileCommand.ts';
 import type { CompileResult } from '../compileConfig.ts';
+import { buildCompileResult } from '../test-utils/compile-result-fixtures.ts';
+import { compile, compileForPayload, compileRaising } from '../test-utils/compile-runners.ts';
+import { readTreeManifest } from '../test-utils/readTreeManifest.ts';
 
 /** The tree swept by every test: one repository whose projects all compile, and one containing each project-level failure. */
 const FIXTURE_TREE = {
@@ -86,7 +87,7 @@ describe('compile --recursive', () => {
   );
 
   beforeEach(() => {
-    mockCompileConfig.mockImplementation(compileResult);
+    mockCompileConfig.mockImplementation(buildCompileResult);
   });
 
   afterEach(() => {
@@ -125,12 +126,12 @@ describe('compile --recursive', () => {
     it('writes each project its own manifest, with paths relative to that manifest', async ({ temp }) => {
       await compile(['--recursive']);
 
-      expect(readManifestKits(temp.resolve('clean/packages/api/.readyup/manifest.json'))).toStrictEqual([
+      expect(readTreeManifest(temp, 'clean/packages/api/.readyup/manifest.json').kits).toStrictEqual([
         expect.objectContaining({ name: 'deploy', path: 'kits/deploy.js', source: 'kits/deploy.ts' }),
         expect.objectContaining({ name: 'ops/deploy', path: 'kits/ops/deploy.js', source: 'kits/ops/deploy.ts' }),
         expect.objectContaining({ name: 'smoke', path: 'kits/smoke.js', source: 'kits/smoke.ts' }),
       ]);
-      expect(readManifestKits(temp.resolve('clean/.readyup/manifest.json'))).toStrictEqual([
+      expect(readTreeManifest(temp, 'clean/.readyup/manifest.json').kits).toStrictEqual([
         expect.objectContaining({ name: 'demo' }),
       ]);
     });
@@ -154,7 +155,7 @@ describe('compile --recursive', () => {
     it('empties the manifest of a project whose kits were all deleted', async ({ temp }) => {
       const { stdout } = await compile(['--recursive']);
 
-      expect(readManifestKits(temp.resolve('clean/packages/emptied/.readyup/manifest.json'))).toStrictEqual([]);
+      expect(readTreeManifest(temp, 'clean/packages/emptied/.readyup/manifest.json').kits).toStrictEqual([]);
       expect(stdout).toContain(
         'Source directory not found: packages/emptied/.readyup/kits; manifest now lists no kits',
       );
@@ -175,7 +176,7 @@ describe('compile --recursive', () => {
     });
 
     it('omits the next-step hint from the payload, though a project has neither kit sources nor a manifest', async () => {
-      await expect(compileForPayload()).resolves.not.toHaveProperty('hint');
+      await expect(compileForPayload(['--recursive'])).resolves.not.toHaveProperty('hint');
     });
 
     it('prints no closing problems line when every project passed', async () => {
@@ -188,7 +189,7 @@ describe('compile --recursive', () => {
       mockCompileConfig.mockImplementation((inputPath, outputPath) =>
         inputPath.endsWith('deploy.ts')
           ? Promise.reject(new Error('bundle failed'))
-          : compileResult(inputPath, outputPath),
+          : buildCompileResult(inputPath, outputPath),
       );
 
       const { exitCode, stdout, stderr } = await compile(['--recursive']);
@@ -201,7 +202,7 @@ describe('compile --recursive', () => {
 
     describe('under --json', () => {
       it('names the project of every kit, and reports every visited project', async () => {
-        const payload = CompileOutputSchema.parse(await compileForPayload());
+        const payload = CompileOutputSchema.parse(await compileForPayload(['--recursive']));
 
         expect(payload).toStrictEqual({
           schemaVersion: 1,
@@ -240,7 +241,7 @@ describe('compile --recursive', () => {
 
       it('collects the warnings raised by kits across projects, naming paths against the sweep root', async () => {
         mockCompileConfig.mockImplementation(async (inputPath, outputPath) => {
-          const result = await compileResult(inputPath, outputPath);
+          const result = await buildCompileResult(inputPath, outputPath);
           if (!inputPath.endsWith('demo.ts') && !inputPath.endsWith('deploy.ts')) return result;
 
           const source = realpathSync(inputPath);
@@ -251,7 +252,7 @@ describe('compile --recursive', () => {
           };
         });
 
-        const payload = CompileOutputSchema.parse(await compileForPayload());
+        const payload = CompileOutputSchema.parse(await compileForPayload(['--recursive']));
 
         expect(payload.passed).toBe(true);
         expect(payload.warnings?.map((warning) => warning.message)).toStrictEqual([
@@ -313,7 +314,7 @@ describe('compile --recursive', () => {
     });
 
     it('reports each failure against its project under --json', async () => {
-      const payload = CompileOutputSchema.parse(await compileForPayload());
+      const payload = CompileOutputSchema.parse(await compileForPayload(['--recursive']));
 
       expect(payload.passed).toBe(false);
       expect(payload.kits).toContainEqual(
@@ -341,7 +342,7 @@ describe('compile --recursive', () => {
     it('emits an empty payload under --json', async ({ temp }) => {
       using _cwd = pointCwdAt(temp.resolve('clean/packages/plain'));
 
-      await expect(compileForPayload()).resolves.toStrictEqual({
+      await expect(compileForPayload(['--recursive'])).resolves.toStrictEqual({
         schemaVersion: 1,
         passed: true,
         kits: [],
@@ -363,7 +364,7 @@ describe('compile --recursive', () => {
         message: '--recursive and --config are mutually exclusive',
       },
     ])('rejects $args', async ({ args, message }) => {
-      const error = await captureError(RdyError, () => compileCommand(args));
+      const { error } = await compileRaising(args);
 
       expect(error.code).toBe('usage');
       expect(error.message).toBe(message);
@@ -373,44 +374,9 @@ describe('compile --recursive', () => {
 
 // region | Helpers
 
-/** Runs the command over the given arguments, returning its exit code alongside everything it wrote. */
-async function compile(args: string[]) {
-  using io = captureStdio();
-
-  const exitCode = await compileCommand(args);
-
-  return { exitCode, stdout: io.stdout, stderr: io.stderr };
-}
-
-/** Runs a recursive compile under `--json` and returns the payload that it emitted. */
-async function compileForPayload(): Promise<unknown> {
-  const { stdout } = await compile(['--recursive', '--json']);
-  return JSON.parse(stdout);
-}
-
-/** Returns a successful compile result for a source, recording the source as its only input. */
-function compileResult(inputPath: string, outputPath = inputPath.replace(/\.ts$/, '.js')): Promise<CompileResult> {
-  return Promise.resolve({
-    bundledDependencies: {},
-    changed: true,
-    esbuildVersion: '0.99.0-test',
-    inlinedJson: [],
-    inputs: [{ hash: '5c0e1234', kind: 'module', path: realpathSync(inputPath) }],
-    metadata: { checklistChecks: [], checklists: [] },
-    outputPath: path.resolve(outputPath),
-    targetHash: 'aaaa1111',
-  });
-}
-
 /** Returns the sources handed to the bundler, relative to the working directory, in the order compiled. */
 function compiledSources(): string[] {
   return mockCompileConfig.mock.calls.map(([inputPath]) => path.relative(process.cwd(), inputPath));
-}
-
-/** Reads the kit entries recorded by the manifest at `manifestPath`. */
-function readManifestKits(manifestPath: string): unknown {
-  const manifest: unknown = JSON.parse(readFileSync(manifestPath, 'utf8'));
-  return typeof manifest === 'object' && manifest !== null && 'kits' in manifest ? manifest.kits : undefined;
 }
 
 // endregion | Helpers

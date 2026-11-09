@@ -205,7 +205,7 @@ describe(compileCommand, () => {
           path: expect.stringContaining('alpha.js'),
           readyupVersion: VERSION,
           source: expect.stringContaining('alpha.ts'),
-          sourceHash: '5c0urce1',
+          sourceHash: '5c0e1234',
           targetHash: 'aaaa1111',
         },
         {
@@ -215,7 +215,7 @@ describe(compileCommand, () => {
           path: expect.stringContaining('beta.js'),
           readyupVersion: VERSION,
           source: expect.stringContaining('beta.ts'),
-          sourceHash: '5c0urce1',
+          sourceHash: '5c0e1234',
           targetHash: 'bbbb2222',
         },
       ],

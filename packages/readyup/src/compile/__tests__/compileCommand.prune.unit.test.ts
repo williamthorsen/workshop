@@ -1,7 +1,4 @@
-import { realpathSync } from 'node:fs';
-import path from 'node:path';
-
-import { captureStdio, createTempTree, pointCwdAt, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockCompileConfig = vi.hoisted(() => vi.fn<(inputPath: string, outputPath?: string) => Promise<CompileResult>>());
@@ -12,17 +9,14 @@ vi.mock(import('../compileConfig.ts'), () => ({
 }));
 
 import { richFormatter } from '../../layout/formatter.ts';
-import { ManifestSchema } from '../../manifest/manifestSchema.ts';
 import { CompileOutputSchema } from '../../schemas/compileOutputSchema.ts';
-import { hashBytes } from '../../verify/targetHash.ts';
-import { compileCommand } from '../compileCommand.ts';
 import type { CompileResult } from '../compileConfig.ts';
+import { buildCompileResult, COMPILED, hashOf } from '../test-utils/compile-result-fixtures.ts';
+import { compile, compileForPayload } from '../test-utils/compile-runners.ts';
+import { readTreeManifest } from '../test-utils/readTreeManifest.ts';
 
 const ICON_PASSED = richFormatter.tokens.passed.text;
 const ICON_DRIFT = richFormatter.tokens.failedWarn.text;
-
-/** Bundle contents as the compile wrote them. */
-const COMPILED = 'export default {};';
 
 /** A project containing one kit with a source and one whose source was deleted after both were compiled. */
 const PROJECT_TREE = {
@@ -39,7 +33,7 @@ const PROJECT_TREE = {
 
 describe('compile handling bundles that no source compiles to', () => {
   beforeEach(() => {
-    mockCompileConfig.mockImplementation(compileResult);
+    mockCompileConfig.mockImplementation(buildCompileResult);
   });
 
   afterEach(() => {
@@ -55,7 +49,7 @@ describe('compile handling bundles that no source compiles to', () => {
 
       expect(exitCode).toBe(0);
       expect(tree.exists('.readyup/kits/legacy.js')).toBe(false);
-      expect(manifestKitNames(tree)).toStrictEqual(['deploy']);
+      expect(readTreeManifest(tree).kits.map((kit) => kit.name)).toStrictEqual(['deploy']);
       expect(stdout).toContain(`${ICON_PASSED} legacy.js · removed, no source compiles to it\n`);
     });
 
@@ -82,7 +76,7 @@ describe('compile handling bundles that no source compiles to', () => {
 
       expect(exitCode).toBe(1);
       expect(tree.exists('.readyup/kits/legacy.js')).toBe(true);
-      expect(manifestKitNames(tree)).toStrictEqual(['deploy', 'legacy']);
+      expect(readTreeManifest(tree).kits.map((kit) => kit.name)).toStrictEqual(['deploy', 'legacy']);
       expect(stdout).toContain(
         `${ICON_DRIFT} legacy.js\n   drift in legacy.js: expected ${hashOf(COMPILED)}, got ${hashOf('export default { edited: true };')}; no source compiles to it\n`,
       );
@@ -141,7 +135,7 @@ describe('compile handling bundles that no source compiles to', () => {
 
       expect(exitCode).toBe(0);
       expect(tree.exists('.readyup/kits/legacy.js')).toBe(false);
-      expect(manifestKitNames(tree)).toStrictEqual(['deploy']);
+      expect(readTreeManifest(tree).kits.map((kit) => kit.name)).toStrictEqual(['deploy']);
     });
 
     it('keeps an orphan whose bundle cannot be deleted, and fails the run', async () => {
@@ -154,7 +148,7 @@ describe('compile handling bundles that no source compiles to', () => {
       const { exitCode, stdout, stderr } = await compile([]);
 
       expect(exitCode).toBe(1);
-      expect(manifestKitNames(tree)).toStrictEqual(['deploy', 'legacy']);
+      expect(readTreeManifest(tree).kits.map((kit) => kit.name)).toStrictEqual(['deploy', 'legacy']);
       expect(stderr).toMatch(/^rdy: cannot remove \.readyup\/kits\/legacy\.js: .+$/m);
       expect(stdout).toContain('1 of 2 kits could not be removed.\n');
     });
@@ -169,7 +163,7 @@ describe('compile handling bundles that no source compiles to', () => {
 
       expect(exitCode).toBe(0);
       expect(tree.exists('.readyup/kits/legacy.js')).toBe(false);
-      expect(manifestKitNames(tree)).toStrictEqual([]);
+      expect(readTreeManifest(tree).kits.map((kit) => kit.name)).toStrictEqual([]);
       expect(stdout).toBe(
         `No .ts files found in .readyup/kits; manifest now lists no kits\n${ICON_PASSED} legacy.js · removed, no source compiles to it\n`,
       );
@@ -254,7 +248,7 @@ describe('compile handling bundles that no source compiles to', () => {
 
       expect(exitCode).toBe(0);
       expect(tree.exists('.readyup/kits/ops/deploy.js')).toBe(true);
-      expect(manifestKitNames(tree)).toStrictEqual(['ops/deploy']);
+      expect(readTreeManifest(tree).kits.map((kit) => kit.name)).toStrictEqual(['ops/deploy']);
       expect(stdout).not.toContain('removed');
     });
   });
@@ -269,7 +263,7 @@ describe('compile handling bundles that no source compiles to', () => {
       expect(exitCode).toBe(0);
       expect(stderr).not.toContain('Warning:');
       expect(tree.exists('.readyup/kits/legacy.js')).toBe(true);
-      expect(manifestKitNames(tree)).toStrictEqual(['deploy', 'legacy']);
+      expect(readTreeManifest(tree).kits.map((kit) => kit.name)).toStrictEqual(['deploy', 'legacy']);
     });
   });
 
@@ -296,46 +290,6 @@ describe('compile handling bundles that no source compiles to', () => {
 });
 
 // region | Helpers
-
-/** Runs the command over the given arguments, returning its exit code alongside everything it wrote. */
-async function compile(args: string[]) {
-  using io = captureStdio();
-
-  const exitCode = await compileCommand(args);
-
-  return { exitCode, stdout: io.stdout, stderr: io.stderr };
-}
-
-/** Runs a compile under `--json` and returns the payload that it emitted. */
-async function compileForPayload(args: string[]): Promise<unknown> {
-  const { stdout } = await compile([...args, '--json']);
-  return JSON.parse(stdout);
-}
-
-/** Returns a successful compile result for a source, recording the source as its only input. */
-function compileResult(inputPath: string, outputPath = inputPath.replace(/\.ts$/, '.js')): Promise<CompileResult> {
-  return Promise.resolve({
-    bundledDependencies: {},
-    changed: true,
-    esbuildVersion: '0.99.0-test',
-    inlinedJson: [],
-    inputs: [{ hash: '5c0e1234', kind: 'module', path: realpathSync(inputPath) }],
-    metadata: { checklistChecks: [], checklists: [] },
-    outputPath: path.resolve(outputPath),
-    targetHash: hashOf(COMPILED),
-  });
-}
-
-/** Returns the hash that the manifest records for a bundle with these contents. */
-function hashOf(contents: string): string {
-  return hashBytes(Buffer.from(contents, 'utf8'));
-}
-
-/** Returns the names of the kits recorded by the tree's manifest, in the order that it lists them. */
-function manifestKitNames(tree: TempTree): string[] {
-  const manifest = ManifestSchema.parse(tree.readJson('.readyup/manifest.json'));
-  return manifest.kits.map((kit) => kit.name);
-}
 
 /** Returns the entries of a tree with each key placed below `prefix`. */
 function prefixEntries(prefix: string, entries: Record<string, string>): Record<string, string> {

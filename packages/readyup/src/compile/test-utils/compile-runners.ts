@@ -27,6 +27,12 @@ export async function compile(args: string[]): Promise<CompileRun> {
   return { exitCode, stdout: io.stdout, stdoutChunks: io.stdoutChunks, stderr: io.stderr };
 }
 
+/** Runs the command under `--json` and returns the payload that it emitted. */
+export async function compileForPayload(args: string[]): Promise<unknown> {
+  const { stdout } = await compile([...args, '--json']);
+  return JSON.parse(stdout);
+}
+
 /** Runs the command expecting it to raise, returning the error alongside everything it wrote. */
 export async function compileRaising(args: string[]): Promise<CompileRaisingRun> {
   using io = captureStdio();
