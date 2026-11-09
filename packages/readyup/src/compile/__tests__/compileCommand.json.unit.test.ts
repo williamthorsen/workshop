@@ -205,6 +205,24 @@ describe(compileCommand, () => {
       });
     });
 
+    it("writes each kit's warnings on stderr after its result line and before the next kit's", async () => {
+      arrangeBatch(['alpha.ts', 'beta.ts']);
+      mockCompileConfig
+        .mockResolvedValueOnce(compileResultInliningJson(kitSource('alpha.ts'), '/abs/alpha.js'))
+        .mockResolvedValueOnce(compileResultInliningJson(kitSource('beta.ts'), '/abs/beta.js'));
+
+      const { stderr } = await compile(['--json']);
+
+      const positions = [
+        stderr.indexOf('alpha.ts'),
+        stderr.indexOf('Warning: kit "alpha"'),
+        stderr.indexOf('beta.ts'),
+        stderr.indexOf('Warning: kit "beta"'),
+      ];
+      expect(positions).not.toContain(-1);
+      expect(positions).toStrictEqual(positions.toSorted((a, b) => a - b));
+    });
+
     it('raises no warning for a kit that fails validation', async () => {
       arrangeBatch(['alpha.ts']);
       mockCompileConfig.mockRejectedValue(new Error('Kit must export a default RdyKit'));
