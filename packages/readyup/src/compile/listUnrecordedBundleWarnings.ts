@@ -5,8 +5,8 @@ import { enumerateKits } from '../list/enumerateKits.ts';
 import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
 import type { RaisedWarning } from '../schemas/common.ts';
 
-/** Arguments for warning on the bundles of a sweep that nothing accounts for. */
-export interface WarnOnUnrecordedBundlesArgs {
+/** Arguments for listing the bundles of a sweep that nothing accounts for. */
+export interface ListUnrecordedBundleWarningsArgs {
   /** The entries of the manifest that the sweep writes. */
   entries: RdyManifestKit[];
   manifestDir: string;
@@ -17,16 +17,13 @@ export interface WarnOnUnrecordedBundlesArgs {
 }
 
 /**
- * Warns on each bundle below `outDir` that neither a swept source nor a manifest entry accounts for, and
- * returns one warning per bundle.
+ * Returns one warning per bundle below `outDir` that neither a swept source nor a manifest entry accounts for.
  *
  * Nothing shows that a compile wrote such a bundle, so it is reported rather than deleted. A bundle named for a swept
  * kit is accounted for whatever became of that kit, because the bundle left by a failed compile still has its source.
  * The candidates are the files that `rdy run` and `rdy list` treat as kits: every bundle below `outDir` that is not hidden.
- *
- * The stderr line is written in both output modes; the returned entries are what JSON mode adds to the payload.
  */
-export function warnOnUnrecordedBundles(args: WarnOnUnrecordedBundlesArgs): RaisedWarning[] {
+export function listUnrecordedBundleWarnings(args: ListUnrecordedBundleWarningsArgs): RaisedWarning[] {
   const { entries, manifestDir, outDir, sweptKitNames } = args;
   const recordedPaths = new Set(
     entries.flatMap((entry) => (entry.path === undefined ? [] : path.resolve(manifestDir, entry.path))),
@@ -43,7 +40,6 @@ export function warnOnUnrecordedBundles(args: WarnOnUnrecordedBundlesArgs): Rais
       message: `${name}.js in ${displayDir} is not recorded in the manifest, and no source compiles to it.`,
       remedy: 'Delete it if its kit was removed.',
     };
-    process.stderr.write(`Warning: ${warning.message} ${warning.remedy}\n`);
     warnings.push(warning);
   }
   return warnings;

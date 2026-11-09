@@ -1,15 +1,8 @@
-import process from 'node:process';
-
 import type { RaisedWarning } from '../schemas/common.ts';
 import type { DirectoryDependence } from './validateCompiledOutput.ts';
 
-/**
- * Warns that a kit's recorded checks depend on the directory from which it is imported, and returns the warning, or
- * nothing when they do not.
- *
- * The stderr line is written in both output modes; the returned entries are what JSON mode adds to the payload.
- */
-export function warnOnDirectoryDependentChecks(
+/** Returns a warning that a kit's recorded checks depend on the directory from which it is imported, if they do. */
+export function listDirectoryDependenceWarnings(
   kitName: string,
   directoryDependence: DirectoryDependence | undefined,
 ): RaisedWarning[] {
@@ -25,7 +18,6 @@ export function warnOnDirectoryDependentChecks(
     remedy:
       'Move the code that reads the repo under check (its files, workspaces, or manifest) out of the checklist\'s declared checks: Declare one check that asserts the condition on which those checks rely, and assign its `checks` a function that returns them, which readyup calls when the checklist runs. See `rdy help authoring`, section "Checks built at run time".',
   };
-  process.stderr.write(`Warning: ${warning.message} ${warning.remedy}\n`);
   return [warning];
 }
 

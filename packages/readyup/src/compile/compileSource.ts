@@ -4,6 +4,7 @@ import { deriveKitName } from '../kits/deriveKitName.ts';
 import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
 import { writeError } from '../output/writeError.ts';
 import { writeHuman } from '../output/writeHuman.ts';
+import { writeWarnings } from '../output/writeWarnings.ts';
 import type { RaisedWarning } from '../schemas/common.ts';
 import type { JsonCompileKitEntry } from '../schemas/compileOutputSchema.ts';
 import { buildManifestKit, deriveClosureFields, detectDrift } from './compile-manifest.ts';
@@ -16,8 +17,8 @@ import {
 } from './compile-report.ts';
 import { compileConfig } from './compileConfig.ts';
 import { deriveJsPath } from './deriveJsPath.ts';
-import { warnOnDirectoryDependentChecks } from './warnOnDirectoryDependentChecks.ts';
-import { warnOnInlinedJson } from './warnOnInlinedJson.ts';
+import { listDirectoryDependenceWarnings } from './listDirectoryDependenceWarnings.ts';
+import { listInlinedJsonWarnings } from './listInlinedJsonWarnings.ts';
 
 /** What a project sweep shares with each of its sources. */
 export interface SourceSweepContext {
@@ -65,6 +66,11 @@ export async function compileSource(fileName: string, context: SourceSweepContex
   try {
     const result = await compileConfig(srcFile, outFile);
     writeHuman(formatResultLine(fileName, outName, result.changed), json);
+    const warnings = [
+      ...listInlinedJsonWarnings(kitName, result.inlinedJson),
+      ...listDirectoryDependenceWarnings(kitName, result.metadata.directoryDependence),
+    ];
+    writeWarnings(warnings);
 
     const closure = deriveClosureFields(result.inputs, path.resolve(srcFile), manifestDir);
     return {
@@ -78,10 +84,7 @@ export async function compileSource(fileName: string, context: SourceSweepContex
         targetHash: result.targetHash,
       }),
       kit: { name: kitName, ...projectField, status: 'compiled' },
-      warnings: [
-        ...warnOnInlinedJson(kitName, result.inlinedJson),
-        ...warnOnDirectoryDependentChecks(kitName, result.metadata.directoryDependence),
-      ],
+      warnings,
     };
   } catch (error: unknown) {
     // A kit that fails to compile is a problem with the kit, not with the invocation, so the sweep

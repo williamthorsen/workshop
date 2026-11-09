@@ -11,6 +11,7 @@ import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
 import { writeManifest } from '../manifest/writeManifest.ts';
 import { writeError } from '../output/writeError.ts';
 import { writeHuman } from '../output/writeHuman.ts';
+import { writeWarnings } from '../output/writeWarnings.ts';
 import type { RaisedWarning } from '../schemas/common.ts';
 import { collectSourceFiles } from './collectSourceFiles.ts';
 import { loadExistingKitsByName } from './compile-manifest.ts';
@@ -31,8 +32,8 @@ import {
 } from './compile-report.ts';
 import { compileSource, type SourceOutcome, type SourceSweepContext } from './compileSource.ts';
 import { deriveJsPath } from './deriveJsPath.ts';
+import { listUnrecordedBundleWarnings, type ListUnrecordedBundleWarningsArgs } from './listUnrecordedBundleWarnings.ts';
 import { type OrphanOutcome, pruneOrphanedEntries } from './pruneOrphanedEntries.ts';
-import { warnOnUnrecordedBundles, type WarnOnUnrecordedBundlesArgs } from './warnOnUnrecordedBundles.ts';
 
 /** Arguments for compiling one project's kit sources. */
 export interface CompileProjectArgs {
@@ -148,7 +149,9 @@ export async function compileProject(args: CompileProjectArgs): Promise<ProjectC
 
   // A run that reads no manifest cannot tell a recorded bundle from an unrecorded one.
   if (!skipManifest) {
-    warnings.push(...warnOnSweepBundles({ entries: kitEntries, manifestDir, outDir, sweptKitNames }));
+    const bundleWarnings = listSweepBundleWarnings({ entries: kitEntries, manifestDir, outDir, sweptKitNames });
+    writeWarnings(bundleWarnings);
+    warnings.push(...bundleWarnings);
   }
 
   const tally = formatSweepTally({
@@ -257,12 +260,12 @@ function reportOrphans(orphans: OrphanOutcome[], args: ReportOrphansArgs): Orpha
 }
 
 /**
- * Warns on the bundles of a sweep that nothing accounts for, and raises an output directory that cannot be read as a
- * config error, as an unreadable source directory is.
+ * Returns the warnings on the bundles of a sweep that nothing accounts for, and raises an output directory that cannot
+ * be read as a config error, as an unreadable source directory is.
  */
-function warnOnSweepBundles(args: WarnOnUnrecordedBundlesArgs): RaisedWarning[] {
+function listSweepBundleWarnings(args: ListUnrecordedBundleWarningsArgs): RaisedWarning[] {
   try {
-    return warnOnUnrecordedBundles(args);
+    return listUnrecordedBundleWarnings(args);
   } catch (error: unknown) {
     throw configError(`Failed to read output directory: ${describeError(error)}`, { cause: error });
   }

@@ -1,18 +1,14 @@
-import assert from 'node:assert';
 import path from 'node:path';
 import process from 'node:process';
 
-import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import type { InlinedJsonFile } from '../buildBundle.ts';
-import { warnOnInlinedJson } from '../warnOnInlinedJson.ts';
+import { listInlinedJsonWarnings } from '../listInlinedJsonWarnings.ts';
 
-describe(warnOnInlinedJson, () => {
+describe(listInlinedJsonWarnings, () => {
   it('reports a bundled JSON file under its code, naming the kit and the file and suggesting pickJson', () => {
-    using _io = captureStdio();
-
-    const [warning] = warnOnInlinedJson('deploy', [inlinedJson('package.json', ['kits/deploy.ts'])]);
+    const [warning] = listInlinedJsonWarnings('deploy', [inlinedJson('package.json', ['kits/deploy.ts'])]);
 
     expect(warning).toHaveProperty('code', 'json-inlined');
     expect(warning?.message).toContain('kit "deploy" bundles all of package.json');
@@ -21,17 +17,15 @@ describe(warnOnInlinedJson, () => {
   });
 
   it('names every module that imports the file, relative to the working directory', () => {
-    using _io = captureStdio();
-
-    const [warning] = warnOnInlinedJson('deploy', [inlinedJson('shared.json', ['kits/deploy.ts', 'kits/helper.ts'])]);
+    const [warning] = listInlinedJsonWarnings('deploy', [
+      inlinedJson('shared.json', ['kits/deploy.ts', 'kits/helper.ts']),
+    ]);
 
     expect(warning?.message).toContain('imported by kits/deploy.ts, kits/helper.ts,');
   });
 
   it('raises one warning per file', () => {
-    using _io = captureStdio();
-
-    const warnings = warnOnInlinedJson('deploy', [
+    const warnings = listInlinedJsonWarnings('deploy', [
       inlinedJson('package.json', ['kits/deploy.ts']),
       inlinedJson('settings.json', ['kits/deploy.ts']),
     ]);
@@ -42,20 +36,8 @@ describe(warnOnInlinedJson, () => {
     ]);
   });
 
-  it('writes each warning to stderr with its remedy', () => {
-    using io = captureStdio();
-
-    const [warning] = warnOnInlinedJson('deploy', [inlinedJson('package.json', ['kits/deploy.ts'])]);
-
-    assert.ok(warning);
-    expect(io.stderr).toBe(`Warning: ${warning.message} ${warning.remedy}\n`);
-  });
-
-  it('reports nothing and writes nothing for a bundle that includes no JSON file', () => {
-    using io = captureStdio();
-
-    expect(warnOnInlinedJson('deploy', [])).toStrictEqual([]);
-    expect(io.stderr).toBe('');
+  it('reports nothing for a bundle that includes no JSON file', () => {
+    expect(listInlinedJsonWarnings('deploy', [])).toStrictEqual([]);
   });
 });
 
