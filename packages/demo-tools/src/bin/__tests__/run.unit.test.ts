@@ -71,7 +71,7 @@ describe(run, () => {
         exitCode: 2,
         launch: undefined,
         revoice: undefined,
-        stderr: "Error: The manifest declares no version.\nTry 'thor-demo --help'.\n",
+        stderr: "thor-demo: The manifest declares no version.\nTry 'thor-demo --help'.\n",
         stdout: '',
         voice: undefined,
       });
@@ -101,10 +101,10 @@ describe(run, () => {
 
   describe('given a bad invocation', () => {
     it.each([
-      { args: ['nope'], expected: 'Error: Unknown command: nope' },
-      { args: ['--bogus'], expected: 'Error: Unknown option: --bogus' },
-      { args: ['render'], expected: 'Error: expects a demo name before any option' },
-      { args: ['probe', '--golden'], expected: 'Error: expects a demo name before any option' },
+      { args: ['nope'], expected: 'thor-demo: Unknown command: nope' },
+      { args: ['--bogus'], expected: 'thor-demo: Unknown option: --bogus' },
+      { args: ['render'], expected: 'thor-demo: expects a demo name before any option' },
+      { args: ['probe', '--golden'], expected: 'thor-demo: expects a demo name before any option' },
     ])('exits 2, pointing at the help: $args', async ({ args, expected }) => {
       const { exitCode, launch, stderr, stdout } = await run(args, EFFECTS);
 

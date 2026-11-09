@@ -114,7 +114,7 @@ export function renderRefusal(invocation: Invocation, refusal: ThorChromeRefusal
   }
 
   if (refusal.code === USAGE_CODE) {
-    output.stderr.write(`Error: ${refusal.message}\nTry '${output.name} --help'.\n`);
+    output.stderr.write(`${output.name}: ${refusal.message}\nTry '${output.name} --help'.\n`);
     return refusal.exitCode;
   }
   writeProse(invocation, 'stderr', [`${output.name}: ${refusal.message}`, ...refusal.hints.map((hint) => `  ${hint}`)]);

@@ -57,7 +57,7 @@ describe(run, () => {
 
       await expect(runWithBuffers(['--version'], failing)).resolves.toStrictEqual({
         exitCode: 2,
-        stderr: "Error: The manifest declares no version.\nTry 'thor-npm --help'.\n",
+        stderr: "thor-npm: The manifest declares no version.\nTry 'thor-npm --help'.\n",
         stdout: '',
       });
     });
@@ -95,8 +95,8 @@ describe(run, () => {
     });
 
     it.each([
-      { args: ['--to', 'owner/new'], expected: 'Error: --from <owner/repo> is required' },
-      { args: ['--from', 'owner/old'], expected: 'Error: --to <owner/repo> is required' },
+      { args: ['--to', 'owner/new'], expected: 'thor-npm: --from <owner/repo> is required' },
+      { args: ['--from', 'owner/old'], expected: 'thor-npm: --to <owner/repo> is required' },
     ])('exits 2 when a repository flag is absent: $args', async ({ args, expected }) => {
       const { exitCode, stderr } = await runWithBuffers(['move-trust', '@scope/pkg', ...args], listing);
 
@@ -149,7 +149,7 @@ describe(run, () => {
       const { exitCode, stderr } = await runWithBuffers(['publish-placeholder', 'Not Valid']);
 
       expect(exitCode).toBe(2);
-      expect(stderr).toContain("Error: invalid package name 'Not Valid':");
+      expect(stderr).toContain("thor-npm: invalid package name 'Not Valid':");
       expect(stderr).toContain("Try 'thor-npm publish-placeholder --help'.");
     });
 
@@ -174,8 +174,8 @@ describe(run, () => {
 
   describe('given a bad invocation', () => {
     it.each([
-      { args: ['publish'], expected: 'Error: Unknown command: publish' },
-      { args: ['--bogus'], expected: 'Error: Unknown option: --bogus' },
+      { args: ['publish'], expected: 'thor-npm: Unknown command: publish' },
+      { args: ['--bogus'], expected: 'thor-npm: Unknown option: --bogus' },
     ])('exits 2, pointing at the help: $args', async ({ args, expected }) => {
       const { exitCode, stderr, stdout } = await runWithBuffers(args);
 

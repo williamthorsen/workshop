@@ -418,7 +418,7 @@ describe('REPO_COMMANDS', () => {
       [['add', 'one', 'two']],
     ])('rejects %j as a usage error', async (argv) => {
       const result = await runCaptured(argv);
-      expect(result.stderr).toMatch(/^Error: /);
+      expect(result.stderr).toMatch(/^thor-repo: /);
       expect(result.stdout).toBe('');
       expect(result.status).toBe(2);
     });

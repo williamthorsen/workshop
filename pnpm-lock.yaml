@@ -177,8 +177,8 @@ catalogs:
       specifier: 0.8.0
       version: 0.8.0
     '@williamthorsen/toolbelt.cli':
-      specifier: 0.7.1
-      version: 0.7.1
+      specifier: 0.8.0
+      version: 0.8.0
     '@williamthorsen/toolbelt.errors':
       specifier: 0.9.0
       version: 0.9.0
@@ -318,7 +318,7 @@ importers:
         version: 0.8.0
       '@williamthorsen/toolbelt.cli':
         specifier: 'catalog:'
-        version: 0.7.1
+        version: 0.8.0
       '@williamthorsen/toolbelt.packaging':
         specifier: 'catalog:'
         version: 0.7.0
@@ -340,7 +340,7 @@ importers:
     dependencies:
       '@williamthorsen/toolbelt.cli':
         specifier: 'catalog:'
-        version: 0.7.1
+        version: 0.8.0
       '@williamthorsen/toolbelt.errors':
         specifier: 'catalog:'
         version: 0.9.0
@@ -399,7 +399,7 @@ importers:
     dependencies:
       '@williamthorsen/toolbelt.cli':
         specifier: 'catalog:'
-        version: 0.7.1
+        version: 0.8.0
       '@williamthorsen/toolbelt.errors':
         specifier: 'catalog:'
         version: 0.9.0
@@ -430,7 +430,7 @@ importers:
     dependencies:
       '@williamthorsen/toolbelt.cli':
         specifier: 'catalog:'
-        version: 0.7.1
+        version: 0.8.0
       '@williamthorsen/toolbelt.errors':
         specifier: 'catalog:'
         version: 0.9.0
@@ -468,7 +468,7 @@ importers:
     dependencies:
       '@williamthorsen/toolbelt.cli':
         specifier: 'catalog:'
-        version: 0.7.1
+        version: 0.8.0
       '@williamthorsen/toolbelt.errors':
         specifier: 'catalog:'
         version: 0.9.0
@@ -496,7 +496,7 @@ importers:
     dependencies:
       '@williamthorsen/toolbelt.cli':
         specifier: 'catalog:'
-        version: 0.7.1
+        version: 0.8.0
       '@williamthorsen/toolbelt.errors':
         specifier: 'catalog:'
         version: 0.9.0
@@ -610,7 +610,7 @@ importers:
     dependencies:
       '@williamthorsen/toolbelt.cli':
         specifier: 'catalog:'
-        version: 0.7.1
+        version: 0.8.0
       '@williamthorsen/toolbelt.errors':
         specifier: 'catalog:'
         version: 0.9.0
@@ -632,7 +632,7 @@ importers:
     dependencies:
       '@williamthorsen/toolbelt.cli':
         specifier: 'catalog:'
-        version: 0.7.1
+        version: 0.8.0
       '@williamthorsen/toolbelt.errors':
         specifier: 'catalog:'
         version: 0.9.0
@@ -1702,20 +1702,12 @@ packages:
     peerDependencies:
       eslint: '>=10'
 
-  '@williamthorsen/toolbelt.arrays@6.4.0':
-    resolution: {integrity: sha512-OM+Pvl/CUFZiIjI3VitCObJUvkkAFBmXQEZBpMzoD0aXLV01OfZi9bZhcNhIRQrWxRZ4owhbiTrvJ/64Hl75ng==}
-    engines: {node: '>=24.0.0'}
-
   '@williamthorsen/toolbelt.arrays@6.4.1':
     resolution: {integrity: sha512-P2Und156n4N3AvfDs44VUOXB24ZbTSfycIhOJcienZw4Q0zzU0fsm99mNpFnbkqoCR6ZV10c7bRV6YpNSlUk1Q==}
     engines: {node: '>=24.0.0'}
 
   '@williamthorsen/toolbelt.atlassian@0.8.0':
     resolution: {integrity: sha512-HZk0p79s0BCLaRMeqS+x0gJBARkBfNg20L3CuLiYLOZIarPJQILChiobIb5L7kMeTgkvyOEqmHSauTx4XBn4aQ==}
-    engines: {node: '>=24.0.0'}
-
-  '@williamthorsen/toolbelt.cli@0.7.1':
-    resolution: {integrity: sha512-Dg87tFESYxcisy+ue4uwSFx5sWrUAhki1CUKo8cYXiRc09eJSCdANUpQTyHiREKm6INMCjQPIMKnZN09E0RLIQ==}
     engines: {node: '>=24.0.0'}
 
   '@williamthorsen/toolbelt.cli@0.8.0':
@@ -1780,10 +1772,6 @@ packages:
 
   '@williamthorsen/toolbelt.sets@3.1.0':
     resolution: {integrity: sha512-LQDYMoL+qA+ui01VHke2oMLkrcZeaeiC4Do/3Y2AAaIyTU7RpKN2lvc5X5Rph9DF9Ns4+5aEXuVSQ4iWr6Y/+w==}
-    engines: {node: '>=24.0.0'}
-
-  '@williamthorsen/toolbelt.strings@8.2.0':
-    resolution: {integrity: sha512-I0KY52+7XNptoTHHUyKqWjfkOYv0vEBVKyu26TYWAQMnfpoFgvZB4J/VpVJf16Ory2x7CR7gqTx+QaYu3mDzlw==}
     engines: {node: '>=24.0.0'}
 
   '@williamthorsen/toolbelt.strings@8.2.1':
@@ -4242,11 +4230,6 @@ snapshots:
       '@williamthorsen/toolbelt.packaging': 0.6.3
       eslint: 10.14.0(jiti@2.7.0)(supports-color@7.2.0)
 
-  '@williamthorsen/toolbelt.arrays@6.4.0':
-    dependencies:
-      '@williamthorsen/toolbelt.guards': 4.2.0
-      '@williamthorsen/toolbelt.numbers': 7.3.0
-
   '@williamthorsen/toolbelt.arrays@6.4.1':
     dependencies:
       '@williamthorsen/toolbelt.guards': 4.2.0
@@ -4257,11 +4240,6 @@ snapshots:
       '@williamthorsen/toolbelt.errors': 0.9.0
       '@williamthorsen/toolbelt.objects': 4.4.0
       '@williamthorsen/toolbelt.secrets': 0.6.0
-
-  '@williamthorsen/toolbelt.cli@0.7.1':
-    dependencies:
-      '@williamthorsen/toolbelt.errors': 0.9.0
-      '@williamthorsen/toolbelt.strings': 8.2.0
 
   '@williamthorsen/toolbelt.cli@0.8.0':
     dependencies:
@@ -4315,12 +4293,6 @@ snapshots:
       '@williamthorsen/toolbelt.errors': 0.9.0
 
   '@williamthorsen/toolbelt.sets@3.1.0': {}
-
-  '@williamthorsen/toolbelt.strings@8.2.0':
-    dependencies:
-      '@williamthorsen/toolbelt.arrays': 6.4.0
-      '@williamthorsen/toolbelt.numbers': 7.3.0
-      '@williamthorsen/toolbelt.sets': 3.1.0
 
   '@williamthorsen/toolbelt.strings@8.2.1':
     dependencies:

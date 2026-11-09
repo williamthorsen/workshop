@@ -58,7 +58,7 @@ describe('thor-chrome', () => {
     const result = runEntry(['frobnicate'], makeEnvironment());
     expect(result).toMatchObject({
       status: 2,
-      stderr: "Error: unknown command 'frobnicate'\nTry 'thor-chrome --help'.\n",
+      stderr: "thor-chrome: unknown command 'frobnicate'\nTry 'thor-chrome --help'.\n",
       stdout: '',
     });
   });
