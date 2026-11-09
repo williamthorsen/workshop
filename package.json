@@ -32,7 +32,7 @@
     "@williamthorsen/toolbelt.errors": "catalog:",
     "@williamthorsen/toolbelt.vitest": "catalog:",
     "@williamthorsen/tsconfig": "0.12.1",
-    "codeassembly": "0.20.0",
+    "codeassembly": "0.20.1",
     "esbuild": "catalog:",
     "eslint": "10.14.0",
     "lefthook": "2.2.1",

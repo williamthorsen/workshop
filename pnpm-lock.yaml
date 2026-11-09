@@ -278,8 +278,8 @@ importers:
         specifier: 0.12.1
         version: 0.12.1(readyup@packages+readyup)
       codeassembly:
-        specifier: 0.20.0
-        version: 0.20.0(esbuild@0.28.2)
+        specifier: 0.20.1
+        version: 0.20.1(esbuild@0.28.2)
       esbuild:
         specifier: 'catalog:'
         version: 0.28.2
@@ -1631,8 +1631,8 @@ packages:
   '@vitest/spy@5.1.0':
     resolution: {integrity: sha512-2DPO5OMHWKrBngC+fCmTQqemNF0gidRhp3lxbBmRhW+M1XJrfgPpqNqWVevXtn2f2ufD5ZaR1B6B641aAlcX5A==}
 
-  '@williamthorsen/change-grammar@0.3.0':
-    resolution: {integrity: sha512-o3uKa5Q7tHCfuZW//fqQj2Lwexkh99xsT5Z3GjuDOtwp8eG8obq/Ihr51GM4P2feWU1pTlKI9x5a30ZDHt7Nug==}
+  '@williamthorsen/change-grammar@0.3.1':
+    resolution: {integrity: sha512-RD1lue7FkZRiESAEVjgV8gT4CDHEIeFI6Rootn+69j6MvO41pi5KUY6ofM7n94E2ZUSuRK6OaDIGc2qn65T68w==}
     engines: {node: '>=24.16.0'}
 
   '@williamthorsen/change-grammar@0.4.0':
@@ -1671,10 +1671,6 @@ packages:
         optional: true
       readyup:
         optional: true
-
-  '@williamthorsen/nmr-core@0.14.0':
-    resolution: {integrity: sha512-WjJVuXZ7QEgKSMRit5NdQzYhX4sUPAFs0pVFNeFfQMkOCYTkvqSThu7fjIaeH7l21GXaEsgCiRYh4Gcr//bclQ==}
-    engines: {node: '>=24.16.0'}
 
   '@williamthorsen/nmr-core@0.16.0':
     resolution: {integrity: sha512-jbJf6uDhB1ny29TJ4TuQ1/GYFOUugFHC2cpFfAlzqwS3RMt8zzVJKOdNhRKnpAzjw5Eq4yIt+gN1qggqohhbyA==}
@@ -1954,8 +1950,8 @@ packages:
     resolution: {integrity: sha512-BSeNnyus75C4//NQ9gQt1/csTXyo/8Sb+afLAkzAptFuMsod9HFokGNudZpi/oQV73hnVK+sR+5PVRMd+Dr7YQ==}
     engines: {node: '>=12'}
 
-  codeassembly@0.20.0:
-    resolution: {integrity: sha512-NEqRY0h1vThJC3urjDqxxpohL4PkY6fbJOIm3C+EOxiKCPS8wHFIGDxvYiWWszAuGIIww6HKyy1y+D3iNZv3dQ==}
+  codeassembly@0.20.1:
+    resolution: {integrity: sha512-DYM20kKCcv85CKOnVaI9Phz1GDLfDtWsgDJL6I419XgsjQVTVNWCQcUBNFnGiFBQRBpw6XWQUUjF0hNLmDHcuw==}
     engines: {node: '>=24'}
     hasBin: true
     peerDependencies:
@@ -4152,7 +4148,7 @@ snapshots:
 
   '@vitest/spy@5.1.0': {}
 
-  '@williamthorsen/change-grammar@0.3.0': {}
+  '@williamthorsen/change-grammar@0.3.1': {}
 
   '@williamthorsen/change-grammar@0.4.0': {}
 
@@ -4183,16 +4179,6 @@ snapshots:
       - eslint-import-resolver-node
       - supports-color
       - ts-declaration-location
-
-  '@williamthorsen/nmr-core@0.14.0':
-    dependencies:
-      '@williamthorsen/toolbelt.datetime': 4.1.0
-      '@williamthorsen/toolbelt.errors': 0.9.0
-      '@williamthorsen/toolbelt.filesystem': 0.10.0
-      '@williamthorsen/toolbelt.packaging': 0.7.0
-      '@williamthorsen/toolbelt.terminal': 0.3.0
-      diff: 9.0.0
-      yaml: 2.9.1
 
   '@williamthorsen/nmr-core@0.16.0':
     dependencies:
@@ -4471,10 +4457,10 @@ snapshots:
       strip-ansi: 6.0.1
       wrap-ansi: 7.0.0
 
-  codeassembly@0.20.0(esbuild@0.28.2):
+  codeassembly@0.20.1(esbuild@0.28.2):
     dependencies:
-      '@williamthorsen/change-grammar': 0.3.0
-      '@williamthorsen/nmr-core': 0.14.0
+      '@williamthorsen/change-grammar': 0.3.1
+      '@williamthorsen/nmr-core': 0.16.0
       '@williamthorsen/toolbelt.errors': 0.9.0
       '@williamthorsen/toolbelt.terminal': 0.3.0
       yaml: 2.9.1
