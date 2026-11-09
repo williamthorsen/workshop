@@ -1,5 +1,33 @@
 [
   {
+    "version": "0.2.0",
+    "date": "2026-11-09",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Upgrade toolbelt.cli to 0.8.0 (#744)",
+            "body": "Changes every `thor-*` binary to start a usage error with its own name, as `thor-npm: <message>`, in place of `Error: <message>`, and keeps the `Try '… --help'.` line that follows it. The change upgrades `@williamthorsen/toolbelt.cli` to 0.8.0, whose `runCli` prints the new prefix, and changes `thor-chrome`, which reports usage errors through its own renderer, to print the same prefix.",
+            "hash": "7d7ad4ac90f3fe2ed7ee12effc3ee61a03353240"
+          }
+        ]
+      },
+      {
+        "title": "🧪 Tests",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Replaces the real-time sleeps in tests with waits that do not depend on wall time, a `setImmediate` yield in the `runRdy` and `readStreamText` tests and a wait for the stub upstream's close in the `speech-proxy` disconnect test, and disables `sky-pilot/no-real-time-sleep` at the two `chrome-tools` polling loops that wait on a real external process. (#742)",
+            "hash": "f33d3885ffe4a94d9719ee0f93b53f4da3361903",
+            "entry": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.1.0",
     "date": "2026-11-05",
     "sections": [

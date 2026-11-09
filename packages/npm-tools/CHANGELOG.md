@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.0 — 2026-11-09
+
+### 🎉 Features
+
+- Upgrade toolbelt.cli to 0.8.0 (#744)
+
+  Changes every `thor-*` binary to start a usage error with its own name, as `thor-npm: <message>`, in place of `Error: <message>`, and keeps the `Try '… --help'.` line that follows it. The change upgrades `@williamthorsen/toolbelt.cli` to 0.8.0, whose `runCli` prints the new prefix, and changes `thor-chrome`, which reports usage errors through its own renderer, to print the same prefix.
+
+- Adds the `thor-npm list-packages` command, which prints the name, version, directory, and description of each package in the pnpm workspace that contains the working directory, and whether npm can publish it (that is, whether its manifest does not set `private` to `true`), as a table or, with `--json`, as JSON. (#749)
+
+### 📦 Dependencies
+
+- Raises the minimum Node.js version of `@williamthorsen/npm-tools` from 24 to 24.16.0, which the newly added `@williamthorsen/nmr-core` dependency requires. (#749)
+
 ## 0.1.0 — 2026-11-05
 
 ### 🎉 Features

@@ -1,5 +1,84 @@
 [
   {
+    "version": "0.45.1",
+    "date": "2026-11-09",
+    "sections": [
+      {
+        "title": "🐛 Bug fixes",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Fixes the issue that `rdy run` headed a kit that loaded and then failed, as on an unknown checklist name in `rdy run a:missing b`, with \"Kit did not load\" and listed it as `did not load` in the summary table, where it now reads `did not run`. (#727)",
+            "hash": "f84b569006a3656e08b112256220eadfb0c31bb1",
+            "entry": 1
+          },
+          {
+            "description": "Fixes the issue that `rdy` passed a check whose `findings` return was malformed, such as a finding without a boolean `reported`, and makes the runner report that check as an authoring error at `error` severity that names the field and the value received. (#728)",
+            "hash": "990c953c3857b9f734a34172a6325e6ea80f363d",
+            "entry": 1
+          },
+          {
+            "description": "Fixes the issue that `rdy` started its error messages with `Error` rather than with the program name; `rdy` now prints `rdy: <message>`, and `rdy: <directory>: <message>` for a project that fails in a `--recursive` compile or verify sweep. (#746)",
+            "hash": "bda76efdb76a8cc80586f915e9bc707840f6fd54",
+            "entry": 1
+          },
+          {
+            "description": "Fixes the issue that `rdy` printed an unexpected crash in the same form as a handled error and without its stack frames, by printing such a crash as `rdy: internal error: <message>` followed by the stack frames. (#748)",
+            "hash": "8bc58ff8e575af5e84dc37e9ea146635d6f52726",
+            "entry": 1
+          }
+        ]
+      },
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Makes the warning producers in `readyup`'s `src/run` return their warnings as `list*Warnings` functions instead of writing them to stderr, and has `runHumanMode` and `runJsonMode` print those warnings through the new `writeWarnings`. (#726)",
+            "hash": "6a01aaac262894b17911a62b9ecd62cd3bac34c0",
+            "entry": 1
+          },
+          {
+            "description": "Extracts the per-kit run loop shared by human mode and JSON mode into `runKitEntries`, an async generator whose events (`runStarted`, `kitLoaded`, `checklistReported`, `kitFinished`, `kitFailed`, and `runFinished`) both modes render, and moves the orchestration tests from the two mode suites into its own suite. (#729)",
+            "hash": "791dc52e45cd9e652919c7d88ab3b25a1bb48d04",
+            "entry": 1
+          },
+          {
+            "description": "Adds a trailing `dependencies` parameter to `runKitEntries`, `runHumanMode`, `runJsonMode`, and `runCommand`, which defaults to their real collaborators, so that a test can pass fakes instead of mocking modules by path. (#730)",
+            "hash": "7360404c0b483bd5a202df09eb2c2d7e5caf5b83",
+            "entry": 1
+          }
+        ]
+      },
+      {
+        "title": "🧪 Tests",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Replaces the `vi.hoisted` and `vi.mock` scaffolds in the run-loop, run-mode, and `runCommand` suites with fakes built by the new `createRunFakes` helper and passed through that parameter. (#730)",
+            "hash": "7360404c0b483bd5a202df09eb2c2d7e5caf5b83",
+            "entry": 2
+          },
+          {
+            "description": "Moves the advisory and warning-output cases from `runJsonMode.unit.test.ts` to `runJsonMode.advisories.unit.test.ts`, which brings each file under the 500-line limit for a test file. (#730)",
+            "hash": "7360404c0b483bd5a202df09eb2c2d7e5caf5b83",
+            "entry": 3
+          },
+          {
+            "description": "Renames the test helpers in readyup's `src/run/test-utils/` and `src/run/__tests__/` to verb-led names, among them `wrapAsCheck` for `returning`, `wrapAsChecksBuilder` for `buildingReturning`, `wrapAsSkip` for `skipReturning`, and `buildSingleKitEntry` for `singleKitEntry`. (#731)",
+            "hash": "88b5067ed35ee438b70eeed2e02a1bb5642f8715",
+            "entry": 1
+          },
+          {
+            "description": "Replaces the real-time sleeps in tests with waits that do not depend on wall time, a `setImmediate` yield in the `runRdy` and `readStreamText` tests and a wait for the stub upstream's close in the `speech-proxy` disconnect test, and disables `sky-pilot/no-real-time-sleep` at the two `chrome-tools` polling loops that wait on a real external process. (#742)",
+            "hash": "f33d3885ffe4a94d9719ee0f93b53f4da3361903",
+            "entry": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.45.0",
     "date": "2026-11-05",
     "sections": [

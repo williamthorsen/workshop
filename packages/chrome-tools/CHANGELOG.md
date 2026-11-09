@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.3.0 — 2026-11-09
+
+### 🎉 Features
+
+- Changes `thor-chrome` to print a usage error as `thor-chrome: <message>` in place of `Error: <message>`, matching the other `thor-*` binaries. (#744)
+
+### 🧪 Tests
+
+- Replaces the real-time sleeps in tests with waits that do not depend on wall time, a `setImmediate` yield in the `runRdy` and `readStreamText` tests and a wait for the stub upstream's close in the `speech-proxy` disconnect test, and disables `sky-pilot/no-real-time-sleep` at the two `chrome-tools` polling loops that wait on a real external process. (#742)
+
 ## 0.2.0 — 2026-11-08
 
 ### 🎉 Features

@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.0 — 2026-11-09
+
+### 🎉 Features
+
+- Upgrade toolbelt.cli to 0.8.0 (#744)
+
+  Changes every `thor-*` binary to start a usage error with its own name, as `thor-npm: <message>`, in place of `Error: <message>`, and keeps the `Try '… --help'.` line that follows it. The change upgrades `@williamthorsen/toolbelt.cli` to 0.8.0, whose `runCli` prints the new prefix, and changes `thor-chrome`, which reports usage errors through its own renderer, to print the same prefix.
+
 ## 0.1.3 — 2026-10-26
 
 ### 🧪 Tests

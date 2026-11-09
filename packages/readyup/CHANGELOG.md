@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.45.1 — 2026-11-09
+
+### 🐛 Bug fixes
+
+- Fixes the issue that `rdy run` headed a kit that loaded and then failed, as on an unknown checklist name in `rdy run a:missing b`, with "Kit did not load" and listed it as `did not load` in the summary table, where it now reads `did not run`. (#727)
+- Fixes the issue that `rdy` passed a check whose `findings` return was malformed, such as a finding without a boolean `reported`, and makes the runner report that check as an authoring error at `error` severity that names the field and the value received. (#728)
+- Fixes the issue that `rdy` started its error messages with `Error` rather than with the program name; `rdy` now prints `rdy: <message>`, and `rdy: <directory>: <message>` for a project that fails in a `--recursive` compile or verify sweep. (#746)
+- Fixes the issue that `rdy` printed an unexpected crash in the same form as a handled error and without its stack frames, by printing such a crash as `rdy: internal error: <message>` followed by the stack frames. (#748)
+
+### ♻️ Refactoring
+
+- Makes the warning producers in `readyup`'s `src/run` return their warnings as `list*Warnings` functions instead of writing them to stderr, and has `runHumanMode` and `runJsonMode` print those warnings through the new `writeWarnings`. (#726)
+- Extracts the per-kit run loop shared by human mode and JSON mode into `runKitEntries`, an async generator whose events (`runStarted`, `kitLoaded`, `checklistReported`, `kitFinished`, `kitFailed`, and `runFinished`) both modes render, and moves the orchestration tests from the two mode suites into its own suite. (#729)
+- Adds a trailing `dependencies` parameter to `runKitEntries`, `runHumanMode`, `runJsonMode`, and `runCommand`, which defaults to their real collaborators, so that a test can pass fakes instead of mocking modules by path. (#730)
+
+### 🧪 Tests
+
+- Replaces the `vi.hoisted` and `vi.mock` scaffolds in the run-loop, run-mode, and `runCommand` suites with fakes built by the new `createRunFakes` helper and passed through that parameter. (#730)
+- Moves the advisory and warning-output cases from `runJsonMode.unit.test.ts` to `runJsonMode.advisories.unit.test.ts`, which brings each file under the 500-line limit for a test file. (#730)
+- Renames the test helpers in readyup's `src/run/test-utils/` and `src/run/__tests__/` to verb-led names, among them `wrapAsCheck` for `returning`, `wrapAsChecksBuilder` for `buildingReturning`, `wrapAsSkip` for `skipReturning`, and `buildSingleKitEntry` for `singleKitEntry`. (#731)
+- Replaces the real-time sleeps in tests with waits that do not depend on wall time, a `setImmediate` yield in the `runRdy` and `readStreamText` tests and a wait for the stub upstream's close in the `speech-proxy` disconnect test, and disables `sky-pilot/no-real-time-sleep` at the two `chrome-tools` polling loops that wait on a real external process. (#742)
+
 ## 0.45.0 — 2026-11-05
 
 ### 🎉 Features
