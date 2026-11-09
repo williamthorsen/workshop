@@ -89,6 +89,13 @@ describe(`${discoverWorkspaces.name} cwd reconciliation`, () => {
 // region | Helpers
 
 /**
+ * Throws when discovery never called the armed trigger. Such a test leaves the cwd in place and passes vacuously.
+ */
+function assertRepointFired(fsFunction: FsTrigger): void {
+  if (repoint.on === fsFunction) throw new Error(`discovery never called ${fsFunction}`);
+}
+
+/**
  * Discovers workspaces with `process.cwd` repointed at `decoyDir` on the first call to `fsFunction`,
  * restoring it before the caller asserts so that a failure leaves nothing behind for the next test.
  */
@@ -98,8 +105,7 @@ function discoverWithCwdRepointedAt(decoyDir: string, fsFunction: FsTrigger): Wo
   repoint.to = decoyDir;
   try {
     const workspaces = discoverWorkspaces();
-    // A trigger that discovery never calls leaves the cwd in place, and the test would then pass vacuously.
-    if (repoint.on !== undefined) throw new Error(`discovery never called ${fsFunction}`);
+    assertRepointFired(fsFunction);
     return workspaces;
   } finally {
     repoint.on = undefined;
