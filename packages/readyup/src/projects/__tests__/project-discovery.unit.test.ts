@@ -10,6 +10,7 @@ vi.mock(import('node:fs'), async (importOriginal) => {
   return { ...actual, readdirSync: mockReaddirSync };
 });
 
+import type { ReportedWarning } from '../../output/writeWarnings.ts';
 import { useFailingDirectoryRead } from '../../test-utils/useFailingDirectoryRead.ts';
 import { discoverKitProjects, discoverProjects } from '../project-discovery.ts';
 
@@ -178,7 +179,7 @@ describe(discoverKitProjects, () => {
     using _io = captureStdio();
     using _cwd = pointCwdAt(temp.resolve('packages/emptied'));
 
-    const { projects } = await discoverKitProjects();
+    const projects = await discoverKitProjects({}, []);
 
     expect(projects.map((project) => project.dir)).toStrictEqual(['.']);
   });
@@ -217,6 +218,18 @@ describe(discoverKitProjects, () => {
     reads.failReadOf('packages/compiled-only/.readyup/kits', 'EMFILE');
 
     await expect(discover(temp.dir)).rejects.toThrow('read failed: EMFILE');
+  });
+
+  it('keeps the warnings raised before a failure that it rethrows', async ({ reads, temp }) => {
+    using _io = captureStdio();
+    reads.failReadOf('packages/compiled-only/.readyup/kits', 'EACCES');
+    reads.failReadOf('packages/custom/.readyup/kits', 'EMFILE');
+    const warnings: ReportedWarning[] = [];
+
+    await expect(discoverKitProjects({ root: temp.dir }, warnings)).rejects.toThrow('read failed: EMFILE');
+    expect(warnings).toContainEqual({
+      message: `Cannot read ${temp.resolve('packages/compiled-only/.readyup/kits')}. Reading the project without it.`,
+    });
   });
 });
 
@@ -269,7 +282,8 @@ describe(discoverProjects, () => {
 async function discover(root: string) {
   using io = captureStdio();
 
-  const { projects, warnings } = await discoverKitProjects({ root });
+  const warnings: ReportedWarning[] = [];
+  const projects = await discoverKitProjects({ root }, warnings);
 
   return { dirs: projects.map((project) => project.dir), projects, stderr: io.stderr, warnings };
 }

@@ -8,7 +8,7 @@ import { RdyError } from '../errors/RdyError.ts';
 import { writeError } from '../output/writeError.ts';
 import { writeHint } from '../output/writeHint.ts';
 import { writeHuman } from '../output/writeHuman.ts';
-import { writeWarnings } from '../output/writeWarnings.ts';
+import { type ReportedWarning, writeWarnings } from '../output/writeWarnings.ts';
 import { discoverKitProjects, type Project } from '../projects/project-discovery.ts';
 import type { RaisedWarning } from '../schemas/common.ts';
 import type {
@@ -29,8 +29,14 @@ import { compileProject } from './compileProject.ts';
 export async function compileRecursive(args: CompileRecursiveArgs): Promise<number> {
   const { shouldForce, shouldSkipManifest, isJson } = args;
   const root = process.cwd();
-  const { projects, warnings: discoveryWarnings } = await discoverKitProjects({ root });
-  writeWarnings(discoveryWarnings);
+  const discoveryWarnings: ReportedWarning[] = [];
+  let projects: Project[];
+  try {
+    projects = await discoverKitProjects({ root }, discoveryWarnings);
+  } finally {
+    // Write the warnings raised before a failure too, so that they precede its error.
+    writeWarnings(discoveryWarnings);
+  }
 
   if (projects.length === 0) {
     writeHuman('No kit projects found.\n', isJson);

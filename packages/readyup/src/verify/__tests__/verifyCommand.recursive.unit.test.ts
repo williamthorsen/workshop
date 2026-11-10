@@ -2,10 +2,19 @@ import path from 'node:path';
 
 import { captureError, captureStdio, createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
-import { describe, expect, it as baseIt } from 'vitest';
+import { describe, expect, it as baseIt, vi } from 'vitest';
+
+const mockReaddirSync = vi.hoisted(() => vi.fn());
+
+// Intercept only directory reads; the fixture still writes the temporary tree to disk.
+vi.mock(import('node:fs'), async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...actual, readdirSync: mockReaddirSync };
+});
 
 import { RdyError } from '../../errors/RdyError.ts';
 import { VerifyOutputSchema } from '../../schemas/verifyOutputSchema.ts';
+import { useFailingDirectoryRead } from '../../test-utils/useFailingDirectoryRead.ts';
 import { hashBytes } from '../targetHash.ts';
 import { verifyCommand } from '../verifyCommand.ts';
 
@@ -72,13 +81,27 @@ const FIXTURE_TREE = {
   // -- A repository containing no kit project --
 
   'empty/package.json': JSON.stringify({ name: 'empty' }),
+
+  // -- A repository whose first kit project's kit directory cannot be read --
+
+  'unreadable/package.json': JSON.stringify({ name: 'unreadable' }),
+  'unreadable/packages/blocked/package.json': JSON.stringify({ name: 'blocked' }),
+  'unreadable/packages/blocked/.readyup/kits/demo.js': 'export default {};',
+  'unreadable/packages/later/package.json': JSON.stringify({ name: 'later' }),
+  'unreadable/packages/later/.readyup/kits/demo.js': 'export default {};',
 };
 
+/** The warning of the unreadable kit directory in the `unreadable` repository. */
+const UNREADABLE_DIR_WARNING =
+  /^Warning: Cannot read \S+\/packages\/blocked\/\.readyup\/kits\. Reading the project without it\.$/m;
+
 describe('verify --recursive', () => {
-  const it = baseIt.extend(
-    'temp',
-    makeFixture(() => createTempTree(FIXTURE_TREE, { prefix: 'rdy-verify-recursive-' })),
-  );
+  const it = baseIt
+    .extend(
+      'temp',
+      makeFixture(() => createTempTree(FIXTURE_TREE, { prefix: 'rdy-verify-recursive-' })),
+    )
+    .extend('reads', { auto: true }, ({ temp }) => useFailingDirectoryRead(mockReaddirSync, temp.dir));
 
   describe('a repository whose every project passes', () => {
     it.aroundEach(async (runTest, { temp }) => {
@@ -198,6 +221,32 @@ describe('verify --recursive', () => {
       expect(payload.uncompiled).toStrictEqual([
         { name: 'extra', project: 'packages/partial', source: path.join('kits', 'extra.ts') },
       ]);
+    });
+  });
+
+  describe('a repository containing a directory that discovery cannot read', () => {
+    it.aroundEach(async (runTest, { temp }) => {
+      using _cwd = pointCwdAt(temp.resolve('unreadable'));
+
+      await runTest();
+    });
+
+    it('warns of the directory and sweeps on without it', async ({ reads }) => {
+      reads.failReadOf('unreadable/packages/blocked/.readyup/kits', 'EACCES');
+
+      const { stderr, stdout } = await verify(['--recursive']);
+
+      expect(stderr).toMatch(UNREADABLE_DIR_WARNING);
+      expect(stdout).toContain('packages/later');
+    });
+
+    it('writes the warning ahead of a failure that ends the sweep', async ({ reads }) => {
+      reads.failReadOf('unreadable/packages/blocked/.readyup/kits', 'EACCES');
+      reads.failReadOf('unreadable/packages/later/.readyup/kits', 'EMFILE');
+      using io = captureStdio();
+
+      await expect(verifyCommand(['--recursive'])).rejects.toThrow('read failed: EMFILE');
+      expect(io.stderr).toMatch(UNREADABLE_DIR_WARNING);
     });
   });
 

@@ -33,12 +33,6 @@ export interface Project {
   manifestPath: string;
 }
 
-/** The kit projects found by a sweep, with a warning for each directory that it could not read. */
-export interface KitProjectDiscovery {
-  projects: Project[];
-  warnings: ReportedWarning[];
-}
-
 /** Options for the sweeps below. */
 export interface DiscoverProjectsOptions {
   /** Directory from which the sweep descends. */
@@ -46,8 +40,8 @@ export interface DiscoverProjectsOptions {
 }
 
 /**
- * Returns the kit projects in the tree below `root`, each resolved under its own config, root-first, with a warning
- * for each directory that the sweep could not read and went on without.
+ * Returns the kit projects in the tree below `root`, each resolved under its own config, root-first, adding to
+ * `warnings` a warning for each directory that the sweep could not read and went on without.
  *
  * A candidate counts as a kit project when it has TypeScript kit sources in its `compile.srcDir`, or
  * compiled kits in its `compile.outDir`, or a manifest. The three are alternatives because they name
@@ -58,18 +52,21 @@ export interface DiscoverProjectsOptions {
  * A candidate whose config cannot be evaluated counts as well. Its directories are unknown, so the
  * defaults cannot show whether it contains kits, and a caller that must not act on those defaults still
  * has to learn that the project is there.
+ *
+ * The caller owns `warnings`, so the warnings raised before a failure that the sweep rethrows reach the caller too.
  */
-export async function discoverKitProjects(options: DiscoverProjectsOptions = {}): Promise<KitProjectDiscovery> {
+export async function discoverKitProjects(
+  options: DiscoverProjectsOptions,
+  warnings: ReportedWarning[],
+): Promise<Project[]> {
   const projects = await discoverProjects(options);
 
-  const warnings: ReportedWarning[] = [];
-  const kitProjects = projects.filter(
+  return projects.filter(
     (project) =>
       hasReadyupFootprint(project.absolutePath) &&
       (project.configError !== undefined ||
         holdsKits(project.absolutePath, project.config, project.manifestPath, warnings)),
   );
-  return { projects: kitProjects, warnings };
 }
 
 /**

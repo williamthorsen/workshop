@@ -29,8 +29,7 @@ import { buildSourceKitEntry } from './source-kit-entries.ts';
  */
 export async function runRecursiveMode(showChecks: boolean, warnings: ReportedWarning[]): Promise<ListResult> {
   const root = process.cwd();
-  const { projects, warnings: discoveryWarnings } = await discoverKitProjects({ root });
-  warnings.push(...discoveryWarnings);
+  const projects = await discoverKitProjects({ root }, warnings);
   warnOfDefaultedConfigs(projects, warnings);
 
   const views: RecursiveProjectView[] = [];

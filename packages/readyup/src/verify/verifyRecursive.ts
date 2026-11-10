@@ -9,7 +9,7 @@ import { RdyError } from '../errors/RdyError.ts';
 import type { RdyManifest } from '../manifest/manifestSchema.ts';
 import { writeError } from '../output/writeError.ts';
 import { writeHuman } from '../output/writeHuman.ts';
-import { writeWarnings } from '../output/writeWarnings.ts';
+import { type ReportedWarning, writeWarnings } from '../output/writeWarnings.ts';
 import { discoverKitProjects, type Project } from '../projects/project-discovery.ts';
 import type {
   JsonVerifyKitEntry,
@@ -44,8 +44,14 @@ export async function verifyRecursive(
 ): Promise<number> {
   const { rebuild, json } = args;
   const root = process.cwd();
-  const { projects, warnings: discoveryWarnings } = await discoverKitProjects({ root });
-  writeWarnings(discoveryWarnings);
+  const discoveryWarnings: ReportedWarning[] = [];
+  let projects: Project[];
+  try {
+    projects = await discoverKitProjects({ root }, discoveryWarnings);
+  } finally {
+    // Write the warnings raised before a failure too, so that they precede its error.
+    writeWarnings(discoveryWarnings);
+  }
 
   if (projects.length === 0) {
     writeHuman('No kit projects found.\n', json);
