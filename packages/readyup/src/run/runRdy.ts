@@ -1,5 +1,3 @@
-import { performance } from 'node:perf_hooks';
-
 import { withSweepRecorder } from '../check-utils/project/sweepRecorder.ts';
 import type { KitProvenance } from '../kits/KitProvenance.ts';
 import {
