@@ -417,13 +417,16 @@ ${violations.map((violation) => `- ${violation}`).join("\n")}`);
     return Object.fromEntries(entries);
   }
 
-  // ../../node_modules/.pnpm/ansi-regex@6.5.0/node_modules/ansi-regex/index.js
+  // ../../node_modules/.pnpm/ansi-regex@6.6.0/node_modules/ansi-regex/index.js
+  var ST = String.raw`(?:\u001B\u005C|\u009C)`;
+  var stringControls = String.raw`\u0018\u001A\u001B\u0080-\u009F`;
+  var osc = String.raw`(?:\u001B\]|\u009D)[^\u0007${stringControls}]*(?:\u0007|${ST})`;
+  var controlString = String.raw`(?:\u001B[PX^_k]|[\u0090\u0098\u009E\u009F])[^${stringControls}]*${ST}`;
+  var linuxPalette = String.raw`\u001B\](?:P[\dA-Fa-f]{7}|R)(?:\u0007|${ST})?`;
+  var csi = String.raw`(?:\u001B\[|\u009B)[\u0030-\u003F]*[\u0020-\u002F]*[\u0040-\u007E]`;
+  var escape = String.raw`\u001B(?:[\u0020-\u002F]+[\u0030-\u007E]|[\dA-PR-TZcf-oq-uy=><~|}])`;
+  var pattern = `${linuxPalette}|${osc}|${controlString}|${csi}|${escape}`;
   function ansiRegex({ onlyFirst = false } = {}) {
-    const ST = String.raw`(?:\u0007|\u001B\u005C|\u009C)`;
-    const osc = String.raw`(?:(?:\u001B\]|\u009D)[^\u0007\u001B\u009C\u009D]*${ST})`;
-    const csi = String.raw`[\u001B\u009B][[\]()#;?]*(?:\d{1,4}(?:[;:]\d{0,4})*)?[A-PR-TZcf-nq-uy=><~]`;
-    const csiPrivate = String.raw`(?:\u001B\[|\u009B)[<=>][0-9;:]*[A-PR-TZcf-nq-uy~]`;
-    const pattern = `${osc}|${csiPrivate}|${csi}`;
     return new RegExp(pattern, onlyFirst ? void 0 : "g");
   }
 
@@ -952,7 +955,7 @@ ${violations.map((violation) => `- ${violation}`).join("\n")}`);
     return `${style.open}${text}${style.close}`;
   }
 
-  // ../../node_modules/.pnpm/@williamthorsen+toolbelt.strings@8.2.1/node_modules/@williamthorsen/toolbelt.strings/dist/esm/4-release/pluralize.js
+  // ../../node_modules/.pnpm/@williamthorsen+toolbelt.strings@8.2.2/node_modules/@williamthorsen/toolbelt.strings/dist/esm/4-release/pluralize.js
   function pluralize(count, singular, plural = `${singular}s`) {
     return Math.abs(count) === 1 ? singular : plural;
   }
