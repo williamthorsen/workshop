@@ -1,8 +1,6 @@
-import { parseArgs as nodeParseArgs } from 'node:util';
-
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
-import { translateParseArgsError } from '../errors/parse-args-error.ts';
+import { parseSubcommandArgs } from '../bin/parseSubcommandArgs.ts';
 import { usageError } from '../errors/RdyError.ts';
 import { assertRelativeKitName } from '../kits/assertRelativeKitName.ts';
 import type { Severity } from '../kits/types.ts';
@@ -58,8 +56,6 @@ const runOptions = {
   quiet: { type: 'boolean' },
   'report-on': { type: 'string' },
   sources: { type: 'boolean' },
-  // Declared so that strict parsing accepts it; `routeCommand` consumed its value before dispatch.
-  style: { type: 'string' },
   url: { type: 'string' },
 } as const;
 
@@ -80,15 +76,12 @@ const flagErrorHints: Record<string, string> = {
 
 /** Parses run-subcommand flags into a structured object. */
 export function parseRunArgs(flags: string[]): ParsedRunArgs {
-  const { values, positionals } = parseRunFlags(flags);
-
-  // parseArgs accepts `--flag=` as an empty string; the CLI treats an empty value as missing.
-  for (const [name, value] of Object.entries(values)) {
-    if (value === '') {
-      const flag = `--${name}`;
-      throw usageError(flagErrorHints[flag] ?? `${flag} requires a value`);
-    }
-  }
+  const { values, positionals } = parseSubcommandArgs({
+    args: flags,
+    command: 'run',
+    hints: flagErrorHints,
+    options: runOptions,
+  });
 
   const parsed = {
     all: values.all === true,
@@ -161,15 +154,6 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
 function parseDetailFlag(value: string): JsonDetail {
   if (value === 'full' || value === 'summary') return value;
   throw usageError(`--detail must be one of: summary, full (got "${value}")`);
-}
-
-/** Tokenizes run-subcommand flags via node:util.parseArgs, translating parse errors into domain-specific messages. */
-function parseRunFlags(flags: string[]) {
-  try {
-    return nodeParseArgs({ args: flags, options: runOptions, strict: true, allowPositionals: true });
-  } catch (error: unknown) {
-    throw usageError(translateParseArgsError(error, 'run', flagErrorHints), { cause: error });
-  }
 }
 
 /** Validates and narrows a string to a Severity value. */

@@ -1,7 +1,5 @@
-import { parseArgs as nodeParseArgs } from 'node:util';
-
 import { EXIT_OK } from '../bin/exitCodes.ts';
-import { translateParseArgsError } from '../errors/parse-args-error.ts';
+import { parseSubcommandArgs } from '../bin/parseSubcommandArgs.ts';
 import { usageError } from '../errors/RdyError.ts';
 import { getStyle, getWidth } from '../layout/engine.ts';
 import { writeHuman } from '../output/writeHuman.ts';
@@ -23,17 +21,11 @@ export const HELP_FLAGS = new Set(['--help', '-h']);
 export function helpCommand(flags: string[], json: boolean): number {
   const helpOptions = {
     help: { type: 'boolean', short: 'h' },
-    // Declared so that strict parsing accepts them; `routeCommand` read both before dispatch.
+    // Declared so that strict parsing accepts it; `routeCommand` read it before dispatch.
     json: { type: 'boolean' },
-    style: { type: 'string' },
   } as const;
 
-  let parsed;
-  try {
-    parsed = nodeParseArgs({ args: flags, options: helpOptions, strict: true, allowPositionals: true });
-  } catch (error: unknown) {
-    throw usageError(translateParseArgsError(error, 'help'), { cause: error });
-  }
+  const parsed = parseSubcommandArgs({ args: flags, command: 'help', options: helpOptions });
 
   const [subject, ...extra] = parsed.positionals;
   if (extra.length > 0) throw usageError('Usage: rdy help [<command|topic>]');

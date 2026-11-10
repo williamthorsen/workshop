@@ -133,6 +133,13 @@ describe('rdy help', () => {
     expect(stderr).toContain('Usage: rdy help [<command|topic>]');
   });
 
+  it('rejects an empty --style', async () => {
+    const { exitCode, stderr } = await route(['help', '--style=']);
+
+    expect(exitCode).toBe(2);
+    expect(stderr).toContain('--style requires a value');
+  });
+
   it('diverts topic output to stderr under --json, leaving stdout to the JSON document', async () => {
     const { exitCode, stdout, stderr } = await route(['help', 'concepts', '--json']);
 
