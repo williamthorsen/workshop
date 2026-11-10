@@ -8,6 +8,7 @@ import { RdyError } from '../errors/RdyError.ts';
 import { writeError } from '../output/writeError.ts';
 import { writeHint } from '../output/writeHint.ts';
 import { writeHuman } from '../output/writeHuman.ts';
+import { writeWarnings } from '../output/writeWarnings.ts';
 import { discoverKitProjects, type Project } from '../projects/project-discovery.ts';
 import type { RaisedWarning } from '../schemas/common.ts';
 import type {
@@ -28,7 +29,8 @@ import { compileProject } from './compileProject.ts';
 export async function compileRecursive(args: CompileRecursiveArgs): Promise<number> {
   const { shouldForce, shouldSkipManifest, isJson } = args;
   const root = process.cwd();
-  const projects = await discoverKitProjects({ root });
+  const { projects, warnings: discoveryWarnings } = await discoverKitProjects({ root });
+  writeWarnings(discoveryWarnings);
 
   if (projects.length === 0) {
     writeHuman('No kit projects found.\n', isJson);

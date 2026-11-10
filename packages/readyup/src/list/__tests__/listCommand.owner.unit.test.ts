@@ -372,6 +372,31 @@ describe(listCommand, () => {
       expect(error.message).toContain('permission denied');
     });
 
+    it('writes a warning raised before the listing fails, ahead of the error', async () => {
+      mockLoadConfig.mockRejectedValue(new Error('bad config'));
+      mockCollectSourceKitNames.mockImplementation(() => {
+        throw Object.assign(new Error('permission denied'), { code: 'EACCES' });
+      });
+
+      const { error, stderr, stdout } = await listRaising([]);
+
+      expect(error.code).toBe('config');
+      expect(stderr).toBe('Warning: bad config. Listing with default settings.\n');
+      expect(stdout).toBe('');
+    });
+
+    it('writes the warnings and then the view to stderr under --json, leaving stdout to the document', async () => {
+      mockLoadConfig.mockRejectedValue(new Error('bad config'));
+      mockCollectSourceKitNames.mockReturnValue(['default']);
+
+      const { stderrChunks, stdoutChunks } = await list(['--json']);
+
+      expect(stderrChunks[0]).toBe('Warning: bad config. Listing with default settings.\n');
+      expect(stderrChunks.slice(1).join('')).toContain('default');
+      expect(stdoutChunks).toHaveLength(1);
+      expect(ListOutputSchema.parse(JSON.parse(stdoutChunks[0] ?? ''))).toMatchObject({ kits: [{ name: 'default' }] });
+    });
+
     it('renders Uncompiled without Compiled when neither a manifest nor a bundle exists', async () => {
       mockCollectSourceKitNames.mockReturnValue(['default']);
       mockReadManifest.mockImplementation(() => {

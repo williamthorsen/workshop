@@ -8,6 +8,7 @@ import { READYUP_DIR } from '../kits/kitsDir.ts';
 import type { ResolvedRdyConfig } from '../kits/types.ts';
 import { enumerateKits } from '../list/enumerateKits.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
+import type { ReportedWarning } from '../output/writeWarnings.ts';
 import { isSkippableFilesystemError } from '../portable/isSkippableFilesystemError.ts';
 import { toError } from '../portable/toError.ts';
 import { walkDirectories } from '../portable/walkDirectories.ts';
@@ -32,6 +33,12 @@ export interface Project {
   manifestPath: string;
 }
 
+/** The kit projects found by a sweep, with a warning for each directory that it could not read. */
+export interface KitProjectDiscovery {
+  projects: Project[];
+  warnings: ReportedWarning[];
+}
+
 /** Options for the sweeps below. */
 export interface DiscoverProjectsOptions {
   /** Directory from which the sweep descends. */
@@ -39,7 +46,8 @@ export interface DiscoverProjectsOptions {
 }
 
 /**
- * Returns the kit projects in the tree below `root`, each resolved under its own config, root-first.
+ * Returns the kit projects in the tree below `root`, each resolved under its own config, root-first, with a warning
+ * for each directory that the sweep could not read and went on without.
  *
  * A candidate counts as a kit project when it has TypeScript kit sources in its `compile.srcDir`, or
  * compiled kits in its `compile.outDir`, or a manifest. The three are alternatives because they name
@@ -51,14 +59,17 @@ export interface DiscoverProjectsOptions {
  * defaults cannot show whether it contains kits, and a caller that must not act on those defaults still
  * has to learn that the project is there.
  */
-export async function discoverKitProjects(options: DiscoverProjectsOptions = {}): Promise<Project[]> {
+export async function discoverKitProjects(options: DiscoverProjectsOptions = {}): Promise<KitProjectDiscovery> {
   const projects = await discoverProjects(options);
 
-  return projects.filter(
+  const warnings: ReportedWarning[] = [];
+  const kitProjects = projects.filter(
     (project) =>
       hasReadyupFootprint(project.absolutePath) &&
-      (project.configError !== undefined || holdsKits(project.absolutePath, project.config, project.manifestPath)),
+      (project.configError !== undefined ||
+        holdsKits(project.absolutePath, project.config, project.manifestPath, warnings)),
   );
+  return { projects: kitProjects, warnings };
 }
 
 /**
@@ -88,23 +99,23 @@ export async function discoverProjects(options: DiscoverProjectsOptions = {}): P
 // region | Helpers
 
 /** Reports whether a project's `compile.outDir` contains at least one compiled kit. */
-function hasCompiledKits(absolutePath: string, config: ResolvedRdyConfig): boolean {
+function hasCompiledKits(absolutePath: string, config: ResolvedRdyConfig, warnings: ReportedWarning[]): boolean {
   const outDir = path.resolve(absolutePath, config.compile.outDir);
   try {
     return enumerateKits({ dir: outDir, extension: '.js', recursive: true }).length > 0;
   } catch (error: unknown) {
-    return skipUnreadableDir(outDir, error);
+    return skipUnreadableDir(outDir, error, warnings);
   }
 }
 
 /** Reports whether a project's `compile.srcDir` contains at least one TypeScript kit source. */
-function hasKitSources(absolutePath: string, config: ResolvedRdyConfig): boolean {
+function hasKitSources(absolutePath: string, config: ResolvedRdyConfig, warnings: ReportedWarning[]): boolean {
   const srcDir = path.resolve(absolutePath, config.compile.srcDir);
   if (!existsSync(srcDir)) return false;
   try {
     return collectSourceFiles(srcDir, config.compile).length > 0;
   } catch (error: unknown) {
-    return skipUnreadableDir(srcDir, error);
+    return skipUnreadableDir(srcDir, error, warnings);
   }
 }
 
@@ -126,8 +137,17 @@ function hasReadyupFootprint(absolutePath: string): boolean {
  *
  * The manifest is one stat, the compiled kits one directory read, and the sources a recursive walk.
  */
-function holdsKits(absolutePath: string, config: ResolvedRdyConfig, manifestPath: string): boolean {
-  return existsSync(manifestPath) || hasCompiledKits(absolutePath, config) || hasKitSources(absolutePath, config);
+function holdsKits(
+  absolutePath: string,
+  config: ResolvedRdyConfig,
+  manifestPath: string,
+  warnings: ReportedWarning[],
+): boolean {
+  return (
+    existsSync(manifestPath) ||
+    hasCompiledKits(absolutePath, config, warnings) ||
+    hasKitSources(absolutePath, config, warnings)
+  );
 }
 
 /** The settings read for one project, with the failure that caused a fallback to the defaults. */
@@ -151,10 +171,13 @@ async function readProjectConfig(absolutePath: string): Promise<ProjectConfigRea
   }
 }
 
-/** Returns `false` for a directory that the sweep cannot read, rethrowing a failure that it cannot skip past. */
-function skipUnreadableDir(dir: string, error: unknown): false {
+/**
+ * Returns `false` for a directory that the sweep cannot read, adding a warning for it, and rethrows a failure that
+ * it cannot skip past.
+ */
+function skipUnreadableDir(dir: string, error: unknown, warnings: ReportedWarning[]): false {
   if (!isSkippableFilesystemError(error)) throw error;
-  process.stderr.write(`Warning: Cannot read ${dir}. Reading the project without it.\n`);
+  warnings.push({ message: `Cannot read ${dir}. Reading the project without it.` });
   return false;
 }
 

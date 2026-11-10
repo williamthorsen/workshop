@@ -3,7 +3,7 @@ import process from 'node:process';
 
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
-import { writeHuman } from '../output/writeHuman.ts';
+import type { ReportedWarning } from '../output/writeWarnings.ts';
 import { isSkippableFilesystemError } from '../portable/isSkippableFilesystemError.ts';
 import { discoverKitProjects, discoverProjects, type Project } from '../projects/project-discovery.ts';
 import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
@@ -17,7 +17,7 @@ import {
   type RecursiveProjectView,
   resolveCompiledStyle,
 } from './formatList.ts';
-import { finishList, type ListOutputOptions, warnOfUnreadableManifest } from './list-output.ts';
+import type { ListResult } from './list-output.ts';
 import { buildSourceKitEntry } from './source-kit-entries.ts';
 
 /**
@@ -27,16 +27,17 @@ import { buildSourceKitEntry } from './source-kit-entries.ts';
  * `--internal` reject every source flag, and a configured package's kits belong to the dependency axis.
  * What is left is exactly the set that a reader can run from the working directory.
  */
-export async function runRecursiveMode(output: ListOutputOptions): Promise<number> {
+export async function runRecursiveMode(showChecks: boolean, warnings: ReportedWarning[]): Promise<ListResult> {
   const root = process.cwd();
-  const projects = await discoverKitProjects({ root });
-  warnOfDefaultedConfigs(projects);
+  const { projects, warnings: discoveryWarnings } = await discoverKitProjects({ root });
+  warnings.push(...discoveryWarnings);
+  warnOfDefaultedConfigs(projects, warnings);
 
   const views: RecursiveProjectView[] = [];
   const entries: JsonListKitEntry[] = [];
 
   for (const project of projects) {
-    const kits = collectProjectKits(project);
+    const kits = collectProjectKits(project, warnings);
     views.push({
       dir: project.dir,
       compiledKits: kits.map(({ name, description, checklists, checklistChecks }) => ({
@@ -50,9 +51,7 @@ export async function runRecursiveMode(output: ListOutputOptions): Promise<numbe
     entries.push(...kits);
   }
 
-  writeHuman(formatRecursiveView({ projects: views, showChecks: output.showChecks }) + '\n', output.json);
-
-  return finishList(entries, output);
+  return { view: formatRecursiveView({ projects: views, showChecks }), kits: entries };
 }
 
 /**
@@ -66,19 +65,24 @@ export async function runRecursiveMode(output: ListOutputOptions): Promise<numbe
  * another does not is reported as configured only for the workspace that configures it. A repository that several
  * projects name, and that cannot be fetched, is warned of once per project naming it.
  */
-export async function runRecursiveSourcesMode(output: ListOutputOptions, remote: RemoteFetchContext): Promise<number> {
+export async function runRecursiveSourcesMode(
+  showChecks: boolean,
+  remote: RemoteFetchContext,
+  warnings: ReportedWarning[],
+): Promise<ListResult> {
   const projects = await discoverProjects({ root: process.cwd() });
-  warnOfDefaultedConfigs(projects);
+  warnOfDefaultedConfigs(projects, warnings);
 
   const views: ProjectSourcesView[] = [];
   const entries: JsonListKitEntry[] = [];
 
   for (const project of projects) {
-    const groups = await collectSourceGroups({
+    const { groups, warnings: sourceWarnings } = await collectSourceGroups({
       configuredSources: project.config.sources,
       fromDir: project.absolutePath,
       remote,
     });
+    warnings.push(...sourceWarnings);
 
     views.push({ dir: project.dir, groups });
     entries.push(
@@ -86,46 +90,47 @@ export async function runRecursiveSourcesMode(output: ListOutputOptions, remote:
     );
   }
 
-  writeHuman(formatRecursiveSourcesView({ projects: views, showChecks: output.showChecks }) + '\n', output.json);
-
-  return finishList(entries, output);
+  return { view: formatRecursiveSourcesView({ projects: views, showChecks }), kits: entries };
 }
 
 // region | Helpers
 
 /**
- * Reads one project's compiled kits for a repo-wide listing.
+ * Reads one project's compiled kits for a repo-wide listing, adding a warning for each part that it skips.
  *
  * For a project whose manifest nobody can read, the listing omits the descriptions but keeps the kits: The kits
  * themselves are still on disk. A project whose output directory cannot be read is omitted, and the sweep moves on.
  */
-function collectProjectKits(project: Project): JsonListKitEntry[] {
+function collectProjectKits(project: Project, warnings: ReportedWarning[]): JsonListKitEntry[] {
   const outDir = path.resolve(project.absolutePath, project.config.compile.outDir);
 
   try {
     return collectCompiledKits({
       manifestPath: project.manifestPath,
-      onUnreadableManifest: warnOfUnreadableManifest,
+      onUnreadableManifest: (error) => {
+        warnings.push({ message: describeError(error) });
+      },
       outDir,
       project: project.dir,
     });
   } catch (error: unknown) {
     if (!isSkippableFilesystemError(error)) throw error;
-    process.stderr.write(`Warning: Cannot read ${outDir}. Omitting ${project.dir} from the listing.\n`);
+    warnings.push({ message: `Cannot read ${outDir}. Omitting ${project.dir} from the listing.` });
     return [];
   }
 }
 
 /**
- * Warns of each swept project whose config could not be evaluated, which the listing reads with default settings.
+ * Adds a warning for each swept project whose config could not be evaluated, which the listing reads with default
+ * settings.
  *
  * Listing is read-only, so it takes the same warn-and-continue that `loadListingConfig` takes for the working directory.
  */
-function warnOfDefaultedConfigs(projects: Project[]): void {
+function warnOfDefaultedConfigs(projects: Project[], warnings: ReportedWarning[]): void {
   for (const { configError, dir } of projects) {
     if (configError === undefined) continue;
     const detail = describeError(configError).replace(/\.$/, '');
-    process.stderr.write(`Warning: ${detail}. Reading ${dir} with default settings.\n`);
+    warnings.push({ message: `${detail}. Reading ${dir} with default settings.` });
   }
 }
 

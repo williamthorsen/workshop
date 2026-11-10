@@ -5,6 +5,7 @@ import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { getLayout } from '../layout/engine.ts';
 import { SEGMENT_SEPARATOR } from '../layout/layoutEngine.ts';
+import type { ReportedWarning } from '../output/writeWarnings.ts';
 import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
 import type { JsonListKitEntry } from '../schemas/listOutputSchema.ts';
 import { expandConfiguredSource, type SourceKit } from '../sources/expandConfiguredSources.ts';
@@ -45,7 +46,8 @@ export function buildSourceKitEntry(kit: SourceKit, configured: boolean, project
 }
 
 /**
- * Collects the kits published by the configured sources, tolerating one that cannot be expanded.
+ * Collects the kits published by the configured sources, returning a warning in source order for each one that cannot
+ * be expanded.
  *
  * `run` fails hard on the same configuration, because it would otherwise execute against a source set that
  * nobody chose. Listing is read-only, so it takes the warn-and-continue that the corrupt-manifest path above
@@ -54,18 +56,17 @@ export function buildSourceKitEntry(kit: SourceKit, configured: boolean, project
 export async function collectConfiguredSourceKits(
   sources: readonly ConfiguredSource[],
   remote: RemoteFetchContext,
-): Promise<SourceKit[]> {
-  const expanded = await Promise.all(
-    sources.map(async (configured) => {
+): Promise<{ kits: SourceKit[]; warnings: ReportedWarning[] }> {
+  const slots = await Promise.all(
+    sources.map(async (configured): Promise<{ kits: SourceKit[]; warnings: ReportedWarning[] }> => {
       try {
-        return await expandConfiguredSource(configured, '.js', remote);
+        return { kits: await expandConfiguredSource(configured, '.js', remote), warnings: [] };
       } catch (error: unknown) {
-        process.stderr.write(`Warning: ${describeError(error)}\n`);
-        return [];
+        return { kits: [], warnings: [{ message: describeError(error) }] };
       }
     }),
   );
-  return expanded.flat();
+  return { kits: slots.flatMap(({ kits }) => kits), warnings: slots.flatMap(({ warnings }) => warnings) };
 }
 
 /**

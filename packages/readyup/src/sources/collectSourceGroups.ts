@@ -3,6 +3,7 @@ import process from 'node:process';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { discoverKitPackages } from '../check-utils/discoverKitPackages.ts';
+import type { ReportedWarning } from '../output/writeWarnings.ts';
 import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
 import { expandConfiguredSource, type SourceKit } from './expandConfiguredSources.ts';
 import { type ConfiguredSource, parseConfiguredSource } from './parseConfiguredSource.ts';
@@ -17,6 +18,12 @@ export interface SourceGroup {
   version: string | undefined;
   configured: boolean;
   kits: SourceKit[];
+}
+
+/** The source groups available to a project, with a warning for each source that could not be expanded. */
+export interface SourceGroupCollection {
+  groups: SourceGroup[];
+  warnings: ReportedWarning[];
 }
 
 interface SourceGroupOptions {
@@ -37,15 +44,15 @@ interface SourceGroupOptions {
  * Configured membership is passed as an argument rather than read here, which leaves the result a
  * function of a directory and a list: A caller sweeping a repository already has each project's config.
  *
- * A source that cannot be expanded is reported in a warning and omitted, matching the warn-and-continue behavior
- * that listing already follows elsewhere. Because listing is read-only, a broken source loses only its own group,
- * not the whole listing.
+ * A source that cannot be expanded is omitted, and a warning for it is returned in source order, matching the
+ * warn-and-continue behavior that listing already follows elsewhere. Because listing is read-only, a broken source
+ * loses only its own group, not the whole listing.
  */
 export async function collectSourceGroups({
   configuredSources,
   fromDir = process.cwd(),
   remote,
-}: SourceGroupOptions): Promise<SourceGroup[]> {
+}: SourceGroupOptions): Promise<SourceGroupCollection> {
   const configuredPackages = new Set<string>();
   const repositories: ConfiguredSource[] = [];
   for (const configured of configuredSources) {
@@ -57,17 +64,20 @@ export async function collectSourceGroups({
   }
 
   const packageNames = [...new Set([...discoverKitPackages(fromDir), ...configuredPackages])].toSorted();
-  const packageGroups = packageNames.map(async (packageName) => {
-    const kits = await expandOrWarn(parseConfiguredSource(`npm:${packageName}`), remote, fromDir);
-    return buildGroup('package', packageName, configuredPackages.has(packageName), kits);
+  const packageSlots = packageNames.map(async (packageName) => {
+    const { kits, warnings } = await expandOrSkip(parseConfiguredSource(`npm:${packageName}`), remote, fromDir);
+    return { group: buildGroup('package', packageName, configuredPackages.has(packageName), kits), warnings };
   });
-  const repositoryGroups = repositories.map(async (configured) => {
-    const kits = await expandOrWarn(configured, remote, fromDir);
-    return buildGroup('repository', configured.spelling, true, kits);
+  const repositorySlots = repositories.map(async (configured) => {
+    const { kits, warnings } = await expandOrSkip(configured, remote, fromDir);
+    return { group: buildGroup('repository', configured.spelling, true, kits), warnings };
   });
 
-  const groups = await Promise.all([...packageGroups, ...repositoryGroups]);
-  return groups.filter((group) => group !== undefined);
+  const slots = await Promise.all([...packageSlots, ...repositorySlots]);
+  return {
+    groups: slots.map(({ group }) => group).filter((group) => group !== undefined),
+    warnings: slots.flatMap(({ warnings }) => warnings),
+  };
 }
 
 // region | Helpers
@@ -86,17 +96,16 @@ function buildGroup(
   return { kind, source: first.source, name, version: first.version, configured, kits };
 }
 
-/** Expands one source into the kits that it publishes, reporting one that cannot be read and omitting it. */
-async function expandOrWarn(
+/** Expands one source into the kits that it publishes, or into a warning when the source cannot be read. */
+async function expandOrSkip(
   configured: ConfiguredSource,
   remote: RemoteFetchContext,
   fromDir: string,
-): Promise<SourceKit[]> {
+): Promise<{ kits: SourceKit[]; warnings: ReportedWarning[] }> {
   try {
-    return await expandConfiguredSource(configured, '.js', remote, fromDir);
+    return { kits: await expandConfiguredSource(configured, '.js', remote, fromDir), warnings: [] };
   } catch (error: unknown) {
-    process.stderr.write(`Warning: ${describeError(error)}\n`);
-    return [];
+    return { kits: [], warnings: [{ message: describeError(error) }] };
   }
 }
 

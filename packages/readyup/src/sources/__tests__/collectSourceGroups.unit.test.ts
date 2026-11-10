@@ -99,17 +99,33 @@ describe(collectSourceGroups, () => {
   });
 
   // Because listing is read-only, a dependency that nobody can read loses only its own group, not the whole listing.
-  it('warns and omits a configured source that cannot be resolved', async ({ temp }) => {
+  it('omits a configured source that cannot be resolved, returning a warning for it', async ({ temp }) => {
     using io = captureStdio();
 
-    const groups = await collectSourceGroups({
+    const { groups, warnings } = await collectSourceGroups({
       configuredSources: [parseConfiguredSource('npm:absent-package')],
       fromDir: temp.dir,
       remote: createUncachedRemoteContext(),
     });
 
     expect(groups.map((group) => group.name)).not.toContain('absent-package');
-    expect(io.stderr).toContain('Configured source "npm:absent-package" was not found');
+    expect(warnings).toStrictEqual([
+      { message: expect.stringContaining('Configured source "npm:absent-package" was not found') },
+    ]);
+    expect(io.stderr).toBe('');
+  });
+
+  it('returns the warnings in source order, whichever expansion fails first', async ({ temp }) => {
+    const { warnings } = await collectSourceGroups({
+      configuredSources: [parseConfiguredSource('npm:zeta-absent'), parseConfiguredSource('npm:alpha-absent')],
+      fromDir: temp.dir,
+      remote: createUncachedRemoteContext(),
+    });
+
+    expect(warnings.map(({ message }) => /npm:(\w+-absent)/.exec(message)?.[1])).toStrictEqual([
+      'alpha-absent',
+      'zeta-absent',
+    ]);
   });
 
   it('lists a configured repository after the packages, under its spelling', async ({ temp }) => {
@@ -128,31 +144,35 @@ describe(collectSourceGroups, () => {
     expect(groups.at(-1)?.kits.map((kit) => kit.description)).toStrictEqual(['Callers of the reusable workflow']);
   });
 
-  it('warns and omits a configured repository whose manifest cannot be fetched', async ({ temp }) => {
+  it('omits a configured repository whose manifest cannot be fetched, returning a warning for it', async ({ temp }) => {
     using io = captureStdio();
     serveManifest('https://example.invalid/', []);
 
-    const groups = await collectSourceGroups({
+    const { groups, warnings } = await collectSourceGroups({
       configuredSources: [parseConfiguredSource('github:acme/standards')],
       fromDir: temp.dir,
       remote: createUncachedRemoteContext(),
     });
 
     expect(groups.map((group) => group.kind)).not.toContain('repository');
-    expect(io.stderr).toContain('Configured source "github:acme/standards"');
+    expect(warnings).toStrictEqual([{ message: expect.stringContaining('Configured source "github:acme/standards"') }]);
+    expect(io.stderr).toBe('');
   });
 
-  it('warns and omits a configured source that publishes no kits', async ({ temp }) => {
+  it('omits a configured source that publishes no kits, returning a warning for it', async ({ temp }) => {
     using io = captureStdio();
 
-    const groups = await collectSourceGroups({
+    const { groups, warnings } = await collectSourceGroups({
       configuredSources: [parseConfiguredSource('npm:kitless')],
       fromDir: temp.dir,
       remote: createUncachedRemoteContext(),
     });
 
     expect(groups.map((group) => group.name)).not.toContain('kitless');
-    expect(io.stderr).toContain('Configured source "npm:kitless" publishes no kits');
+    expect(warnings).toStrictEqual([
+      { message: expect.stringContaining('Configured source "npm:kitless" publishes no kits') },
+    ]);
+    expect(io.stderr).toBe('');
   });
 });
 
@@ -160,10 +180,9 @@ describe(collectSourceGroups, () => {
 
 /** Collects the groups for sources spelled as a config writes them, discarding the warnings for an unreadable one. */
 async function collect(entries: string[], fromDir: string): Promise<SourceGroup[]> {
-  using _io = captureStdio();
-
   const configuredSources = entries.map((entry) => parseConfiguredSource(entry));
-  return await collectSourceGroups({ configuredSources, fromDir, remote: createUncachedRemoteContext() });
+  const { groups } = await collectSourceGroups({ configuredSources, fromDir, remote: createUncachedRemoteContext() });
+  return groups;
 }
 
 /** Serves one manifest URL a manifest listing the given kits, and every other URL as absent. */
