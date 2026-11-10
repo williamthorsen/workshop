@@ -1,12 +1,9 @@
 import path from 'node:path';
 
-import { describeError } from '@williamthorsen/toolbelt.errors';
-
-import { usageError } from '../errors/RdyError.ts';
 import { assertFromPathExists } from '../kits/assertFromPathExists.ts';
 import { buildKitFilename } from '../kits/buildKitFilename.ts';
 import { type CompileDirectories, resolveKitRoot } from '../kits/kitsDir.ts';
-import { type FromSource, parseFromValue } from '../kits/parseFromValue.ts';
+import { parseFromArgument } from '../kits/parseFromArgument.ts';
 import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
 import type { ConfiguredSource } from '../sources/parseConfiguredSource.ts';
 import { DEFAULT_KIT_NAME } from './defaultKitName.ts';
@@ -81,12 +78,7 @@ export async function resolveKitSources({
   const specs = checklists === undefined ? declaredSpecs : declaredSpecs.map((spec) => ({ ...spec, checklists }));
 
   if (fromValue !== undefined) {
-    let source: FromSource;
-    try {
-      source = parseFromValue(fromValue);
-    } catch (error: unknown) {
-      throw usageError(describeError(error), { cause: error });
-    }
+    const source = parseFromArgument(fromValue);
     assertFromPathExists(source);
     return selectEntries(resolveFromSource(source, fromValue, specs, extension));
   }

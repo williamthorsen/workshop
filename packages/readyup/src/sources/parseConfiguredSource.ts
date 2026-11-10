@@ -1,7 +1,12 @@
-import { describeError } from '@williamthorsen/toolbelt.errors';
-
 import { configError } from '../errors/RdyError.ts';
-import { type BitbucketSource, type GitHubSource, type NpmSource, parseFromValue } from '../kits/parseFromValue.ts';
+import { InvalidFromValueError } from '../kits/InvalidFromValueError.ts';
+import {
+  type BitbucketSource,
+  type FromSource,
+  type GitHubSource,
+  type NpmSource,
+  parseFromValue,
+} from '../kits/parseFromValue.ts';
 
 /** A kit source that the config's `sources` list names, with the spelling under which the config names it. */
 export interface ConfiguredSource {
@@ -15,16 +20,20 @@ export interface ConfiguredSource {
  * A directory, `global`, or a local path names a place on this machine rather than a publisher, so it has no
  * stable meaning in a config shared by everyone who checks the project out.
  */
-export function parseConfiguredSource(entry: string): ConfiguredSource {
+export function parseConfiguredSource(
+  entry: string,
+  parse: (value: string) => FromSource = parseFromValue,
+): ConfiguredSource {
   if (!/^[a-z]+:/.test(entry)) {
     throw configError(`Source "${entry}" has no scheme; write an installed package as "npm:${entry}".`);
   }
 
   let source;
   try {
-    source = parseFromValue(entry);
+    source = parse(entry);
   } catch (error: unknown) {
-    throw configError(`Source "${entry}" is malformed: ${describeError(error)}`, { cause: error });
+    if (!(error instanceof InvalidFromValueError)) throw error;
+    throw configError(`Source "${entry}" is malformed: ${error.message}`, { cause: error });
   }
 
   if (source.type === 'npm' && source.versionSpec !== undefined) {

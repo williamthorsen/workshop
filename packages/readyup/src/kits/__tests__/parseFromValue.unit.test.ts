@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { InvalidFromValueError } from '../InvalidFromValueError.ts';
 import { parseFromValue } from '../parseFromValue.ts';
 
 describe(parseFromValue, () => {
@@ -114,7 +115,21 @@ describe(parseFromValue, () => {
   });
 
   it('throws for http:// values with helpful message', () => {
-    expect(() => parseFromValue('https://example.com/kit.js')).toThrow('Use --url instead');
+    // eslint-disable-next-line unicorn/prefer-https -- the parser must reject an http:// URL, so the test passes one.
+    expect(() => parseFromValue('http://example.com/kit.js')).toThrow('Use --url instead');
+  });
+
+  // -- rejection type --
+
+  it.each([
+    'github:acme/toolkit@',
+    'github:toolkit',
+    'npm:readyup@',
+    'npm:',
+    'npm:@williamthorsen',
+    'https://example.com/kit.js',
+  ])('rejects %s with an InvalidFromValueError', (value) => {
+    expect(() => parseFromValue(value)).toThrow(InvalidFromValueError);
   });
 
   // -- global keyword --

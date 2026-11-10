@@ -2,6 +2,7 @@ import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { RdyError } from '../../errors/RdyError.ts';
+import { InvalidFromValueError } from '../../kits/InvalidFromValueError.ts';
 import { parseConfiguredSource } from '../parseConfiguredSource.ts';
 
 describe(parseConfiguredSource, () => {
@@ -38,5 +39,26 @@ describe(parseConfiguredSource, () => {
 
     expect(error.code).toBe('config');
     expect(error.message).toContain(`"${entry}"`);
+  });
+
+  it("reports a malformed entry with the parser's message and the rejection as its cause", async () => {
+    const error = await captureError(RdyError, () => parseConfiguredSource('github:acme'));
+
+    expect(error.message).toBe(
+      'Source "github:acme" is malformed: Invalid --from value: expected "owner/repo" format, got "acme"',
+    );
+    expect(error.cause).toBeInstanceOf(InvalidFromValueError);
+  });
+
+  it('propagates a failure other than a rejection unchanged', async () => {
+    const defect = new TypeError('parser defect');
+
+    const error = await captureError(() =>
+      parseConfiguredSource('github:acme/standards', () => {
+        throw defect;
+      }),
+    );
+
+    expect(error).toBe(defect);
   });
 });

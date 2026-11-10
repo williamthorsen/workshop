@@ -4,9 +4,9 @@ import process from 'node:process';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { collectSourceKitNames } from '../compile/collectSourceKitNames.ts';
-import { configError, kitLoadError, usageError } from '../errors/RdyError.ts';
+import { configError, kitLoadError } from '../errors/RdyError.ts';
 import { resolveKitRoot } from '../kits/kitsDir.ts';
-import { type FromSource, parseFromValue } from '../kits/parseFromValue.ts';
+import { parseFromArgument } from '../kits/parseFromArgument.ts';
 import type { ResolvedRdyConfig } from '../kits/types.ts';
 import { collectCompiledKits } from '../list/collectCompiledKits.ts';
 import { collectSourceKits } from '../list/collectSourceKits.ts';
@@ -78,15 +78,6 @@ export async function resolveAllKitSources(options: ResolveAllKitSourcesOptions)
 }
 
 // region | Helpers
-
-/** Parses a `--from` value, reporting a malformed one as the usage error that a named run reports. */
-function parseFromArgument(fromValue: string): FromSource {
-  try {
-    return parseFromValue(fromValue);
-  } catch (error: unknown) {
-    throw usageError(describeError(error), { cause: error });
-  }
-}
 
 /** Returns the sorted kit names in a directory, reporting a directory that cannot be read as a config error. */
 function readKitNames(dir: string, extension: string): string[] {
