@@ -90,11 +90,9 @@ export function loadManifest(manifestPath: string, manifestFlag?: string): RdyMa
   try {
     return readManifest(manifestPath);
   } catch (error: unknown) {
-    const hint =
-      error instanceof ManifestNotFoundError
-        ? `Run \`rdy compile${manifestFlag === undefined ? '' : ` --manifest ${manifestFlag}`}\` to create it.`
-        : undefined;
-    throw configError(describeError(error), { cause: error, hint });
+    if (!(error instanceof ManifestNotFoundError)) throw error;
+    const hint = `Run \`rdy compile${manifestFlag === undefined ? '' : ` --manifest ${manifestFlag}`}\` to create it.`;
+    throw configError(error.message, { cause: error, hint });
   }
 }
 

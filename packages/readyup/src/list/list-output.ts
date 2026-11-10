@@ -5,11 +5,8 @@ import { describeError } from '@williamthorsen/toolbelt.errors';
 import { EXIT_OK } from '../bin/exitCodes.ts';
 import { DEFAULT_CONFIG, loadConfig } from '../config/loadConfig.ts';
 import { extractHint } from '../errors/error-handling.ts';
-import { configError } from '../errors/RdyError.ts';
 import type { ResolvedRdyConfig } from '../kits/types.ts';
 import { getLayout } from '../layout/engine.ts';
-import type { RdyManifest } from '../manifest/manifestSchema.ts';
-import { readManifest } from '../manifest/readManifest.ts';
 import { type JsonListKitEntry, type JsonListOutput, SCHEMA_VERSION } from '../schemas/listOutputSchema.ts';
 
 /** The `list` flags that decide what every listing mode emits. */
@@ -56,15 +53,6 @@ export async function loadListingConfig(configPath: string | undefined): Promise
     const hint = extractHint(error);
     if (hint !== undefined) process.stderr.write(getLayout().formatHint(hint) + '\n');
     return { ...DEFAULT_CONFIG };
-  }
-}
-
-/** Reads a manifest, reporting an unreadable or invalid one as a config failure. */
-export function readManifestOrThrow(manifestPath: string): RdyManifest {
-  try {
-    return readManifest(manifestPath);
-  } catch (error: unknown) {
-    throw configError(describeError(error), { cause: error });
   }
 }
 

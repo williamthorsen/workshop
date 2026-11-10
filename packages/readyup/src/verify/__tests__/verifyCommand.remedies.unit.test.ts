@@ -45,6 +45,7 @@ vi.mock(import('../../portable/buildInstallCommand.ts'), () => ({
   buildInstallCommand: (moduleName: string) => `npm install --save-dev ${moduleName}`,
 }));
 
+import { configError } from '../../errors/RdyError.ts';
 import { richFormatter } from '../../layout/formatter.ts';
 import { ManifestNotFoundError } from '../../manifest/readManifest.ts';
 import { buildConfig, verify, verifyRaising } from '../test-utils/verify-harness.ts';
@@ -218,7 +219,7 @@ describe(verifyCommand, () => {
 
   it('reports an invalid manifest without a hint', async () => {
     mockReadManifest.mockImplementation(() => {
-      throw new Error('Manifest file contains invalid JSON: /path/to/manifest.json');
+      throw configError('Manifest file contains invalid JSON: /path/to/manifest.json');
     });
 
     const { error } = await verifyRaising([]);

@@ -7,13 +7,14 @@ import { describeError } from '@williamthorsen/toolbelt.errors';
 import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { usageError } from '../errors/RdyError.ts';
 import { parseFromValue } from '../kits/parseFromValue.ts';
+import { readManifest } from '../manifest/readManifest.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import { createRemoteFetchContext, type RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
 import { collectSourceGroups } from '../sources/collectSourceGroups.ts';
 import { buildManifestEntry } from './buildManifestEntry.ts';
 import { collectSourceKits } from './collectSourceKits.ts';
 import { formatConsumerView, formatManifestView, formatSourcesView } from './formatList.ts';
-import { finishList, type ListOutputOptions, loadListingConfig, readManifestOrThrow } from './list-output.ts';
+import { finishList, type ListOutputOptions, loadListingConfig } from './list-output.ts';
 import { runRecursiveMode, runRecursiveSourcesMode } from './list-recursive.ts';
 import { runOwnerMode } from './runOwnerMode.ts';
 import { buildSourceKitEntry } from './source-kit-entries.ts';
@@ -175,7 +176,7 @@ async function runFromMode(fromArg: string, output: ListOutputOptions, noCache: 
 /** Displays the kits declared by a manifest file. */
 function runManifestMode(manifestArg: string, output: ListOutputOptions): number {
   const manifestPath = path.resolve(process.cwd(), manifestArg);
-  const manifest = readManifestOrThrow(manifestPath);
+  const manifest = readManifest(manifestPath);
 
   const relPath = path.relative(process.cwd(), manifestPath);
   writeHuman(

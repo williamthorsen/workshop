@@ -119,8 +119,12 @@ describe(expandConfiguredSources, () => {
   });
 
   // Falling back here would report a kit list that the publisher never declared.
-  it('rejects a malformed manifest instead of reading around it', async ({ temp }) => {
-    await expect(expand(['broken-manifest'], temp.dir)).rejects.toThrow(/invalid JSON/);
+  it('rejects a malformed manifest as a config error instead of reading around it', async ({ temp }) => {
+    const error = await captureError(() => expand(['broken-manifest'], temp.dir));
+
+    expect(error).toBeInstanceOf(RdyError);
+    expect(error).toMatchObject({ code: 'config' });
+    expect(error.message).toMatch(/invalid JSON/);
   });
 
   describe('a repository without a manifest', () => {
