@@ -1,12 +1,10 @@
 import path from 'node:path';
 import process from 'node:process';
 
-import { describeError } from '@williamthorsen/toolbelt.errors';
-
 import { EXIT_OK } from '../bin/exitCodes.ts';
 import { parseSubcommandArgs } from '../bin/parseSubcommandArgs.ts';
 import { usageError } from '../errors/RdyError.ts';
-import { parseFromValue } from '../kits/parseFromValue.ts';
+import { parseFromArgument } from '../kits/parseFromArgument.ts';
 import { readManifest } from '../manifest/readManifest.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import { type ReportedWarning, writeWarnings } from '../output/writeWarnings.ts';
@@ -134,14 +132,7 @@ function rejectConflictingFlags({ configArg, fromArg, manifestArg, recursive, so
 
 /** Lists the kits in a `--from` source. */
 async function runFromMode(fromArg: string, showChecks: boolean, noCache: boolean): Promise<ListResult> {
-  let source;
-  try {
-    source = parseFromValue(fromArg);
-  } catch (error: unknown) {
-    throw usageError(describeError(error), { cause: error });
-  }
-
-  const sourceKits = await collectSourceKits(source, createRemoteFetchContext({ reload: noCache }));
+  const sourceKits = await collectSourceKits(parseFromArgument(fromArg), createRemoteFetchContext({ reload: noCache }));
 
   const view =
     sourceKits.kind === 'remote'
