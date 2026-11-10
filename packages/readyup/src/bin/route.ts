@@ -1,7 +1,6 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import { parseArgs as nodeParseArgs } from 'node:util';
 
 import { describeError } from '@williamthorsen/toolbelt.errors';
 import { describeInvalidOutputStyle, resolveOutputStyle } from '@williamthorsen/toolbelt.terminal/candidate';
@@ -10,7 +9,6 @@ import { compileCommand } from '../compile/compileCommand.ts';
 import { loadConfig } from '../config/loadConfig.ts';
 import { extractHint } from '../errors/error-handling.ts';
 import { extractStackFrames } from '../errors/extractStackFrames.ts';
-import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { configError, internalError, RdyError, toRdyError, usageError } from '../errors/RdyError.ts';
 import { HELP_FLAGS, helpCommand, writeHelp } from '../help/helpCommand.ts';
 import { COMPILE_HELP, HELP, INIT_HELP, LIST_HELP, RUN_HELP, VERIFY_HELP } from '../help/helpText.ts';
@@ -34,6 +32,7 @@ import { verifyCommand } from '../verify/verifyCommand.ts';
 import { VERSION } from '../version.ts';
 import { EXIT_OK, EXIT_TOOL_FAILURE } from './exitCodes.ts';
 import { hasJsonFlag } from './hasJsonFlag.ts';
+import { parseSubcommandArgs } from './parseSubcommandArgs.ts';
 
 /** Command names against which a mistyped bare word is matched, including the implicit `run`. */
 export const COMMAND_NAMES = ['compile', 'help', 'init', 'list', 'run', 'verify'];
@@ -250,16 +249,9 @@ function handleInit(flags: string[]): number {
   const initOptions = {
     'dry-run': { type: 'boolean', short: 'n' },
     force: { type: 'boolean' },
-    // Declared so that strict parsing accepts it; `routeCommand` consumed its value before dispatch.
-    style: { type: 'string' },
   } as const;
 
-  let parsed;
-  try {
-    parsed = nodeParseArgs({ args: flags, options: initOptions, strict: true, allowPositionals: true });
-  } catch (error: unknown) {
-    throw usageError(translateParseArgsError(error, 'init'), { cause: error });
-  }
+  const parsed = parseSubcommandArgs({ args: flags, command: 'init', options: initOptions });
 
   if (parsed.positionals.length > 0) {
     throw usageError('rdy init does not accept positional arguments.');

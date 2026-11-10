@@ -1,10 +1,9 @@
 import path from 'node:path';
 import process from 'node:process';
-import { parseArgs as nodeParseArgs } from 'node:util';
 
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
-import { translateParseArgsError } from '../errors/parse-args-error.ts';
+import { parseSubcommandArgs } from '../bin/parseSubcommandArgs.ts';
 import { usageError } from '../errors/RdyError.ts';
 import { parseFromValue } from '../kits/parseFromValue.ts';
 import { readManifest } from '../manifest/readManifest.ts';
@@ -28,28 +27,14 @@ const listOptions = {
   'no-cache': { type: 'boolean' },
   recursive: { type: 'boolean' },
   sources: { type: 'boolean' },
-  // Declared so that strict parsing accepts it; `routeCommand` consumed its value before dispatch.
-  style: { type: 'string' },
 } as const;
 
 /** Runs the `list` subcommand, returning the exit code produced by its enumeration of manifest and filesystem kits. */
 export async function listCommand(args: string[]): Promise<number> {
-  let parsed;
-  try {
-    parsed = nodeParseArgs({ args, options: listOptions, strict: true, allowPositionals: true });
-  } catch (error: unknown) {
-    throw usageError(translateParseArgsError(error, 'list'), { cause: error });
-  }
-  const { positionals, values } = parsed;
+  const { positionals, values } = parseSubcommandArgs({ args, command: 'list', options: listOptions });
 
   if (positionals.length > 0) {
     throw usageError('rdy list does not accept positional arguments.');
-  }
-
-  for (const [name, value] of Object.entries(values)) {
-    if (value === '') {
-      throw usageError(`--${name} requires a value`);
-    }
   }
 
   const configArg = values.config;
