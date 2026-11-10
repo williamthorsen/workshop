@@ -1,7 +1,7 @@
 import assert from 'node:assert';
 import { setImmediate } from 'node:timers/promises';
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import type { RdyChecklist, RdyStagedChecklist } from '../../kits/types.ts';
 import { runRdy } from '../runRdy.ts';
@@ -437,6 +437,30 @@ describe(runRdy, () => {
     const report = await runRdy(checklist);
 
     expect(report.durationMs).toBeGreaterThanOrEqual(0);
+  });
+
+  it('measures durations on the clock that fake timers control', async () => {
+    vi.useFakeTimers({ toFake: ['performance'] });
+    onTestFinished(() => {
+      vi.useRealTimers();
+    });
+    const checklist: RdyChecklist = {
+      name: 'timing',
+      checks: [
+        {
+          name: 'slow',
+          check: () => {
+            vi.advanceTimersByTime(25);
+            return true;
+          },
+        },
+      ],
+    };
+
+    const report = await runRdy(checklist);
+
+    expect(report.results[0]?.durationMs).toBe(25);
+    expect(report.durationMs).toBe(25);
   });
 
   describe('check ids', () => {
