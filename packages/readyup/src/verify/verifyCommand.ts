@@ -5,12 +5,14 @@ import { parseSubcommandArgs } from '../bin/parseSubcommandArgs.ts';
 import { usageError } from '../errors/RdyError.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import {
+  defaultVerifyDependencies,
   findUncompiledKits,
   finishVerify,
   loadManifest,
   loadVerifyConfig,
   requireEsbuild,
   resolveManifestProjectDir,
+  type VerifyDependencies,
   verifyManifest,
 } from './verify-manifest.ts';
 import { verifyRecursive } from './verifyRecursive.ts';
@@ -36,7 +38,10 @@ const verifyOptions = {
  * sweep is a config failure and is thrown rather than reported as drift, as is a `--rebuild` run with
  * no esbuild to rebuild with.
  */
-export async function verifyCommand(args: string[]): Promise<number> {
+export async function verifyCommand(
+  args: string[],
+  dependencies: VerifyDependencies = defaultVerifyDependencies,
+): Promise<number> {
   const { values, positionals } = parseSubcommandArgs({ args, command: 'verify', options: verifyOptions });
 
   if (positionals.length > 0) {
@@ -60,21 +65,21 @@ export async function verifyCommand(args: string[]): Promise<number> {
   // Settle the bundler's availability before the run says anything. An exactness check that reports
   // kit after kit and then discovers it could never have run reads as a partial result; raised here,
   // the error reports an absent esbuild as a problem with the environment, not with any kit.
-  if (rebuild) await requireEsbuild();
+  if (rebuild) await requireEsbuild(dependencies);
 
   if (recursive) {
-    return verifyRecursive({ rebuild, json });
+    return verifyRecursive({ rebuild, json }, dependencies);
   }
 
   const manifestPath = path.resolve(process.cwd(), values.manifest ?? DEFAULT_MANIFEST_PATH);
-  const manifest = loadManifest(manifestPath, values.manifest);
+  const manifest = loadManifest(manifestPath, values.manifest, dependencies);
   const projectDir = resolveManifestProjectDir(manifestPath);
-  const config = await loadVerifyConfig(projectDir, values.config);
+  const config = await loadVerifyConfig(projectDir, values.config, dependencies);
   const uncompiled = findUncompiledKits({
     manifest,
     manifestDir: path.dirname(manifestPath),
     srcDir: path.resolve(projectDir, config.compile.srcDir),
     selection: config.compile,
   });
-  return finishVerify(await verifyManifest({ manifest, manifestPath, rebuild, json, uncompiled }), json);
+  return finishVerify(await verifyManifest({ manifest, manifestPath, rebuild, json, uncompiled }, dependencies), json);
 }
