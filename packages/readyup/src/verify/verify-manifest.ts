@@ -30,6 +30,17 @@ import { checkSourceDrift } from './checkSourceDrift.ts';
 import type { KitVerdicts } from './verdicts.ts';
 import { buildVerifyEntry, formatStatusLine, formatUncompiledLine, isPassingVerdict } from './verify-report.ts';
 
+/** The real collaborators of verification. */
+export const defaultVerifyDependencies: VerifyDependencies = {
+  checkDrift,
+  checkInputDrift,
+  checkRebuild,
+  checkSourceDrift,
+  loadConfig,
+  loadEsbuild,
+  readManifest,
+};
+
 /**
  * Returns an entry for each kit that the compile settings select and the manifest does not record, sorted by name.
  *
@@ -86,9 +97,13 @@ export function finishVerify({ kits, passed, projects, uncompiled }: VerifyOutco
  *
  * A missing manifest's hint repeats `manifestFlag`, the `--manifest` value as typed, so that the user can rerun it.
  */
-export function loadManifest(manifestPath: string, manifestFlag?: string): RdyManifest {
+export function loadManifest(
+  manifestPath: string,
+  manifestFlag?: string,
+  dependencies: VerifyDependencies = defaultVerifyDependencies,
+): RdyManifest {
   try {
-    return readManifest(manifestPath);
+    return dependencies.readManifest(manifestPath);
   } catch (error: unknown) {
     if (!(error instanceof ManifestNotFoundError)) throw error;
     const hint = `Run \`rdy compile${manifestFlag === undefined ? '' : ` --manifest ${manifestFlag}`}\` to create it.`;
@@ -100,9 +115,13 @@ export function loadManifest(manifestPath: string, manifestFlag?: string): RdyMa
  * Loads the project's config, or the one named by `--config` relative to the working directory, raising a config
  * error when it cannot be evaluated.
  */
-export async function loadVerifyConfig(projectDir: string, configPath: string | undefined): Promise<ResolvedRdyConfig> {
+export async function loadVerifyConfig(
+  projectDir: string,
+  configPath: string | undefined,
+  dependencies: VerifyDependencies = defaultVerifyDependencies,
+): Promise<ResolvedRdyConfig> {
   try {
-    return await loadConfig({
+    return await dependencies.loadConfig({
       fromDir: projectDir,
       ...(configPath !== undefined && { overridePath: path.resolve(process.cwd(), configPath) }),
     });
@@ -126,9 +145,9 @@ export interface ManifestVerification {
  * that concluded "no esbuild, so nothing to report" would pass while establishing nothing -- the
  * failure mode that the flag exists to remove.
  */
-export async function requireEsbuild(): Promise<void> {
+export async function requireEsbuild(dependencies: VerifyDependencies = defaultVerifyDependencies): Promise<void> {
   try {
-    await loadEsbuild();
+    await dependencies.loadEsbuild();
   } catch (error: unknown) {
     throw configError(`rdy verify --rebuild requires esbuild, which is not installed. ${buildEsbuildInstallHint()}`, {
       cause: error,
@@ -147,8 +166,23 @@ export function resolveManifestProjectDir(manifestPath: string): string {
     : process.cwd();
 }
 
+/** The collaborators that verification calls, replaceable so that a test can verify without their effects. */
+export interface VerifyDependencies {
+  checkDrift: typeof checkDrift;
+  checkInputDrift: typeof checkInputDrift;
+  checkRebuild: typeof checkRebuild;
+  checkSourceDrift: typeof checkSourceDrift;
+  loadConfig: typeof loadConfig;
+  /** Settles only whether esbuild is installed, so verification does not depend on the module's shape. */
+  loadEsbuild: () => Promise<unknown>;
+  readManifest: typeof readManifest;
+}
+
 /** Verifies every kit that a manifest lists, writing a heading, one line per kit, and one per uncompiled kit. */
-export async function verifyManifest(args: VerifyManifestArgs): Promise<ManifestVerification> {
+export async function verifyManifest(
+  args: VerifyManifestArgs,
+  dependencies: VerifyDependencies = defaultVerifyDependencies,
+): Promise<ManifestVerification> {
   const { manifest, manifestPath, rebuild, json, project, uncompiled } = args;
   const manifestDir = path.dirname(manifestPath);
 
@@ -163,10 +197,10 @@ export async function verifyManifest(args: VerifyManifestArgs): Promise<Manifest
   let failed = 0;
   for (const kit of manifest.kits) {
     const verdicts: KitVerdicts = {
-      drift: checkDrift(kit, manifestDir),
-      inputs: checkInputDrift(kit, manifestDir),
-      rebuild: rebuild ? await checkRebuild(kit, manifestDir) : undefined,
-      source: checkSourceDrift(kit, manifestDir),
+      drift: dependencies.checkDrift(kit, manifestDir),
+      inputs: dependencies.checkInputDrift(kit, manifestDir),
+      rebuild: rebuild ? await dependencies.checkRebuild(kit, manifestDir) : undefined,
+      source: dependencies.checkSourceDrift(kit, manifestDir),
     };
     writeHuman(formatStatusLine(kit, verdicts), json);
     entries.push(buildVerifyEntry(kit.name, verdicts, project));

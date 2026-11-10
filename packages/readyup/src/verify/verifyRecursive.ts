@@ -15,7 +15,14 @@ import type {
   JsonVerifyProjectEntry,
   JsonVerifyUncompiledEntry,
 } from '../schemas/verifyOutputSchema.ts';
-import { findUncompiledKits, finishVerify, loadManifest, verifyManifest } from './verify-manifest.ts';
+import {
+  defaultVerifyDependencies,
+  findUncompiledKits,
+  finishVerify,
+  loadManifest,
+  type VerifyDependencies,
+  verifyManifest,
+} from './verify-manifest.ts';
 
 /** Arguments for the recursive verify path. */
 export interface VerifyRecursiveArgs {
@@ -30,7 +37,10 @@ export interface VerifyRecursiveArgs {
  * next project is tried, and the run fails. A project whose config cannot be evaluated is one of those, and
  * is never verified under the defaults with which discovery read it.
  */
-export async function verifyRecursive(args: VerifyRecursiveArgs): Promise<number> {
+export async function verifyRecursive(
+  args: VerifyRecursiveArgs,
+  dependencies: VerifyDependencies = defaultVerifyDependencies,
+): Promise<number> {
   const { rebuild, json } = args;
   const root = process.cwd();
   const projects = await discoverKitProjects({ root });
@@ -46,7 +56,7 @@ export async function verifyRecursive(args: VerifyRecursiveArgs): Promise<number
   let hasWrittenBlock = false;
 
   for (const project of projects) {
-    const loaded = loadSweptProject(project, root);
+    const loaded = loadSweptProject(project, root, dependencies);
     if ('failure' in loaded) {
       projectEntries.push(reportProjectFailure(project.dir, loaded.failure));
       continue;
@@ -56,14 +66,17 @@ export async function verifyRecursive(args: VerifyRecursiveArgs): Promise<number
     if (hasWrittenBlock) writeHuman('\n', json);
     hasWrittenBlock = true;
 
-    const outcome = await verifyManifest({
-      manifest: loaded.manifest,
-      manifestPath: project.manifestPath,
-      rebuild,
-      json,
-      project: project.dir,
-      uncompiled: loaded.uncompiled,
-    });
+    const outcome = await verifyManifest(
+      {
+        manifest: loaded.manifest,
+        manifestPath: project.manifestPath,
+        rebuild,
+        json,
+        project: project.dir,
+        uncompiled: loaded.uncompiled,
+      },
+      dependencies,
+    );
     kits.push(...outcome.kits);
     uncompiled.push(...outcome.uncompiled);
     projectEntries.push({ project: project.dir, passed: outcome.passed });
@@ -91,6 +104,7 @@ export async function verifyRecursive(args: VerifyRecursiveArgs): Promise<number
 function loadSweptProject(
   project: Project,
   root: string,
+  dependencies: VerifyDependencies,
 ): { manifest: RdyManifest; uncompiled: JsonVerifyUncompiledEntry[] } | { failure: string } {
   if (project.configError !== undefined) {
     return { failure: describeError(project.configError) };
@@ -102,7 +116,7 @@ function loadSweptProject(
   }
 
   try {
-    const manifest = loadManifest(project.manifestPath);
+    const manifest = loadManifest(project.manifestPath, undefined, dependencies);
     const uncompiled = findUncompiledKits({
       manifest,
       manifestDir: path.dirname(project.manifestPath),
