@@ -66,18 +66,6 @@ describe(buildBundle, () => {
 // region | Helpers
 
 /**
- * Writes a kit source into a fresh temp tree and returns the kit's path.
- *
- * The tree is outside the repository, so nothing above it is discoverable but what a test puts
- * there, and the kit is one directory below the tree root, leaving room for a config above it.
- */
-function writeKitTree(source: string): string {
-  const tree = disposeOnTestFinished(createTempTree({ 'kits/kit.ts': source }, { prefix: 'rdy-host-tsconfig-' }));
-
-  return tree.resolve('kits/kit.ts');
-}
-
-/**
  * Writes the host config into the directory above a kit, where esbuild's search would reach it.
  *
  * The module to which the config's `paths` entry maps is written alongside it, so that the alias would resolve
@@ -88,6 +76,18 @@ function writeHostTsconfig(entryPath: string): void {
   mkdirSync(path.join(treeRoot, 'src'));
   writeFileSync(path.join(treeRoot, 'src', 'thing.ts'), ALIASED_MODULE, 'utf8');
   writeFileSync(path.join(treeRoot, 'tsconfig.json'), HOST_TSCONFIG, 'utf8');
+}
+
+/**
+ * Writes a kit source into a fresh temp tree and returns the kit's path.
+ *
+ * The tree is outside the repository, so nothing above it is discoverable but what a test puts
+ * there, and the kit is one directory below the tree root, leaving room for a config above it.
+ */
+function writeKitTree(source: string): string {
+  const tree = disposeOnTestFinished(createTempTree({ 'kits/kit.ts': source }, { prefix: 'rdy-host-tsconfig-' }));
+
+  return tree.resolve('kits/kit.ts');
 }
 
 // endregion | Helpers

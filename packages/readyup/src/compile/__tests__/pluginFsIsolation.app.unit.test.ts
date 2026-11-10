@@ -10,12 +10,6 @@ const FILESYSTEM_SPECIFIERS = new Set(['fs', 'fs/promises', 'node:fs', 'node:fs/
 const COMPILE_DIR = path.join(import.meta.dirname, '..');
 const SRC_DIR = path.join(COMPILE_DIR, '..');
 
-/** A filesystem import found in a module that a plugin reaches at run time. */
-interface Offender {
-  module: string;
-  specifier: string;
-}
-
 const PLUGIN_MODULES = findPluginModules();
 
 describe('esbuild plugins are isolated from the filesystem', () => {
@@ -117,6 +111,12 @@ function importsValues(importClause: ts.ImportClause | undefined): boolean {
   if (ts.isNamespaceImport(bindings)) return true;
 
   return bindings.elements.some((element) => !element.isTypeOnly);
+}
+
+/** A filesystem import found in a module that a plugin reaches at run time. */
+interface Offender {
+  module: string;
+  specifier: string;
 }
 
 /** Parses a TypeScript module into a syntax tree. */

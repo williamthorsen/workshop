@@ -8,29 +8,6 @@ import type { CompiledInput } from './CompiledInput.ts';
 import { deriveJsPath } from './deriveJsPath.ts';
 import { type KitMetadata, validateCompiledOutput } from './validateCompiledOutput.ts';
 
-/** Result of a successful compilation. */
-export interface CompileResult {
-  /** Every package inlined by the bundle, by name, with the version that its `package.json` declares. */
-  bundledDependencies: Record<string, string>;
-
-  changed: boolean;
-
-  /** The esbuild that produced the bundle. */
-  esbuildVersion: string;
-
-  /** Every JSON file that the bundle includes from outside `node_modules`. */
-  inlinedJson: InlinedJsonFile[];
-
-  /** Every file read by the compile outside `node_modules`, with absolute paths. */
-  inputs: CompiledInput[];
-
-  /** What validating the bundle as a kit yielded. */
-  metadata: KitMetadata;
-
-  outputPath: string;
-  targetHash: string;
-}
-
 /**
  * Bundles a TypeScript kit file, validates the bundle as a kit, and writes it to disk.
  *
@@ -68,6 +45,29 @@ export async function compileConfig(inputPath: string, outputPath?: string): Pro
     outputPath: resolvedOutput,
     targetHash: hashBytes(bytes),
   };
+}
+
+/** Result of a successful compilation. */
+export interface CompileResult {
+  /** Every package inlined by the bundle, by name, with the version that its `package.json` declares. */
+  bundledDependencies: Record<string, string>;
+
+  changed: boolean;
+
+  /** The esbuild that produced the bundle. */
+  esbuildVersion: string;
+
+  /** Every JSON file that the bundle includes from outside `node_modules`. */
+  inlinedJson: InlinedJsonFile[];
+
+  /** Every file read by the compile outside `node_modules`, with absolute paths. */
+  inputs: CompiledInput[];
+
+  /** What validating the bundle as a kit yielded. */
+  metadata: KitMetadata;
+
+  outputPath: string;
+  targetHash: string;
 }
 
 // region | Helpers

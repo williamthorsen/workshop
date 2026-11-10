@@ -12,40 +12,6 @@ import { compileConfig } from './compileConfig.ts';
 import { listDirectoryDependenceWarnings } from './listDirectoryDependenceWarnings.ts';
 import { listInlinedJsonWarnings } from './listInlinedJsonWarnings.ts';
 
-/** Arguments for compiling one kit, stating what its caller decides about naming and reporting. */
-export interface CompileKitArgs {
-  /** Returns the message that reports a failed compile. */
-  describeFailure: (error: unknown) => string;
-  /** Name of the source on the drift line and the result line. */
-  displayInput: string;
-  existingKit: RdyManifestKit | undefined;
-  /** Subject that prefixes the failure message, absent when the message names the source on its own. */
-  failureSubject: string | undefined;
-  /** Returns the name of the bundle on the result line, given the path to which the compile wrote it. */
-  formatOutput: (outputPath: string) => string;
-  /** Source path as given to `compileConfig`. */
-  inputPath: string;
-  isJson: boolean;
-  kitName: string;
-  manifestDir: string;
-  /** Bundle path as given to `compileConfig`, which derives one from the source when it is absent. */
-  outputPath: string | undefined;
-  /** The project named on the kit's JSON entry, given by a recursive compile alone. */
-  project: string | undefined;
-  /** Absolute source path, from which the closure is read and against which the manifest records the source. */
-  resolvedInputPath: string;
-  shouldForce: boolean;
-  shouldSkipManifest: boolean;
-}
-
-/** One kit's contribution to its compile. */
-export interface SourceOutcome {
-  /** The manifest entry recording the kit, absent for a kit that failed before it was ever recorded. */
-  entry: RdyManifestKit | undefined;
-  kit: JsonCompileKitEntry;
-  warnings: RaisedWarning[];
-}
-
 /** Compiles one kit behind the drift gate, reports it, and returns its manifest entry, JSON entry, and warnings. */
 export async function compileKit(args: CompileKitArgs): Promise<SourceOutcome> {
   const {
@@ -113,4 +79,38 @@ export async function compileKit(args: CompileKitArgs): Promise<SourceOutcome> {
     kit: { name: kitName, ...projectField, status: 'compiled' },
     warnings,
   };
+}
+
+/** Arguments for compiling one kit, stating what its caller decides about naming and reporting. */
+export interface CompileKitArgs {
+  /** Returns the message that reports a failed compile. */
+  describeFailure: (error: unknown) => string;
+  /** Name of the source on the drift line and the result line. */
+  displayInput: string;
+  existingKit: RdyManifestKit | undefined;
+  /** Subject that prefixes the failure message, absent when the message names the source on its own. */
+  failureSubject: string | undefined;
+  /** Returns the name of the bundle on the result line, given the path to which the compile wrote it. */
+  formatOutput: (outputPath: string) => string;
+  /** Source path as given to `compileConfig`. */
+  inputPath: string;
+  isJson: boolean;
+  kitName: string;
+  manifestDir: string;
+  /** Bundle path as given to `compileConfig`, which derives one from the source when it is absent. */
+  outputPath: string | undefined;
+  /** The project named on the kit's JSON entry, given by a recursive compile alone. */
+  project: string | undefined;
+  /** Absolute source path, from which the closure is read and against which the manifest records the source. */
+  resolvedInputPath: string;
+  shouldForce: boolean;
+  shouldSkipManifest: boolean;
+}
+
+/** One kit's contribution to its compile. */
+export interface SourceOutcome {
+  /** The manifest entry recording the kit, absent for a kit that failed before it was ever recorded. */
+  entry: RdyManifestKit | undefined;
+  kit: JsonCompileKitEntry;
+  warnings: RaisedWarning[];
 }

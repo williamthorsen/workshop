@@ -6,15 +6,6 @@ import { hashBytes } from '../../verify/targetHash.ts';
 import type { CompileResult } from '../compileConfig.ts';
 import type { KitMetadata } from '../validateCompiledOutput.ts';
 
-/** The hash recorded by a compile for its entry point, and the source of a manifest entry's `sourceHash`. */
-export const SOURCE_HASH = '5c0e1234';
-
-/** The esbuild version reported by every mocked compile, and the source of an entry's `esbuildVersion`. */
-export const ESBUILD_VERSION = '0.99.0-test';
-
-/** The bundle that `buildCompileResult` writes for every source. */
-export const COMPILED = 'export default {};';
-
 /**
  * Stands in for `compileConfig` against a temp tree: Writes `COMPILED` to the output path, which defaults to the
  * source with a `.js` extension, and returns that bundle's real hash with the source's real path as its only input.
@@ -41,6 +32,12 @@ export async function buildCompileResult(
   };
 }
 
+/** The bundle that `buildCompileResult` writes for every source. */
+export const COMPILED = 'export default {};';
+
+/** The esbuild version reported by every mocked compile, and the source of an entry's `esbuildVersion`. */
+export const ESBUILD_VERSION = '0.99.0-test';
+
 /** Returns the hash that the manifest records for a bundle with these contents. */
 export function hashOf(contents: string): string {
   return hashBytes(Buffer.from(contents, 'utf8'));
@@ -50,3 +47,6 @@ export function hashOf(contents: string): string {
 export function kitMetadata(overrides: Partial<KitMetadata> = {}): KitMetadata {
   return { checklistChecks: [], checklists: [], ...overrides };
 }
+
+/** The hash recorded by a compile for its entry point, and the source of a manifest entry's `sourceHash`. */
+export const SOURCE_HASH = '5c0e1234';

@@ -6,29 +6,6 @@ import { projectJsonFile } from '../json-projection/projectJsonFile.ts';
 import { hashBytes, hashProjection } from '../verify/targetHash.ts';
 import { type CompiledInput, identifyInput } from './CompiledInput.ts';
 
-/**
- * The two methods through which a compile plugin reads files.
- *
- * Both record, so a file that a plugin reads out of band cannot be left out of the compile's input closure. A
- * plugin uses a recorder rather than importing `node:fs`, which keeps that property true of the next
- * plugin as well as this one.
- */
-export interface CompileRecorder {
-  /** Every file read so far, one record per path and kind, in the order the reads happened. */
-  readonly inputs: CompiledInput[];
-
-  /** Reads a module and records its contents. */
-  readModule(filePath: string): string;
-
-  /**
-   * Reads a JSON file and records the projection of `paths` over it, returning that projection serialized.
-   *
-   * Because the recorder records the projection rather than the file, an edit to a field that the kit did not
-   * pick is not treated as staleness.
-   */
-  readProjection(filePath: string, paths: JsonPathSpec): string;
-}
-
 /** Builds a recorder that accumulates the closure of everything read through it. */
 export function createCompileRecorder(): CompileRecorder {
   const recorded = new Map<string, CompiledInput>();
@@ -52,6 +29,29 @@ export function createCompileRecorder(): CompileRecorder {
       return projection;
     },
   };
+}
+
+/**
+ * The two methods through which a compile plugin reads files.
+ *
+ * Both record, so a file that a plugin reads out of band cannot be left out of the compile's input closure. A
+ * plugin uses a recorder rather than importing `node:fs`, which keeps that property true of the next
+ * plugin as well as this one.
+ */
+export interface CompileRecorder {
+  /** Every file read so far, one record per path and kind, in the order the reads happened. */
+  readonly inputs: CompiledInput[];
+
+  /** Reads a module and records its contents. */
+  readModule(filePath: string): string;
+
+  /**
+   * Reads a JSON file and records the projection of `paths` over it, returning that projection serialized.
+   *
+   * Because the recorder records the projection rather than the file, an edit to a field that the kit did not
+   * pick is not treated as staleness.
+   */
+  readProjection(filePath: string, paths: JsonPathSpec): string;
 }
 
 // region | Helpers

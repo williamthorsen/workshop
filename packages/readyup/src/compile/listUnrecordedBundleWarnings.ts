@@ -5,17 +5,6 @@ import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
 import { toDisplayPath } from '../portable/toDisplayPath.ts';
 import type { RaisedWarning } from '../schemas/common.ts';
 
-/** Arguments for listing the bundles of a sweep that nothing accounts for. */
-export interface ListUnrecordedBundleWarningsArgs {
-  /** The entries of the manifest that the sweep writes. */
-  entries: RdyManifestKit[];
-  manifestDir: string;
-  /** Absolute path of the directory into which the sweep compiles. */
-  outDir: string;
-  /** The name of every kit whose source the sweep attempted, whatever became of it. */
-  sweptKitNames: ReadonlySet<string>;
-}
-
 /**
  * Returns one warning per bundle below `outDir` that neither a swept source nor a manifest entry accounts for.
  *
@@ -43,4 +32,15 @@ export function listUnrecordedBundleWarnings(args: ListUnrecordedBundleWarningsA
     warnings.push(warning);
   }
   return warnings;
+}
+
+/** Arguments for listing the bundles of a sweep that nothing accounts for. */
+export interface ListUnrecordedBundleWarningsArgs {
+  /** The entries of the manifest that the sweep writes. */
+  entries: RdyManifestKit[];
+  manifestDir: string;
+  /** Absolute path of the directory into which the sweep compiles. */
+  outDir: string;
+  /** The name of every kit whose source the sweep attempted, whatever became of it. */
+  sweptKitNames: ReadonlySet<string>;
 }

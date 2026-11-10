@@ -22,22 +22,6 @@ import { toDisplayPath } from '../portable/toDisplayPath.ts';
 import { toError } from '../portable/toError.ts';
 
 /**
- * How a kit's recorded checks depend on the directory from which it is imported: the checklists whose check names
- * differ between imports, or the error that the import from another directory threw.
- */
-export type DirectoryDependence = { checklists: string[] } | { error: string };
-
-/** Lightweight metadata extracted from a validated kit. */
-export interface KitMetadata {
-  checklistChecks: RdyManifestChecklistChecks[];
-  checklists: string[];
-  description?: string | undefined;
-
-  /** Present only when the kit's recorded checks depend on the directory from which it is imported. */
-  directoryDependence?: DirectoryDependence | undefined;
-}
-
-/**
  * Imports a compiled kit bundle, validates it semantically, and returns the metadata that it yields.
  *
  * Imports the bundle a second time from an empty directory, and reports in `directoryDependence` a kit whose recorded
@@ -70,6 +54,22 @@ export async function validateCompiledOutput(
     description: kit.description,
     ...(directoryDependence !== undefined && { directoryDependence }),
   };
+}
+
+/**
+ * How a kit's recorded checks depend on the directory from which it is imported: the checklists whose check names
+ * differ between imports, or the error that the import from another directory threw.
+ */
+export type DirectoryDependence = { checklists: string[] } | { error: string };
+
+/** Lightweight metadata extracted from a validated kit. */
+export interface KitMetadata {
+  checklistChecks: RdyManifestChecklistChecks[];
+  checklists: string[];
+  description?: string | undefined;
+
+  /** Present only when the kit's recorded checks depend on the directory from which it is imported. */
+  directoryDependence?: DirectoryDependence | undefined;
 }
 
 // region | Helpers

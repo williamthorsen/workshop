@@ -26,25 +26,6 @@ const EXCLUDED_DIRECTORY = 'node_modules';
 
 const IMPORT_ATTRIBUTES_SUFFIX_RE = / with \{[^{}]*\}$/;
 
-/** esbuild target for compiled kits. Matches the Node floor of the `rdy` runner that executes them. */
-export const KIT_COMPILE_TARGET = 'es2025';
-
-/**
- * TypeScript settings under which kits compile.
- *
- * Supplying this at all stops esbuild searching for a `tsconfig.json` above the kit, so a kit compiles from its
- * own sources rather than from whatever configuration the host repo happens to keep above it. The two settings
- * are the ones that esbuild derives rather than fixes; stating them keeps a version bump from changing kit
- * semantics quietly. Everything else stays at esbuild's default.
- *
- * `target` is left undeclared, which keeps class-field semantics independent of
- * `KIT_COMPILE_TARGET`: Because esbuild derives `useDefineForClassFields` from the TypeScript `target`,
- * declaring one here would tie the two back together.
- */
-export const KIT_TSCONFIG = {
-  compilerOptions: { experimentalDecorators: false, useDefineForClassFields: true },
-};
-
 /**
  * Why an import that a kit resolved under the host repo's configuration no longer resolves.
  *
@@ -92,31 +73,6 @@ const REQUIRE_SHIM = [
  * specifier, and `require.resolve`, as the same `<runtime>` import that any other esbuild helper produces.
  */
 const REQUIRE_HELPER_PATTERN = /^var __require = /m;
-
-/** A kit's compiled bundle and the closure of files that the compile read to produce it. */
-export interface BundleResult {
-  /** Every package inlined by the bundle, by name, with the version that its `package.json` declares. */
-  bundledDependencies: Record<string, string>;
-
-  bytes: Buffer;
-
-  /** The esbuild that produced the bundle. */
-  esbuildVersion: string;
-
-  /** Every JSON file that the bundle includes from outside `node_modules`, sorted by path. */
-  inlinedJson: InlinedJsonFile[];
-
-  /** Every file read outside `node_modules`, with absolute paths, sorted by path and then by kind. */
-  inputs: CompiledInput[];
-}
-
-/** A JSON file that a bundle includes whole, with the modules that import it. */
-export interface InlinedJsonFile {
-  /** Absolute paths, sorted. */
-  importers: string[];
-
-  path: string;
-}
 
 /**
  * Bundles a TypeScript checklist file into a self-contained ESM bundle and returns it.
@@ -206,6 +162,50 @@ export async function buildBundle(inputPath: string): Promise<BundleResult> {
 export function buildEsbuildInstallHint(): string {
   return `Install it with: ${buildInstallCommand('esbuild')}`;
 }
+
+/** A kit's compiled bundle and the closure of files that the compile read to produce it. */
+export interface BundleResult {
+  /** Every package inlined by the bundle, by name, with the version that its `package.json` declares. */
+  bundledDependencies: Record<string, string>;
+
+  bytes: Buffer;
+
+  /** The esbuild that produced the bundle. */
+  esbuildVersion: string;
+
+  /** Every JSON file that the bundle includes from outside `node_modules`, sorted by path. */
+  inlinedJson: InlinedJsonFile[];
+
+  /** Every file read outside `node_modules`, with absolute paths, sorted by path and then by kind. */
+  inputs: CompiledInput[];
+}
+
+/** A JSON file that a bundle includes whole, with the modules that import it. */
+export interface InlinedJsonFile {
+  /** Absolute paths, sorted. */
+  importers: string[];
+
+  path: string;
+}
+
+/** esbuild target for compiled kits. Matches the Node floor of the `rdy` runner that executes them. */
+export const KIT_COMPILE_TARGET = 'es2025';
+
+/**
+ * TypeScript settings under which kits compile.
+ *
+ * Supplying this at all stops esbuild searching for a `tsconfig.json` above the kit, so a kit compiles from its
+ * own sources rather than from whatever configuration the host repo happens to keep above it. The two settings
+ * are the ones that esbuild derives rather than fixes; stating them keeps a version bump from changing kit
+ * semantics quietly. Everything else stays at esbuild's default.
+ *
+ * `target` is left undeclared, which keeps class-field semantics independent of
+ * `KIT_COMPILE_TARGET`: Because esbuild derives `useDefineForClassFields` from the TypeScript `target`,
+ * declaring one here would tie the two back together.
+ */
+export const KIT_TSCONFIG = {
+  compilerOptions: { experimentalDecorators: false, useDefineForClassFields: true },
+};
 
 // region | Helpers
 

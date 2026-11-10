@@ -17,36 +17,6 @@ const WRAPPER_PATH = path.join(FIXTURES_DIR, 'discoverWorkspaces-subprocess-wrap
 
 const BUNDLE_SIZE_LIMIT_BYTES = 2 * 1024;
 
-/** Result of running a child process. */
-interface SpawnResult {
-  exitCode: number | null;
-  stdout: string;
-  stderr: string;
-}
-
-/** Spawns `node` with the given arguments and returns its collected stdio. */
-function spawnNode(args: string[]): Promise<SpawnResult> {
-  return new Promise((resolve, reject) => {
-    const child = spawn(process.execPath, args, { stdio: ['ignore', 'pipe', 'pipe'] });
-    const stdoutChunks: Buffer[] = [];
-    const stderrChunks: Buffer[] = [];
-    child.stdout.on('data', (chunk: Buffer) => {
-      stdoutChunks.push(chunk);
-    });
-    child.stderr.on('data', (chunk: Buffer) => {
-      stderrChunks.push(chunk);
-    });
-    child.on('error', reject);
-    child.on('close', (exitCode) => {
-      resolve({
-        exitCode,
-        stdout: Buffer.concat(stdoutChunks).toString('utf8'),
-        stderr: Buffer.concat(stderrChunks).toString('utf8'),
-      });
-    });
-  });
-}
-
 const it = baseIt
   .extend(
     'temp',
@@ -119,3 +89,37 @@ describe('readyup externalization + resolver hook', () => {
     expect(result.stdout).toContain('resolved-ok');
   });
 });
+
+// region | Helpers
+
+/** Spawns `node` with the given arguments and returns its collected stdio. */
+function spawnNode(args: string[]): Promise<SpawnResult> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    const stdoutChunks: Buffer[] = [];
+    const stderrChunks: Buffer[] = [];
+    child.stdout.on('data', (chunk: Buffer) => {
+      stdoutChunks.push(chunk);
+    });
+    child.stderr.on('data', (chunk: Buffer) => {
+      stderrChunks.push(chunk);
+    });
+    child.on('error', reject);
+    child.on('close', (exitCode) => {
+      resolve({
+        exitCode,
+        stdout: Buffer.concat(stdoutChunks).toString('utf8'),
+        stderr: Buffer.concat(stderrChunks).toString('utf8'),
+      });
+    });
+  });
+}
+
+/** Result of running a child process. */
+interface SpawnResult {
+  exitCode: number | null;
+  stdout: string;
+  stderr: string;
+}
+
+// endregion | Helpers

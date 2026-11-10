@@ -116,15 +116,6 @@ export async function compileCommand(args: string[]): Promise<number> {
 
 // region | Helpers
 
-/** Arguments for the batch compile path. */
-interface CompileBatchArgs {
-  shouldSkipManifest: boolean;
-  shouldForce: boolean;
-  manifestPath: string;
-  isJson: boolean;
-  configPath: string | undefined;
-}
-
 /** Compiles every kit source of the working directory's project, under its config or the one named by `--config`. */
 async function compileBatch(args: CompileBatchArgs): Promise<number> {
   const { shouldSkipManifest, shouldForce, manifestPath, isJson, configPath } = args;
@@ -146,10 +137,8 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
   return finishCompile(outcome, isJson);
 }
 
-/** Arguments for the single-file compile path. */
-interface CompileSingleArgs {
-  inputPath: string;
-  outputPath: string | undefined;
+/** Arguments for the batch compile path. */
+interface CompileBatchArgs {
   shouldSkipManifest: boolean;
   shouldForce: boolean;
   manifestPath: string;
@@ -208,6 +197,17 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
   }
 
   return finishCompile({ kits: [outcome.kit], removed: [], warnings: outcome.warnings }, isJson);
+}
+
+/** Arguments for the single-file compile path. */
+interface CompileSingleArgs {
+  inputPath: string;
+  outputPath: string | undefined;
+  shouldSkipManifest: boolean;
+  shouldForce: boolean;
+  manifestPath: string;
+  isJson: boolean;
+  configPath: string | undefined;
 }
 
 /** Loads the config that a single-file compile reads, reporting a config that cannot be evaluated as a config error. */
