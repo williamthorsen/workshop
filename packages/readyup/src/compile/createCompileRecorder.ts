@@ -1,10 +1,10 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
+import type { JsonPathSpec } from '../json-projection/extractJsonPaths.ts';
+import { projectJsonFile } from '../json-projection/projectJsonFile.ts';
 import { hashBytes, hashProjection } from '../verify/targetHash.ts';
 import { type CompiledInput, identifyInput } from './CompiledInput.ts';
-import type { JsonPathSpec } from './extractJsonPaths.ts';
-import { projectJsonFile } from './projectJsonFile.ts';
 
 /**
  * The two methods through which a compile plugin reads files.

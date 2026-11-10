@@ -2,8 +2,8 @@ import { existsSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 
 import { hashToRecordedLength } from '../check-utils/hashing.ts';
-import { describeJsonProjectionFailure } from '../compile/JsonProjectionError.ts';
-import { projectJsonFile } from '../compile/projectJsonFile.ts';
+import { describeJsonProjectionFailure } from '../json-projection/JsonProjectionError.ts';
+import { projectJsonFile } from '../json-projection/projectJsonFile.ts';
 import type { RdyManifestInput, RdyManifestKit } from '../manifest/manifestSchema.ts';
 import { hashFileToRecordedLength } from './targetHash.ts';
 

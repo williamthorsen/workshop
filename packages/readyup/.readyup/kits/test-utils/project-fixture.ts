@@ -1,8 +1,8 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-import type { JsonPathSpec } from '../../../src/compile/extractJsonPaths.ts';
-import { projectJsonFile } from '../../../src/compile/projectJsonFile.ts';
+import type { JsonPathSpec } from '../../../src/json-projection/extractJsonPaths.ts';
+import { projectJsonFile } from '../../../src/json-projection/projectJsonFile.ts';
 import { hashFile, hashProjection } from '../../../src/verify/targetHash.ts';
 
 /** Path at which a fixture kit's inlined module is recorded, relative to the manifest's own directory. */

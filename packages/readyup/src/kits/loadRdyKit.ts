@@ -3,9 +3,9 @@ import path from 'node:path';
 
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
-import { inlinePickJsonCalls } from '../compile/inlinePickJsonCalls.ts';
-import { projectJsonFile } from '../compile/projectJsonFile.ts';
 import { extractHint } from '../errors/error-handling.ts';
+import { inlinePickJsonCalls } from '../json-projection/inlinePickJsonCalls.ts';
+import { projectJsonFile } from '../json-projection/projectJsonFile.ts';
 import { assertKitImportsResolve } from '../kitImports/assertKitImportsResolve.ts';
 import { UnresolvableKitImportsError } from '../kitImports/UnresolvableKitImportsError.ts';
 import { enumerateKits } from '../list/enumerateKits.ts';

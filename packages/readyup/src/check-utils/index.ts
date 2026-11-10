@@ -1,6 +1,6 @@
-export type { JsonPathSpec } from '../compile/extractJsonPaths.ts';
-export { describeJsonProjectionFailure } from '../compile/JsonProjectionError.ts';
-export { projectJsonFile } from '../compile/projectJsonFile.ts';
+export type { JsonPathSpec } from '../json-projection/extractJsonPaths.ts';
+export { describeJsonProjectionFailure } from '../json-projection/JsonProjectionError.ts';
+export { projectJsonFile } from '../json-projection/projectJsonFile.ts';
 export { blankNonCode } from '../portable/blankNonCode.ts';
 export { getLineAtOffset } from '../portable/getLineAtOffset.ts';
 export { isRecord } from '../portable/isRecord.ts';
