@@ -12,6 +12,7 @@ import { writeManifest } from '../manifest/writeManifest.ts';
 import { writeError } from '../output/writeError.ts';
 import { writeHuman } from '../output/writeHuman.ts';
 import { writeWarnings } from '../output/writeWarnings.ts';
+import { toDisplayPath } from '../portable/toDisplayPath.ts';
 import type { RaisedWarning } from '../schemas/common.ts';
 import { collectSourceFiles } from './collectSourceFiles.ts';
 import { loadExistingKitsByName } from './compile-manifest.ts';
@@ -250,7 +251,7 @@ function reportOrphans(orphans: OrphanOutcome[], args: ReportOrphansArgs): Orpha
         report.skippedCount += 1;
         break;
       case 'failed':
-        writeError(orphan.message, `cannot remove ${path.relative(process.cwd(), bundlePath)}`);
+        writeError(orphan.message, `cannot remove ${toDisplayPath(bundlePath)}`);
         report.kits.push({ name, ...projectField, status: 'failed', error: orphan.message });
         report.failedCount += 1;
         break;

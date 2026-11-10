@@ -1,6 +1,4 @@
-import path from 'node:path';
-import process from 'node:process';
-
+import { toDisplayPath } from '../portable/toDisplayPath.ts';
 import type { RaisedWarning } from '../schemas/common.ts';
 import type { InlinedJsonFile } from './buildBundle.ts';
 
@@ -18,12 +16,3 @@ export function listInlinedJsonWarnings(kitName: string, inlinedJson: InlinedJso
   }
   return warnings;
 }
-
-// region | Helpers
-
-/** Returns a path relative to the working directory. */
-function toDisplayPath(filePath: string): string {
-  return path.relative(process.cwd(), filePath);
-}
-
-// endregion | Helpers
