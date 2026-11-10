@@ -6,7 +6,6 @@ import { EXIT_OK } from '../bin/exitCodes.ts';
 import { DEFAULT_CONFIG, loadConfig } from '../config/loadConfig.ts';
 import { extractHint } from '../errors/error-handling.ts';
 import type { ResolvedRdyConfig } from '../kits/types.ts';
-import { getLayout } from '../layout/engine.ts';
 import { type JsonListKitEntry, type JsonListOutput, SCHEMA_VERSION } from '../schemas/listOutputSchema.ts';
 
 /** The `list` flags that decide what every listing mode emits. */
@@ -49,9 +48,9 @@ export async function loadListingConfig(configPath: string | undefined): Promise
     return await loadConfig({ ...(configPath !== undefined && { overridePath: configPath }) });
   } catch (error: unknown) {
     const detail = describeError(error).replace(/\.$/, '');
-    process.stderr.write(`Warning: ${detail}. Listing with default settings.\n`);
     const hint = extractHint(error);
-    if (hint !== undefined) process.stderr.write(getLayout().formatHint(hint) + '\n');
+    const remedy = hint === undefined ? '' : ` ${hint}`;
+    process.stderr.write(`Warning: ${detail}. Listing with default settings.${remedy}\n`);
     return { ...DEFAULT_CONFIG };
   }
 }

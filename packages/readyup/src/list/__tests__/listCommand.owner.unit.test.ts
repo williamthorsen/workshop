@@ -313,7 +313,7 @@ describe(listCommand, () => {
       expect(stdout).toContain('default');
     });
 
-    it('renders a hint that the config failure has, on a line of its own', async () => {
+    it('appends a hint that the config failure has to the warning line', async () => {
       mockLoadConfig.mockRejectedValue(
         Object.assign(new Error("Cannot resolve 'some-lib' while evaluating config.ts."), {
           hint: 'Install it with: pnpm add --save-dev some-lib',
@@ -323,12 +323,11 @@ describe(listCommand, () => {
       const { stderrChunks } = await list([]);
 
       expect(stderrChunks).toStrictEqual([
-        "Warning: Cannot resolve 'some-lib' while evaluating config.ts. Listing with default settings.\n",
-        '\u{1F449} Hint: Install it with: pnpm add --save-dev some-lib\n',
+        "Warning: Cannot resolve 'some-lib' while evaluating config.ts. Listing with default settings. Install it with: pnpm add --save-dev some-lib\n",
       ]);
     });
 
-    it('writes no hint line for a config failure that has none', async () => {
+    it('writes the warning alone for a config failure without a hint', async () => {
       mockLoadConfig.mockRejectedValue(new Error('bad config'));
 
       const { stderrChunks } = await list([]);
