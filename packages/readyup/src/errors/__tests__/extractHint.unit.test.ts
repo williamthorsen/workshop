@@ -2,7 +2,7 @@ import { runInNewContext } from 'node:vm';
 
 import { describe, expect, it } from 'vitest';
 
-import { extractHint } from '../error-handling.ts';
+import { extractHint } from '../extractHint.ts';
 import { configError } from '../RdyError.ts';
 
 describe(extractHint, () => {

@@ -7,7 +7,7 @@ import type { DriftStatus } from './checkDrift.ts';
 import type { InputFailure, InputsStatus } from './checkInputDrift.ts';
 import type { DependencyChange, RebuildStatus } from './checkRebuild.ts';
 import type { SourceStatus } from './checkSourceDrift.ts';
-import { resolveRemedies } from './remedies.ts';
+import { resolveRemedies } from './resolveRemedies.ts';
 import { hasSourceFailed, hasTargetFailed, type KitVerdicts } from './verdicts.ts';
 
 /** Builds a kit's JSON entry, stating what a verdict compared only when it compared something. */

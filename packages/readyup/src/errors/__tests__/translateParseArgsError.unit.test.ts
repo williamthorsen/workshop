@@ -3,7 +3,7 @@ import { parseArgs } from 'node:util';
 import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
-import { translateParseArgsError } from '../parse-args-error.ts';
+import { translateParseArgsError } from '../translateParseArgsError.ts';
 
 const options = {
   file: { type: 'string', short: 'f' },

@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
-import { extractHint } from '../errors/error-handling.ts';
+import { extractHint } from '../errors/extractHint.ts';
 import { inlinePickJsonCalls } from '../json-projection/inlinePickJsonCalls.ts';
 import { projectJsonFile } from '../json-projection/projectJsonFile.ts';
 import { assertKitImportsResolve } from '../kitImports/assertKitImportsResolve.ts';

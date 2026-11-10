@@ -1,6 +1,6 @@
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
-import { extractHint } from '../errors/error-handling.ts';
+import { extractHint } from '../errors/extractHint.ts';
 import { kitLoadError, type RdyError } from '../errors/RdyError.ts';
 import { describeUnresolvableImports } from '../kitImports/describeUnresolvableImports.ts';
 import { UnresolvableKitImportsError } from '../kitImports/UnresolvableKitImportsError.ts';

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } fr
 
 const mockScaffoldConfig = vi.hoisted(() => vi.fn());
 
-vi.mock(import('../scaffold.ts'), () => ({
+vi.mock(import('../scaffoldConfig.ts'), () => ({
   scaffoldConfig: mockScaffoldConfig,
 }));
 

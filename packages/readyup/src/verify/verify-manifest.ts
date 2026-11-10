@@ -8,7 +8,7 @@ import { buildEsbuildInstallHint } from '../compile/buildBundle.ts';
 import { collectSourceKitNames } from '../compile/collectSourceKitNames.ts';
 import { loadEsbuild } from '../compile/loadEsbuild.ts';
 import { loadConfig } from '../config/loadConfig.ts';
-import { extractHint } from '../errors/error-handling.ts';
+import { extractHint } from '../errors/extractHint.ts';
 import { configError } from '../errors/RdyError.ts';
 import type { ResolvedRdyConfig } from '../kits/types.ts';
 import { getLayout } from '../layout/engine.ts';

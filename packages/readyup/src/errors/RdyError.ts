@@ -1,6 +1,6 @@
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
-import { extractHint } from './error-handling.ts';
+import { extractHint } from './extractHint.ts';
 
 /**
  * Diagnosis of a failure that prevented rdy from completing an invocation.

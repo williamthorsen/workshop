@@ -14,7 +14,7 @@ vi.mock('jiti', () => ({
   createJiti: () => ({ import: mockImport }),
 }));
 
-import { extractHint } from '../../errors/error-handling.ts';
+import { extractHint } from '../../errors/extractHint.ts';
 import { jitiImport } from '../jitiImport.ts';
 import { UnresolvedModuleError } from '../UnresolvedModuleError.ts';
 

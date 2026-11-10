@@ -1,7 +1,7 @@
 import { parseArgs, type ParseArgsOptionsConfig } from 'node:util';
 
-import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { usageError } from '../errors/RdyError.ts';
+import { translateParseArgsError } from '../errors/translateParseArgsError.ts';
 
 const styleOption = {
   // Declared so that strict parsing accepts it; `routeCommand` consumed its value before dispatch.

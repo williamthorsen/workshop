@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { RdyManifestKit } from '../../manifest/manifestSchema.ts';
-import { resolveRemedies } from '../remedies.ts';
+import { resolveRemedies } from '../resolveRemedies.ts';
 import type { KitVerdicts } from '../verdicts.ts';
 
 const KIT: RdyManifestKit = { name: 'deploy', path: 'kits/deploy.js', source: 'kits/deploy.ts' };
