@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { InvalidFromValueError } from '../InvalidFromValueError.ts';
 import { parseFromValue } from '../parseFromValue.ts';
 
 describe(parseFromValue, () => {
@@ -24,11 +25,11 @@ describe(parseFromValue, () => {
   });
 
   it('throws for github: with empty ref', () => {
-    expect(() => parseFromValue('github:acme/toolkit@')).toThrow("ref after '@' must not be empty");
+    expectRejection('github:acme/toolkit@', "ref after '@' must not be empty");
   });
 
   it('throws for github: without slash-separated org/repo', () => {
-    expect(() => parseFromValue('github:toolkit')).toThrow('expected "owner/repo" format');
+    expectRejection('github:toolkit', 'expected "owner/repo" format');
   });
 
   // -- bitbucket scheme --
@@ -52,7 +53,7 @@ describe(parseFromValue, () => {
   });
 
   it('throws for bitbucket: with missing repo', () => {
-    expect(() => parseFromValue('bitbucket:myteam')).toThrow('expected "owner/repo" format');
+    expectRejection('bitbucket:myteam', 'expected "owner/repo" format');
   });
 
   // -- npm scheme --
@@ -96,25 +97,25 @@ describe(parseFromValue, () => {
   });
 
   it('throws for npm: with an empty version', () => {
-    expect(() => parseFromValue('npm:readyup@')).toThrow("version after '@' must not be empty");
+    expectRejection('npm:readyup@', "version after '@' must not be empty");
   });
 
   it('throws for npm: with no package name', () => {
-    expect(() => parseFromValue('npm:')).toThrow('requires a package name');
+    expectRejection('npm:', 'requires a package name');
   });
 
   it('throws for npm: with a scope but no package name', () => {
-    expect(() => parseFromValue('npm:@williamthorsen')).toThrow('expected "@scope/name" format');
+    expectRejection('npm:@williamthorsen', 'expected "@scope/name" format');
   });
 
   // -- URL rejection --
 
   it('throws for https:// values with helpful message', () => {
-    expect(() => parseFromValue('https://example.com/kit.js')).toThrow('Use --url instead');
+    expectRejection('https://example.com/kit.js', 'Use --url instead');
   });
 
   it('throws for http:// values with helpful message', () => {
-    expect(() => parseFromValue('https://example.com/kit.js')).toThrow('Use --url instead');
+    expectRejection('http://example.com/kit.js', 'Use --url instead');
   });
 
   // -- global keyword --
@@ -151,3 +152,13 @@ describe(parseFromValue, () => {
     expect(parseFromValue('.')).toStrictEqual({ type: 'local', path: '.' });
   });
 });
+
+// region | Helpers
+
+/** Asserts that `parseFromValue` rejects the value with an `InvalidFromValueError` whose message contains the text. */
+function expectRejection(value: string, message: string): void {
+  expect(() => parseFromValue(value)).toThrow(InvalidFromValueError);
+  expect(() => parseFromValue(value)).toThrow(message);
+}
+
+// endregion | Helpers

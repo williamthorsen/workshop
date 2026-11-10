@@ -1,3 +1,5 @@
+import { InvalidFromValueError } from './InvalidFromValueError.ts';
+
 /** Parsed result for the `github:` scheme. */
 export interface GitHubSource {
   type: 'github';
@@ -61,7 +63,7 @@ export function parseFromValue(value: string): FromSource {
   }
 
   if (value.startsWith('http://') || value.startsWith('https://')) {
-    throw new Error(`URLs are not accepted by --from. Use --url instead: ${value}`);
+    throw new InvalidFromValueError(`URLs are not accepted by --from. Use --url instead: ${value}`);
   }
 
   if (value === 'global') {
@@ -86,13 +88,13 @@ function parseOrgRepo(value: string): { owner: string; name: string; ref: string
   const ref = atIndex === -1 ? 'main' : value.slice(atIndex + 1);
 
   if (ref === '') {
-    throw new Error(`Invalid --from value: ref after '@' must not be empty in "${value}"`);
+    throw new InvalidFromValueError(`Invalid --from value: ref after '@' must not be empty in "${value}"`);
   }
 
   // The slash must be strictly inside the slug, leaving a non-empty owner and name on either side.
   const slashIndex = slug.indexOf('/');
   if (slashIndex <= 0 || slashIndex === slug.length - 1) {
-    throw new Error(`Invalid --from value: expected "owner/repo" format, got "${slug}"`);
+    throw new InvalidFromValueError(`Invalid --from value: expected "owner/repo" format, got "${slug}"`);
   }
 
   return { owner: slug.slice(0, slashIndex), name: slug.slice(slashIndex + 1), ref };
@@ -115,13 +117,13 @@ function parseNpmSpecifier(value: string): { name: string; versionSpec: string |
   const versionSpec = atIndex > 0 ? value.slice(atIndex + 1) : undefined;
 
   if (versionSpec === '') {
-    throw new Error(`Invalid --from value: version after '@' must not be empty in "npm:${value}"`);
+    throw new InvalidFromValueError(`Invalid --from value: version after '@' must not be empty in "npm:${value}"`);
   }
   if (name === '') {
-    throw new Error('Invalid --from value: npm: requires a package name');
+    throw new InvalidFromValueError('Invalid --from value: npm: requires a package name');
   }
   if (name.startsWith('@') && !name.slice(1).includes('/')) {
-    throw new Error(`Invalid --from value: expected "@scope/name" format, got "${name}"`);
+    throw new InvalidFromValueError(`Invalid --from value: expected "@scope/name" format, got "${name}"`);
   }
 
   return { name, versionSpec };
