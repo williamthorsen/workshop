@@ -1,8 +1,7 @@
 import path from 'node:path';
 import process from 'node:process';
-import { parseArgs as nodeParseArgs } from 'node:util';
 
-import { translateParseArgsError } from '../errors/parse-args-error.ts';
+import { parseSubcommandArgs } from '../bin/parseSubcommandArgs.ts';
 import { usageError } from '../errors/RdyError.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import {
@@ -22,8 +21,6 @@ const verifyOptions = {
   manifest: { type: 'string' },
   rebuild: { type: 'boolean' },
   recursive: { type: 'boolean' },
-  // Declared so that strict parsing accepts it; `routeCommand` consumed its value before dispatch.
-  style: { type: 'string' },
 } as const;
 
 /**
@@ -40,22 +37,10 @@ const verifyOptions = {
  * no esbuild to rebuild with.
  */
 export async function verifyCommand(args: string[]): Promise<number> {
-  let parsed;
-  try {
-    parsed = nodeParseArgs({ args, options: verifyOptions, strict: true, allowPositionals: true });
-  } catch (error: unknown) {
-    throw usageError(translateParseArgsError(error, 'verify'), { cause: error });
-  }
-  const { values, positionals } = parsed;
+  const { values, positionals } = parseSubcommandArgs({ args, command: 'verify', options: verifyOptions });
 
   if (positionals.length > 0) {
     throw usageError('rdy verify does not accept positional arguments.');
-  }
-
-  for (const [name, value] of Object.entries(values)) {
-    if (value === '') {
-      throw usageError(`--${name} requires a value`);
-    }
   }
 
   const json = values.json === true;

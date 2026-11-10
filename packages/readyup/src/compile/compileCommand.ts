@@ -1,13 +1,12 @@
 import assert from 'node:assert';
 import path from 'node:path';
 import process from 'node:process';
-import { parseArgs as nodeParseArgs } from 'node:util';
 
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
+import { parseSubcommandArgs } from '../bin/parseSubcommandArgs.ts';
 import { loadConfig } from '../config/loadConfig.ts';
 import { extractHint } from '../errors/error-handling.ts';
-import { translateParseArgsError } from '../errors/parse-args-error.ts';
 import { configError, usageError } from '../errors/RdyError.ts';
 import { deriveKitNameFromBundle } from '../kits/deriveKitName.ts';
 import type { ResolvedRdyConfig } from '../kits/types.ts';
@@ -29,8 +28,6 @@ const compileOptions = {
   output: { type: 'string', short: 'o' },
   recursive: { type: 'boolean' },
   'skip-manifest': { type: 'boolean' },
-  // Declared so that strict parsing accepts it; `routeCommand` consumed its value before dispatch.
-  style: { type: 'string' },
 } as const;
 
 /** Domain-specific hints for compile flags that require a value. */
@@ -41,21 +38,12 @@ const compileHints: Record<string, string> = {
 
 /** Runs the `compile` subcommand, returning the exit code produced by its parse, bundle, and report. */
 export async function compileCommand(args: string[]): Promise<number> {
-  let parsed;
-  try {
-    parsed = nodeParseArgs({ args, options: compileOptions, strict: true, allowPositionals: true });
-  } catch (error: unknown) {
-    throw usageError(translateParseArgsError(error, 'compile', compileHints), { cause: error });
-  }
-  const { values, positionals } = parsed;
-
-  // parseArgs accepts `--flag=` as an empty string; treat an empty value as missing.
-  for (const [name, value] of Object.entries(values)) {
-    if (value === '') {
-      const flag = `--${name}`;
-      throw usageError(compileHints[flag] ?? `${flag} requires a value`);
-    }
-  }
+  const { values, positionals } = parseSubcommandArgs({
+    args,
+    command: 'compile',
+    hints: compileHints,
+    options: compileOptions,
+  });
 
   const recursive = values.recursive === true;
 

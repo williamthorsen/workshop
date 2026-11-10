@@ -508,6 +508,14 @@ describe(routeCommand, () => {
     expect(stderr).toContain("Unknown option '--unknown'");
   });
 
+  it('returns 2 for init given an empty --style, without scaffolding', async () => {
+    const { exitCode, stderr } = await routeCli(['init', '--style=']);
+
+    expect(exitCode).toBe(2);
+    expect(stderr).toContain('--style requires a value');
+    expect(mockInitCommand).not.toHaveBeenCalled();
+  });
+
   it('shows list help and returns 0 for list --help', async () => {
     const { exitCode, stdout } = await routeCli(['list', '--help']);
 
