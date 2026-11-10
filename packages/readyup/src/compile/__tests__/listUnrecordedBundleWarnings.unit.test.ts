@@ -1,3 +1,6 @@
+import path from 'node:path';
+import process from 'node:process';
+
 import { createTempTree, pointCwdAt, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
@@ -20,6 +23,28 @@ describe(listUnrecordedBundleWarnings, () => {
         remedy: 'Delete it if its kit was removed.',
       },
     ]);
+  });
+
+  it('names an output directory outside the working directory by its absolute path', () => {
+    using tree = createTempTree({ 'kits/old.js': '', 'project/.keep': '' }, { prefix: 'rdy-unrecorded-bundles-' });
+    using _cwd = pointCwdAt(tree.resolve('project'));
+
+    const [warning] = listWarnings(tree, { outDir: tree.resolve('kits') });
+
+    expect(warning?.message).toBe(
+      `old.js in ${path.resolve(process.cwd(), '../kits')} is not recorded in the manifest, and no source compiles to it.`,
+    );
+  });
+
+  it('names an output directory that is the working directory by its absolute path', () => {
+    using tree = createTempTree({ '.readyup/kits/old.js': '' }, { prefix: 'rdy-unrecorded-bundles-' });
+    using _cwd = pointCwdAt(tree.resolve('.readyup/kits'));
+
+    const [warning] = listWarnings(tree, {});
+
+    expect(warning?.message).toBe(
+      `old.js in ${process.cwd()} is not recorded in the manifest, and no source compiles to it.`,
+    );
   });
 
   it('accounts for a bundle recorded by a manifest entry', () => {

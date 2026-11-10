@@ -24,6 +24,14 @@ describe(listInlinedJsonWarnings, () => {
     expect(warning?.message).toContain('imported by kits/deploy.ts, kits/helper.ts,');
   });
 
+  it('names a file and an importer outside the working directory by their absolute paths', () => {
+    const [warning] = listInlinedJsonWarnings('deploy', [inlinedJson('../shared.json', ['../kits/deploy.ts'])]);
+
+    expect(warning?.message).toContain(
+      `bundles all of ${path.resolve(process.cwd(), '../shared.json')}, imported by ${path.resolve(process.cwd(), '../kits/deploy.ts')},`,
+    );
+  });
+
   it('raises one warning per file', () => {
     const warnings = listInlinedJsonWarnings('deploy', [
       inlinedJson('package.json', ['kits/deploy.ts']),
