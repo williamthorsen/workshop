@@ -13,46 +13,6 @@ vi.mock(import('node:fs'), () => ({
 import { type CompileRecorder, createCompileRecorder } from '../createCompileRecorder.ts';
 import { pickJsonPlugin } from '../pickJsonPlugin.ts';
 
-type OnLoadCallback = Parameters<esbuild.PluginBuild['onLoad']>[1];
-
-/** Returns a minimal `PluginBuild` stub, which implements `onLoad` alone. */
-function stubBuild(onLoad: esbuild.PluginBuild['onLoad']): esbuild.PluginBuild {
-  return {
-    initialOptions: {},
-    resolve: () => Promise.reject(new Error('resolve is not exercised in these tests')),
-    onStart() {},
-    onEnd() {},
-    onResolve() {},
-    onLoad,
-    onDispose() {},
-    esbuild,
-  };
-}
-
-/** Returns the onLoad callback that the plugin registered, read back through a real recorder. */
-function captureOnLoad(recorder: CompileRecorder = createCompileRecorder()): OnLoadCallback {
-  let captured: OnLoadCallback | undefined;
-  const plugin = pickJsonPlugin(recorder);
-  void plugin.setup(
-    stubBuild((_options, callback) => {
-      captured = callback;
-    }),
-  );
-  if (captured === undefined) {
-    throw new Error('onLoad callback was not registered');
-  }
-  return captured;
-}
-
-/** Returns the synchronous result of invoking the captured onLoad for a source path. */
-function runOnLoad(onLoad: OnLoadCallback, path: string): esbuild.OnLoadResult | null | undefined {
-  const result = onLoad({ path, namespace: 'file', suffix: '', pluginData: undefined, with: {} });
-  if (result instanceof Promise) {
-    throw new TypeError('pickJson onLoad is synchronous');
-  }
-  return result;
-}
-
 describe(pickJsonPlugin, () => {
   it('returns a plugin with the name "pick-json"', () => {
     const plugin = pickJsonPlugin(createCompileRecorder());
@@ -127,3 +87,47 @@ describe(pickJsonPlugin, () => {
     expect(capturedFilter?.test('file.tsx')).toBe(false);
   });
 });
+
+// region | Helpers
+
+/** Returns the onLoad callback that the plugin registered, read back through a real recorder. */
+function captureOnLoad(recorder: CompileRecorder = createCompileRecorder()): OnLoadCallback {
+  let captured: OnLoadCallback | undefined;
+  const plugin = pickJsonPlugin(recorder);
+  void plugin.setup(
+    stubBuild((_options, callback) => {
+      captured = callback;
+    }),
+  );
+  if (captured === undefined) {
+    throw new Error('onLoad callback was not registered');
+  }
+  return captured;
+}
+
+type OnLoadCallback = Parameters<esbuild.PluginBuild['onLoad']>[1];
+
+/** Returns the synchronous result of invoking the captured onLoad for a source path. */
+function runOnLoad(onLoad: OnLoadCallback, path: string): esbuild.OnLoadResult | null | undefined {
+  const result = onLoad({ path, namespace: 'file', suffix: '', pluginData: undefined, with: {} });
+  if (result instanceof Promise) {
+    throw new TypeError('pickJson onLoad is synchronous');
+  }
+  return result;
+}
+
+/** Returns a minimal `PluginBuild` stub, which implements `onLoad` alone. */
+function stubBuild(onLoad: esbuild.PluginBuild['onLoad']): esbuild.PluginBuild {
+  return {
+    initialOptions: {},
+    resolve: () => Promise.reject(new Error('resolve is not exercised in these tests')),
+    onStart() {},
+    onEnd() {},
+    onResolve() {},
+    onLoad,
+    onDispose() {},
+    esbuild,
+  };
+}
+
+// endregion | Helpers

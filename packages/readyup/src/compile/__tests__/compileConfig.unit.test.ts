@@ -246,7 +246,11 @@ describe(compileConfig, () => {
   });
 });
 
+// region | Helpers
+
 /** Builds a mock esbuild result with the given output text and no resolved modules. */
 function buildResult(text: string) {
   return { metafile: { inputs: {} }, outputFiles: [{ contents: new TextEncoder().encode(text) }] };
 }
+
+// endregion | Helpers
