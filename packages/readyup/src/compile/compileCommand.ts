@@ -12,6 +12,7 @@ import { configError, usageError } from '../errors/RdyError.ts';
 import { deriveKitNameFromBundle } from '../kits/deriveKitName.ts';
 import type { ResolvedRdyConfig } from '../kits/types.ts';
 import { writeHuman } from '../output/writeHuman.ts';
+import { toDisplayPath } from '../portable/toDisplayPath.ts';
 import { loadExistingKitsByName, resolveManifestPath, upsertManifest } from './compile-manifest.ts';
 import { finishCompile } from './compile-outcome.ts';
 import { formatDriftRemedy, formatSectionHeading } from './compile-report.ts';
@@ -159,17 +160,17 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
   // `exclude` select matter to a sweep rather than to a named file.
   const config = await loadConfigForSingle(configPath);
   const kitName = deriveKitNameFromBundle(resolvedOutputPath, path.resolve(config.compile.outDir));
-  const relInput = path.relative(process.cwd(), resolvedInputPath);
+  const displayInput = toDisplayPath(resolvedInputPath);
 
   writeHuman(formatSectionHeading('Compiling kit'), json);
 
   const outcome = await compileKit({
     describeFailure: describeError,
-    displayInput: relInput,
+    displayInput,
     existingKit: skipManifest ? undefined : loadExistingKitsByName(manifestPath).get(kitName),
     failureSubject: undefined,
     force,
-    formatOutput: (writtenPath) => path.relative(process.cwd(), writtenPath),
+    formatOutput: toDisplayPath,
     inputPath,
     json,
     kitName,

@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
+import process from 'node:process';
 
 import { createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -58,6 +59,18 @@ describe(compileCommand, () => {
 
     expect(stdout).toContain(`${ICON_COMPILED} input.ts -> ${GLYPH_OUTPUT} `);
     expect(stdout).not.toContain('\u{2192}');
+  });
+
+  it('names a single file outside the working directory by its absolute path', async () => {
+    using tree = createTempTree({ 'outside/input.ts': COMPILED, 'project/.keep': '' }, TREE_OPTIONS);
+    using _cwd = pointCwdAt(tree.resolve('project'));
+    const outsideDir = path.resolve(process.cwd(), '../outside');
+
+    const { stdout } = await compile(['../outside/input.ts']);
+
+    expect(stdout).toContain(
+      `${ICON_COMPILED} ${path.join(outsideDir, 'input.ts')} -> ${GLYPH_OUTPUT} ${path.join(outsideDir, 'input.js')}`,
+    );
   });
 
   it('shows no-changes indicator for an unchanged single file', async () => {

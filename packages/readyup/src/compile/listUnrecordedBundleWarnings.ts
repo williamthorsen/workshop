@@ -1,8 +1,8 @@
 import path from 'node:path';
-import process from 'node:process';
 
 import { enumerateKits } from '../list/enumerateKits.ts';
 import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
+import { toDisplayPath } from '../portable/toDisplayPath.ts';
 import type { RaisedWarning } from '../schemas/common.ts';
 
 /** Arguments for listing the bundles of a sweep that nothing accounts for. */
@@ -28,7 +28,7 @@ export function listUnrecordedBundleWarnings(args: ListUnrecordedBundleWarningsA
   const recordedPaths = new Set(
     entries.flatMap((entry) => (entry.path === undefined ? [] : path.resolve(manifestDir, entry.path))),
   );
-  const displayDir = path.relative(process.cwd(), outDir) || '.';
+  const displayDir = toDisplayPath(outDir);
 
   const warnings: RaisedWarning[] = [];
   const bundleNames = enumerateKits({ dir: outDir, extension: '.js', recursive: true });
