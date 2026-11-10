@@ -5,7 +5,7 @@ import { configError } from '../errors/RdyError.ts';
 import { isPackageInstalled } from '../installed-packages/isPackageInstalled.ts';
 import { printStep, reportWriteResult } from '../output/terminal.ts';
 import { buildInstallCommand } from '../portable/buildInstallCommand.ts';
-import { scaffoldConfig } from './scaffold.ts';
+import { scaffoldConfig } from './scaffoldConfig.ts';
 
 /** Packages that the next steps need from the project, in the order in which the install step names them. */
 const PREREQUISITE_PACKAGES = ['readyup', 'esbuild'];

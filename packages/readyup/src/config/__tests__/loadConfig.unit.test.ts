@@ -16,7 +16,7 @@ vi.mock('jiti', () => ({
   createJiti: () => ({ import: mockJitiImport }),
 }));
 
-import { extractHint } from '../../errors/error-handling.ts';
+import { extractHint } from '../../errors/extractHint.ts';
 import { RdyError } from '../../errors/RdyError.ts';
 import { loadConfig } from '../loadConfig.ts';
 

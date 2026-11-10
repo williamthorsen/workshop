@@ -1,7 +1,7 @@
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { DEFAULT_CONFIG, loadConfig } from '../config/loadConfig.ts';
-import { extractHint } from '../errors/error-handling.ts';
+import { extractHint } from '../errors/extractHint.ts';
 import type { ResolvedRdyConfig } from '../kits/types.ts';
 import type { ReportedWarning } from '../output/writeWarnings.ts';
 import { type JsonListKitEntry, type JsonListOutput, SCHEMA_VERSION } from '../schemas/listOutputSchema.ts';

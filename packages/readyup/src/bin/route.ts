@@ -7,7 +7,7 @@ import { describeInvalidOutputStyle, resolveOutputStyle } from '@williamthorsen/
 
 import { compileCommand } from '../compile/compileCommand.ts';
 import { loadConfig } from '../config/loadConfig.ts';
-import { extractHint } from '../errors/error-handling.ts';
+import { extractHint } from '../errors/extractHint.ts';
 import { extractStackFrames } from '../errors/extractStackFrames.ts';
 import { configError, internalError, RdyError, toRdyError, usageError } from '../errors/RdyError.ts';
 import { HELP_FLAGS, helpCommand, writeHelp } from '../help/helpCommand.ts';

@@ -6,7 +6,7 @@ import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { parseSubcommandArgs } from '../bin/parseSubcommandArgs.ts';
 import { loadConfig } from '../config/loadConfig.ts';
-import { extractHint } from '../errors/error-handling.ts';
+import { extractHint } from '../errors/extractHint.ts';
 import { configError, usageError } from '../errors/RdyError.ts';
 import { deriveKitNameFromBundle } from '../kits/deriveKitName.ts';
 import type { ResolvedRdyConfig } from '../kits/types.ts';

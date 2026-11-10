@@ -3,7 +3,7 @@ import process from 'node:process';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 import { pluralizeWithCount } from '@williamthorsen/toolbelt.strings';
 
-import { extractHint } from '../errors/error-handling.ts';
+import { extractHint } from '../errors/extractHint.ts';
 import { RdyError } from '../errors/RdyError.ts';
 import { writeError } from '../output/writeError.ts';
 import { writeHint } from '../output/writeHint.ts';
