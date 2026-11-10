@@ -24,7 +24,7 @@ Packages live under `packages/`:
 
 Key files:
 
-- `.config/nmr.config.ts`: Per-repo nmr script overrides. Its root hooks are what keep kit bundles honest and what validate readyup's agent content root, and its `rdy` devBin runs readyup from TypeScript source so the root's `rdy` hooks need no prior build.
+- `.config/nmr.config.ts`: Per-repo nmr script overrides. Its root hooks are what keep kit bundles honest and what validate readyup's agent content root, and its `build:post` and `ci:pre` hooks run readyup from TypeScript source, so they need no prior build.
 - `.config/readyup.config.ts`: Readyup compile settings, plus the `sources` list whose kits audit this repo.
 - `.readyup/kits/`: Kit files (TypeScript sources compiled to self-contained ESM bundles).
 - `packages/readyup/vitest.config.ts`: Retained per-package config, holding the kit tree's coverage include. A package config replaces the root one rather than extending it, so this one passes `vitest.shared.ts` alongside its own setting, and anything a root-collected run needs belongs in that layer instead.
