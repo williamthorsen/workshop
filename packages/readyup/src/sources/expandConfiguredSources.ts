@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import { configError } from '../errors/RdyError.ts';
+import { configError, RdyError } from '../errors/RdyError.ts';
 import { readPackageVersion, resolvePackageRoot } from '../installed-packages/resolvePackageRoot.ts';
 import { resolveWorkspaceRoot } from '../installed-packages/resolveWorkspaceRoot.ts';
 import { buildRepositoryProvenance, type KitProvenance } from '../kits/KitProvenance.ts';
@@ -11,9 +11,7 @@ import type { RdyManifestChecklistChecks } from '../manifest/manifestSchema.ts';
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
 import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
 import { buildRepositoryKitUrl, buildRepositoryManifestUrl, type RepositorySource } from '../remote/kitSourceUrls.ts';
-import { loadRemoteManifest } from '../remote/loadRemoteManifest.ts';
-import { resolveRemoteProvider } from '../remote/remote-provider.ts';
-import { toRemoteRdyError } from '../remote/toRemoteRdyError.ts';
+import { loadRemoteSourceManifest } from '../remote/loadRemoteSourceManifest.ts';
 import type { ConfiguredSource } from './parseConfiguredSource.ts';
 
 /** A kit published by a configured source, with the provenance that its output is labelled with. */
@@ -120,22 +118,13 @@ async function expandRepository(
   remote: RemoteFetchContext,
 ): Promise<SourceKit[]> {
   const url = buildRepositoryManifestUrl(source);
-  const provider = resolveRemoteProvider(url);
 
   let manifest;
   try {
-    manifest = await loadRemoteManifest({
-      url,
-      cache: remote.cache,
-      resolveHeaders: () => remote.resolveAuthHeaders(provider),
-    });
+    manifest = await loadRemoteSourceManifest(url, remote);
   } catch (error: unknown) {
-    const tokenForwarded = remote.resolveAuthHeaders(provider) !== undefined;
-    const diagnosis = toRemoteRdyError(error, { code: 'config', provider, tokenForwarded, url });
-    throw configError(`Configured source "${spelling}": ${diagnosis.message}`, {
-      cause: error,
-      hint: diagnosis.hint,
-    });
+    if (!(error instanceof RdyError)) throw error;
+    throw configError(`Configured source "${spelling}": ${error.message}`, { cause: error.cause, hint: error.hint });
   }
 
   if (manifest.kits.length === 0) {
