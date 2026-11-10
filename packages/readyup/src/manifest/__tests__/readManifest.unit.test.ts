@@ -7,7 +7,8 @@ vi.mock(import('node:fs'), () => ({
   readFileSync: mockReadFileSync,
 }));
 
-import { readManifest } from '../readManifest.ts';
+import { RdyError } from '../../errors/RdyError.ts';
+import { ManifestNotFoundError, readManifest } from '../readManifest.ts';
 
 describe(readManifest, () => {
   it('returns a typed manifest for valid content', () => {
@@ -28,14 +29,17 @@ describe(readManifest, () => {
     expect(result).toStrictEqual(manifest);
   });
 
-  it('throws when the file does not exist', () => {
+  it('throws a config ManifestNotFoundError when the file does not exist', async () => {
     mockReadFileSync.mockImplementation(() => {
       throw Object.assign(new Error("ENOENT: no such file or directory, open '/missing/manifest.json'"), {
         code: 'ENOENT',
       });
     });
 
-    expect(() => readManifest('/missing/manifest.json')).toThrow('Manifest file not found');
+    const error = await captureError(() => readManifest('/missing/manifest.json'));
+
+    expect(error).toBeInstanceOf(ManifestNotFoundError);
+    expect(error).toMatchObject({ code: 'config', message: 'Manifest file not found: /missing/manifest.json' });
   });
 
   it('throws with detail when the file is unreadable, preserving the read failure as the cause', async () => {
@@ -48,19 +52,31 @@ describe(readManifest, () => {
 
     const error = await captureError(() => readManifest('/locked/manifest.json'));
 
+    expect(error).toBeInstanceOf(RdyError);
+    expect(error).toMatchObject({ code: 'config' });
     expect(error.message).toBe(`Failed to read manifest file /locked/manifest.json: ${readFailure.message}`);
     expect(error.cause).toBe(readFailure);
   });
 
-  it('throws when the file contains invalid JSON', () => {
+  it('throws a config error with the parse failure as the cause when the file contains invalid JSON', async () => {
     mockReadFileSync.mockReturnValue('not json');
 
-    expect(() => readManifest('/bad/manifest.json')).toThrow('invalid JSON');
+    const error = await captureError(() => readManifest('/bad/manifest.json'));
+
+    expect(error).toBeInstanceOf(RdyError);
+    expect(error).toMatchObject({ code: 'config' });
+    expect(error.message).toMatch(/^Manifest file contains invalid JSON: \/bad\/manifest\.json: \S/);
+    expect(error.cause).toBeInstanceOf(SyntaxError);
   });
 
-  it('throws when the manifest has an invalid schema', () => {
+  it('throws a config error with the validation failure as the cause when the schema is invalid', async () => {
     mockReadFileSync.mockReturnValue(JSON.stringify({ version: 2, kits: [] }));
 
-    expect(() => readManifest('/bad/manifest.json')).toThrow('Invalid manifest schema');
+    const error = await captureError(() => readManifest('/bad/manifest.json'));
+
+    expect(error).toBeInstanceOf(RdyError);
+    expect(error).toMatchObject({ code: 'config' });
+    expect(error.message).toMatch(/^Invalid manifest schema in \/bad\/manifest\.json: /);
+    expect(error.cause).toBeInstanceOf(Error);
   });
 });

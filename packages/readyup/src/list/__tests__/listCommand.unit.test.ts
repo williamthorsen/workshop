@@ -40,6 +40,7 @@ vi.mock(import('../../manifest/readManifest.ts'), async (importOriginal) => {
   };
 });
 
+import { configError } from '../../errors/RdyError.ts';
 import { ManifestNotFoundError } from '../../manifest/readManifest.ts';
 import { listCommand } from '../listCommand.ts';
 import { list, listRaising } from '../test-utils/list-runners.ts';
@@ -102,15 +103,15 @@ describe(listCommand, () => {
       expect(stdout).toContain('No compiled kits found');
     });
 
-    it('reports a config error when the manifest is not found at the --from path', async () => {
+    it('reports a config error when the manifest at the --from path cannot be parsed', async () => {
       mockReadManifest.mockImplementation(() => {
-        throw new Error('Manifest file not found: .readyup/manifest.json');
+        throw configError('Manifest file contains invalid JSON: .readyup/manifest.json');
       });
 
       const { error } = await listRaising(['--from', import.meta.dirname]);
 
       expect(error.code).toBe('config');
-      expect(error.message).toContain('Manifest file not found');
+      expect(error.message).toContain('invalid JSON');
     });
   });
 
@@ -133,7 +134,7 @@ describe(listCommand, () => {
 
     it('reports a config error when the manifest file cannot be read', async () => {
       mockReadManifest.mockImplementation(() => {
-        throw new Error('Manifest file not found: /missing/manifest.json');
+        throw new ManifestNotFoundError('/missing/manifest.json');
       });
 
       const { error } = await listRaising(['--manifest', '/missing/manifest.json']);

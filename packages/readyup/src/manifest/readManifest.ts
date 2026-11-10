@@ -1,14 +1,14 @@
 import { readFileSync } from 'node:fs';
 
-import { isError } from '@williamthorsen/toolbelt.errors';
-import { chainError } from '@williamthorsen/toolbelt.errors/candidate';
+import { describeError, isError } from '@williamthorsen/toolbelt.errors';
 
+import { configError, RdyError } from '../errors/RdyError.ts';
 import { ManifestSchema, type RdyManifest } from './manifestSchema.ts';
 
 /** Thrown when the manifest file does not exist on disk. */
-export class ManifestNotFoundError extends Error {
+export class ManifestNotFoundError extends RdyError {
   constructor(manifestPath: string) {
-    super(`Manifest file not found: ${manifestPath}`);
+    super('config', `Manifest file not found: ${manifestPath}`);
     this.name = 'ManifestNotFoundError';
   }
 }
@@ -16,8 +16,8 @@ export class ManifestNotFoundError extends Error {
 /**
  * Returns a manifest file read from disk and validated.
  *
- * Throws `ManifestNotFoundError` for a missing file, or a plain `Error` for invalid JSON or a schema
- * failure.
+ * Every failure is a config error: `ManifestNotFoundError` for a missing file, and a plain config `RdyError`, whose
+ * `cause` is the underlying error, for an unreadable file, invalid JSON, or a schema failure.
  */
 export function readManifest(manifestPath: string): RdyManifest {
   let raw: string;
@@ -27,19 +27,21 @@ export function readManifest(manifestPath: string): RdyManifest {
     if (isError(error) && 'code' in error && error.code === 'ENOENT') {
       throw new ManifestNotFoundError(manifestPath);
     }
-    throw chainError(`Failed to read manifest file ${manifestPath}`, error);
+    throw configError(`Failed to read manifest file ${manifestPath}: ${describeError(error)}`, { cause: error });
   }
 
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
-  } catch {
-    throw new Error(`Manifest file contains invalid JSON: ${manifestPath}`);
+  } catch (error: unknown) {
+    throw configError(`Manifest file contains invalid JSON: ${manifestPath}: ${describeError(error)}`, {
+      cause: error,
+    });
   }
 
   const result = ManifestSchema.safeParse(parsed);
   if (!result.success) {
-    throw new Error(`Invalid manifest schema in ${manifestPath}: ${result.error.message}`);
+    throw configError(`Invalid manifest schema in ${manifestPath}: ${result.error.message}`, { cause: result.error });
   }
 
   return result.data;
