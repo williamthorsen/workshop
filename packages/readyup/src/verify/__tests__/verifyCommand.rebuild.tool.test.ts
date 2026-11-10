@@ -15,7 +15,7 @@ import { hashFile } from '../targetHash.ts';
 import { verifyCommand } from '../verifyCommand.ts';
 
 /** Absolute specifier for the `pickJson` marker, so that a kit written into a tempdir can import it. */
-const PICK_JSON_MODULE = path.resolve(import.meta.dirname, '../../compile/pickJson.ts');
+const PICK_JSON_MODULE = path.resolve(import.meta.dirname, '../../json-projection/pickJson.ts');
 
 /** Absolute specifier for an installed package, so that the fixture's compile records a bundled dependency. */
 const PICOMATCH_MODULE = createRequire(import.meta.url).resolve('picomatch');

@@ -1,7 +1,7 @@
 import type { Plugin } from 'esbuild';
 
+import { inlinePickJsonCalls } from '../json-projection/inlinePickJsonCalls.ts';
 import type { CompileRecorder } from './createCompileRecorder.ts';
-import { inlinePickJsonCalls } from './inlinePickJsonCalls.ts';
 
 /**
  * Returns an esbuild plugin that replaces `pickJson(...)` calls with inlined object literals.

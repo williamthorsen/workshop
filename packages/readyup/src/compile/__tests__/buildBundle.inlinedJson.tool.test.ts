@@ -7,7 +7,7 @@ import { describe, expect, it as baseIt } from 'vitest';
 import { buildBundle, type InlinedJsonFile } from '../buildBundle.ts';
 
 const KIT_SOURCE = [
-  `import { pickJson } from '${path.resolve(import.meta.dirname, '../pickJson.ts')}';`,
+  `import { pickJson } from '${path.resolve(import.meta.dirname, '../../json-projection/pickJson.ts')}';`,
   `import dependencyData from 'tiny-dep/data.json' with { type: 'json' };`,
   `import { tiny } from 'tiny-dep';`,
   `import data from './data.jsonc' with { type: 'json' };`,

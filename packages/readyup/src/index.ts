@@ -77,7 +77,7 @@ export {
 } from './kits/authoring.ts';
 
 // Compile utilities
-export { pickJson } from './compile/pickJson.ts';
+export { pickJson } from './json-projection/pickJson.ts';
 
 // Manifest
 export { DEFAULT_MANIFEST_PATH } from './manifest/manifestPath.ts';

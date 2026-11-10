@@ -1,4 +1,4 @@
-import type { JsonPathSpec } from './extractJsonPaths.ts';
+import type { JsonPathSpec } from '../json-projection/extractJsonPaths.ts';
 
 /**
  * One file read by a compile, as recorded while the compile ran.

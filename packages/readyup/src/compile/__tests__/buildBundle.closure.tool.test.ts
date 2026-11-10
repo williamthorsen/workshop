@@ -8,7 +8,7 @@ import { buildBundle } from '../buildBundle.ts';
 import type { CompiledInput } from '../CompiledInput.ts';
 
 const KIT_SOURCE = [
-  `import { pickJson } from '${path.resolve(import.meta.dirname, '../pickJson.ts')}';`,
+  `import { pickJson } from '${path.resolve(import.meta.dirname, '../../json-projection/pickJson.ts')}';`,
   `import { helper } from './helper.ts';`,
   `import { tiny } from 'tiny-dep';`,
   '',

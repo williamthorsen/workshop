@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 const FILESYSTEM_SPECIFIERS = new Set(['fs', 'fs/promises', 'node:fs', 'node:fs/promises']);
 
 const COMPILE_DIR = path.join(import.meta.dirname, '..');
+const SRC_DIR = path.join(COMPILE_DIR, '..');
 
 /** A filesystem import found in a module that a plugin reaches at run time. */
 interface Offender {
@@ -34,7 +35,7 @@ describe('esbuild plugins are isolated from the filesystem', () => {
   it('reports a filesystem import reached through another module', () => {
     const offenders = findFilesystemImports(path.join(COMPILE_DIR, 'createCompileRecorder.ts'));
 
-    expect(offenders).toContainEqual({ module: 'projectJsonFile.ts', specifier: 'node:fs' });
+    expect(offenders).toContainEqual({ module: 'json-projection/projectJsonFile.ts', specifier: 'node:fs' });
   });
 });
 
@@ -76,7 +77,7 @@ function findFilesystemImports(entryPath: string): Offender[] {
 
     for (const specifier of readValueImports(modulePath)) {
       if (FILESYSTEM_SPECIFIERS.has(specifier)) {
-        offenders.push({ module: path.relative(COMPILE_DIR, modulePath), specifier });
+        offenders.push({ module: path.relative(SRC_DIR, modulePath), specifier });
       } else if (specifier.startsWith('.')) {
         queue.push(path.resolve(path.dirname(modulePath), specifier));
       }

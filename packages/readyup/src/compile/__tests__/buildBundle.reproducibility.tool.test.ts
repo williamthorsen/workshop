@@ -7,7 +7,7 @@ import { describe, expect, it as baseIt } from 'vitest';
 import { buildBundle, type BundleResult } from '../buildBundle.ts';
 
 const KIT_SOURCE = [
-  `import { pickJson } from '${path.resolve(import.meta.dirname, '../pickJson.ts')}';`,
+  `import { pickJson } from '${path.resolve(import.meta.dirname, '../../json-projection/pickJson.ts')}';`,
   `import { helper } from './helper.ts';`,
   `import { tiny } from 'tiny-dep';`,
   '',
