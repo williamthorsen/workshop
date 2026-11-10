@@ -1,118 +1,63 @@
+import { createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mockCompileConfig = vi.hoisted(() => vi.fn());
-const mockLoadConfig = vi.hoisted(() => vi.fn());
-const mockExistsSync = vi.hoisted(() => vi.fn());
-const mockReaddirSync = vi.hoisted(() => vi.fn());
-const mockRealpathSync = vi.hoisted(() => Object.assign(vi.fn(), { native: vi.fn() }));
-const mockPicomatch = vi.hoisted(() => vi.fn());
-const mockWriteManifest = vi.hoisted(() => vi.fn());
-const mockReadManifest = vi.hoisted(() => vi.fn());
-const mockCheckDrift = vi.hoisted(() => vi.fn());
-const mockListUnrecordedBundleWarnings = vi.hoisted(() => vi.fn());
+const mockCompileConfig = vi.hoisted(() => vi.fn<(inputPath: string, outputPath?: string) => Promise<CompileResult>>());
 
+// The bundler and the import of its output are mocked; configs and manifests use the tree.
 vi.mock(import('../compileConfig.ts'), () => ({
   compileConfig: mockCompileConfig,
 }));
 
-vi.mock(import('../../config/loadConfig.ts'), async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../config/loadConfig.ts')>();
-  return { ...actual, loadConfig: mockLoadConfig };
-});
-
-vi.mock(import('node:fs'), () => ({
-  existsSync: mockExistsSync,
-  readdirSync: mockReaddirSync,
-  realpathSync: mockRealpathSync,
-}));
-
-vi.mock('picomatch', () => ({
-  default: mockPicomatch,
-}));
-
-vi.mock(import('../../manifest/writeManifest.ts'), () => ({
-  writeManifest: mockWriteManifest,
-}));
-
-vi.mock(import('../../manifest/readManifest.ts'), async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../manifest/readManifest.ts')>();
-  return {
-    ManifestNotFoundError: actual.ManifestNotFoundError,
-    readManifest: mockReadManifest,
-  };
-});
-
-vi.mock(import('../../verify/checkDrift.ts'), () => ({
-  checkDrift: mockCheckDrift,
-}));
-
-// The output directory is scanned through the real filesystem, which these tests replace with sweep-shaped stubs.
-vi.mock(import('../listUnrecordedBundleWarnings.ts'), () => ({
-  listUnrecordedBundleWarnings: mockListUnrecordedBundleWarnings,
-}));
-
 import { compileCommand } from '../compileCommand.ts';
-import { compileResult, SRC_DIR } from '../test-utils/compile-result-fixtures.ts';
+import type { CompileResult } from '../compileConfig.ts';
+import { buildCompileResult, COMPILED } from '../test-utils/compile-result-fixtures.ts';
 import { compile, compileRaising } from '../test-utils/compile-runners.ts';
+
+const TREE_OPTIONS = { prefix: 'rdy-compile-arguments-' };
 
 describe(compileCommand, () => {
   beforeEach(() => {
-    mockLoadConfig.mockResolvedValue({
-      compile: { srcDir: SRC_DIR, outDir: SRC_DIR, include: undefined, exclude: [] },
-    });
-    mockCheckDrift.mockReturnValue({ kind: 'unverified' });
-    mockListUnrecordedBundleWarnings.mockReturnValue([]);
-    // No path named by these tests contains a symlink, so a real path is the path itself.
-    mockRealpathSync.mockImplementation((target: string) => target);
+    mockCompileConfig.mockImplementation(buildCompileResult);
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
     mockCompileConfig.mockReset();
-    mockLoadConfig.mockReset();
-    mockExistsSync.mockReset();
-    mockReaddirSync.mockReset();
-    mockRealpathSync.mockReset();
-    mockPicomatch.mockReset();
-    mockWriteManifest.mockReset();
-    mockReadManifest.mockReset();
-    mockCheckDrift.mockReset();
-    mockListUnrecordedBundleWarnings.mockReset();
   });
 
   it('passes --output value to compileConfig', async () => {
-    mockCompileConfig.mockResolvedValue(
-      compileResult('input.ts', { outputPath: '/abs/custom.js', changed: true, targetHash: 'aaaa1111' }),
-    );
+    using tree = createTempTree({ 'input.ts': COMPILED }, TREE_OPTIONS);
+    using _cwd = pointCwdAt(tree.dir);
 
     const { exitCode } = await compile(['input.ts', '--output', 'custom.js']);
 
     expect(exitCode).toBe(0);
     expect(mockCompileConfig).toHaveBeenCalledWith('input.ts', 'custom.js');
+    expect(tree.exists('custom.js')).toBe(true);
   });
 
   it('passes --output=value inline form to compileConfig', async () => {
-    mockCompileConfig.mockResolvedValue(
-      compileResult('input.ts', { outputPath: '/abs/custom.js', changed: true, targetHash: 'aaaa1111' }),
-    );
+    using tree = createTempTree({ 'input.ts': COMPILED }, TREE_OPTIONS);
+    using _cwd = pointCwdAt(tree.dir);
 
     const { exitCode } = await compile(['input.ts', '--output=custom.js']);
 
     expect(exitCode).toBe(0);
     expect(mockCompileConfig).toHaveBeenCalledWith('input.ts', 'custom.js');
+    expect(tree.exists('custom.js')).toBe(true);
   });
 
   it('passes -o value short form to compileConfig', async () => {
-    mockCompileConfig.mockResolvedValue(
-      compileResult('input.ts', { outputPath: '/abs/custom.js', changed: true, targetHash: 'aaaa1111' }),
-    );
+    using tree = createTempTree({ 'input.ts': COMPILED }, TREE_OPTIONS);
+    using _cwd = pointCwdAt(tree.dir);
 
     const { exitCode } = await compile(['input.ts', '-o', 'custom.js']);
 
     expect(exitCode).toBe(0);
     expect(mockCompileConfig).toHaveBeenCalledWith('input.ts', 'custom.js');
+    expect(tree.exists('custom.js')).toBe(true);
   });
 
+  // Each usage error is raised while parsing arguments, before the command reads a config or a file.
   it('reports a usage error when --output is provided without a value', async () => {
     const { error } = await compileRaising(['input.ts', '--output']);
 
