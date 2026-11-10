@@ -1,15 +1,10 @@
 import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
-import { afterEach, describe, expect, it as baseIt, vi } from 'vitest';
+import { beforeEach, describe, expect, it as baseIt, type Mock, vi } from 'vitest';
 
-const mockBuildBundle = vi.hoisted(() => vi.fn());
-
-vi.mock(import('../../compile/buildBundle.ts'), () => ({
-  buildBundle: mockBuildBundle,
-}));
-
+import type { BundleResult } from '../../compile/buildBundle.ts';
 import { VERSION } from '../../version.ts';
-import { checkRebuild } from '../checkRebuild.ts';
+import { checkRebuild, type RebuildDependencies } from '../checkRebuild.ts';
 import { hashBytes } from '../targetHash.ts';
 
 const it = baseIt.extend(
@@ -18,16 +13,18 @@ const it = baseIt.extend(
 );
 
 describe(checkRebuild, () => {
-  afterEach(() => {
-    mockBuildBundle.mockReset();
+  let buildBundle: Mock<RebuildDependencies['buildBundle']>;
+
+  beforeEach(() => {
+    buildBundle = vi.fn<RebuildDependencies['buildBundle']>();
   });
 
   it('returns ok when the recompiled bytes match the bundle on disk', async ({ temp }) => {
     const bundle = Buffer.from('compiled output');
     writeKitFiles(temp, bundle);
-    mockBuildBundle.mockResolvedValue({ bytes: bundle, inputs: [] });
+    buildBundle.mockResolvedValue(rebuildResult({ bytes: bundle }));
 
-    const status = await checkRebuild(kit(), temp.dir);
+    const status = await checkRebuild(kit(), temp.dir, { buildBundle });
 
     expect(status.kind).toBe('ok');
   });
@@ -36,9 +33,9 @@ describe(checkRebuild, () => {
     const onDisk = Buffer.from('stale output');
     const rebuilt = Buffer.from('fresh output');
     writeKitFiles(temp, onDisk);
-    mockBuildBundle.mockResolvedValue({ bytes: rebuilt, inputs: [] });
+    buildBundle.mockResolvedValue(rebuildResult({ bytes: rebuilt }));
 
-    const status = await checkRebuild(kit(), temp.dir);
+    const status = await checkRebuild(kit(), temp.dir, { buildBundle });
 
     expect(status).toStrictEqual({
       kind: 'mismatch',
@@ -50,56 +47,57 @@ describe(checkRebuild, () => {
   it('compares against the on-disk bytes rather than the recorded targetHash', async ({ temp }) => {
     const bundle = Buffer.from('compiled output');
     writeKitFiles(temp, bundle);
-    mockBuildBundle.mockResolvedValue({ bytes: bundle, inputs: [] });
+    buildBundle.mockResolvedValue(rebuildResult({ bytes: bundle }));
 
-    const status = await checkRebuild({ ...kit(), targetHash: 'deadbeef' }, temp.dir);
+    const status = await checkRebuild({ ...kit(), targetHash: 'deadbeef' }, temp.dir, { buildBundle });
 
     expect(status.kind).toBe('ok');
   });
 
   it('names the compiling version on a mismatch when it differs from the runner', async ({ temp }) => {
     writeKitFiles(temp, Buffer.from('stale output'));
-    mockBuildBundle.mockResolvedValue({ bytes: Buffer.from('fresh output'), inputs: [] });
+    buildBundle.mockResolvedValue(rebuildResult());
 
-    const status = await checkRebuild({ ...kit(), readyupVersion: '0.0.1-old' }, temp.dir);
+    const status = await checkRebuild({ ...kit(), readyupVersion: '0.0.1-old' }, temp.dir, { buildBundle });
 
     expect(status).toMatchObject({ kind: 'mismatch', compiledWith: '0.0.1-old' });
   });
 
   it('omits the compiling version on a mismatch when it matches the runner', async ({ temp }) => {
     writeKitFiles(temp, Buffer.from('stale output'));
-    mockBuildBundle.mockResolvedValue({ bytes: Buffer.from('fresh output'), inputs: [] });
+    buildBundle.mockResolvedValue(rebuildResult());
 
-    const status = await checkRebuild({ ...kit(), readyupVersion: VERSION }, temp.dir);
+    const status = await checkRebuild({ ...kit(), readyupVersion: VERSION }, temp.dir, { buildBundle });
 
     expect(status).not.toHaveProperty('compiledWith');
   });
 
   it('compares the recorded esbuild version against the rebuild on a mismatch', async ({ temp }) => {
     writeKitFiles(temp, Buffer.from('stale output'));
-    mockBuildBundle.mockResolvedValue(rebuildResult({ esbuildVersion: '0.29.0' }));
+    buildBundle.mockResolvedValue(rebuildResult({ esbuildVersion: '0.29.0' }));
 
-    const status = await checkRebuild({ ...kit(), esbuildVersion: '0.28.1' }, temp.dir);
+    const status = await checkRebuild({ ...kit(), esbuildVersion: '0.28.1' }, temp.dir, { buildBundle });
 
     expect(status).toMatchObject({ kind: 'mismatch', esbuild: { recorded: '0.28.1', rebuilt: '0.29.0' } });
   });
 
   it('reports the esbuild comparison even when the recorded version matches the rebuild', async ({ temp }) => {
     writeKitFiles(temp, Buffer.from('stale output'));
-    mockBuildBundle.mockResolvedValue(rebuildResult({ esbuildVersion: '0.29.0' }));
+    buildBundle.mockResolvedValue(rebuildResult({ esbuildVersion: '0.29.0' }));
 
-    const status = await checkRebuild({ ...kit(), esbuildVersion: '0.29.0' }, temp.dir);
+    const status = await checkRebuild({ ...kit(), esbuildVersion: '0.29.0' }, temp.dir, { buildBundle });
 
     expect(status).toMatchObject({ kind: 'mismatch', esbuild: { recorded: '0.29.0', rebuilt: '0.29.0' } });
   });
 
   it('names each bundled package whose recorded version the rebuild does not reproduce', async ({ temp }) => {
     writeKitFiles(temp, Buffer.from('stale output'));
-    mockBuildBundle.mockResolvedValue(rebuildResult({ bundledDependencies: { added: '2.0.0', zod: '4.0.0' } }));
+    buildBundle.mockResolvedValue(rebuildResult({ bundledDependencies: { added: '2.0.0', zod: '4.0.0' } }));
 
     const status = await checkRebuild(
       { ...kit(), esbuildVersion: '0.29.0', bundledDependencies: { dropped: '1.0.0', zod: '3.24.1' } },
       temp.dir,
+      { buildBundle },
     );
 
     expect(status).toMatchObject({
@@ -114,11 +112,12 @@ describe(checkRebuild, () => {
 
   it('omits dependencyChanges when the recorded versions match the rebuild', async ({ temp }) => {
     writeKitFiles(temp, Buffer.from('stale output'));
-    mockBuildBundle.mockResolvedValue(rebuildResult({ bundledDependencies: { zod: '4.0.0' } }));
+    buildBundle.mockResolvedValue(rebuildResult({ bundledDependencies: { zod: '4.0.0' } }));
 
     const status = await checkRebuild(
       { ...kit(), esbuildVersion: '0.29.0', bundledDependencies: { zod: '4.0.0' } },
       temp.dir,
+      { buildBundle },
     );
 
     expect(status).not.toHaveProperty('dependencyChanges');
@@ -126,9 +125,9 @@ describe(checkRebuild, () => {
 
   it('omits the toolchain comparison for an entry recording no esbuild version', async ({ temp }) => {
     writeKitFiles(temp, Buffer.from('stale output'));
-    mockBuildBundle.mockResolvedValue(rebuildResult({ bundledDependencies: { zod: '4.0.0' } }));
+    buildBundle.mockResolvedValue(rebuildResult({ bundledDependencies: { zod: '4.0.0' } }));
 
-    const status = await checkRebuild(kit(), temp.dir);
+    const status = await checkRebuild(kit(), temp.dir, { buildBundle });
 
     expect(status).not.toHaveProperty('esbuild');
     expect(status).not.toHaveProperty('dependencyChanges');
@@ -136,9 +135,9 @@ describe(checkRebuild, () => {
 
   it('returns failed with the compile error when the source no longer compiles', async ({ temp }) => {
     writeKitFiles(temp, Buffer.from('compiled output'));
-    mockBuildBundle.mockRejectedValue(new Error('Unexpected token'));
+    buildBundle.mockRejectedValue(new Error('Unexpected token'));
 
-    const status = await checkRebuild(kit(), temp.dir);
+    const status = await checkRebuild(kit(), temp.dir, { buildBundle });
 
     expect(status).toStrictEqual({ kind: 'failed', message: 'Unexpected token' });
   });
@@ -146,16 +145,16 @@ describe(checkRebuild, () => {
   it('returns missing when the manifest entry records no source', async ({ temp }) => {
     writeKitFiles(temp, Buffer.from('compiled output'));
 
-    const status = await checkRebuild({ name: 'demo', path: 'demo.js' }, temp.dir);
+    const status = await checkRebuild({ name: 'demo', path: 'demo.js' }, temp.dir, { buildBundle });
 
     expect(status).toMatchObject({ kind: 'missing', reason: expect.stringContaining('no source recorded') });
-    expect(mockBuildBundle).not.toHaveBeenCalled();
+    expect(buildBundle).not.toHaveBeenCalled();
   });
 
   it('returns missing when the manifest entry records no compiled path', async ({ temp }) => {
     writeKitFiles(temp, Buffer.from('compiled output'));
 
-    const status = await checkRebuild({ name: 'demo', source: 'demo.ts' }, temp.dir);
+    const status = await checkRebuild({ name: 'demo', source: 'demo.ts' }, temp.dir, { buildBundle });
 
     expect(status).toMatchObject({ kind: 'missing', reason: expect.stringContaining('no compiled path recorded') });
   });
@@ -163,7 +162,7 @@ describe(checkRebuild, () => {
   it('returns missing when the recorded source file is gone', async ({ temp }) => {
     temp.write('demo.js', Buffer.from('compiled output'));
 
-    const status = await checkRebuild(kit(), temp.dir);
+    const status = await checkRebuild(kit(), temp.dir, { buildBundle });
 
     expect(status).toMatchObject({ kind: 'missing', reason: expect.stringContaining('source file demo.ts is gone') });
   });
@@ -171,7 +170,7 @@ describe(checkRebuild, () => {
   it('returns missing when the compiled file is gone', async ({ temp }) => {
     temp.write('demo.ts', 'export default {};\n');
 
-    const status = await checkRebuild(kit(), temp.dir);
+    const status = await checkRebuild(kit(), temp.dir, { buildBundle });
 
     expect(status).toMatchObject({ kind: 'missing', reason: expect.stringContaining('compiled file demo.js is gone') });
   });
@@ -184,12 +183,13 @@ function kit() {
   return { name: 'demo', path: 'demo.js', source: 'demo.ts' };
 }
 
-/** Returns a `buildBundle` result that mismatches the bundle that `writeKitFiles` writes. */
-function rebuildResult(overrides: { esbuildVersion?: string; bundledDependencies?: Record<string, string> } = {}) {
+/** Returns a `buildBundle` result whose bytes, unless overridden, mismatch every bundle that the tests write. */
+function rebuildResult(overrides: Partial<BundleResult> = {}): BundleResult {
   return {
     bundledDependencies: {},
     bytes: Buffer.from('fresh output'),
     esbuildVersion: '0.29.0',
+    inlinedJson: [],
     inputs: [],
     ...overrides,
   };

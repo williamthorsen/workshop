@@ -57,7 +57,11 @@ export interface EsbuildComparison {
  * when an input is absent, `failed` when the source no longer compiles. `failed` is distinct from
  * `mismatch` because the remedy differs -- fix the kit, versus recompile it.
  */
-export async function checkRebuild(kit: RdyManifestKit, manifestDir: string): Promise<RebuildStatus> {
+export async function checkRebuild(
+  kit: RdyManifestKit,
+  manifestDir: string,
+  dependencies: RebuildDependencies = defaultRebuildDependencies,
+): Promise<RebuildStatus> {
   if (kit.source === undefined) {
     return { kind: 'missing', reason: 'no source recorded in manifest' };
   }
@@ -78,7 +82,7 @@ export async function checkRebuild(kit: RdyManifestKit, manifestDir: string): Pr
 
   let rebuild: BundleResult;
   try {
-    rebuild = await buildBundle(sourcePath);
+    rebuild = await dependencies.buildBundle(sourcePath);
   } catch (error: unknown) {
     // A source that no longer compiles is a finding about the kit, not a failure of the invocation,
     // so the sweep goes on to the kits after it.
@@ -103,6 +107,14 @@ export async function checkRebuild(kit: RdyManifestKit, manifestDir: string): Pr
     ...compareToolchain(kit, rebuild),
   };
 }
+
+/** The collaborators of a rebuild check, replaceable so that a test can rebuild without esbuild. */
+export interface RebuildDependencies {
+  buildBundle: typeof buildBundle;
+}
+
+/** The real collaborators of a rebuild check. */
+export const defaultRebuildDependencies: RebuildDependencies = { buildBundle };
 
 // region | Helpers
 
