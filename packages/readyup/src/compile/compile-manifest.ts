@@ -75,8 +75,8 @@ export function deriveClosureFields(inputs: CompiledInput[], entryPath: string, 
  * the kit should proceed to compile.
  */
 export function detectDrift(args: DetectDriftArgs): DriftSkip | undefined {
-  const { skipManifest, force, existingKit, manifestDir } = args;
-  if (skipManifest || force || existingKit === undefined) return undefined;
+  const { shouldSkipManifest, shouldForce, existingKit, manifestDir } = args;
+  if (shouldSkipManifest || shouldForce || existingKit === undefined) return undefined;
   const status = checkDrift(existingKit, manifestDir);
   if (status.kind !== 'drift') return undefined;
   return { status, existingKit };
@@ -84,8 +84,8 @@ export function detectDrift(args: DetectDriftArgs): DriftSkip | undefined {
 
 /** Arguments for the per-kit drift-detection helper. */
 export interface DetectDriftArgs {
-  skipManifest: boolean;
-  force: boolean;
+  shouldSkipManifest: boolean;
+  shouldForce: boolean;
   existingKit: RdyManifestKit | undefined;
   manifestDir: string;
 }

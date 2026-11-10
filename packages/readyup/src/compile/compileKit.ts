@@ -21,12 +21,11 @@ export interface CompileKitArgs {
   existingKit: RdyManifestKit | undefined;
   /** Subject that prefixes the failure message, absent when the message names the source on its own. */
   failureSubject: string | undefined;
-  force: boolean;
   /** Returns the name of the bundle on the result line, given the path to which the compile wrote it. */
   formatOutput: (outputPath: string) => string;
   /** Source path as given to `compileConfig`. */
   inputPath: string;
-  json: boolean;
+  isJson: boolean;
   kitName: string;
   manifestDir: string;
   /** Bundle path as given to `compileConfig`, which derives one from the source when it is absent. */
@@ -35,7 +34,8 @@ export interface CompileKitArgs {
   project: string | undefined;
   /** Absolute source path, from which the closure is read and against which the manifest records the source. */
   resolvedInputPath: string;
-  skipManifest: boolean;
+  shouldForce: boolean;
+  shouldSkipManifest: boolean;
 }
 
 /** One kit's contribution to its compile. */
@@ -53,22 +53,22 @@ export async function compileKit(args: CompileKitArgs): Promise<SourceOutcome> {
     displayInput,
     existingKit,
     failureSubject,
-    force,
     formatOutput,
     inputPath,
-    json,
+    isJson,
     kitName,
     manifestDir,
     outputPath,
     project,
     resolvedInputPath,
-    skipManifest,
+    shouldForce,
+    shouldSkipManifest,
   } = args;
   const projectField = project === undefined ? {} : { project };
 
-  const drift = detectDrift({ skipManifest, force, existingKit, manifestDir });
+  const drift = detectDrift({ shouldSkipManifest, shouldForce, existingKit, manifestDir });
   if (drift !== undefined) {
-    writeHuman(formatDriftLine(displayInput, drift.status), json);
+    writeHuman(formatDriftLine(displayInput, drift.status), isJson);
     return {
       entry: drift.existingKit,
       kit: { name: kitName, ...projectField, status: 'skipped', error: formatDriftReason(drift.status) },
@@ -92,7 +92,7 @@ export async function compileKit(args: CompileKitArgs): Promise<SourceOutcome> {
     };
   }
 
-  writeHuman(formatResultLine(displayInput, formatOutput(result.outputPath), result.changed), json);
+  writeHuman(formatResultLine(displayInput, formatOutput(result.outputPath), result.changed), isJson);
   const warnings = [
     ...listInlinedJsonWarnings(kitName, result.inlinedJson),
     ...listDirectoryDependenceWarnings(kitName, result.metadata.directoryDependence),

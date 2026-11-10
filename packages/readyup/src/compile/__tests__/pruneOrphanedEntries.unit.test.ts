@@ -105,7 +105,7 @@ describe(pruneOrphanedEntries, () => {
     const entry = recordedEntry(tree, 'stale');
     tree.write('kits/stale.js', 'export default { edited: true };');
 
-    const outcome = prune(tree, { existingEntries: [entry], force: true });
+    const outcome = prune(tree, { existingEntries: [entry], shouldForce: true });
 
     expect(outcome.keptEntries).toStrictEqual([]);
     expect(outcome.orphans).toStrictEqual([
@@ -177,9 +177,9 @@ function createProject(files: Record<string, string>): TempTree {
 function prune(tree: TempTree, overrides: Partial<PruneOrphanedEntriesArgs>) {
   return pruneOrphanedEntries({
     existingEntries: [],
-    force: false,
     manifestDir: tree.dir,
     outDir: tree.resolve('kits'),
+    shouldForce: false,
     sweptBundlePaths: new Set(),
     sweptKitNames: new Set(),
     ...overrides,

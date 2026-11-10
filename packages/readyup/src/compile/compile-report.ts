@@ -96,9 +96,13 @@ export function formatEmptySweepLine({
  * Empty under `--skip-manifest`, because the run never consulted the manifest and has nothing to report about it. A written
  * manifest lists no kits unless an orphan kept its entry.
  */
-export function formatManifestOutcome(skipManifest: boolean, writesManifest: boolean, entryCount: number): string {
-  if (skipManifest) return '';
-  if (!writesManifest) return '; manifest not written';
+export function formatManifestOutcome(
+  shouldSkipManifest: boolean,
+  doesWriteManifest: boolean,
+  entryCount: number,
+): string {
+  if (shouldSkipManifest) return '';
+  if (!doesWriteManifest) return '; manifest not written';
   return `; manifest now lists ${entryCount === 0 ? 'no kits' : pluralizeWithCount(entryCount, 'kit')}`;
 }
 

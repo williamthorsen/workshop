@@ -81,13 +81,13 @@ export async function compileCommand(args: string[]): Promise<number> {
     throw usageError('Too many arguments. Expected a single input file.');
   }
 
-  const force = values.force === true;
-  const json = values.json === true;
+  const shouldForce = values.force === true;
+  const isJson = values.json === true;
   const outputPath = values.output;
-  const skipManifest = values['skip-manifest'] === true;
+  const shouldSkipManifest = values['skip-manifest'] === true;
 
   if (recursive) {
-    return compileRecursive({ force, skipManifest, json });
+    return compileRecursive({ shouldForce, shouldSkipManifest, isJson });
   }
 
   const manifestPath = resolveManifestPath(values.manifest);
@@ -95,7 +95,15 @@ export async function compileCommand(args: string[]): Promise<number> {
 
   // Explicit input file -- compile just that one
   if (inputPath !== undefined) {
-    return compileSingle({ inputPath, outputPath, skipManifest, force, manifestPath, json, configPath: values.config });
+    return compileSingle({
+      inputPath,
+      outputPath,
+      shouldSkipManifest,
+      shouldForce,
+      manifestPath,
+      isJson,
+      configPath: values.config,
+    });
   }
 
   // No input file -- compile the sources that the config selects
@@ -103,23 +111,23 @@ export async function compileCommand(args: string[]): Promise<number> {
     throw usageError('--output requires an input file');
   }
 
-  return compileBatch({ skipManifest, force, manifestPath, json, configPath: values.config });
+  return compileBatch({ shouldSkipManifest, shouldForce, manifestPath, isJson, configPath: values.config });
 }
 
 // region | Helpers
 
 /** Arguments for the batch compile path. */
 interface CompileBatchArgs {
-  skipManifest: boolean;
-  force: boolean;
+  shouldSkipManifest: boolean;
+  shouldForce: boolean;
   manifestPath: string;
-  json: boolean;
+  isJson: boolean;
   configPath: string | undefined;
 }
 
 /** Compiles every kit source of the working directory's project, under its config or the one named by `--config`. */
 async function compileBatch(args: CompileBatchArgs): Promise<number> {
-  const { skipManifest, force, manifestPath, json, configPath } = args;
+  const { shouldSkipManifest, shouldForce, manifestPath, isJson, configPath } = args;
   let config;
   try {
     config = await loadConfig({ ...(configPath !== undefined && { overridePath: configPath }) });
@@ -131,27 +139,27 @@ async function compileBatch(args: CompileBatchArgs): Promise<number> {
     projectDir: process.cwd(),
     config,
     manifestPath,
-    force,
-    skipManifest,
-    json,
+    shouldForce,
+    shouldSkipManifest,
+    isJson,
   });
-  return finishCompile(outcome, json);
+  return finishCompile(outcome, isJson);
 }
 
 /** Arguments for the single-file compile path. */
 interface CompileSingleArgs {
   inputPath: string;
   outputPath: string | undefined;
-  skipManifest: boolean;
-  force: boolean;
+  shouldSkipManifest: boolean;
+  shouldForce: boolean;
   manifestPath: string;
-  json: boolean;
+  isJson: boolean;
   configPath: string | undefined;
 }
 
 /** Compiles a single explicit input file, applying the drift gate before overwriting. */
 async function compileSingle(args: CompileSingleArgs): Promise<number> {
-  const { inputPath, outputPath, skipManifest, force, manifestPath, json, configPath } = args;
+  const { inputPath, outputPath, shouldSkipManifest, shouldForce, manifestPath, isJson, configPath } = args;
   const manifestDir = path.dirname(manifestPath);
 
   const resolvedInputPath = path.resolve(inputPath);
@@ -162,34 +170,34 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
   const kitName = deriveKitNameFromBundle(resolvedOutputPath, path.resolve(config.compile.outDir));
   const displayInput = toDisplayPath(resolvedInputPath);
 
-  writeHuman(formatSectionHeading('Compiling kit'), json);
+  writeHuman(formatSectionHeading('Compiling kit'), isJson);
 
   const outcome = await compileKit({
     describeFailure: describeError,
     displayInput,
-    existingKit: skipManifest ? undefined : loadExistingKitsByName(manifestPath).get(kitName),
+    existingKit: shouldSkipManifest ? undefined : loadExistingKitsByName(manifestPath).get(kitName),
     failureSubject: undefined,
-    force,
     formatOutput: toDisplayPath,
     inputPath,
-    json,
+    isJson,
     kitName,
     manifestDir,
     outputPath,
     project: undefined,
     resolvedInputPath,
-    skipManifest,
+    shouldForce,
+    shouldSkipManifest,
   });
 
   if (outcome.kit.status === 'skipped') {
-    writeHuman(`\n${formatDriftRemedy({ hasOrphan: false, hasSourced: true })}\n`, json);
+    writeHuman(`\n${formatDriftRemedy({ hasOrphan: false, hasSourced: true })}\n`, isJson);
   }
 
   if (outcome.kit.status !== 'compiled') {
-    return finishCompile({ kits: [outcome.kit], removed: [], warnings: [] }, json);
+    return finishCompile({ kits: [outcome.kit], removed: [], warnings: [] }, isJson);
   }
 
-  if (!skipManifest) {
+  if (!shouldSkipManifest) {
     const { entry } = outcome;
     assert.ok(entry !== undefined, 'A compiled kit has a manifest entry');
     try {
@@ -199,7 +207,7 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
     }
   }
 
-  return finishCompile({ kits: [outcome.kit], removed: [], warnings: outcome.warnings }, json);
+  return finishCompile({ kits: [outcome.kit], removed: [], warnings: outcome.warnings }, isJson);
 }
 
 /** Loads the config that a single-file compile reads, reporting a config that cannot be evaluated as a config error. */

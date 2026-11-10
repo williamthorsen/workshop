@@ -37,11 +37,11 @@ export interface CompileRunOutcome extends ProjectCompileOutcome {
  *
  * A project that failed counts against the run whether or not it contributed a kit.
  */
-export function finishCompile(outcome: CompileRunOutcome, json: boolean): number {
+export function finishCompile(outcome: CompileRunOutcome, isJson: boolean): number {
   const { hint, kits, projects, removed, warnings } = outcome;
   const passed = kits.every((kit) => kit.status === 'compiled') && (projects ?? []).every((project) => project.passed);
 
-  if (json) {
+  if (isJson) {
     const output: JsonCompileOutput = {
       schemaVersion: SCHEMA_VERSION,
       passed,
