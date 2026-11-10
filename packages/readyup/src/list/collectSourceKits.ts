@@ -14,9 +14,7 @@ import type { RdyManifest } from '../manifest/manifestSchema.ts';
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
 import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
 import { buildRepositoryManifestUrl } from '../remote/kitSourceUrls.ts';
-import { loadRemoteManifest } from '../remote/loadRemoteManifest.ts';
-import { resolveRemoteProvider } from '../remote/remote-provider.ts';
-import { toRemoteRdyError } from '../remote/toRemoteRdyError.ts';
+import { loadRemoteSourceManifest } from '../remote/loadRemoteSourceManifest.ts';
 import type { JsonListKitEntry } from '../schemas/listOutputSchema.ts';
 import { buildManifestEntry } from './buildManifestEntry.ts';
 import { enumerateKits } from './enumerateKits.ts';
@@ -59,19 +57,7 @@ function collectLocalKits(manifestPath: string, kitsDir: string): SourceKits {
 
 /** Fetches the kits at a remote manifest URL, authenticating when the host is one that readyup knows. */
 async function collectRemoteKits(url: string, remote: RemoteFetchContext): Promise<SourceKits> {
-  const provider = resolveRemoteProvider(url);
-
-  let manifest;
-  try {
-    manifest = await loadRemoteManifest({
-      url,
-      cache: remote.cache,
-      resolveHeaders: () => remote.resolveAuthHeaders(provider),
-    });
-  } catch (error: unknown) {
-    const tokenForwarded = remote.resolveAuthHeaders(provider) !== undefined;
-    throw toRemoteRdyError(error, { code: 'config', provider, tokenForwarded, url });
-  }
+  const manifest = await loadRemoteSourceManifest(url, remote);
 
   // A remote manifest's paths name locations on the host that published it, so they are passed
   // through rather than rebased onto a directory that does not exist here.
