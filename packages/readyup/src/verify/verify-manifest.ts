@@ -173,7 +173,7 @@ export interface VerifyDependencies {
   checkRebuild: typeof checkRebuild;
   checkSourceDrift: typeof checkSourceDrift;
   loadConfig: typeof loadConfig;
-  /** Settles only whether esbuild is installed, so verification does not depend on the module's shape. */
+  /** Settles only whether esbuild is installed, so that verification does not depend on the module's shape. */
   loadEsbuild: () => Promise<unknown>;
   readManifest: typeof readManifest;
 }
