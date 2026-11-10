@@ -9,13 +9,13 @@ import { deriveJsPath } from './deriveJsPath.ts';
 /** What a project sweep shares with each of its sources. */
 export interface SourceSweepContext {
   existingKitsByName: Map<string, RdyManifestKit>;
-  force: boolean;
-  json: boolean;
+  isJson: boolean;
   manifestDir: string;
   outDir: string;
   /** The project named on the kit's JSON entry, given by a recursive compile alone. */
   project: string | undefined;
-  skipManifest: boolean;
+  shouldForce: boolean;
+  shouldSkipManifest: boolean;
   srcDir: string;
   /** Directory against which a failed source is named, given by a recursive compile alone. */
   sweepRoot: string | undefined;
@@ -23,7 +23,17 @@ export interface SourceSweepContext {
 
 /** Compiles one source of a project sweep, naming it and its bundle by their places in the sweep's directories. */
 export async function compileSource(fileName: string, context: SourceSweepContext): Promise<SourceOutcome> {
-  const { existingKitsByName, force, json, manifestDir, outDir, project, skipManifest, srcDir, sweepRoot } = context;
+  const {
+    existingKitsByName,
+    isJson,
+    manifestDir,
+    outDir,
+    project,
+    shouldForce,
+    shouldSkipManifest,
+    srcDir,
+    sweepRoot,
+  } = context;
   const srcFile = path.join(srcDir, fileName);
   const outName = deriveJsPath(fileName);
   const kitName = deriveKitName(fileName, '.ts');
@@ -33,15 +43,15 @@ export async function compileSource(fileName: string, context: SourceSweepContex
     displayInput: fileName,
     existingKit: existingKitsByName.get(kitName),
     failureSubject: `cannot compile ${describeSource(fileName, srcDir, sweepRoot)}`,
-    force,
     formatOutput: () => outName,
     inputPath: srcFile,
-    json,
+    isJson,
     kitName,
     manifestDir,
     outputPath: path.join(outDir, outName),
     project,
     resolvedInputPath: path.resolve(srcFile),
-    skipManifest,
+    shouldForce,
+    shouldSkipManifest,
   });
 }

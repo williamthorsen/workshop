@@ -20,9 +20,9 @@ import { compileProject } from './compileProject.ts';
 
 /** Arguments for the recursive compile path. */
 export interface CompileRecursiveArgs {
-  force: boolean;
-  skipManifest: boolean;
-  json: boolean;
+  shouldForce: boolean;
+  shouldSkipManifest: boolean;
+  isJson: boolean;
 }
 
 /**
@@ -33,13 +33,13 @@ export interface CompileRecursiveArgs {
  * is one of those, and is never compiled under the defaults that discovery read it with.
  */
 export async function compileRecursive(args: CompileRecursiveArgs): Promise<number> {
-  const { force, skipManifest, json } = args;
+  const { shouldForce, shouldSkipManifest, isJson } = args;
   const root = process.cwd();
   const projects = await discoverKitProjects({ root });
 
   if (projects.length === 0) {
-    writeHuman('No kit projects found.\n', json);
-    return finishCompile({ kits: [], projects: [], removed: [], warnings: [] }, json);
+    writeHuman('No kit projects found.\n', isJson);
+    return finishCompile({ kits: [], projects: [], removed: [], warnings: [] }, isJson);
   }
 
   const kits: JsonCompileKitEntry[] = [];
@@ -55,10 +55,10 @@ export async function compileRecursive(args: CompileRecursiveArgs): Promise<numb
     }
 
     // No block is written for a project that fails on its config, so separation follows the blocks actually written.
-    if (hasWrittenBlock) writeHuman('\n', json);
+    if (hasWrittenBlock) writeHuman('\n', isJson);
     hasWrittenBlock = true;
 
-    const outcome = await compileSweptProject(project, { root, force, skipManifest, json });
+    const outcome = await compileSweptProject(project, { root, shouldForce, shouldSkipManifest, isJson });
     kits.push(...outcome.kits);
     projectEntries.push(outcome.entry);
     removed.push(...outcome.removed);
@@ -69,11 +69,11 @@ export async function compileRecursive(args: CompileRecursiveArgs): Promise<numb
   if (failedDirs.length > 0) {
     writeHuman(
       `\nProblems in ${failedDirs.length} of ${pluralizeWithCount(projects.length, 'project')}: ${failedDirs.join(', ')}\n`,
-      json,
+      isJson,
     );
   }
 
-  return finishCompile({ kits, projects: projectEntries, removed, warnings }, json);
+  return finishCompile({ kits, projects: projectEntries, removed, warnings }, isJson);
 }
 
 // region | Helpers
@@ -81,9 +81,9 @@ export async function compileRecursive(args: CompileRecursiveArgs): Promise<numb
 /** Arguments shared by every project that a recursive compile visits. */
 interface CompileSweptProjectArgs {
   root: string;
-  force: boolean;
-  skipManifest: boolean;
-  json: boolean;
+  shouldForce: boolean;
+  shouldSkipManifest: boolean;
+  isJson: boolean;
 }
 
 /** One project's contribution to a recursive compile. */
@@ -97,16 +97,16 @@ interface SweptProjectOutcome extends ProjectCompileOutcome {
  * Only an `RdyError` is a project failure. Anything else is a defect in rdy, and ends the run.
  */
 async function compileSweptProject(project: Project, args: CompileSweptProjectArgs): Promise<SweptProjectOutcome> {
-  const { root, force, skipManifest, json } = args;
+  const { root, shouldForce, shouldSkipManifest, isJson } = args;
 
   try {
     const outcome = await compileProject({
       projectDir: project.absolutePath,
       config: project.config,
       manifestPath: project.manifestPath,
-      force,
-      skipManifest,
-      json,
+      shouldForce,
+      shouldSkipManifest,
+      isJson,
       sweep: { root, project: project.dir },
     });
     return {

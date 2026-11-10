@@ -43,9 +43,9 @@ export interface CompileProjectArgs {
   projectDir: string;
   config: ResolvedRdyConfig;
   manifestPath: string;
-  force: boolean;
-  skipManifest: boolean;
-  json: boolean;
+  shouldForce: boolean;
+  shouldSkipManifest: boolean;
+  isJson: boolean;
   /** The recursive compile that the project belongs to, which names every path against its root. */
   sweep?: SweepContext;
 }
@@ -71,7 +71,7 @@ export interface SweepContext {
  * kits since deleted, and the sweep seeds no manifest for a project with neither kits nor a manifest.
  */
 export async function compileProject(args: CompileProjectArgs): Promise<ProjectCompileOutcome> {
-  const { projectDir, config, manifestPath, force, skipManifest, json, sweep } = args;
+  const { projectDir, config, manifestPath, shouldForce, shouldSkipManifest, isJson, sweep } = args;
 
   const srcDir = path.resolve(projectDir, config.compile.srcDir);
   const outDir = path.resolve(projectDir, config.compile.outDir);
@@ -91,19 +91,21 @@ export async function compileProject(args: CompileProjectArgs): Promise<ProjectC
   const isEmptySweep = tsFiles.length === 0;
   if (!isEmptySweep) {
     const anchor = sweep?.root ?? resolveWorkspaceAnchor(srcDir, projectDir);
-    writeHuman(formatSectionHeading(formatSweepLabel(anchor, srcDir, outDir)), json);
+    writeHuman(formatSectionHeading(formatSweepLabel(anchor, srcDir, outDir)), isJson);
   }
 
   const manifestDir = path.dirname(manifestPath);
-  const existingKitsByName = skipManifest ? new Map<string, RdyManifestKit>() : loadExistingKitsByName(manifestPath);
+  const existingKitsByName = shouldSkipManifest
+    ? new Map<string, RdyManifestKit>()
+    : loadExistingKitsByName(manifestPath);
   const sourceContext: SourceSweepContext = {
     existingKitsByName,
-    force,
-    json,
+    isJson,
     manifestDir,
     outDir,
     project: sweep?.project,
-    skipManifest,
+    shouldForce,
+    shouldSkipManifest,
     srcDir,
     sweepRoot: sweep?.root,
   };
@@ -123,34 +125,34 @@ export async function compileProject(args: CompileProjectArgs): Promise<ProjectC
   const sweptBundlePaths = new Set(tsFiles.map((fileName) => path.join(outDir, deriveJsPath(fileName))));
   const pruned = pruneOrphanedEntries({
     existingEntries: existingKitsByName.values(),
-    force,
     manifestDir,
     outDir,
+    shouldForce,
     sweptBundlePaths,
     sweptKitNames,
   });
   kitEntries.push(...pruned.keptEntries);
-  const writesManifest = !skipManifest && (!isEmptySweep || existsSync(manifestPath));
+  const doesWriteManifest = !shouldSkipManifest && (!isEmptySweep || existsSync(manifestPath));
 
   const hint = isEmptySweep
     ? reportEmptySweep({
+        doesWriteManifest,
         entryCount: kitEntries.length,
-        json,
+        isJson,
         manifestPath,
         projectDir,
-        skipManifest,
+        shouldSkipManifest,
         srcDir,
         srcDirExists,
         sweep,
-        writesManifest,
       })
     : undefined;
 
-  const orphanReport = reportOrphans(pruned.orphans, { json, outDir, project: sweep?.project });
+  const orphanReport = reportOrphans(pruned.orphans, { isJson, outDir, project: sweep?.project });
   kitResults.push(...orphanReport.kits);
 
   // A run that reads no manifest cannot tell a recorded bundle from an unrecorded one.
-  if (!skipManifest) {
+  if (!shouldSkipManifest) {
     const bundleWarnings = listSweepBundleWarnings({ entries: kitEntries, manifestDir, outDir, sweptKitNames });
     writeWarnings(bundleWarnings);
     warnings.push(...bundleWarnings);
@@ -162,9 +164,9 @@ export async function compileProject(args: CompileProjectArgs): Promise<ProjectC
     orphanReport,
     sourcedSkippedCount: skippedCount,
   });
-  if (tally !== '') writeHuman(tally, json);
+  if (tally !== '') writeHuman(tally, isJson);
 
-  if (writesManifest) {
+  if (doesWriteManifest) {
     try {
       kitEntries.sort((a, b) => a.name.localeCompare(b.name));
       writeManifest(manifestPath, { version: 1, kits: kitEntries });
@@ -180,26 +182,35 @@ export async function compileProject(args: CompileProjectArgs): Promise<ProjectC
 
 /** Arguments for reporting a sweep that found no sources. */
 interface EmptySweepReportArgs {
+  doesWriteManifest: boolean;
   /** How many kits the manifest lists after the sweep. */
   entryCount: number;
-  json: boolean;
+  isJson: boolean;
   manifestPath: string;
   projectDir: string;
-  skipManifest: boolean;
+  shouldSkipManifest: boolean;
   srcDir: string;
   srcDirExists: boolean;
   sweep: SweepContext | undefined;
-  writesManifest: boolean;
 }
 
 /** Reports a sweep that found no sources, returning the hint that it printed, if any. */
 function reportEmptySweep(args: EmptySweepReportArgs): string | undefined {
-  const { entryCount, json, manifestPath, projectDir, skipManifest, srcDir, srcDirExists, sweep, writesManifest } =
-    args;
-  const manifestOutcome = formatManifestOutcome(skipManifest, writesManifest, entryCount);
+  const {
+    doesWriteManifest,
+    entryCount,
+    isJson,
+    manifestPath,
+    projectDir,
+    shouldSkipManifest,
+    srcDir,
+    srcDirExists,
+    sweep,
+  } = args;
+  const manifestOutcome = formatManifestOutcome(shouldSkipManifest, doesWriteManifest, entryCount);
   writeHuman(
     formatEmptySweepLine({ displayRoot: sweep?.root ?? projectDir, manifestOutcome, srcDir, srcDirExists }),
-    json,
+    isJson,
   );
 
   // A project with a manifest was emptied deliberately, and a recursive sweep found each project by its readyup
@@ -207,13 +218,13 @@ function reportEmptySweep(args: EmptySweepReportArgs): string | undefined {
   if (sweep !== undefined || existsSync(manifestPath)) return undefined;
 
   const hint = buildNoSourcesHint(projectDir, srcDir);
-  writeHuman(`${getLayout().formatHint(hint)}\n`, json);
+  writeHuman(`${getLayout().formatHint(hint)}\n`, isJson);
   return hint;
 }
 
 /** Arguments for reporting the orphans of a project compile. */
 interface ReportOrphansArgs {
-  json: boolean;
+  isJson: boolean;
   /** Directory against which a bundle is named, as a source is named against the source directory. */
   outDir: string;
   /** The project named on each JSON entry, given by a recursive compile alone. */
@@ -227,7 +238,7 @@ interface ReportOrphansArgs {
  * not what its manifest entry says it should be, and counts against the run as any other skipped or failed kit does.
  */
 function reportOrphans(orphans: OrphanOutcome[], args: ReportOrphansArgs): OrphanReport {
-  const { json, outDir, project } = args;
+  const { isJson, outDir, project } = args;
   const projectField = project === undefined ? {} : { project };
   const report: OrphanReport = { failedCount: 0, kits: [], removed: [], skippedCount: 0 };
 
@@ -237,11 +248,11 @@ function reportOrphans(orphans: OrphanOutcome[], args: ReportOrphansArgs): Orpha
 
     switch (orphan.kind) {
       case 'removed':
-        writeHuman(formatRemovalLine(bundleName), json);
+        writeHuman(formatRemovalLine(bundleName), isJson);
         report.removed.push({ name, ...projectField, path: path.relative(process.cwd(), bundlePath) });
         break;
       case 'drift':
-        writeHuman(formatDriftLine(bundleName, orphan.status, NO_SOURCE_CLAUSE), json);
+        writeHuman(formatDriftLine(bundleName, orphan.status, NO_SOURCE_CLAUSE), isJson);
         report.kits.push({
           name,
           ...projectField,

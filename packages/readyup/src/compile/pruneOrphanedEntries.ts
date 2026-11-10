@@ -11,10 +11,10 @@ import { checkDrift, type DriftStatus } from '../verify/checkDrift.ts';
 export interface PruneOrphanedEntriesArgs {
   /** The entries of the manifest as it was before the sweep. */
   existingEntries: Iterable<RdyManifestKit>;
-  force: boolean;
   manifestDir: string;
   /** Absolute path of the directory into which the sweep compiles, and outside which nothing is deleted. */
   outDir: string;
+  shouldForce: boolean;
   /** Absolute path of the bundle that every attempted source compiles to, whatever became of it. */
   sweptBundlePaths: ReadonlySet<string>;
   /** The name of every kit whose source the sweep attempted, whatever became of it. */
@@ -43,8 +43,8 @@ export type OrphanOutcome =
  *
  * An entry is an orphan when its name matches none of the swept kits. Its bundle is deleted when it lies inside
  * `outDir` and still matches the hash recorded for it, or when no hash was recorded, which is the rule under which a
- * compile overwrites a bundle. A drifted bundle is kept unless `force` is set, and one that cannot be deleted is kept.
- * Both keep their entry, because the manifest still describes a file on disk.
+ * compile overwrites a bundle. A drifted bundle is kept unless `shouldForce` is set, and one that cannot be deleted is
+ * kept. Both keep their entry, because the manifest still describes a file on disk.
  *
  * An orphan whose bundle the sweep just wrote is dropped without deleting anything: The entry named that bundle under
  * a name that no source claims any more, and the file itself belongs to the kit that now claims it. This is how the
@@ -54,7 +54,7 @@ export type OrphanOutcome =
  * dropped without deleting anything and without an outcome. A sweep writes no file outside `outDir`.
  */
 export function pruneOrphanedEntries(args: PruneOrphanedEntriesArgs): PruneOutcome {
-  const { existingEntries, force, manifestDir, outDir, sweptBundlePaths, sweptKitNames } = args;
+  const { existingEntries, manifestDir, outDir, shouldForce, sweptBundlePaths, sweptKitNames } = args;
   const outcome: PruneOutcome = { keptEntries: [], orphans: [] };
 
   for (const entry of existingEntries) {
@@ -65,7 +65,7 @@ export function pruneOrphanedEntries(args: PruneOrphanedEntriesArgs): PruneOutco
     if (sweptBundlePaths.has(bundlePath) || !isInsideDirectory(outDir, bundlePath)) continue;
 
     try {
-      const status = force ? undefined : checkDrift(entry, manifestDir);
+      const status = shouldForce ? undefined : checkDrift(entry, manifestDir);
       if (status?.kind === 'drift') {
         outcome.keptEntries.push(entry);
         outcome.orphans.push({ kind: 'drift', bundlePath, name, status });
