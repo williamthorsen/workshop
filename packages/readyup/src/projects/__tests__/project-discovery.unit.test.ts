@@ -10,6 +10,7 @@ vi.mock(import('node:fs'), async (importOriginal) => {
   return { ...actual, readdirSync: mockReaddirSync };
 });
 
+import type { ReportedWarning } from '../../output/writeWarnings.ts';
 import { useFailingDirectoryRead } from '../../test-utils/useFailingDirectoryRead.ts';
 import { discoverKitProjects, discoverProjects } from '../project-discovery.ts';
 
@@ -178,7 +179,7 @@ describe(discoverKitProjects, () => {
     using _io = captureStdio();
     using _cwd = pointCwdAt(temp.resolve('packages/emptied'));
 
-    const projects = await discoverKitProjects();
+    const projects = await discoverKitProjects({}, []);
 
     expect(projects.map((project) => project.dir)).toStrictEqual(['.']);
   });
@@ -188,27 +189,47 @@ describe(discoverKitProjects, () => {
     async (code, { reads, temp }) => {
       reads.failReadOf('packages/compiled-only/.readyup/kits', code);
 
-      const { dirs, stderr } = await discover(temp.dir);
+      const { dirs, stderr, warnings } = await discover(temp.dir);
 
       expect(dirs).not.toContain('packages/compiled-only');
       expect(dirs).toStrictEqual(expect.arrayContaining(['.', 'packages/authored', 'packages/tooling']));
-      expect(stderr).toContain('packages/compiled-only');
+      // The default config reads compiled kits and sources from the same directory, so both reads warn of it.
+      const warning = {
+        message: `Cannot read ${temp.resolve('packages/compiled-only/.readyup/kits')}. Reading the project without it.`,
+      };
+      expect(warnings).toStrictEqual([warning, warning]);
+      expect(stderr).toBe('');
     },
   );
 
   it('omits a project whose source directory it cannot read', async ({ reads, temp }) => {
     reads.failReadOf('packages/custom/src/kits', 'EACCES');
 
-    const dirs = await discoverDirs(temp.dir);
+    const { dirs, warnings } = await discover(temp.dir);
 
     expect(dirs).not.toContain('packages/custom');
     expect(dirs).toContain('packages/authored');
+    expect(warnings).toStrictEqual([
+      { message: `Cannot read ${temp.resolve('packages/custom/src/kits')}. Reading the project without it.` },
+    ]);
   });
 
   it('rethrows a filesystem failure that is not benign', async ({ reads, temp }) => {
     reads.failReadOf('packages/compiled-only/.readyup/kits', 'EMFILE');
 
     await expect(discover(temp.dir)).rejects.toThrow('read failed: EMFILE');
+  });
+
+  it('keeps the warnings raised before a failure that it rethrows', async ({ reads, temp }) => {
+    using _io = captureStdio();
+    reads.failReadOf('packages/compiled-only/.readyup/kits', 'EACCES');
+    reads.failReadOf('packages/custom/.readyup/kits', 'EMFILE');
+    const warnings: ReportedWarning[] = [];
+
+    await expect(discoverKitProjects({ root: temp.dir }, warnings)).rejects.toThrow('read failed: EMFILE');
+    expect(warnings).toContainEqual({
+      message: `Cannot read ${temp.resolve('packages/compiled-only/.readyup/kits')}. Reading the project without it.`,
+    });
   });
 });
 
@@ -257,13 +278,14 @@ describe(discoverProjects, () => {
 
 // region | Helpers
 
-/** Sweeps the fixture tree for kit projects, returning them alongside what the sweep wrote to stderr. */
+/** Sweeps the fixture tree for kit projects, returning them and their warnings alongside the sweep's stderr. */
 async function discover(root: string) {
   using io = captureStdio();
 
-  const projects = await discoverKitProjects({ root });
+  const warnings: ReportedWarning[] = [];
+  const projects = await discoverKitProjects({ root }, warnings);
 
-  return { dirs: projects.map((project) => project.dir), projects, stderr: io.stderr };
+  return { dirs: projects.map((project) => project.dir), projects, stderr: io.stderr, warnings };
 }
 
 /** Sweeps the fixture tree for every project, returning them alongside what the sweep wrote to stderr. */

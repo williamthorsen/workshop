@@ -2,9 +2,17 @@ import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
-import { createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureStdio, createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
 import { afterEach, beforeEach, describe, expect, it as baseIt, vi } from 'vitest';
+
+const mockReaddirSync = vi.hoisted(() => vi.fn());
+
+// Intercept only directory reads; the fixture still writes the temporary tree to disk.
+vi.mock(import('node:fs'), async (importOriginal) => {
+  const actual = await importOriginal();
+  return { ...actual, readdirSync: mockReaddirSync };
+});
 
 const mockCompileConfig = vi.hoisted(() => vi.fn<(inputPath: string, outputPath?: string) => Promise<CompileResult>>());
 
@@ -15,6 +23,8 @@ vi.mock(import('../compileConfig.ts'), () => ({
 
 import { getLayout, setStyle } from '../../layout/engine.ts';
 import { CompileOutputSchema } from '../../schemas/compileOutputSchema.ts';
+import { useFailingDirectoryRead } from '../../test-utils/useFailingDirectoryRead.ts';
+import { compileCommand } from '../compileCommand.ts';
 import type { CompileResult } from '../compileConfig.ts';
 import { buildCompileResult } from '../test-utils/compile-result-fixtures.ts';
 import { compile, compileForPayload, compileRaising } from '../test-utils/compile-runners.ts';
@@ -83,13 +93,27 @@ const FIXTURE_TREE = {
   'faulty/packages/unwritable/package.json': JSON.stringify({ name: 'unwritable' }),
   'faulty/packages/unwritable/.readyup/kits/audit.ts': 'export default {};',
   'faulty/packages/unwritable/.readyup/manifest.json/.keep': '',
+
+  // -- A repository whose first kit project's kit directory cannot be read --
+
+  'unreadable/package.json': JSON.stringify({ name: 'unreadable' }),
+  'unreadable/packages/blocked/package.json': JSON.stringify({ name: 'blocked' }),
+  'unreadable/packages/blocked/.readyup/kits/demo.js': 'export default {};',
+  'unreadable/packages/later/package.json': JSON.stringify({ name: 'later' }),
+  'unreadable/packages/later/.readyup/kits/demo.js': 'export default {};',
 };
 
+/** The warning of the unreadable kit directory in the `unreadable` repository. */
+const UNREADABLE_DIR_WARNING =
+  /^Warning: Cannot read \S+\/packages\/blocked\/\.readyup\/kits\. Reading the project without it\.$/m;
+
 describe('compile --recursive', () => {
-  const it = baseIt.extend(
-    'temp',
-    makeFixture(() => createTempTree(FIXTURE_TREE, { prefix: 'rdy-compile-recursive-' })),
-  );
+  const it = baseIt
+    .extend(
+      'temp',
+      makeFixture(() => createTempTree(FIXTURE_TREE, { prefix: 'rdy-compile-recursive-' })),
+    )
+    .extend('reads', { auto: true }, ({ temp }) => useFailingDirectoryRead(mockReaddirSync, temp.dir));
 
   beforeEach(() => {
     mockCompileConfig.mockImplementation(buildCompileResult);
@@ -341,6 +365,32 @@ describe('compile --recursive', () => {
         { project: 'packages/unresolved', passed: false, error: expect.stringContaining('rdy-test-absent-package') },
         { project: 'packages/unwritable', passed: false, error: expect.stringContaining('Cannot write manifest') },
       ]);
+    });
+  });
+
+  describe('a repository containing a directory that discovery cannot read', () => {
+    it.aroundEach(async (runTest, { temp }) => {
+      using _cwd = pointCwdAt(temp.resolve('unreadable'));
+
+      await runTest();
+    });
+
+    it('warns of the directory and sweeps on without it', async ({ reads }) => {
+      reads.failReadOf('unreadable/packages/blocked/.readyup/kits', 'EACCES');
+
+      const { stderr, stdout } = await compile(['--recursive']);
+
+      expect(stderr).toMatch(UNREADABLE_DIR_WARNING);
+      expect(stdout).toContain('packages/later');
+    });
+
+    it('writes the warning ahead of a failure that ends the sweep', async ({ reads }) => {
+      reads.failReadOf('unreadable/packages/blocked/.readyup/kits', 'EACCES');
+      reads.failReadOf('unreadable/packages/later/.readyup/kits', 'EMFILE');
+      using io = captureStdio();
+
+      await expect(compileCommand(['--recursive'])).rejects.toThrow('read failed: EMFILE');
+      expect(io.stderr).toMatch(UNREADABLE_DIR_WARNING);
     });
   });
 
