@@ -10,18 +10,6 @@ import {
   SCHEMA_VERSION,
 } from '../schemas/compileOutputSchema.ts';
 
-/**
- * Each kit's outcome in a project compile, the bundles that it removed, the warnings that its kits raised, and the next
- * step that it names.
- */
-export interface ProjectCompileOutcome {
-  /** The next step for a project without kit sources or a manifest. */
-  hint?: string;
-  kits: JsonCompileKitEntry[];
-  removed: JsonCompileRemovedEntry[];
-  warnings: RaisedWarning[];
-}
-
 /** What a compile run did, gathered for its payload and its exit code. */
 export interface CompileRunOutcome extends ProjectCompileOutcome {
   /** Every project that a recursive compile visited; absent from any other run. */
@@ -55,4 +43,16 @@ export function finishCompile(outcome: CompileRunOutcome, isJson: boolean): numb
   }
 
   return passed ? EXIT_OK : EXIT_PROBLEMS_FOUND;
+}
+
+/**
+ * Each kit's outcome in a project compile, the bundles that it removed, the warnings that its kits raised, and the next
+ * step that it names.
+ */
+export interface ProjectCompileOutcome {
+  /** The next step for a project without kit sources or a manifest. */
+  hint?: string;
+  kits: JsonCompileKitEntry[];
+  removed: JsonCompileRemovedEntry[];
+  warnings: RaisedWarning[];
 }

@@ -6,21 +6,6 @@ import { describeSource, describeSweepFailure } from './compile-report.ts';
 import { compileKit, type SourceOutcome } from './compileKit.ts';
 import { deriveJsPath } from './deriveJsPath.ts';
 
-/** What a project sweep shares with each of its sources. */
-export interface SourceSweepContext {
-  existingKitsByName: Map<string, RdyManifestKit>;
-  isJson: boolean;
-  manifestDir: string;
-  outDir: string;
-  /** The project named on the kit's JSON entry, given by a recursive compile alone. */
-  project: string | undefined;
-  shouldForce: boolean;
-  shouldSkipManifest: boolean;
-  srcDir: string;
-  /** Directory against which a failed source is named, given by a recursive compile alone. */
-  sweepRoot: string | undefined;
-}
-
 /** Compiles one source of a project sweep, naming it and its bundle by their places in the sweep's directories. */
 export async function compileSource(fileName: string, context: SourceSweepContext): Promise<SourceOutcome> {
   const {
@@ -54,4 +39,19 @@ export async function compileSource(fileName: string, context: SourceSweepContex
     shouldForce,
     shouldSkipManifest,
   });
+}
+
+/** What a project sweep shares with each of its sources. */
+export interface SourceSweepContext {
+  existingKitsByName: Map<string, RdyManifestKit>;
+  isJson: boolean;
+  manifestDir: string;
+  outDir: string;
+  /** The project named on the kit's JSON entry, given by a recursive compile alone. */
+  project: string | undefined;
+  shouldForce: boolean;
+  shouldSkipManifest: boolean;
+  srcDir: string;
+  /** Directory against which a failed source is named, given by a recursive compile alone. */
+  sweepRoot: string | undefined;
 }

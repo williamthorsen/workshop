@@ -18,13 +18,6 @@ import type {
 import { finishCompile, type ProjectCompileOutcome } from './compile-outcome.ts';
 import { compileProject } from './compileProject.ts';
 
-/** Arguments for the recursive compile path. */
-export interface CompileRecursiveArgs {
-  shouldForce: boolean;
-  shouldSkipManifest: boolean;
-  isJson: boolean;
-}
-
 /**
  * Compiles the kits of every kit project below the working directory, each as `rdy compile` run from its directory would.
  *
@@ -76,20 +69,14 @@ export async function compileRecursive(args: CompileRecursiveArgs): Promise<numb
   return finishCompile({ kits, projects: projectEntries, removed, warnings }, isJson);
 }
 
-// region | Helpers
-
-/** Arguments shared by every project that a recursive compile visits. */
-interface CompileSweptProjectArgs {
-  root: string;
+/** Arguments for the recursive compile path. */
+export interface CompileRecursiveArgs {
   shouldForce: boolean;
   shouldSkipManifest: boolean;
   isJson: boolean;
 }
 
-/** One project's contribution to a recursive compile. */
-interface SweptProjectOutcome extends ProjectCompileOutcome {
-  entry: JsonCompileProjectEntry;
-}
+// region | Helpers
 
 /**
  * Compiles one discovered project, reporting a failure that stops the project rather than letting it end the sweep.
@@ -119,12 +106,25 @@ async function compileSweptProject(project: Project, args: CompileSweptProjectAr
   }
 }
 
+/** Arguments shared by every project that a recursive compile visits. */
+interface CompileSweptProjectArgs {
+  root: string;
+  shouldForce: boolean;
+  shouldSkipManifest: boolean;
+  isJson: boolean;
+}
+
 /** Writes the failure of a project that could not be compiled at all, with its hint, and returns the project's entry. */
 function reportProjectFailure(dir: string, error: Error): JsonCompileProjectEntry {
   const message = describeError(error);
   writeError(message, dir);
   writeHint(extractHint(error));
   return { project: dir, passed: false, error: message };
+}
+
+/** One project's contribution to a recursive compile. */
+interface SweptProjectOutcome extends ProjectCompileOutcome {
+  entry: JsonCompileProjectEntry;
 }
 
 // endregion | Helpers

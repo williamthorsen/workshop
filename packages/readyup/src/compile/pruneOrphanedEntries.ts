@@ -7,37 +7,6 @@ import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
 import { isInsideDirectory } from '../portable/isInsideDirectory.ts';
 import { checkDrift, type DriftStatus } from '../verify/checkDrift.ts';
 
-/** Arguments for pruning the manifest entries that a sweep did not produce. */
-export interface PruneOrphanedEntriesArgs {
-  /** The entries of the manifest as it was before the sweep. */
-  existingEntries: Iterable<RdyManifestKit>;
-  manifestDir: string;
-  /** Absolute path of the directory into which the sweep compiles, and outside which nothing is deleted. */
-  outDir: string;
-  shouldForce: boolean;
-  /** Absolute path of the bundle that every attempted source compiles to, whatever became of it. */
-  sweptBundlePaths: ReadonlySet<string>;
-  /** The name of every kit whose source the sweep attempted, whatever became of it. */
-  sweptKitNames: ReadonlySet<string>;
-}
-
-/** What became of the orphaned entries of one sweep. */
-export interface PruneOutcome {
-  /** Orphaned entries that stay in the manifest, because their bundle is still on disk. */
-  keptEntries: RdyManifestKit[];
-  /** Each orphan whose bundle was deleted or kept, in manifest order. */
-  orphans: OrphanOutcome[];
-}
-
-/**
- * What became of one orphan's bundle: deleted, kept because it was edited since it was compiled, or kept because
- * deleting it failed. `bundlePath` is absolute.
- */
-export type OrphanOutcome =
-  | { kind: 'removed'; bundlePath: string; name: string }
-  | { kind: 'drift'; bundlePath: string; name: string; status: Extract<DriftStatus, { kind: 'drift' }> }
-  | { kind: 'failed'; bundlePath: string; message: string; name: string };
-
 /**
  * Deletes the bundle of each manifest entry that no source in the sweep produced, and returns what became of each.
  *
@@ -82,7 +51,54 @@ export function pruneOrphanedEntries(args: PruneOrphanedEntriesArgs): PruneOutco
   return outcome;
 }
 
+/**
+ * What became of one orphan's bundle: deleted, kept because it was edited since it was compiled, or kept because
+ * deleting it failed. `bundlePath` is absolute.
+ */
+export type OrphanOutcome =
+  | { kind: 'removed'; bundlePath: string; name: string }
+  | { kind: 'drift'; bundlePath: string; name: string; status: Extract<DriftStatus, { kind: 'drift' }> }
+  | { kind: 'failed'; bundlePath: string; message: string; name: string };
+
+/** Arguments for pruning the manifest entries that a sweep did not produce. */
+export interface PruneOrphanedEntriesArgs {
+  /** The entries of the manifest as it was before the sweep. */
+  existingEntries: Iterable<RdyManifestKit>;
+  manifestDir: string;
+  /** Absolute path of the directory into which the sweep compiles, and outside which nothing is deleted. */
+  outDir: string;
+  shouldForce: boolean;
+  /** Absolute path of the bundle that every attempted source compiles to, whatever became of it. */
+  sweptBundlePaths: ReadonlySet<string>;
+  /** The name of every kit whose source the sweep attempted, whatever became of it. */
+  sweptKitNames: ReadonlySet<string>;
+}
+
+/** What became of the orphaned entries of one sweep. */
+export interface PruneOutcome {
+  /** Orphaned entries that stay in the manifest, because their bundle is still on disk. */
+  keptEntries: RdyManifestKit[];
+  /** Each orphan whose bundle was deleted or kept, in manifest order. */
+  orphans: OrphanOutcome[];
+}
+
 // region | Helpers
+
+/** Deletes a file, returning `false` when there was none to delete. */
+function deleteFile(filePath: string): boolean {
+  try {
+    unlinkSync(filePath);
+    return true;
+  } catch (error: unknown) {
+    if (isMissingFileError(error)) return false;
+    throw error;
+  }
+}
+
+/** Reports whether an error is the filesystem's report that a file does not exist. */
+function isMissingFileError(error: unknown): boolean {
+  return isError(error) && 'code' in error && error.code === 'ENOENT';
+}
 
 /**
  * Removes each directory from `directory` upward that a deletion left empty, stopping below `outDir`.
@@ -99,22 +115,6 @@ function removeEmptiedDirectories(directory: string, outDir: string): void {
       return;
     }
   }
-}
-
-/** Deletes a file, returning `false` when there was none to delete. */
-function deleteFile(filePath: string): boolean {
-  try {
-    unlinkSync(filePath);
-    return true;
-  } catch (error: unknown) {
-    if (isMissingFileError(error)) return false;
-    throw error;
-  }
-}
-
-/** Reports whether an error is the filesystem's report that a file does not exist. */
-function isMissingFileError(error: unknown): boolean {
-  return isError(error) && 'code' in error && error.code === 'ENOENT';
 }
 
 // endregion | Helpers

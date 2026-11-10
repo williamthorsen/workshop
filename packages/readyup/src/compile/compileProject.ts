@@ -37,27 +37,6 @@ import { deriveJsPath } from './deriveJsPath.ts';
 import { listUnrecordedBundleWarnings, type ListUnrecordedBundleWarningsArgs } from './listUnrecordedBundleWarnings.ts';
 import { type OrphanOutcome, pruneOrphanedEntries } from './pruneOrphanedEntries.ts';
 
-/** Arguments for compiling one project's kit sources. */
-export interface CompileProjectArgs {
-  /** Directory against which the config's `srcDir` and `outDir` resolve. */
-  projectDir: string;
-  config: ResolvedRdyConfig;
-  manifestPath: string;
-  shouldForce: boolean;
-  shouldSkipManifest: boolean;
-  isJson: boolean;
-  /** The recursive compile that the project belongs to, which names every path against its root. */
-  sweep?: SweepContext;
-}
-
-/** A project's location in a recursive compile. */
-export interface SweepContext {
-  /** Directory from which the sweep descended. */
-  root: string;
-  /** The project's directory relative to `root`, as discovery reports it. */
-  project: string;
-}
-
 /**
  * Compiles every matching `.ts` file in a project's config-driven source directory, prunes the bundles of kits that
  * no source compiles to any longer, and returns what became of each kit.
@@ -178,6 +157,27 @@ export async function compileProject(args: CompileProjectArgs): Promise<ProjectC
   return { kits: kitResults, removed: orphanReport.removed, warnings, ...(hint !== undefined && { hint }) };
 }
 
+/** Arguments for compiling one project's kit sources. */
+export interface CompileProjectArgs {
+  /** Directory against which the config's `srcDir` and `outDir` resolve. */
+  projectDir: string;
+  config: ResolvedRdyConfig;
+  manifestPath: string;
+  shouldForce: boolean;
+  shouldSkipManifest: boolean;
+  isJson: boolean;
+  /** The recursive compile that the project belongs to, which names every path against its root. */
+  sweep?: SweepContext;
+}
+
+/** A project's location in a recursive compile. */
+export interface SweepContext {
+  /** Directory from which the sweep descended. */
+  root: string;
+  /** The project's directory relative to `root`, as discovery reports it. */
+  project: string;
+}
+
 // region | Helpers
 
 /** Arguments for reporting a sweep that found no sources. */
@@ -192,6 +192,18 @@ interface EmptySweepReportArgs {
   srcDir: string;
   srcDirExists: boolean;
   sweep: SweepContext | undefined;
+}
+
+/**
+ * Returns the warnings on the bundles of a sweep that nothing accounts for, and raises an output directory that cannot
+ * be read as a config error, as an unreadable source directory is.
+ */
+function listSweepBundleWarnings(args: ListUnrecordedBundleWarningsArgs): RaisedWarning[] {
+  try {
+    return listUnrecordedBundleWarnings(args);
+  } catch (error: unknown) {
+    throw configError(`Failed to read output directory: ${describeError(error)}`, { cause: error });
+  }
 }
 
 /** Reports a sweep that found no sources, returning the hint that it printed, if any. */
@@ -220,15 +232,6 @@ function reportEmptySweep(args: EmptySweepReportArgs): string | undefined {
   const hint = buildNoSourcesHint(projectDir, srcDir);
   writeHuman(`${getLayout().formatHint(hint)}\n`, isJson);
   return hint;
-}
-
-/** Arguments for reporting the orphans of a project compile. */
-interface ReportOrphansArgs {
-  isJson: boolean;
-  /** Directory against which a bundle is named, as a source is named against the source directory. */
-  outDir: string;
-  /** The project named on each JSON entry, given by a recursive compile alone. */
-  project: string | undefined;
 }
 
 /**
@@ -272,16 +275,13 @@ function reportOrphans(orphans: OrphanOutcome[], args: ReportOrphansArgs): Orpha
   return report;
 }
 
-/**
- * Returns the warnings on the bundles of a sweep that nothing accounts for, and raises an output directory that cannot
- * be read as a config error, as an unreadable source directory is.
- */
-function listSweepBundleWarnings(args: ListUnrecordedBundleWarningsArgs): RaisedWarning[] {
-  try {
-    return listUnrecordedBundleWarnings(args);
-  } catch (error: unknown) {
-    throw configError(`Failed to read output directory: ${describeError(error)}`, { cause: error });
-  }
+/** Arguments for reporting the orphans of a project compile. */
+interface ReportOrphansArgs {
+  isJson: boolean;
+  /** Directory against which a bundle is named, as a source is named against the source directory. */
+  outDir: string;
+  /** The project named on each JSON entry, given by a recursive compile alone. */
+  project: string | undefined;
 }
 
 // endregion | Helpers
