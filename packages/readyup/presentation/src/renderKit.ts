@@ -45,7 +45,7 @@ export interface RenderedKit {
 /** The flags of a kit's run that a kit page sets; each takes readyup's default when absent. */
 export interface RenderOptions {
   failOn?: Severity;
-  json?: boolean;
+  isJson?: boolean;
 }
 
 /** A check's outcome: the severity at which it failed, or what else became of it. */
@@ -92,8 +92,8 @@ export function renderTitleRun(): TerminalLine[] {
  * Returns a kit's command with the flags in `options`, in the form `rdy run {kit} --fail-on={level} --json`; the
  * default threshold adds no flag.
  */
-function buildCommand(kit: KitModel, { failOn = FAIL_ON, json = false }: RenderOptions): string {
-  return kit.command + (failOn === FAIL_ON ? '' : ` --fail-on=${failOn}`) + (json ? ' --json' : '');
+function buildCommand(kit: KitModel, { failOn = FAIL_ON, isJson = false }: RenderOptions): string {
+  return kit.command + (failOn === FAIL_ON ? '' : ` --fail-on=${failOn}`) + (isJson ? ' --json' : '');
 }
 
 /** Returns the environment in which every condition of `kit` takes its declared default. */

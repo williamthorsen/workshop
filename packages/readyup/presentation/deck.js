@@ -1565,8 +1565,8 @@ ${violations.map((violation) => `- ${violation}`).join("\n")}`);
     const env = Object.fromEntries(CAPTURED_PREFLIGHT.conditions.map(({ id }) => [id, false]));
     return renderKit(CAPTURED_PREFLIGHT, env).lines;
   }
-  function buildCommand(kit, { failOn = FAIL_ON, json = false }) {
-    return kit.command + (failOn === FAIL_ON ? "" : ` --fail-on=${failOn}`) + (json ? " --json" : "");
+  function buildCommand(kit, { failOn = FAIL_ON, isJson = false }) {
+    return kit.command + (failOn === FAIL_ON ? "" : ` --fail-on=${failOn}`) + (isJson ? " --json" : "");
   }
   function buildDefaultEnvironment(kit) {
     return Object.fromEntries(kit.conditions.map((condition) => [condition.id, condition.on]));
