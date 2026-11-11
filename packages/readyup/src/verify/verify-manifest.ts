@@ -183,7 +183,7 @@ export async function verifyManifest(
   args: VerifyManifestArgs,
   dependencies: VerifyDependencies = defaultVerifyDependencies,
 ): Promise<ManifestVerification> {
-  const { manifest, manifestPath, rebuild, isJson, project, uncompiled } = args;
+  const { manifest, manifestPath, shouldRebuild, isJson, project, uncompiled } = args;
   const manifestDir = path.dirname(manifestPath);
 
   const relManifestPath = path.relative(process.cwd(), manifestPath);
@@ -199,7 +199,7 @@ export async function verifyManifest(
     const verdicts: KitVerdicts = {
       drift: dependencies.checkDrift(kit, manifestDir),
       inputs: dependencies.checkInputDrift(kit, manifestDir),
-      rebuild: rebuild ? await dependencies.checkRebuild(kit, manifestDir) : undefined,
+      rebuild: shouldRebuild ? await dependencies.checkRebuild(kit, manifestDir) : undefined,
       source: dependencies.checkSourceDrift(kit, manifestDir),
     };
     writeHuman(formatStatusLine(kit, verdicts), isJson);
@@ -225,7 +225,7 @@ export async function verifyManifest(
 export interface VerifyManifestArgs {
   manifest: RdyManifest;
   manifestPath: string;
-  rebuild: boolean;
+  shouldRebuild: boolean;
   isJson: boolean;
   /** The project named on each kit's JSON entry, given by a recursive verify alone. */
   project?: string;

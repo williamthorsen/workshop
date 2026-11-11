@@ -49,7 +49,7 @@ export async function verifyCommand(
   }
 
   const isJson = values.json === true;
-  const rebuild = values.rebuild === true;
+  const shouldRebuild = values.rebuild === true;
   const recursive = values.recursive === true;
 
   // `--recursive` verifies each project's own manifest, so there is no single manifest for `--manifest` to name.
@@ -65,10 +65,10 @@ export async function verifyCommand(
   // Settle the bundler's availability before the run says anything. An exactness check that reports
   // kit after kit and then discovers it could never have run reads as a partial result; raised here,
   // the error reports an absent esbuild as a problem with the environment, not with any kit.
-  if (rebuild) await requireEsbuild(dependencies);
+  if (shouldRebuild) await requireEsbuild(dependencies);
 
   if (recursive) {
-    return verifyRecursive({ rebuild, isJson }, dependencies);
+    return verifyRecursive({ shouldRebuild, isJson }, dependencies);
   }
 
   const manifestPath = path.resolve(process.cwd(), values.manifest ?? DEFAULT_MANIFEST_PATH);
@@ -82,7 +82,7 @@ export async function verifyCommand(
     selection: config.compile,
   });
   return finishVerify(
-    await verifyManifest({ manifest, manifestPath, rebuild, isJson, uncompiled }, dependencies),
+    await verifyManifest({ manifest, manifestPath, shouldRebuild, isJson, uncompiled }, dependencies),
     isJson,
   );
 }

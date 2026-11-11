@@ -27,7 +27,7 @@ import {
 
 /** Arguments for the recursive verify path. */
 export interface VerifyRecursiveArgs {
-  rebuild: boolean;
+  shouldRebuild: boolean;
   isJson: boolean;
 }
 
@@ -42,7 +42,7 @@ export async function verifyRecursive(
   args: VerifyRecursiveArgs,
   dependencies: VerifyDependencies = defaultVerifyDependencies,
 ): Promise<number> {
-  const { rebuild, isJson } = args;
+  const { shouldRebuild, isJson } = args;
   const root = process.cwd();
   const discoveryWarnings: ReportedWarning[] = [];
   let projects: Project[];
@@ -78,7 +78,7 @@ export async function verifyRecursive(
       {
         manifest: loaded.manifest,
         manifestPath: project.manifestPath,
-        rebuild,
+        shouldRebuild,
         isJson,
         project: project.dir,
         uncompiled: loaded.uncompiled,
