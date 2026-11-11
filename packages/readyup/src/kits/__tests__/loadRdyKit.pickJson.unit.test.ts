@@ -1,8 +1,9 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { describe, expect, it as baseIt } from 'vitest';
 
 import { loadRdyKit } from '../loadRdyKit.ts';
 
@@ -16,45 +17,36 @@ const KIT_SOURCE = [
   `export const checklists = [meta.name, pkg.engines.node].map((name) => ({ name, checks: [check] }));`,
 ].join('\n');
 
+const it = baseIt.extend(
+  'temp',
+  makeFixture(() =>
+    createTempTree({ 'kits/default.ts': KIT_SOURCE, 'lib/meta.ts': HELPER_SOURCE }, { prefix: 'load-kit-pick-json-' }),
+  ),
+);
+
 describe('loadRdyKit with a kit source that calls pickJson', () => {
-  let dir: string;
-  let kitPath: string;
+  it('inlines the picked fields in the kit and in a module that it imports', async ({ temp }) => {
+    writePackageJson(temp.dir, { name: 'my-app', engines: { node: '>=24' }, version: '1.0.0' });
 
-  beforeEach(() => {
-    dir = mkdtempSync(path.join(tmpdir(), 'load-kit-pick-json-'));
-    mkdirSync(path.join(dir, 'kits'));
-    mkdirSync(path.join(dir, 'lib'));
-    writeFileSync(path.join(dir, 'lib', 'meta.ts'), HELPER_SOURCE);
-    kitPath = path.join(dir, 'kits', 'default.ts');
-    writeFileSync(kitPath, KIT_SOURCE);
-  });
-
-  afterEach(() => {
-    rmSync(dir, { force: true, recursive: true });
-  });
-
-  it('inlines the picked fields in the kit and in a module that it imports', async () => {
-    writePackageJson(dir, { name: 'my-app', engines: { node: '>=24' }, version: '1.0.0' });
-
-    const { kit } = await loadRdyKit(kitPath);
+    const { kit } = await loadRdyKit(temp.resolve('kits/default.ts'));
 
     expect(kit.checklists.map(({ name }) => name)).toStrictEqual(['my-app', '>=24']);
   });
 
-  it('reads the JSON file again on a later load', async () => {
-    writePackageJson(dir, { name: 'my-app', engines: { node: '>=24' } });
-    await loadRdyKit(kitPath);
-    writePackageJson(dir, { name: 'renamed-app', engines: { node: '>=26' } });
+  it('reads the JSON file again on a later load', async ({ temp }) => {
+    writePackageJson(temp.dir, { name: 'my-app', engines: { node: '>=24' } });
+    await loadRdyKit(temp.resolve('kits/default.ts'));
+    writePackageJson(temp.dir, { name: 'renamed-app', engines: { node: '>=26' } });
 
-    const { kit } = await loadRdyKit(kitPath);
+    const { kit } = await loadRdyKit(temp.resolve('kits/default.ts'));
 
     expect(kit.checklists.map(({ name }) => name)).toStrictEqual(['renamed-app', '>=26']);
   });
 
-  it('fails with the compile message when a picked path is missing', async () => {
-    writePackageJson(dir, { name: 'my-app' });
+  it('fails with the compile message when a picked path is missing', async ({ temp }) => {
+    writePackageJson(temp.dir, { name: 'my-app' });
 
-    await expect(loadRdyKit(kitPath)).rejects.toThrow('Path not found in JSON: engines.node');
+    await expect(loadRdyKit(temp.resolve('kits/default.ts'))).rejects.toThrow('Path not found in JSON: engines.node');
   });
 });
 

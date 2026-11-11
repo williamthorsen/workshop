@@ -1,24 +1,20 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { describe, expect, it as baseIt } from 'vitest';
 
 import { jitiImport } from '../jitiImport.ts';
 
+const it = baseIt.extend(
+  'temp',
+  makeFixture(() => createTempTree({}, { prefix: 'jiti-import-' })),
+);
+
 describe('jitiImport with transformSource', () => {
-  let dir: string;
-
-  beforeEach(() => {
-    dir = mkdtempSync(path.join(tmpdir(), 'jiti-import-'));
-  });
-
-  afterEach(() => {
-    rmSync(dir, { force: true, recursive: true });
-  });
-
-  it('evaluates the rewritten source', async () => {
-    const modulePath = writeModule(dir, 'module.ts', 'export const value: string = PLACEHOLDER;');
+  it('evaluates the rewritten source', async ({ temp }) => {
+    const modulePath = writeModule(temp.dir, 'module.ts', 'export const value: string = PLACEHOLDER;');
 
     const imported = await jitiImport(modulePath, '', 'Module', {
       transformSource: (source) => source.replace('PLACEHOLDER', '"rewritten"'),
@@ -27,9 +23,9 @@ describe('jitiImport with transformSource', () => {
     expect(imported['value']).toBe('rewritten');
   });
 
-  it('rewrites each module that the entry imports', async () => {
-    writeModule(dir, 'helper.ts', 'export const helperValue = PLACEHOLDER;');
-    const modulePath = writeModule(dir, 'module.ts', "export { helperValue } from './helper.ts';");
+  it('rewrites each module that the entry imports', async ({ temp }) => {
+    writeModule(temp.dir, 'helper.ts', 'export const helperValue = PLACEHOLDER;');
+    const modulePath = writeModule(temp.dir, 'module.ts', "export { helperValue } from './helper.ts';");
 
     const imported = await jitiImport(modulePath, '', 'Module', {
       transformSource: (source) => source.replace('PLACEHOLDER', '42'),
@@ -38,8 +34,8 @@ describe('jitiImport with transformSource', () => {
     expect(imported['helperValue']).toBe(42);
   });
 
-  it('returns a new rewrite on a later import of an unchanged source', async () => {
-    const modulePath = writeModule(dir, 'module.ts', 'export const value = PLACEHOLDER;');
+  it('returns a new rewrite on a later import of an unchanged source', async ({ temp }) => {
+    const modulePath = writeModule(temp.dir, 'module.ts', 'export const value = PLACEHOLDER;');
 
     await jitiImport(modulePath, '', 'Module', { transformSource: (source) => source.replace('PLACEHOLDER', '1') });
     const imported = await jitiImport(modulePath, '', 'Module', {
@@ -49,8 +45,8 @@ describe('jitiImport with transformSource', () => {
     expect(imported['value']).toBe(2);
   });
 
-  it('propagates an error thrown by the rewrite with its message unchanged', async () => {
-    const modulePath = writeModule(dir, 'module.ts', 'export const value = 1;');
+  it('propagates an error thrown by the rewrite with its message unchanged', async ({ temp }) => {
+    const modulePath = writeModule(temp.dir, 'module.ts', 'export const value = 1;');
 
     await expect(
       jitiImport(modulePath, '', 'Module', {
