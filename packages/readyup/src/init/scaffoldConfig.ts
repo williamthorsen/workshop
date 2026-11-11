@@ -5,8 +5,8 @@ const CONFIG_PATH = '.config/readyup.config.ts';
 const KIT_PATH = '.readyup/kits/default.ts';
 
 interface ScaffoldOptions {
-  dryRun: boolean;
-  force: boolean;
+  isDryRun: boolean;
+  shouldForce: boolean;
 }
 
 interface ScaffoldResult {
@@ -15,11 +15,11 @@ interface ScaffoldResult {
 }
 
 /** Scaffolds the rdy config and starter kit files. */
-export function scaffoldConfig({ dryRun, force }: ScaffoldOptions): ScaffoldResult {
-  const configResult = writeFileWithCheck(CONFIG_PATH, rdyConfigTemplate, { dryRun, overwrite: force });
+export function scaffoldConfig({ isDryRun, shouldForce }: ScaffoldOptions): ScaffoldResult {
+  const configResult = writeFileWithCheck(CONFIG_PATH, rdyConfigTemplate, { isDryRun, shouldOverwrite: shouldForce });
   const kitResult = writeFileWithCheck(KIT_PATH, rdyKitTemplate, {
-    dryRun,
-    overwrite: force,
+    isDryRun,
+    shouldOverwrite: shouldForce,
   });
   return { configResult, kitResult };
 }

@@ -33,12 +33,12 @@ function normalizeTrailingWhitespace(content: string): string {
 export function writeFileWithCheck(
   filePath: string,
   content: string,
-  options: { dryRun: boolean; overwrite: boolean },
+  options: { isDryRun: boolean; shouldOverwrite: boolean },
 ): WriteResult {
-  const { dryRun, overwrite } = options;
+  const { isDryRun, shouldOverwrite } = options;
   const fileExists = existsSync(filePath);
 
-  if (fileExists && !overwrite) {
+  if (fileExists && !shouldOverwrite) {
     try {
       const existing = readFileSync(filePath, 'utf8');
       if (normalizeTrailingWhitespace(existing) === normalizeTrailingWhitespace(content)) {
@@ -53,7 +53,7 @@ export function writeFileWithCheck(
 
   const outcome: WriteOutcome = fileExists ? 'overwritten' : 'created';
 
-  if (dryRun) {
+  if (isDryRun) {
     return { filePath, outcome };
   }
 

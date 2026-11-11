@@ -22,8 +22,8 @@ export function printStep(message: string): void {
  *
  * A failed outcome's line shows its cause in a block beneath and is written to stderr; the rest are written to stdout.
  */
-export function reportWriteResult(result: WriteResult, dryRun: boolean): void {
-  const { claim, detail, reason, token } = describeWriteResult(result, dryRun);
+export function reportWriteResult(result: WriteResult, isDryRun: boolean): void {
+  const { claim, detail, reason, token } = describeWriteResult(result, isDryRun);
 
   const lines = [
     getLayout().formatCheckLine({ token, name: claim, ...(detail !== undefined && { detail }) }),
@@ -36,18 +36,18 @@ export function reportWriteResult(result: WriteResult, dryRun: boolean): void {
 }
 
 /**
- * Returns the token and text for a write outcome, phrasing `dryRun` outcomes as what would happen.
+ * Returns the token and text for a write outcome, phrasing `isDryRun` outcomes as what would happen.
  *
  * A skip takes a warning token only when an unreadable file left the outcome undetermined.
  */
-function describeWriteResult(result: WriteResult, dryRun: boolean): WriteLine {
+function describeWriteResult(result: WriteResult, isDryRun: boolean): WriteLine {
   const { error, filePath, outcome } = result;
 
   switch (outcome) {
     case 'created':
-      return { token: 'written', claim: filePath, detail: dryRun ? 'would create' : 'created' };
+      return { token: 'written', claim: filePath, detail: isDryRun ? 'would create' : 'created' };
     case 'overwritten':
-      return { token: 'written', claim: filePath, detail: dryRun ? 'would overwrite' : 'overwrote' };
+      return { token: 'written', claim: filePath, detail: isDryRun ? 'would overwrite' : 'overwrote' };
     case 'up-to-date':
       return { token: 'skippedOptional', claim: filePath, detail: 'up to date' };
     case 'skipped':

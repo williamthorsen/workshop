@@ -24,7 +24,7 @@ describe(initCommand, () => {
   it('scaffolds both config and kit files and returns 0', ({ temp }) => {
     using _silent = silenceConsole(['error', 'info']);
 
-    const exitCode = initCommand({ dryRun: false, force: false });
+    const exitCode = initCommand({ isDryRun: false, shouldForce: false });
 
     expect(exitCode).toBe(0);
     expect(temp.exists(CONFIG_PATH)).toBe(true);
@@ -43,20 +43,20 @@ describe(initCommand, () => {
     temp.write(CONFIG_PATH, 'existing config');
     temp.write(KIT_PATH, 'existing kit');
 
-    const exitCode = initCommand({ dryRun: false, force: false });
+    const exitCode = initCommand({ isDryRun: false, shouldForce: false });
 
     expect(exitCode).toBe(0);
     expect(temp.read(CONFIG_PATH)).toBe('existing config');
     expect(temp.read(KIT_PATH)).toBe('existing kit');
   });
 
-  it('overwrites existing files when force is true', ({ temp }) => {
+  it('overwrites existing files when shouldForce is true', ({ temp }) => {
     using _silent = silenceConsole(['error', 'info']);
 
     temp.write(CONFIG_PATH, 'old config');
     temp.write(KIT_PATH, 'old kit');
 
-    const exitCode = initCommand({ dryRun: false, force: true });
+    const exitCode = initCommand({ isDryRun: false, shouldForce: true });
 
     expect(exitCode).toBe(0);
     expect(temp.read(CONFIG_PATH)).toBe(rdyConfigTemplate);
@@ -66,7 +66,7 @@ describe(initCommand, () => {
   it('previews without writing when dry-run is true', ({ temp }) => {
     using _silent = silenceConsole(['error', 'info']);
 
-    const exitCode = initCommand({ dryRun: true, force: false });
+    const exitCode = initCommand({ isDryRun: true, shouldForce: false });
 
     expect(exitCode).toBe(0);
     expect(temp.exists(CONFIG_PATH)).toBe(false);
@@ -79,7 +79,7 @@ describe(initCommand, () => {
     temp.write(CONFIG_PATH, rdyConfigTemplate);
     temp.write(KIT_PATH, rdyKitTemplate);
 
-    const exitCode = initCommand({ dryRun: false, force: false });
+    const exitCode = initCommand({ isDryRun: false, shouldForce: false });
 
     expect(exitCode).toBe(0);
     expect(temp.read(CONFIG_PATH)).toBe(rdyConfigTemplate);
@@ -92,7 +92,7 @@ describe(initCommand, () => {
     temp.write(CONFIG_PATH, 'existing config');
     temp.write(KIT_PATH, 'existing kit');
 
-    const exitCode = initCommand({ dryRun: true, force: false });
+    const exitCode = initCommand({ isDryRun: true, shouldForce: false });
 
     expect(exitCode).toBe(0);
     expect(temp.read(CONFIG_PATH)).toBe('existing config');
@@ -105,7 +105,7 @@ describe(initCommand, () => {
     temp.write(CONFIG_PATH, 'existing config');
     temp.write(KIT_PATH, 'existing kit');
 
-    const exitCode = initCommand({ dryRun: true, force: true });
+    const exitCode = initCommand({ isDryRun: true, shouldForce: true });
 
     expect(exitCode).toBe(0);
     expect(temp.read(CONFIG_PATH)).toBe('existing config');
@@ -115,7 +115,7 @@ describe(initCommand, () => {
   it('does not print next steps during dry-run', () => {
     using silent = silenceConsole(['error', 'info']);
 
-    const exitCode = initCommand({ dryRun: true, force: false });
+    const exitCode = initCommand({ isDryRun: true, shouldForce: false });
 
     expect(exitCode).toBe(0);
     const infoMessages = listConsoleLines(silent.info);
@@ -125,7 +125,7 @@ describe(initCommand, () => {
   it('prints next steps after successful scaffolding', () => {
     using silent = silenceConsole(['error', 'info']);
 
-    const exitCode = initCommand({ dryRun: false, force: false });
+    const exitCode = initCommand({ isDryRun: false, shouldForce: false });
 
     expect(exitCode).toBe(0);
     const infoMessages = listConsoleLines(silent.info);

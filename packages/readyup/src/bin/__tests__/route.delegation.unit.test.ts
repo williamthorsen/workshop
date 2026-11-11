@@ -467,7 +467,7 @@ describe(routeCommand, () => {
 
     const { exitCode } = await routeCli(['init']);
 
-    expect(mockInitCommand).toHaveBeenCalledWith({ dryRun: false, force: false });
+    expect(mockInitCommand).toHaveBeenCalledWith({ isDryRun: false, shouldForce: false });
     expect(exitCode).toBe(0);
   });
 
@@ -476,7 +476,7 @@ describe(routeCommand, () => {
 
     const { exitCode } = await routeCli(['init', '--dry-run', '--force']);
 
-    expect(mockInitCommand).toHaveBeenCalledWith({ dryRun: true, force: true });
+    expect(mockInitCommand).toHaveBeenCalledWith({ isDryRun: true, shouldForce: true });
     expect(exitCode).toBe(0);
   });
 
@@ -485,7 +485,7 @@ describe(routeCommand, () => {
 
     const { exitCode } = await routeCli(['init', '-n']);
 
-    expect(mockInitCommand).toHaveBeenCalledWith({ dryRun: true, force: false });
+    expect(mockInitCommand).toHaveBeenCalledWith({ isDryRun: true, shouldForce: false });
     expect(exitCode).toBe(0);
   });
 

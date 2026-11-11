@@ -257,7 +257,7 @@ function handleInit(flags: string[]): number {
     throw usageError('rdy init does not accept positional arguments.');
   }
 
-  return initCommand({ dryRun: parsed.values['dry-run'] === true, force: parsed.values.force === true });
+  return initCommand({ isDryRun: parsed.values['dry-run'] === true, shouldForce: parsed.values.force === true });
 }
 
 /**

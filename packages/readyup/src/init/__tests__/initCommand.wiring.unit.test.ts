@@ -53,7 +53,7 @@ describe(`${initCommand.name} error handling`, () => {
       throw new Error('disk full');
     });
 
-    expect(() => initCommand({ dryRun: false, force: false })).toThrow(
+    expect(() => initCommand({ isDryRun: false, shouldForce: false })).toThrow(
       expect.objectContaining({ code: 'config', message: expect.stringContaining('disk full') }),
     );
   });
@@ -63,7 +63,7 @@ describe(`${initCommand.name} error handling`, () => {
 
     mockScaffoldConfig.mockReturnValue(makeScaffoldResult('failed'));
 
-    expect(() => initCommand({ dryRun: false, force: false })).toThrow(
+    expect(() => initCommand({ isDryRun: false, shouldForce: false })).toThrow(
       expect.objectContaining({ code: 'config', message: 'Failed to scaffold .config/readyup.config.ts' }),
     );
   });
@@ -76,7 +76,7 @@ describe(`${initCommand.name} error handling`, () => {
       kitResult: { filePath: '.readyup/kits/default.ts', outcome: 'failed' },
     });
 
-    expect(() => initCommand({ dryRun: false, force: false })).toThrow(
+    expect(() => initCommand({ isDryRun: false, shouldForce: false })).toThrow(
       expect.objectContaining({ code: 'config', message: 'Failed to scaffold .readyup/kits/default.ts' }),
     );
   });
@@ -86,19 +86,19 @@ describe(`${initCommand.name} error handling`, () => {
 
     mockScaffoldConfig.mockReturnValue(makeScaffoldResult('created'));
 
-    const exitCode = initCommand({ dryRun: false, force: false });
+    const exitCode = initCommand({ isDryRun: false, shouldForce: false });
 
     expect(exitCode).toBe(0);
   });
 
   it.each([
-    { outcome: 'created', dryRun: false },
-    { outcome: 'overwritten', dryRun: false },
-    { outcome: 'overwritten', dryRun: true },
-    { outcome: 'up-to-date', dryRun: false },
-    { outcome: 'skipped', dryRun: false },
-    { outcome: 'failed', dryRun: false },
-  ])('calls reportWriteResult for both files with $outcome outcome (dryRun=$dryRun)', ({ outcome, dryRun }) => {
+    { outcome: 'created', isDryRun: false },
+    { outcome: 'overwritten', isDryRun: false },
+    { outcome: 'overwritten', isDryRun: true },
+    { outcome: 'up-to-date', isDryRun: false },
+    { outcome: 'skipped', isDryRun: false },
+    { outcome: 'failed', isDryRun: false },
+  ])('calls reportWriteResult for both files with $outcome outcome (isDryRun=$isDryRun)', ({ outcome, isDryRun }) => {
     using _silent = silenceConsole(['info']);
 
     const result = makeScaffoldResult(outcome);
@@ -106,13 +106,13 @@ describe(`${initCommand.name} error handling`, () => {
 
     // A failed write is reported per-file before the command throws, so both calls are made either way.
     try {
-      initCommand({ dryRun, force: false });
+      initCommand({ isDryRun, shouldForce: false });
     } catch {
       // The thrown failure is asserted by its own test.
     }
 
-    expect(mockReportWriteResult).toHaveBeenCalledWith(result.configResult, dryRun);
-    expect(mockReportWriteResult).toHaveBeenCalledWith(result.kitResult, dryRun);
+    expect(mockReportWriteResult).toHaveBeenCalledWith(result.configResult, isDryRun);
+    expect(mockReportWriteResult).toHaveBeenCalledWith(result.kitResult, isDryRun);
   });
 });
 
@@ -132,7 +132,7 @@ describe(`${initCommand.name} next steps`, () => {
   it('names only rdy commands, never npx readyup', () => {
     using silent = silenceConsole(['info']);
 
-    initCommand({ dryRun: false, force: false });
+    initCommand({ isDryRun: false, shouldForce: false });
 
     expect(printedSteps(silent.info)).not.toContain('npx readyup');
     expect(printedSteps(silent.info)).toContain('rdy compile');
@@ -143,7 +143,7 @@ describe(`${initCommand.name} next steps`, () => {
   it('names no step for the scaffolded config', () => {
     using silent = silenceConsole(['info']);
 
-    initCommand({ dryRun: false, force: false });
+    initCommand({ isDryRun: false, shouldForce: false });
 
     expect(printedSteps(silent.info)).not.toContain('readyup.config.ts');
   });
@@ -151,7 +151,7 @@ describe(`${initCommand.name} next steps`, () => {
   it('omits the install step when readyup is already installed', () => {
     using silent = silenceConsole(['info']);
 
-    initCommand({ dryRun: false, force: false });
+    initCommand({ isDryRun: false, shouldForce: false });
 
     const steps = printedSteps(silent.info);
     expect(steps).not.toContain('Install readyup');
@@ -164,7 +164,7 @@ describe(`${initCommand.name} next steps`, () => {
 
     mockIsPackageInstalled.mockImplementation((name: string) => name !== 'readyup');
 
-    initCommand({ dryRun: false, force: false });
+    initCommand({ isDryRun: false, shouldForce: false });
 
     const steps = printedSteps(silent.info);
     expect(steps).toContain('1. Install readyup as a dev dependency: pnpm add --save-dev readyup\n');
@@ -177,7 +177,7 @@ describe(`${initCommand.name} next steps`, () => {
 
     mockIsPackageInstalled.mockImplementation((name: string) => name !== 'esbuild');
 
-    initCommand({ dryRun: false, force: false });
+    initCommand({ isDryRun: false, shouldForce: false });
 
     const steps = printedSteps(silent.info);
     expect(steps).toContain(
@@ -191,7 +191,7 @@ describe(`${initCommand.name} next steps`, () => {
 
     mockIsPackageInstalled.mockReturnValue(false);
 
-    initCommand({ dryRun: false, force: false });
+    initCommand({ isDryRun: false, shouldForce: false });
 
     const steps = printedSteps(silent.info);
     expect(steps).toContain(
@@ -204,7 +204,7 @@ describe(`${initCommand.name} next steps`, () => {
   it('prints no next steps in dry-run mode', () => {
     using silent = silenceConsole(['info']);
 
-    initCommand({ dryRun: true, force: false });
+    initCommand({ isDryRun: true, shouldForce: false });
 
     expect(printedSteps(silent.info)).not.toContain('Replace the starter checks');
   });
