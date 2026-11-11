@@ -82,9 +82,9 @@ function findNestedCollections(
  *
  * The two branches fault differently and both are decidable from the declaration alone. A sentinel the engine cannot
  * write needs the item to have the mark already, so one that does not could never be found again. A sentinel it can
- * write needs somewhere to write it, and an item that is not a mapping the path descends through offers none. Catching
- * both here turns what would otherwise throw at the first host the declaration was run over into a located authoring
- * fault, reported beside every other mistake in the declarations.
+ * write needs somewhere to write it, and an item that is not a mapping the path descends through offers none.
+ * Detecting both here turns what would otherwise throw at the first host the declaration was run over into a located
+ * authoring fault, reported beside every other mistake in the declarations.
  */
 function findUnmarkableItems(declaration: OwnedItemsDeclaration, path: string): Array<Violation> {
   const stamps = allowsStamping(declaration.sentinel);
