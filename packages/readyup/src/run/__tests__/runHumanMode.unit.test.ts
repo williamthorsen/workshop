@@ -55,7 +55,7 @@ describe(runHumanMode, () => {
       diagnoses: [{ name: 'a', verdict: 'masked-pass' }],
     });
 
-    const { exitCode, stderr } = await runHuman(buildSingleKitEntry(['deploy']), { diagnose: true }, fakes);
+    const { exitCode, stderr } = await runHuman(buildSingleKitEntry(['deploy']), { shouldDiagnose: true }, fakes);
 
     expect(stderr).toContain('skipped check "a" in kit "default" / checklist "deploy" would have passed.');
     expect(exitCode).toBe(0);

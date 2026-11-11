@@ -50,7 +50,7 @@ describe(resolveKitSources, () => {
   // -- --jit flag --
 
   it('resolves to .ts with --jit', async () => {
-    await expect(resolve({ jit: true })).resolves.toStrictEqual([
+    await expect(resolve({ isJit: true })).resolves.toStrictEqual([
       { name: 'default', source: { path: '.readyup/kits/default.ts' }, checklists: [] },
     ]);
   });
@@ -71,7 +71,7 @@ describe(resolveKitSources, () => {
 
   it('combines --jit and --internal', async () => {
     await expect(
-      resolve({ jit: true, internal: true, internalDir: 'internal', internalInfix: 'int' }),
+      resolve({ isJit: true, internal: true, internalDir: 'internal', internalInfix: 'int' }),
     ).resolves.toStrictEqual([
       { name: 'default', source: { path: '.readyup/kits/internal/default.int.ts' }, checklists: [] },
     ]);
@@ -108,7 +108,7 @@ describe(resolveKitSources, () => {
 
   it('resolves a --jit kit against compile.srcDir', async () => {
     await expect(
-      resolve({ kitSpecifiers: [{ kitName: 'deploy', checklists: [] }], jit: true, compile: RELOCATED }),
+      resolve({ kitSpecifiers: [{ kitName: 'deploy', checklists: [] }], isJit: true, compile: RELOCATED }),
     ).resolves.toStrictEqual([
       { name: 'deploy', source: { path: path.join('kits', 'src', 'deploy.ts') }, checklists: [] },
     ]);
@@ -122,7 +122,7 @@ describe(resolveKitSources, () => {
 
   it('roots --jit --internal on compile.srcDir', async () => {
     await expect(
-      resolve({ jit: true, internal: true, internalDir: 'internal', internalInfix: 'int', compile: RELOCATED }),
+      resolve({ isJit: true, internal: true, internalDir: 'internal', internalInfix: 'int', compile: RELOCATED }),
     ).resolves.toStrictEqual([
       { name: 'default', source: { path: path.join('kits', 'src', 'internal', 'default.int.ts') }, checklists: [] },
     ]);
@@ -161,7 +161,7 @@ describe(resolveKitSources, () => {
         urlValue: undefined,
         kitSpecifiers: [],
         checklists: undefined,
-        jit: false,
+        isJit: false,
         internal: false,
       }),
     ).resolves.toStrictEqual([
@@ -209,7 +209,7 @@ describe(resolveKitSources, () => {
         urlValue: 'https://example.com/kit.js',
         kitSpecifiers: [],
         checklists: undefined,
-        jit: false,
+        isJit: false,
         internal: false,
       }),
     ).resolves.toStrictEqual([
@@ -244,7 +244,7 @@ describe(resolveKitSources, () => {
         urlValue: undefined,
         kitSpecifiers: [{ kitName: 'deploy', checklists: [] }],
         checklists: undefined,
-        jit: false,
+        isJit: false,
         internal: false,
       }),
     ).resolves.toStrictEqual([
@@ -319,7 +319,7 @@ describe(resolveKitSources, () => {
   // The flag names a config key, so a call that passes no value for the key is the same case as one that passes an
   // empty list.
   it('reports --sources against a config that declares no sources as a usage error', async () => {
-    const error = await captureError(RdyError, () => resolve({ sources: true }));
+    const error = await captureError(RdyError, () => resolve({ shouldSelectSources: true }));
 
     expect(error.code).toBe('usage');
     expect(error.message).toMatch(/requires a "sources" list/);
@@ -389,7 +389,7 @@ async function resolve(overrides: Partial<Parameters<typeof resolveKitSources>[0
     urlValue: undefined,
     kitSpecifiers: [],
     checklists: undefined,
-    jit: false,
+    isJit: false,
     internal: false,
     internalDir: '.',
     internalInfix: undefined,

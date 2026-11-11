@@ -204,14 +204,14 @@ async function handleRun(flags: string[], isJson: boolean, config?: ResolvedRdyC
           internalInfix: runConfig.internal.infix,
           configuredSources: runConfig.sources,
         };
-  const remote = createRemoteFetchContext({ reload: parsed.noCache });
+  const remote = createRemoteFetchContext({ reload: parsed.shouldBypassCache });
 
-  const { entries: kitEntries, unrunSources } = parsed.all
+  const { entries: kitEntries, unrunSources } = parsed.shouldSelectAll
     ? await resolveAllKitSources({
         fromValue: parsed.fromValue,
-        jit: parsed.jit,
+        isJit: parsed.isJit,
         internal: parsed.internal,
-        sources: parsed.sources,
+        shouldSelectSources: parsed.shouldSelectSources,
         remote,
         ...configFields,
       })
@@ -221,9 +221,9 @@ async function handleRun(flags: string[], isJson: boolean, config?: ResolvedRdyC
         urlValue: parsed.urlValue,
         kitSpecifiers: parsed.kitSpecifiers,
         checklists: parsed.checklists,
-        jit: parsed.jit,
+        isJit: parsed.isJit,
         internal: parsed.internal,
-        sources: parsed.sources,
+        shouldSelectSources: parsed.shouldSelectSources,
         remote,
         ...configFields,
       });
@@ -233,14 +233,14 @@ async function handleRun(flags: string[], isJson: boolean, config?: ResolvedRdyC
       kitEntries,
       unrunSources,
       isJson: parsed.isJson,
-      diagnose: parsed.diagnose,
+      shouldDiagnose: parsed.shouldDiagnose,
       quiet: parsed.quiet,
       remote,
       ...(parsed.detail !== undefined && { detail: parsed.detail }),
       ...(parsed.failOn !== undefined && { failOn: parsed.failOn }),
       ...(parsed.reportOn !== undefined && { reportOn: parsed.reportOn }),
     },
-    parsed.jit,
+    parsed.isJit,
   );
 }
 

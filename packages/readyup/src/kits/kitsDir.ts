@@ -30,7 +30,7 @@ export function resolveHomeDir(): string {
  * Falls back to the convention directory when no config was loaded, which is the path that an external
  * source flag takes.
  */
-export function resolveKitRoot(compile: CompileDirectories | undefined, jit: boolean): string {
+export function resolveKitRoot(compile: CompileDirectories | undefined, isJit: boolean): string {
   if (compile === undefined) return KITS_DIR;
-  return jit ? compile.srcDir : compile.outDir;
+  return isJit ? compile.srcDir : compile.outDir;
 }

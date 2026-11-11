@@ -26,8 +26,8 @@ interface ResolveAllKitSourcesOptions {
   internal: boolean;
   internalDir?: string | undefined;
   internalInfix?: string | undefined;
-  jit: boolean;
-  sources: boolean;
+  isJit: boolean;
+  shouldSelectSources: boolean;
   remote: RemoteFetchContext;
 }
 
@@ -45,12 +45,12 @@ interface ResolveAllKitSourcesOptions {
  * run from the wrong directory.
  */
 export async function resolveAllKitSources(options: ResolveAllKitSourcesOptions): Promise<KitSelection> {
-  const { fromValue, internal, jit, sources } = options;
-  const extension = jit ? '.ts' : '.js';
+  const { fromValue, internal, isJit, shouldSelectSources } = options;
+  const extension = isJit ? '.ts' : '.js';
 
   // A configured source publishing no kits is already a config error, so this selection is never empty and leaves
   // no source unrun.
-  if (sources) {
+  if (shouldSelectSources) {
     return resolveConfiguredSources(options.configuredSources ?? [], 'all', extension, options.remote);
   }
 
@@ -60,7 +60,7 @@ export async function resolveAllKitSources(options: ResolveAllKitSourcesOptions)
     return resolveNamedKits(options, names, `--all found no kits in ${fromValue}.`);
   }
 
-  const root = resolveKitRoot(options.compile, jit);
+  const root = resolveKitRoot(options.compile, isJit);
 
   if (internal) {
     const dir = path.join(root, options.internalDir ?? '.');
@@ -69,7 +69,7 @@ export async function resolveAllKitSources(options: ResolveAllKitSourcesOptions)
     return resolveNamedKits(options, names, `--all found no *${internalExtension} kits in ${dir}.`);
   }
 
-  if (jit) {
+  if (isJit) {
     const names = readSourceKitNames(root, options.compile);
     return resolveNamedKits(options, names, `--all found no kit sources in ${root}.`);
   }
@@ -150,7 +150,7 @@ function resolveNamedKits(
     internal: options.internal,
     internalDir: options.internalDir,
     internalInfix: options.internalInfix,
-    jit: options.jit,
+    isJit: options.isJit,
     kitSpecifiers: names.map((kitName) => ({ kitName, checklists: [] })),
     remote: options.remote,
     urlValue: undefined,

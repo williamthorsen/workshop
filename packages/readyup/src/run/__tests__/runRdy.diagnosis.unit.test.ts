@@ -14,7 +14,7 @@ describe(runRdy, () => {
         checks: [{ name: 'masked-check', check: () => true, skip: () => 'not applicable' }],
       };
 
-      const report = await runRdy(checklist, { diagnose: true });
+      const report = await runRdy(checklist, { shouldDiagnose: true });
 
       expect(report.diagnoses).toStrictEqual([{ name: 'masked-check', verdict: 'masked-pass' }]);
     });
@@ -28,7 +28,7 @@ describe(runRdy, () => {
         ],
       };
 
-      const report = await runRdy(checklist, { diagnose: true });
+      const report = await runRdy(checklist, { shouldDiagnose: true });
 
       expect(report.diagnoses).toStrictEqual([{ name: 'masked-check', verdict: 'masked-pass' }]);
     });
@@ -39,7 +39,7 @@ describe(runRdy, () => {
         checks: [{ name: 'would-fail', check: () => false, skip: () => 'not applicable' }],
       };
 
-      const report = await runRdy(checklist, { diagnose: true });
+      const report = await runRdy(checklist, { shouldDiagnose: true });
 
       expect(report.diagnoses).toStrictEqual([]);
     });
@@ -50,7 +50,7 @@ describe(runRdy, () => {
         checks: [{ name: 'malformed', check: wrapAsCheck({ findings: [null] }), skip: () => 'not applicable' }],
       };
 
-      const report = await runRdy(checklist, { diagnose: true });
+      const report = await runRdy(checklist, { shouldDiagnose: true });
 
       expect(report.diagnoses).toHaveLength(1);
       expect(report.diagnoses?.[0]).toMatchObject({ name: 'malformed', verdict: 'inconclusive' });
@@ -73,7 +73,7 @@ describe(runRdy, () => {
         ],
       };
 
-      const report = await runRdy(checklist, { diagnose: true });
+      const report = await runRdy(checklist, { shouldDiagnose: true });
 
       expect(report.diagnoses).toStrictEqual([{ name: 'would-pass', verdict: 'masked-pass' }]);
     });
@@ -92,7 +92,7 @@ describe(runRdy, () => {
         ],
       };
 
-      const report = await runRdy(checklist, { diagnose: true });
+      const report = await runRdy(checklist, { shouldDiagnose: true });
 
       expect(report.diagnoses).toStrictEqual([
         { name: 'registry-check', verdict: 'inconclusive', reason: 'fetch failed' },
@@ -105,7 +105,7 @@ describe(runRdy, () => {
         checks: [{ name: 'no-verdict', check: wrapAsCheck('yes'), skip: () => 'not applicable' }],
       };
 
-      const report = await runRdy(checklist, { diagnose: true });
+      const report = await runRdy(checklist, { shouldDiagnose: true });
 
       expect(report.diagnoses).toStrictEqual([
         {
@@ -129,7 +129,7 @@ describe(runRdy, () => {
         ],
       };
 
-      const report = await runRdy(checklist, { diagnose: true });
+      const report = await runRdy(checklist, { shouldDiagnose: true });
 
       expect(report.diagnoses).toStrictEqual([
         {
@@ -178,7 +178,7 @@ describe(runRdy, () => {
         ],
       };
 
-      const report = await runRdy(checklist, { diagnose: true });
+      const report = await runRdy(checklist, { shouldDiagnose: true });
 
       expect(report.diagnoses).toStrictEqual([]);
       expect(checkCalled).toBe(false);
@@ -191,7 +191,7 @@ describe(runRdy, () => {
         checks: [{ name: 'downstream', check: () => true }],
       };
 
-      const report = await runRdy(checklist, { diagnose: true });
+      const report = await runRdy(checklist, { shouldDiagnose: true });
 
       expect(report.diagnoses).toStrictEqual([{ name: 'gate', verdict: 'masked-pass' }]);
     });
@@ -218,7 +218,7 @@ describe(runRdy, () => {
         ],
       };
 
-      const report = await runRdy(checklist, { diagnose: true });
+      const report = await runRdy(checklist, { shouldDiagnose: true });
 
       expect(report.results.map((r) => r.name)).toStrictEqual(['parent']);
       expect(report.diagnoses).toStrictEqual([{ name: 'parent', verdict: 'masked-pass' }]);
@@ -241,7 +241,7 @@ describe(runRdy, () => {
         ],
       };
 
-      const report = await runRdy(checklist, { diagnose: true });
+      const report = await runRdy(checklist, { shouldDiagnose: true });
 
       expect(report.results.map((r) => r.name)).toStrictEqual(['slow-skip', 'fast-skip']);
       expect(report.diagnoses?.map((d) => d.name)).toStrictEqual(['slow-skip', 'fast-skip']);
@@ -261,7 +261,7 @@ describe(runRdy, () => {
       });
 
       const plain = await runRdy(buildChecklist());
-      const diagnosed = await runRdy(buildChecklist(), { diagnose: true });
+      const diagnosed = await runRdy(buildChecklist(), { shouldDiagnose: true });
 
       /** Reduces each result to the fields that diagnosis must leave unchanged. */
       const summarizeResults = (report: Awaited<ReturnType<typeof runRdy>>) =>

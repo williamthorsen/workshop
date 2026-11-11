@@ -38,7 +38,7 @@ describe('--sources run path wiring', () => {
 
     const { entries } = await resolveKitSources({
       ...baseArgs,
-      sources: true,
+      shouldSelectSources: true,
       configuredSources: buildNpmSources('@acme/kits'),
     });
 
@@ -57,7 +57,7 @@ describe('--sources run path wiring', () => {
 
     const { entries } = await resolveKitSources({
       ...baseArgs,
-      sources: true,
+      shouldSelectSources: true,
       configuredSources: buildNpmSources('@acme/kits'),
     });
 
@@ -70,7 +70,7 @@ describe('--sources run path wiring', () => {
 
     const { entries } = await resolveKitSources({
       ...baseArgs,
-      sources: true,
+      shouldSelectSources: true,
       configuredSources: buildNpmSources('plain-kit', '@acme/kits'),
       kitSpecifiers: [{ kitName: 'preflight', checklists: [] }],
     });
@@ -87,7 +87,7 @@ describe('--sources run path wiring', () => {
 
     const { entries } = await resolveKitSources({
       ...baseArgs,
-      sources: true,
+      shouldSelectSources: true,
       configuredSources: buildNpmSources('plain-kit'),
     });
 
@@ -101,7 +101,7 @@ describe('--sources run path wiring', () => {
 
     const { entries } = await resolveKitSources({
       ...baseArgs,
-      sources: true,
+      shouldSelectSources: true,
       configuredSources: buildNpmSources('plain-kit', '@acme/kits'),
     });
 
@@ -114,7 +114,7 @@ describe('--sources run path wiring', () => {
     installPackage(temp, '@acme/kits', ['drift']);
     const { entries, unrunSources } = await resolveKitSources({
       ...baseArgs,
-      sources: true,
+      shouldSelectSources: true,
       configuredSources: buildNpmSources('@acme/kits'),
     });
 
@@ -131,7 +131,7 @@ describe('--sources run path wiring', () => {
     installPackage(temp, '@acme/kits', ['drift']);
     const { entries, unrunSources } = await resolveKitSources({
       ...baseArgs,
-      sources: true,
+      shouldSelectSources: true,
       configuredSources: buildNpmSources('plain-kit', '@acme/kits'),
     });
 
@@ -145,7 +145,7 @@ describe('--sources run path wiring', () => {
     installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0' });
     const { entries } = await resolveKitSources({
       ...baseArgs,
-      sources: true,
+      shouldSelectSources: true,
       configuredSources: buildNpmSources('@acme/kits'),
     });
 
@@ -160,7 +160,7 @@ describe('--sources run path wiring', () => {
     installPackage(temp, '@acme/kits', ['default']);
     const { entries } = await resolveKitSources({
       ...baseArgs,
-      sources: true,
+      shouldSelectSources: true,
       configuredSources: buildNpmSources('@acme/kits'),
     });
 
@@ -175,7 +175,7 @@ describe('--sources run path wiring', () => {
     installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0', readyupVersion: '0.19.2' });
     const { entries } = await resolveKitSources({
       ...baseArgs,
-      sources: true,
+      shouldSelectSources: true,
       configuredSources: buildNpmSources('@acme/kits'),
     });
 
@@ -191,7 +191,7 @@ describe('--sources run path wiring', () => {
     installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0' });
     const { entries } = await resolveKitSources({
       ...baseArgs,
-      sources: true,
+      shouldSelectSources: true,
       configuredSources: buildNpmSources('@acme/kits'),
     });
 
@@ -206,7 +206,7 @@ describe('--sources run path wiring', () => {
     installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0' });
     const { entries } = await resolveKitSources({
       ...baseArgs,
-      sources: true,
+      shouldSelectSources: true,
       configuredSources: buildNpmSources('plain-kit', '@acme/kits'),
     });
 
@@ -227,7 +227,7 @@ describe('--sources run path wiring', () => {
     installPackage(temp, 'plain-kit', ['default'], { version: '1.0.0' });
     const { entries } = await resolveKitSources({
       ...baseArgs,
-      sources: true,
+      shouldSelectSources: true,
       configuredSources: buildNpmSources('@acme/kits', 'plain-kit'),
     });
 
@@ -254,7 +254,7 @@ describe('--sources run path wiring', () => {
     );
     const { entries } = await resolveKitSources({
       ...baseArgs,
-      sources: true,
+      shouldSelectSources: true,
       configuredSources: buildNpmSources('@acme/kits', 'broken-kit', 'plain-kit'),
     });
 
@@ -278,7 +278,7 @@ const baseArgs = {
   kitSpecifiers: [],
   checklists: undefined,
   checklistChecks: undefined,
-  jit: false,
+  isJit: false,
   internal: false,
   remote: createUncachedRemoteContext(),
 };

@@ -150,7 +150,7 @@ async function runHumanRecordingWrites(
   const remote = createUncachedRemoteContext();
   await runHumanMode(
     kitEntries,
-    { diagnose: false, failOn: undefined, quiet: false, remote, reportOn: undefined, unrunSources },
+    { shouldDiagnose: false, failOn: undefined, quiet: false, remote, reportOn: undefined, unrunSources },
     false,
     fakes,
   );

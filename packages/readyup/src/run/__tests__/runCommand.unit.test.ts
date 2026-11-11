@@ -74,23 +74,23 @@ describe(runCommand, () => {
 
     expect(modes.runHumanMode).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ diagnose: false }),
+      expect.objectContaining({ shouldDiagnose: false }),
       false,
     );
   });
 
   it('passes the diagnose that the invocation requested through to either mode', async () => {
-    await runCommand({ kitEntries: buildSingleKitEntry(), isJson: false, remote, diagnose: true }, false, modes);
-    await runCommand({ kitEntries: buildSingleKitEntry(), isJson: true, remote, diagnose: true }, false, modes);
+    await runCommand({ kitEntries: buildSingleKitEntry(), isJson: false, remote, shouldDiagnose: true }, false, modes);
+    await runCommand({ kitEntries: buildSingleKitEntry(), isJson: true, remote, shouldDiagnose: true }, false, modes);
 
     expect(modes.runHumanMode).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ diagnose: true }),
+      expect.objectContaining({ shouldDiagnose: true }),
       false,
     );
     expect(modes.runJsonMode).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ diagnose: true }),
+      expect.objectContaining({ shouldDiagnose: true }),
       false,
     );
   });

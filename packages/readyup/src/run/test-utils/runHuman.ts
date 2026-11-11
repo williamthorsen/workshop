@@ -9,11 +9,11 @@ import { createRunFakes, type RunFakes } from './createRunFakes.ts';
 
 /** The settings named by a test, over the defaults that the dispatch would have resolved. */
 export interface HumanRunOptions {
-  diagnose?: boolean;
   failOn?: Severity;
   isJit?: boolean;
   quiet?: boolean;
   reportOn?: Severity;
+  shouldDiagnose?: boolean;
   unrunSources?: UnrunSource[];
 }
 
@@ -30,16 +30,21 @@ export interface HumanRunResult {
  */
 export async function runHuman(
   kitEntries: ResolvedKitEntry[],
-  { diagnose = false, failOn, isJit = false, quiet = false, reportOn, unrunSources = [] }: HumanRunOptions = {},
+  { failOn, isJit = false, quiet = false, reportOn, shouldDiagnose = false, unrunSources = [] }: HumanRunOptions = {},
   fakes: Partial<RunFakes> = {},
 ): Promise<HumanRunResult> {
   using io = captureStdio();
 
   const remote = createUncachedRemoteContext();
-  const exitCode = await runHumanMode(kitEntries, { diagnose, failOn, quiet, remote, reportOn, unrunSources }, isJit, {
-    ...createRunFakes(),
-    ...fakes,
-  });
+  const exitCode = await runHumanMode(
+    kitEntries,
+    { failOn, quiet, remote, reportOn, shouldDiagnose, unrunSources },
+    isJit,
+    {
+      ...createRunFakes(),
+      ...fakes,
+    },
+  );
 
   return { exitCode, stdout: io.stdout, stderr: io.stderr };
 }

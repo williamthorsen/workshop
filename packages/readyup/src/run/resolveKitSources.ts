@@ -20,11 +20,11 @@ export async function resolveKitSources({
   urlValue,
   kitSpecifiers,
   checklists,
-  jit,
+  isJit,
   internal,
   internalDir,
   internalInfix,
-  sources,
+  shouldSelectSources,
   configuredSources,
   compile,
   remote,
@@ -34,11 +34,11 @@ export async function resolveKitSources({
   urlValue: string | undefined;
   kitSpecifiers: KitSpecifier[];
   checklists: string[] | undefined;
-  jit: boolean;
+  isJit: boolean;
   internal: boolean;
   internalDir?: string | undefined;
   internalInfix?: string | undefined;
-  sources?: boolean;
+  shouldSelectSources?: boolean;
   configuredSources?: readonly ConfiguredSource[] | undefined;
   /** The config's compile directories; absent when no config was loaded, which is the external-source path. */
   compile?: CompileDirectories | undefined;
@@ -61,14 +61,14 @@ export async function resolveKitSources({
     ]);
   }
 
-  // Assume `jit` is always `false` when `fromValue` is present; `parseRunArgs` enforces this constraint.
-  const extension = jit ? '.ts' : '.js';
+  // Assume `isJit` is always `false` when `fromValue` is present; `parseRunArgs` enforces this constraint.
+  const extension = isJit ? '.ts' : '.js';
 
   // Fill the default before the `--sources` branch reads it, so that a bare invocation is structurally
   // `--sources default` and the two forms cannot select different kits.
   const declaredSpecs = kitSpecifiers.length > 0 ? kitSpecifiers : [{ kitName: DEFAULT_KIT_NAME, checklists: [] }];
 
-  if (sources === true) {
+  if (shouldSelectSources === true) {
     const requestedNames = declaredSpecs.map((spec) => spec.kitName);
     return resolveConfiguredSources(configuredSources ?? [], requestedNames, extension, remote);
   }
@@ -84,7 +84,7 @@ export async function resolveKitSources({
   }
 
   // Default/internal case: Resolve from the current repo.
-  const root = resolveKitRoot(compile, jit);
+  const root = resolveKitRoot(compile, isJit);
 
   if (internal) {
     return selectEntries(

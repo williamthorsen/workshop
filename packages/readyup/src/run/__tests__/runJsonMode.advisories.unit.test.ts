@@ -102,7 +102,7 @@ describe(runJsonMode, () => {
       });
       fakes.formatJsonReport.mockReturnValue('{"kits":[]}');
 
-      const { stderr } = await runJson(buildSingleKitEntry(['deploy']), { diagnose: true }, fakes);
+      const { stderr } = await runJson(buildSingleKitEntry(['deploy']), { shouldDiagnose: true }, fakes);
 
       expect(fakes.formatJsonReport).toHaveBeenCalledWith(
         expect.anything(),

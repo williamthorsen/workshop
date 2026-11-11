@@ -10,7 +10,7 @@ interface RunCommandOptions {
   kitEntries: ResolvedKitEntry[];
   isJson: boolean;
   detail?: JsonDetail;
-  diagnose?: boolean;
+  shouldDiagnose?: boolean;
   failOn?: Severity;
   quiet?: boolean;
   remote: RemoteFetchContext;
@@ -29,20 +29,20 @@ const defaultRunCommandDependencies: RunCommandDependencies = { runHumanMode, ru
 
 /** Runs rdy checklists across one or more kits, returning the exit code that they produced. */
 export async function runCommand(
-  { kitEntries, isJson, detail, diagnose, failOn, quiet, remote, reportOn, unrunSources = [] }: RunCommandOptions,
+  { kitEntries, isJson, detail, shouldDiagnose, failOn, quiet, remote, reportOn, unrunSources = [] }: RunCommandOptions,
   isJit = false,
   dependencies: RunCommandDependencies = defaultRunCommandDependencies,
 ): Promise<number> {
   if (isJson) {
     return dependencies.runJsonMode(
       kitEntries,
-      { detail: detail ?? 'full', diagnose: diagnose === true, failOn, remote, reportOn, unrunSources },
+      { detail: detail ?? 'full', failOn, remote, reportOn, shouldDiagnose: shouldDiagnose === true, unrunSources },
       isJit,
     );
   }
   return dependencies.runHumanMode(
     kitEntries,
-    { diagnose: diagnose === true, failOn, quiet: quiet === true, remote, reportOn, unrunSources },
+    { failOn, quiet: quiet === true, remote, reportOn, shouldDiagnose: shouldDiagnose === true, unrunSources },
     isJit,
   );
 }

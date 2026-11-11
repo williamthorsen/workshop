@@ -330,7 +330,7 @@ describe(routeCommand, () => {
         filePath: 'foo.ts',
         fromValue: undefined,
         urlValue: undefined,
-        jit: false,
+        isJit: false,
         internal: false,
         isJson: false,
       });
@@ -352,7 +352,7 @@ describe(routeCommand, () => {
         filePath: undefined,
         fromValue: undefined,
         urlValue: undefined,
-        jit: false,
+        isJit: false,
         internal: false,
         isJson: false,
       });

@@ -28,7 +28,7 @@ const baseArgs = {
   urlValue: undefined,
   kitSpecifiers: [],
   checklists: undefined,
-  jit: false,
+  isJit: false,
   internal: false,
   remote: createUncachedRemoteContext(),
 };

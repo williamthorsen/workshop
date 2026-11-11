@@ -21,10 +21,10 @@ import { listVersionSkewWarnings } from './version-skew.ts';
 
 /** What the shared run steps need from the invocation, whichever mode renders the run. */
 export interface KitRunSettings {
-  diagnose: boolean;
   failOn: Severity | undefined;
   remote: RemoteFetchContext;
   reportOn: Severity | undefined;
+  shouldDiagnose: boolean;
   unrunSources: readonly UnrunSource[];
 }
 
@@ -132,10 +132,10 @@ export async function* runKitEntries(
       for (const checklist of checklists) {
         const report = await dependencies.runRdy(checklist, {
           defaultSeverity: thresholds.defaultSeverity,
-          diagnose: settings.diagnose,
           failOn: thresholds.failOn,
           pragmaLedger,
           provenance: entry.provenance,
+          shouldDiagnose: settings.shouldDiagnose,
         });
         if (!report.passed) allPassed = false;
         yield {
