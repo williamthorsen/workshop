@@ -144,7 +144,7 @@ async function runFromMode(
 ): Promise<ListResult> {
   const sourceKits = await collectSourceKits(
     parseFromArgument(fromArg),
-    createRemoteFetchContext({ reload: shouldBypassCache }),
+    createRemoteFetchContext({ shouldReload: shouldBypassCache }),
   );
 
   const view =
@@ -188,7 +188,11 @@ async function runSelectedMode(selection: ListSelection, warnings: ReportedWarni
 
   // The pair composes rather than conflicting: locality from one flag, provenance from the other.
   if (shouldSelectSources && recursive) {
-    return runRecursiveSourcesMode(shouldShowChecks, createRemoteFetchContext({ reload: shouldBypassCache }), warnings);
+    return runRecursiveSourcesMode(
+      shouldShowChecks,
+      createRemoteFetchContext({ shouldReload: shouldBypassCache }),
+      warnings,
+    );
   }
 
   if (recursive) {
@@ -207,12 +211,17 @@ async function runSelectedMode(selection: ListSelection, warnings: ReportedWarni
     return runSourcesMode(
       shouldShowChecks,
       configArg,
-      createRemoteFetchContext({ reload: shouldBypassCache }),
+      createRemoteFetchContext({ shouldReload: shouldBypassCache }),
       warnings,
     );
   }
 
-  return runOwnerMode(shouldShowChecks, configArg, createRemoteFetchContext({ reload: shouldBypassCache }), warnings);
+  return runOwnerMode(
+    shouldShowChecks,
+    configArg,
+    createRemoteFetchContext({ shouldReload: shouldBypassCache }),
+    warnings,
+  );
 }
 
 /**

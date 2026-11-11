@@ -150,7 +150,7 @@ describe('loadRemoteKit validation', () => {
 
   it('evaluates a kit served from the cache without fetching it again', async () => {
     using tree = createTempTree({}, { prefix: 'readyup-remote-kit-cache-' });
-    const options = { cache: { dir: tree.dir, reload: false }, resolveHeaders: () => undefined };
+    const options = { cache: { dir: tree.dir, shouldReload: false }, resolveHeaders: () => undefined };
     const jsBody = `export const checklists = [{ name: 'test', checks: [{ name: 'check-a', check: () => true }] }];`;
     mockFetch.mockResolvedValueOnce(new Response(jsBody, { headers: { 'Cache-Control': 'max-age=300' } }));
     await loadRemoteKit({ url: 'https://example.com/config.js', ...options });
@@ -163,7 +163,7 @@ describe('loadRemoteKit validation', () => {
 
   it('rejects an HTML page served from the cache, as it rejects a fetched one', async () => {
     using tree = createTempTree({}, { prefix: 'readyup-remote-kit-cache-' });
-    const options = { cache: { dir: tree.dir, reload: false }, resolveHeaders: () => undefined };
+    const options = { cache: { dir: tree.dir, shouldReload: false }, resolveHeaders: () => undefined };
     const htmlBody = '<!DOCTYPE html><html><body>Error</body></html>';
     mockFetch.mockResolvedValueOnce(new Response(htmlBody, { headers: { 'Cache-Control': 'max-age=300' } }));
     await captureError(() => loadRemoteKit({ url: 'https://example.com/config.js', ...options }));

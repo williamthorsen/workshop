@@ -1246,11 +1246,11 @@ ${violations.map((violation) => `- ${violation}`).join("\n")}`);
     if (!isFailed) return [checkLine];
     return [checkLine, ...getLayout().formatReasonBlock(collectReasons(result, fixLocation === "inline"), result.depth)];
   }
-  function collectReasons(result, includeFix) {
+  function collectReasons(result, shouldIncludeFix) {
     const reasons = [];
     if (result.detail !== null) reasons.push(result.detail);
     if (result.error !== null) reasons.push(`Error: ${result.error.message}`);
-    if (includeFix && result.fix !== null) reasons.push(getLayout().formatFix(result.fix));
+    if (shouldIncludeFix && result.fix !== null) reasons.push(getLayout().formatFix(result.fix));
     return reasons;
   }
   function collectFixes(results) {

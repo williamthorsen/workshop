@@ -200,7 +200,7 @@ describe(routeCommand, () => {
 
       expect(mockRunCommand).toHaveBeenCalledWith(
         expect.objectContaining({
-          remote: expect.objectContaining({ cache: expect.objectContaining({ reload: shouldBypassCache }) }),
+          remote: expect.objectContaining({ cache: expect.objectContaining({ shouldReload: shouldBypassCache }) }),
         }),
         false,
       );

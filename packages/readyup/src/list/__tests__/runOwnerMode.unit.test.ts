@@ -66,7 +66,7 @@ describe(runOwnerMode, () => {
     using io = captureStdio();
     const warnings: ReportedWarning[] = [];
 
-    const result = await runOwnerMode(false, undefined, createRemoteFetchContext({ reload: false }), warnings);
+    const result = await runOwnerMode(false, undefined, createRemoteFetchContext({ shouldReload: false }), warnings);
 
     expect(result.view).toContain('default');
     expect(result.kits.map(({ name, kind }) => `${kind}:${name}`)).toStrictEqual(['internal:default']);
@@ -83,7 +83,7 @@ describe(runOwnerMode, () => {
     );
     const warnings: ReportedWarning[] = [];
 
-    await runOwnerMode(false, undefined, createRemoteFetchContext({ reload: false }), warnings);
+    await runOwnerMode(false, undefined, createRemoteFetchContext({ shouldReload: false }), warnings);
 
     expect(warnings).toStrictEqual([
       {
@@ -108,7 +108,7 @@ describe(runOwnerMode, () => {
     mockExpandConfiguredSource.mockRejectedValue(new Error('Configured source "npm:broken" was not found.'));
     const warnings: ReportedWarning[] = [];
 
-    await runOwnerMode(false, undefined, createRemoteFetchContext({ reload: false }), warnings);
+    await runOwnerMode(false, undefined, createRemoteFetchContext({ shouldReload: false }), warnings);
 
     expect(warnings).toStrictEqual([
       { message: 'Manifest file contains invalid JSON: .readyup/manifest.json' },

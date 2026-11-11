@@ -162,7 +162,7 @@ describe(loadKit, () => {
 
     it("passes the context's cache to the loader", async () => {
       mockLoadRemoteKit.mockResolvedValue({ kit: makeKit(), compileTimeVersion: undefined });
-      const cache = { dir: '/cache/readyup/http', reload: false };
+      const cache = { dir: '/cache/readyup/http', shouldReload: false };
 
       await loadKit(buildRemoteEntry(GITHUB_URL), { ...createUncachedRemoteContext(), cache });
 

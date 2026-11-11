@@ -204,7 +204,7 @@ async function handleRun(flags: string[], isJson: boolean, config?: ResolvedRdyC
           internalInfix: runConfig.internal.infix,
           configuredSources: runConfig.sources,
         };
-  const remote = createRemoteFetchContext({ reload: parsed.shouldBypassCache });
+  const remote = createRemoteFetchContext({ shouldReload: parsed.shouldBypassCache });
 
   const { entries: kitEntries, unrunSources } = parsed.shouldSelectAll
     ? await resolveAllKitSources({

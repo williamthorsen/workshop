@@ -58,7 +58,7 @@ describe(fetchWithCache, () => {
 
       await expect(
         fetchWithCache(url, {
-          cache: { dir: tree.dir, reload: false },
+          cache: { dir: tree.dir, shouldReload: false },
           resolveHeaders: () => undefined,
           timeoutMs: TIMEOUT_MS,
         }),
