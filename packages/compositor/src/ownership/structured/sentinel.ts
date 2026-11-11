@@ -38,6 +38,25 @@ export function applySentinel(item: unknown, sentinel: Sentinel): unknown {
   return item;
 }
 
+/**
+ * Returns why `item` could not hold the sentinel, or `undefined` when `stampSentinel` can write it.
+ *
+ * A sentinel naming no key or no single place to write is a fault in the declaration, and an item offering no mapping
+ * for the path to descend through is a fault in the declaration or in what the caller built.
+ */
+export function findStampFault(item: unknown, sentinel: Sentinel): string | undefined {
+  if (sentinel.path.length === 0) {
+    return 'A sentinel must name at least one key, since a whole item cannot be its own mark.';
+  }
+  if (!allowsStamping(sentinel)) {
+    return `Cannot write the sentinel at "${sentinel.path.join('.')}": it names no single place to write at.`;
+  }
+  if (!isRecord(item)) {
+    return `Cannot mark an item with a sentinel at "${sentinel.path.join('.')}": the item is not a mapping.`;
+  }
+  return findDescentFault(item, sentinel.path);
+}
+
 /** Reports whether `item` has the sentinel, which is what makes it the engine's to rewrite or remove. */
 export function hasSentinel(item: unknown, sentinel: Sentinel): boolean {
   return findsMark(item, sentinel.path, sentinel);
@@ -46,23 +65,38 @@ export function hasSentinel(item: unknown, sentinel: Sentinel): boolean {
 /**
  * Returns `item` with the sentinel written into it, so an item the engine writes is one it can find again.
  *
- * An item that cannot hold the sentinel -- a scalar where the path expects a mapping -- is a fault in the declaration
- * or in what the caller built, so it throws. So is a sentinel that names no place to write at.
+ * An item that cannot hold the sentinel throws with the reason that `findStampFault` returns.
  */
 export function stampSentinel(item: unknown, sentinel: Sentinel): unknown {
-  if (sentinel.path.length === 0) {
-    throw new Error('A sentinel must name at least one key, since a whole item cannot be its own mark.');
-  }
-  if (!allowsStamping(sentinel)) {
-    throw new Error(`Cannot write the sentinel at "${sentinel.path.join('.')}": it names no single place to write at.`);
-  }
-  if (!isRecord(item)) {
-    throw new Error(`Cannot mark an item with a sentinel at "${sentinel.path.join('.')}": the item is not a mapping.`);
+  const reason = findStampFault(item, sentinel);
+  // `findStampFault` refuses an item that is not a mapping, so the second test only narrows the type.
+  if (reason !== undefined || !isRecord(item)) {
+    throw new Error(reason);
   }
   return writeAtPath(item, sentinel.path, sentinel.value);
 }
 
 // region | Helpers
+
+/**
+ * Returns why the path could not descend through `target` to the place it writes, naming the path remaining at the
+ * level that fails.
+ */
+function findDescentFault(target: Record<string, unknown>, path: ReadonlyArray<string>): string | undefined {
+  const descended = path.slice(0, -1);
+  let current = target;
+  for (const [depth, key] of descended.entries()) {
+    const child = current[key];
+    if (child === undefined || child === null) {
+      return undefined;
+    }
+    if (!isRecord(child)) {
+      return `Cannot mark an item with a sentinel at "${path.slice(depth).join('.')}": "${key}" is not a mapping.`;
+    }
+    current = child;
+  }
+  return undefined;
+}
 
 /**
  * Reports whether the sentinel's value stands anywhere `path` reaches into `value`.
@@ -99,7 +133,10 @@ function matchesValue(value: unknown, sentinel: Sentinel): boolean {
   return value === sentinel.value;
 }
 
-/** Returns a copy of `target` with `value` at `path`, creating the mappings the path descends through. */
+/**
+ * Returns a copy of `target` with `value` at `path`, creating the mappings the path descends through and replacing
+ * anything else, which `findDescentFault` has already refused.
+ */
 function writeAtPath(
   target: Record<string, unknown>,
   path: ReadonlyArray<string>,
@@ -113,9 +150,6 @@ function writeAtPath(
     return { ...target, [key]: value };
   }
   const child = target[key];
-  if (child !== undefined && child !== null && !isRecord(child)) {
-    throw new Error(`Cannot mark an item with a sentinel at "${path.join('.')}": "${key}" is not a mapping.`);
-  }
   return { ...target, [key]: writeAtPath(isRecord(child) ? child : {}, rest, value) };
 }
 
