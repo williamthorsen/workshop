@@ -1,9 +1,9 @@
-import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync } from 'node:fs';
 import path from 'node:path';
-import process from 'node:process';
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { describe, expect, it as baseIt } from 'vitest';
 
 import type { RdyCheck, RdyKit, RdyResult } from '../../../src/kits/types.ts';
 import { README_CODE_POINT_LIMIT } from '../checks/describeReadmeSize.ts';
@@ -23,6 +23,11 @@ import {
 /** Bundle reaching for a package that only the publishing project has installed. */
 const LEAKY_BUNDLE = 'import picomatch from "picomatch";\nexport default { checklists: [] };\n';
 
+const it = baseIt.extend(
+  'temp',
+  makeFixture(() => createTempTree({}, { prefix: 'kit-publishing-' })),
+);
+
 /**
  * Covers the `publishing` kit that readyup publishes, against fixture projects in a temp directory.
  *
@@ -31,23 +36,11 @@ const LEAKY_BUNDLE = 'import picomatch from "picomatch";\nexport default { check
  * working directory.
  */
 describe('publishing kit', () => {
-  let projectRoot: string;
-  let originalCwd: string;
-
-  beforeEach(() => {
-    projectRoot = mkdtempSync(path.join(tmpdir(), 'kit-publishing-'));
-    originalCwd = process.cwd();
-    process.chdir(projectRoot);
-  });
-
-  afterEach(() => {
-    process.chdir(originalCwd);
-    rmSync(projectRoot, { recursive: true, force: true });
-  });
-
   describe('packaging', () => {
-    it('passes a package whose allowlist includes the kit directory', async () => {
-      writePublishablePackage(projectRoot);
+    it('passes a package whose allowlist includes the kit directory', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      writePublishablePackage(temp.dir);
 
       const results = await runPackaging();
 
@@ -55,16 +48,20 @@ describe('publishing kit', () => {
     });
 
     // Nothing is held back, so nothing has to be listed.
-    it('accepts a package that declares no allowlist', async () => {
-      writePublishablePackage(projectRoot, {});
+    it('accepts a package that declares no allowlist', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      writePublishablePackage(temp.dir, {});
 
       const results = await runPackaging();
 
       expect(pickResult(results, 'allowlist')).toMatchObject({ status: 'passed' });
     });
 
-    it('accepts an allowlist naming the package root', async () => {
-      writePublishablePackage(projectRoot, { files: ['.'] });
+    it('accepts an allowlist naming the package root', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      writePublishablePackage(temp.dir, { files: ['.'] });
 
       const results = await runPackaging();
 
@@ -72,16 +69,20 @@ describe('publishing kit', () => {
     });
 
     // The check has to read these as the same entry, because npm does.
-    it('accepts the kit directory however it is spelled', async () => {
-      writePublishablePackage(projectRoot, { files: ['./.readyup/'] });
+    it('accepts the kit directory however it is spelled', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      writePublishablePackage(temp.dir, { files: ['./.readyup/'] });
 
       const results = await runPackaging();
 
       expect(pickResult(results, 'allowlist')).toMatchObject({ status: 'passed', detail: '"files" lists .readyup' });
     });
 
-    it('reports an allowlist that omits the kit directory', async () => {
-      writePublishablePackage(projectRoot, { files: ['dist'] });
+    it('reports an allowlist that omits the kit directory', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      writePublishablePackage(temp.dir, { files: ['dist'] });
 
       const results = await runPackaging();
 
@@ -91,16 +92,20 @@ describe('publishing kit', () => {
       });
     });
 
-    it('reports an allowlist that is not a list', async () => {
-      writePublishablePackage(projectRoot, { files: '.readyup' });
+    it('reports an allowlist that is not a list', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      writePublishablePackage(temp.dir, { files: '.readyup' });
 
       const results = await runPackaging();
 
       expect(pickResult(results, 'allowlist')).toMatchObject({ status: 'failed', detail: '"files" is not an array' });
     });
 
-    it('reports a package with no manifest of record', async () => {
-      writeKitManifest(projectRoot, [writeKit(projectRoot, 'default')]);
+    it('reports a package with no manifest of record', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      writeKitManifest(temp.dir, [writeKit(temp.dir, 'default')]);
 
       const results = await runPackaging();
 
@@ -111,9 +116,11 @@ describe('publishing kit', () => {
     });
 
     // A tarball without it publishes kits that no consumer can discover without running them.
-    it('reports a missing manifest', async () => {
-      writePackageJson(projectRoot, { files: ['.readyup'] });
-      writeKit(projectRoot, 'default');
+    it('reports a missing manifest', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      writePackageJson(temp.dir, { files: ['.readyup'] });
+      writeKit(temp.dir, 'default');
 
       const results = await runPackaging();
 
@@ -121,8 +128,10 @@ describe('publishing kit', () => {
     });
 
     // `rdy run --sources --all` runs this kit in every project, and one that defines no kits publishes none.
-    it('skips the kit-set checks for a project that defines no kits', async () => {
-      writePackageJson(projectRoot, { files: ['dist'] });
+    it('skips the kit-set checks for a project that defines no kits', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      writePackageJson(temp.dir, { files: ['dist'] });
 
       const results = await runPackaging();
 
@@ -134,9 +143,11 @@ describe('publishing kit', () => {
     });
 
     // A project running its kits with `--jit` has kit sources and publishes no bundle.
-    it('skips the kit-set checks for a project that compiles nothing', async () => {
-      writePackageJson(projectRoot, { files: ['dist'] });
-      mkdirSync(path.join(projectRoot, FIXTURE_KITS_DIR), { recursive: true });
+    it('skips the kit-set checks for a project that compiles nothing', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      writePackageJson(temp.dir, { files: ['dist'] });
+      mkdirSync(path.join(temp.dir, FIXTURE_KITS_DIR), { recursive: true });
 
       const results = await runPackaging();
 
@@ -148,8 +159,10 @@ describe('publishing kit', () => {
     });
 
     // Publishing only named kits is legitimate, but a consumer's first invocation is a bare one.
-    it('reports a missing default kit without blocking the publish', async () => {
-      writePublishablePackage(projectRoot, { files: ['.readyup'] }, 'release');
+    it('reports a missing default kit without blocking the publish', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      writePublishablePackage(temp.dir, { files: ['.readyup'] }, 'release');
 
       const results = await runPackaging();
 
@@ -158,10 +171,12 @@ describe('publishing kit', () => {
 
     // A consumer composes the path from the kit's name and never reads the one that the manifest
     // recorded, so a bundle compiled elsewhere is listable and unloadable.
-    it('reports a kit recorded away from the path by which a consumer loads it', async () => {
-      const entry = writeKit(projectRoot, 'default');
-      writePackageJson(projectRoot, { files: ['.readyup'] });
-      writeKitManifest(projectRoot, [{ ...entry, path: path.join('kits', 'nested', 'default.js') }]);
+    it('reports a kit recorded away from the path by which a consumer loads it', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      const entry = writeKit(temp.dir, 'default');
+      writePackageJson(temp.dir, { files: ['.readyup'] });
+      writeKitManifest(temp.dir, [{ ...entry, path: path.join('kits', 'nested', 'default.js') }]);
 
       const results = await runPackaging();
 
@@ -172,9 +187,11 @@ describe('publishing kit', () => {
     });
 
     describe('README size', () => {
-      it('passes a README of exactly the limit', async () => {
-        writePublishablePackage(projectRoot);
-        writeReadme(projectRoot, 'x'.repeat(README_CODE_POINT_LIMIT));
+      it('passes a README of exactly the limit', async ({ temp }) => {
+        using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+        writePublishablePackage(temp.dir);
+        writeReadme(temp.dir, 'x'.repeat(README_CODE_POINT_LIMIT));
 
         const results = await runPackaging();
 
@@ -184,9 +201,11 @@ describe('publishing kit', () => {
         });
       });
 
-      it('reports a README one code point over the limit', async () => {
-        writePublishablePackage(projectRoot);
-        writeReadme(projectRoot, 'x'.repeat(README_CODE_POINT_LIMIT + 1));
+      it('reports a README one code point over the limit', async ({ temp }) => {
+        using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+        writePublishablePackage(temp.dir);
+        writeReadme(temp.dir, 'x'.repeat(README_CODE_POINT_LIMIT + 1));
 
         const results = await runPackaging();
 
@@ -198,9 +217,11 @@ describe('publishing kit', () => {
       });
 
       // The registry counts code points, so a README that is over the limit in bytes is not over it here.
-      it('passes a multi-byte README that is under the limit in code points', async () => {
-        writePublishablePackage(projectRoot);
-        writeReadme(projectRoot, '\u{1F600}'.repeat(README_CODE_POINT_LIMIT - 1));
+      it('passes a multi-byte README that is under the limit in code points', async ({ temp }) => {
+        using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+        writePublishablePackage(temp.dir);
+        writeReadme(temp.dir, '\u{1F600}'.repeat(README_CODE_POINT_LIMIT - 1));
 
         const results = await runPackaging();
 
@@ -209,10 +230,12 @@ describe('publishing kit', () => {
 
       // The check has to measure the file that npm reads, and npm reads a Markdown README in preference
       // to a bare one.
-      it('measures the Markdown README rather than a bare README', async () => {
-        writePublishablePackage(projectRoot);
-        writeReadme(projectRoot, 'x'.repeat(README_CODE_POINT_LIMIT + 1), 'README');
-        writeReadme(projectRoot, 'short');
+      it('measures the Markdown README rather than a bare README', async ({ temp }) => {
+        using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+        writePublishablePackage(temp.dir);
+        writeReadme(temp.dir, 'x'.repeat(README_CODE_POINT_LIMIT + 1), 'README');
+        writeReadme(temp.dir, 'short');
 
         const results = await runPackaging();
 
@@ -222,9 +245,11 @@ describe('publishing kit', () => {
         });
       });
 
-      it('finds a README whatever the case of its name', async () => {
-        writePublishablePackage(projectRoot);
-        writeReadme(projectRoot, 'short', 'readme.md');
+      it('finds a README whatever the case of its name', async ({ temp }) => {
+        using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+        writePublishablePackage(temp.dir);
+        writeReadme(temp.dir, 'short', 'readme.md');
 
         const results = await runPackaging();
 
@@ -235,9 +260,11 @@ describe('publishing kit', () => {
       });
 
       // npm reads no README out of it, so there is nothing for the registry to truncate.
-      it('ignores a lone README.txt', async () => {
-        writePublishablePackage(projectRoot);
-        writeReadme(projectRoot, 'x'.repeat(README_CODE_POINT_LIMIT + 1), 'README.txt');
+      it('ignores a lone README.txt', async ({ temp }) => {
+        using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+        writePublishablePackage(temp.dir);
+        writeReadme(temp.dir, 'x'.repeat(README_CODE_POINT_LIMIT + 1), 'README.txt');
 
         const results = await runPackaging();
 
@@ -247,8 +274,10 @@ describe('publishing kit', () => {
         });
       });
 
-      it('passes a package with no README', async () => {
-        writePublishablePackage(projectRoot);
+      it('passes a package with no README', async ({ temp }) => {
+        using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+        writePublishablePackage(temp.dir);
 
         const results = await runPackaging();
 
@@ -261,8 +290,10 @@ describe('publishing kit', () => {
   });
 
   describe('self-containment', () => {
-    it('passes bundles importing only what the runner supplies', async () => {
-      writePublishablePackage(projectRoot);
+    it('passes bundles importing only what the runner supplies', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      writePublishablePackage(temp.dir);
 
       const results = await runSelfContainment();
 
@@ -272,9 +303,11 @@ describe('publishing kit', () => {
       ]);
     });
 
-    it('reports a bundle reaching for a package that the consumer would have to supply', async () => {
-      writePackageJson(projectRoot, { files: ['.readyup'] });
-      writeKitManifest(projectRoot, [writeKit(projectRoot, 'default', { bundle: LEAKY_BUNDLE })]);
+    it('reports a bundle reaching for a package that the consumer would have to supply', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      writePackageJson(temp.dir, { files: ['.readyup'] });
+      writeKitManifest(temp.dir, [writeKit(temp.dir, 'default', { bundle: LEAKY_BUNDLE })]);
 
       const results = await runSelfContainment();
 
@@ -284,8 +317,10 @@ describe('publishing kit', () => {
       });
     });
 
-    it('skips when the package compiles nothing', async () => {
-      mkdirSync(path.join(projectRoot, FIXTURE_KITS_DIR), { recursive: true });
+    it('skips when the package compiles nothing', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      mkdirSync(path.join(temp.dir, FIXTURE_KITS_DIR), { recursive: true });
 
       const results = await runSelfContainment();
 
@@ -295,20 +330,24 @@ describe('publishing kit', () => {
   });
 
   // `rdy compile` records the checks that a kit declares when it loads, so they must not reflect the fixture.
-  it('declares the same checks in a project with compiled kits as in an empty one', async () => {
+  it('declares the same checks in a project with compiled kits as in an empty one', async ({ temp }) => {
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
     const emptyChecks = listDeclaredCheckNames(await loadOwnKit('publishing'));
-    writePublishablePackage(projectRoot);
-    writeKit(projectRoot, 'legacy');
+    writePublishablePackage(temp.dir);
+    writeKit(temp.dir, 'legacy');
 
     expect(listDeclaredCheckNames(await loadOwnKit('publishing'))).toStrictEqual(emptyChecks);
   });
 
   // A published stale kit contains checks that do not describe the package that contains them, which
   // is the failure that this kit exists to stop -- so it blocks whereas `default` only advises.
-  it('blocks on a kit compiled from a source that has since moved on', async () => {
-    writePackageJson(projectRoot, { files: ['.readyup'] });
-    const entry = writeKit(projectRoot, 'default');
-    writeKitManifest(projectRoot, [{ ...entry, sourceHash: '0badcafe' }]);
+  it('blocks on a kit compiled from a source that has since moved on', async ({ temp }) => {
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+    writePackageJson(temp.dir, { files: ['.readyup'] });
+    const entry = writeKit(temp.dir, 'default');
+    writeKitManifest(temp.dir, [{ ...entry, sourceHash: '0badcafe' }]);
 
     const results = await runChecklist(await loadOwnKit('publishing'), 'freshness');
 
@@ -316,10 +355,12 @@ describe('publishing kit', () => {
   });
 
   // A consumer can still load an unrecorded bundle by name from the published package.
-  it('blocks on a bundle that the manifest does not record', async () => {
-    writePackageJson(projectRoot, { files: ['.readyup'] });
-    writeKitManifest(projectRoot, [writeKit(projectRoot, 'default')]);
-    writeKit(projectRoot, 'legacy');
+  it('blocks on a bundle that the manifest does not record', async ({ temp }) => {
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+    writePackageJson(temp.dir, { files: ['.readyup'] });
+    writeKitManifest(temp.dir, [writeKit(temp.dir, 'default')]);
+    writeKit(temp.dir, 'legacy');
 
     const results = await runChecklist(await loadOwnKit('publishing'), 'freshness');
 
@@ -331,12 +372,14 @@ describe('publishing kit', () => {
 
   // A module inlined by the bundle is as much a part of what a consumer runs as the kit source is, and
   // neither recorded hash describes it.
-  it('blocks on a kit whose inlined module has since moved on', async () => {
-    writePackageJson(projectRoot, { files: ['.readyup'] });
-    const entry = writeKit(projectRoot, 'default');
-    const helper = writeModuleInput(projectRoot, FIXTURE_INLINED_MODULE_PATH, 'export const helper = 1;\n');
-    writeKitManifest(projectRoot, [withInputs(entry, helper)]);
-    writeModuleInput(projectRoot, FIXTURE_INLINED_MODULE_PATH, 'export const helper = 2;\n');
+  it('blocks on a kit whose inlined module has since moved on', async ({ temp }) => {
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+    writePackageJson(temp.dir, { files: ['.readyup'] });
+    const entry = writeKit(temp.dir, 'default');
+    const helper = writeModuleInput(temp.dir, FIXTURE_INLINED_MODULE_PATH, 'export const helper = 1;\n');
+    writeKitManifest(temp.dir, [withInputs(entry, helper)]);
+    writeModuleInput(temp.dir, FIXTURE_INLINED_MODULE_PATH, 'export const helper = 2;\n');
 
     const results = await runChecklist(await loadOwnKit('publishing'), 'freshness');
 

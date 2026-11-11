@@ -1,9 +1,10 @@
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { describe, expect, it as baseIt } from 'vitest';
 
 import { computeHash } from '../../../src/check-utils/hashing.ts';
 import type { RdyResult } from '../../../src/kits/types.ts';
@@ -34,6 +35,11 @@ const PROJECTED_JSON_PATH = path.join('..', 'package.json');
 /** Substring of the name of the check that compares installed kit-publishing dependencies against `sources`. */
 const SOURCES_CHECK = 'is listed in "sources"';
 
+const it = baseIt.extend(
+  'temp',
+  makeFixture(() => createTempTree({}, { prefix: 'kit-default-' })),
+);
+
 /**
  * Covers the `default` kit that readyup publishes, against fixture projects in a temp directory.
  *
@@ -41,25 +47,13 @@ const SOURCES_CHECK = 'is listed in "sources"';
  * wants to be judged and moves there before loading the kit.
  */
 describe('default kit', () => {
-  let projectRoot: string;
-  let originalCwd: string;
-
-  beforeEach(() => {
-    projectRoot = mkdtempSync(path.join(tmpdir(), 'kit-default-'));
-    originalCwd = process.cwd();
-    process.chdir(projectRoot);
-  });
-
-  afterEach(() => {
-    process.chdir(originalCwd);
-    rmSync(projectRoot, { recursive: true, force: true });
-  });
-
   describe('setup', () => {
-    it('passes a project containing a kit directory, a config, and a manifest', async () => {
-      const entry = writeKit(projectRoot, 'default');
-      writeKitManifest(projectRoot, [entry]);
-      writeRdyConfig(projectRoot);
+    it('passes a project containing a kit directory, a config, and a manifest', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      const entry = writeKit(temp.dir, 'default');
+      writeKitManifest(temp.dir, [entry]);
+      writeRdyConfig(temp.dir);
 
       const results = await runSetup();
 
@@ -67,7 +61,9 @@ describe('default kit', () => {
     });
 
     // A monorepo root that lists `sources` authors no kits of its own, and is not defective for it.
-    it('skips every authoring check for a project that defines no kits', async () => {
+    it('skips every authoring check for a project that defines no kits', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
       const results = await runSetup();
 
       const authoringResults = [pickResult(results, 'readyup.config.ts'), pickResult(results, 'manifest.json')];
@@ -75,7 +71,9 @@ describe('default kit', () => {
       expect(authoringResults.every((result) => result.detail === 'This project defines no kits')).toBe(true);
     });
 
-    it('reports an installed kit-publishing dependency that "sources" does not list', async () => {
+    it('reports an installed kit-publishing dependency that "sources" does not list', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
       writeConsumerProject({ sources: ['npm:listed-kit'] });
 
       const results = await runSetup();
@@ -86,7 +84,9 @@ describe('default kit', () => {
       });
     });
 
-    it('passes once every kit-publishing dependency is listed', async () => {
+    it('passes once every kit-publishing dependency is listed', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
       writeConsumerProject({ sources: ['npm:listed-kit', 'npm:unlisted-kit'] });
 
       const results = await runSetup();
@@ -94,7 +94,9 @@ describe('default kit', () => {
       expect(pickResult(results, SOURCES_CHECK)).toMatchObject({ status: 'passed' });
     });
 
-    it('passes when "omittedSources" names the unlisted dependency', async () => {
+    it('passes when "omittedSources" names the unlisted dependency', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
       writeConsumerProject({ sources: ['npm:listed-kit'], omittedSources: ['npm:unlisted-kit'] });
 
       const results = await runSetup();
@@ -102,17 +104,21 @@ describe('default kit', () => {
       expect(pickResult(results, SOURCES_CHECK)).toMatchObject({ status: 'passed' });
     });
 
-    it('does not report a dependency that publishes no kits', async () => {
+    it('does not report a dependency that publishes no kits', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
       writeConsumerProject({ sources: ['npm:listed-kit', 'npm:unlisted-kit'] });
-      writeInstalledKitPackage(projectRoot, 'kitless', []);
-      writePackageJson(projectRoot, { devDependencies: { kitless: '1.0.0', 'listed-kit': '1.0.0' } });
+      writeInstalledKitPackage(temp.dir, 'kitless', []);
+      writePackageJson(temp.dir, { devDependencies: { kitless: '1.0.0', 'listed-kit': '1.0.0' } });
 
       const results = await runSetup();
 
       expect(pickResult(results, SOURCES_CHECK)).toMatchObject({ status: 'passed' });
     });
 
-    it('skips the source check when the config lists no sources', async () => {
+    it('skips the source check when the config lists no sources', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
       writeConsumerProject({ sources: [] });
 
       const results = await runSetup();
@@ -123,9 +129,11 @@ describe('default kit', () => {
       });
     });
 
-    it('skips the source check when the project has no config', async () => {
-      writeInstalledKitPackage(projectRoot, 'unlisted-kit', ['default']);
-      writePackageJson(projectRoot, { devDependencies: { 'unlisted-kit': '1.0.0' } });
+    it('skips the source check when the project has no config', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      writeInstalledKitPackage(temp.dir, 'unlisted-kit', ['default']);
+      writePackageJson(temp.dir, { devDependencies: { 'unlisted-kit': '1.0.0' } });
 
       const results = await runSetup();
 
@@ -133,8 +141,10 @@ describe('default kit', () => {
     });
 
     // A project compiling to a non-default `outDir` declares in the manifest that it has kits.
-    it('applies to a project containing a manifest but no kit directory', async () => {
-      writeKitManifest(projectRoot, []);
+    it('applies to a project containing a manifest but no kit directory', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      writeKitManifest(temp.dir, []);
 
       const results = await runSetup();
 
@@ -142,8 +152,10 @@ describe('default kit', () => {
     });
 
     // A project can be perfectly functional without one; the defaults that it would have declared still apply.
-    it('reports a missing config at the lowest severity', async () => {
-      mkdirSync(path.join(projectRoot, FIXTURE_KITS_DIR), { recursive: true });
+    it('reports a missing config at the lowest severity', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      mkdirSync(path.join(temp.dir, FIXTURE_KITS_DIR), { recursive: true });
 
       const results = await runSetup();
 
@@ -151,8 +163,10 @@ describe('default kit', () => {
     });
 
     // Running kits straight from source with `--jit` compiles nothing, so there is nothing to record.
-    it('does not ask for a manifest when nothing is compiled', async () => {
-      mkdirSync(path.join(projectRoot, FIXTURE_KITS_DIR), { recursive: true });
+    it('does not ask for a manifest when nothing is compiled', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      mkdirSync(path.join(temp.dir, FIXTURE_KITS_DIR), { recursive: true });
 
       const results = await runSetup();
 
@@ -162,8 +176,10 @@ describe('default kit', () => {
       });
     });
 
-    it('asks for a manifest once a bundle exists', async () => {
-      writeKit(projectRoot, 'default');
+    it('asks for a manifest once a bundle exists', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      writeKit(temp.dir, 'default');
 
       const results = await runSetup();
 
@@ -172,8 +188,10 @@ describe('default kit', () => {
   });
 
   describe('freshness', () => {
-    it('passes when every recorded kit matches the hashes recorded for it', async () => {
-      writeKitManifest(projectRoot, [writeKit(projectRoot, 'default'), writeKit(projectRoot, 'release')]);
+    it('passes when every recorded kit matches the hashes recorded for it', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      writeKitManifest(temp.dir, [writeKit(temp.dir, 'default'), writeKit(temp.dir, 'release')]);
 
       const results = await runFreshness();
 
@@ -186,9 +204,11 @@ describe('default kit', () => {
       ]);
     });
 
-    it('reports a source edited since it was compiled', async () => {
-      const entry = writeKit(projectRoot, 'default');
-      writeKitManifest(projectRoot, [{ ...entry, sourceHash: '0badcafe' }]);
+    it('reports a source edited since it was compiled', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      const entry = writeKit(temp.dir, 'default');
+      writeKitManifest(temp.dir, [{ ...entry, sourceHash: '0badcafe' }]);
 
       const results = await runFreshness();
 
@@ -199,9 +219,11 @@ describe('default kit', () => {
       expect(pickResult(results, 'Its bundle')).toMatchObject({ status: 'passed' });
     });
 
-    it('reports a bundle edited by hand', async () => {
-      const entry = writeKit(projectRoot, 'default');
-      writeKitManifest(projectRoot, [{ ...entry, targetHash: '0badcafe' }]);
+    it('reports a bundle edited by hand', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      const entry = writeKit(temp.dir, 'default');
+      writeKitManifest(temp.dir, [{ ...entry, targetHash: '0badcafe' }]);
 
       const results = await runFreshness();
 
@@ -211,31 +233,40 @@ describe('default kit', () => {
       });
     });
 
-    it.each([12, 64])('passes on a bundle recorded with a %i-character hash', async (length) => {
-      const entry = writeKit(projectRoot, 'default');
-      writeKitManifest(projectRoot, [{ ...entry, targetHash: computeHash(SELF_CONTAINED_BUNDLE).slice(0, length) }]);
+    it.for([12, 64])('passes on a bundle recorded with a %i-character hash', async (length, { temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      const entry = writeKit(temp.dir, 'default');
+      writeKitManifest(temp.dir, [{ ...entry, targetHash: computeHash(SELF_CONTAINED_BUNDLE).slice(0, length) }]);
 
       const results = await runFreshness();
 
       expect(pickResult(results, 'Its bundle')).toMatchObject({ status: 'passed' });
     });
 
-    it.each(['0badcaf', '0badcafg'])('reports %o as a recorded value that is not a hash', async (targetHash) => {
-      const entry = writeKit(projectRoot, 'default');
-      writeKitManifest(projectRoot, [{ ...entry, targetHash }]);
+    it.for(['0badcaf', '0badcafg'])(
+      'reports %o as a recorded value that is not a hash',
+      async (targetHash, { temp }) => {
+        using _cwd = pointCwdAt(temp.dir, { chdir: true });
 
-      const results = await runFreshness();
+        const entry = writeKit(temp.dir, 'default');
+        writeKitManifest(temp.dir, [{ ...entry, targetHash }]);
 
-      expect(pickResult(results, 'Its bundle')).toMatchObject({
-        status: 'failed',
-        detail: expect.stringContaining(`records ${targetHash}, which is not a hash`),
-      });
-    });
+        const results = await runFreshness();
 
-    it('reports a recorded file that is no longer there', async () => {
-      const entry = writeKit(projectRoot, 'default');
-      writeKitManifest(projectRoot, [entry]);
-      rmSync(path.join(projectRoot, FIXTURE_KITS_DIR, 'default.js'));
+        expect(pickResult(results, 'Its bundle')).toMatchObject({
+          status: 'failed',
+          detail: expect.stringContaining(`records ${targetHash}, which is not a hash`),
+        });
+      },
+    );
+
+    it('reports a recorded file that is no longer there', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      const entry = writeKit(temp.dir, 'default');
+      writeKitManifest(temp.dir, [entry]);
+      rmSync(path.join(temp.dir, FIXTURE_KITS_DIR, 'default.js'));
 
       const results = await runFreshness();
 
@@ -247,9 +278,11 @@ describe('default kit', () => {
 
     // Without a recorded hash there is nothing to compare against, so the check fails the entry itself
     // and skips the comparisons beneath it, which cannot support a verdict.
-    it('reports an entry recording no hashes and withholds the comparisons', async () => {
-      writeKit(projectRoot, 'default');
-      writeKitManifest(projectRoot, [{ name: 'default' }]);
+    it('reports an entry recording no hashes and withholds the comparisons', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      writeKit(temp.dir, 'default');
+      writeKitManifest(temp.dir, [{ name: 'default' }]);
 
       const results = await runFreshness();
 
@@ -261,9 +294,11 @@ describe('default kit', () => {
       expect(pickResult(results, 'Its bundle')).toMatchObject({ status: 'skipped' });
     });
 
-    it('reports an inlined module that has since changed', async () => {
-      writeKitManifest(projectRoot, [withInputs(writeKit(projectRoot, 'default'), inlineHelper(projectRoot, '1'))]);
-      inlineHelper(projectRoot, '2');
+    it('reports an inlined module that has since changed', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      writeKitManifest(temp.dir, [withInputs(writeKit(temp.dir, 'default'), inlineHelper(temp.dir, '1'))]);
+      inlineHelper(temp.dir, '2');
 
       const results = await runFreshness();
 
@@ -273,9 +308,11 @@ describe('default kit', () => {
       });
     });
 
-    it('leaves an edited source to the source check alone', async () => {
-      writeKitManifest(projectRoot, [withInputs(writeKit(projectRoot, 'default'), inlineHelper(projectRoot, '1'))]);
-      writeFileSync(path.join(projectRoot, FIXTURE_KITS_DIR, 'default.ts'), 'export default { edited: true };\n');
+    it('leaves an edited source to the source check alone', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      writeKitManifest(temp.dir, [withInputs(writeKit(temp.dir, 'default'), inlineHelper(temp.dir, '1'))]);
+      writeFileSync(path.join(temp.dir, FIXTURE_KITS_DIR, 'default.ts'), 'export default { edited: true };\n');
 
       const results = await runFreshness();
 
@@ -286,10 +323,12 @@ describe('default kit', () => {
       });
     });
 
-    it('counts only the inputs past the source when one has changed', async () => {
-      writeKitManifest(projectRoot, [withInputs(writeKit(projectRoot, 'default'), inlineHelper(projectRoot, '1'))]);
-      writeFileSync(path.join(projectRoot, FIXTURE_KITS_DIR, 'default.ts'), 'export default { edited: true };\n');
-      inlineHelper(projectRoot, '2');
+    it('counts only the inputs past the source when one has changed', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      writeKitManifest(temp.dir, [withInputs(writeKit(temp.dir, 'default'), inlineHelper(temp.dir, '1'))]);
+      writeFileSync(path.join(temp.dir, FIXTURE_KITS_DIR, 'default.ts'), 'export default { edited: true };\n');
+      inlineHelper(temp.dir, '2');
 
       const results = await runFreshness();
 
@@ -300,9 +339,11 @@ describe('default kit', () => {
       });
     });
 
-    it('passes a kit that inlines nothing past its source', async () => {
-      writeKitManifest(projectRoot, [writeKit(projectRoot, 'default')]);
-      writeFileSync(path.join(projectRoot, FIXTURE_KITS_DIR, 'default.ts'), 'export default { edited: true };\n');
+    it('passes a kit that inlines nothing past its source', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      writeKitManifest(temp.dir, [writeKit(temp.dir, 'default')]);
+      writeFileSync(path.join(temp.dir, FIXTURE_KITS_DIR, 'default.ts'), 'export default { edited: true };\n');
 
       const results = await runFreshness();
 
@@ -312,13 +353,17 @@ describe('default kit', () => {
       });
     });
 
-    it('leaves a deleted source to the source check when the recorded source passes through a symlink', async () => {
-      const realKitsDir = path.join(projectRoot, '.readyup', 'real');
+    it('leaves a deleted source to the source check when the recorded source passes through a symlink', async ({
+      temp,
+    }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      const realKitsDir = path.join(temp.dir, '.readyup', 'real');
       mkdirSync(realKitsDir, { recursive: true });
-      symlinkSync(realKitsDir, path.join(projectRoot, FIXTURE_KITS_DIR));
-      const entry = writeKit(projectRoot, 'default');
+      symlinkSync(realKitsDir, path.join(temp.dir, FIXTURE_KITS_DIR));
+      const entry = writeKit(temp.dir, 'default');
       // A compile records each input at the path to which esbuild resolved it.
-      writeKitManifest(projectRoot, [
+      writeKitManifest(temp.dir, [
         { ...entry, inputs: [{ hash: entry.sourceHash, kind: 'module', path: path.join('real', 'default.ts') }] },
       ]);
       rmSync(path.join(realKitsDir, 'default.ts'));
@@ -332,11 +377,11 @@ describe('default kit', () => {
       });
     });
 
-    it('reports an inlined projection that has since changed', async () => {
-      writeKitManifest(projectRoot, [
-        withInputs(writeKit(projectRoot, 'default'), projectVersion(projectRoot, '1.0.0')),
-      ]);
-      writePackageJson(projectRoot, { version: '2.0.0' });
+    it('reports an inlined projection that has since changed', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      writeKitManifest(temp.dir, [withInputs(writeKit(temp.dir, 'default'), projectVersion(temp.dir, '1.0.0'))]);
+      writePackageJson(temp.dir, { version: '2.0.0' });
 
       const results = await runFreshness();
 
@@ -348,22 +393,22 @@ describe('default kit', () => {
 
     // The recorded hash is over the projection rather than the file, so a field never picked up by the
     // kit is not something the bundle could have inlined.
-    it('accepts an edit to a field that the projection does not pick', async () => {
-      writeKitManifest(projectRoot, [
-        withInputs(writeKit(projectRoot, 'default'), projectVersion(projectRoot, '1.0.0')),
-      ]);
-      writePackageJson(projectRoot, { description: 'edited since the kit was compiled', version: '1.0.0' });
+    it('accepts an edit to a field that the projection does not pick', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      writeKitManifest(temp.dir, [withInputs(writeKit(temp.dir, 'default'), projectVersion(temp.dir, '1.0.0'))]);
+      writePackageJson(temp.dir, { description: 'edited since the kit was compiled', version: '1.0.0' });
 
       const results = await runFreshness();
 
       expect(pickResult(results, 'Everything it inlined')).toMatchObject({ status: 'passed' });
     });
 
-    it('reports a projected file whose picked field is gone', async () => {
-      writeKitManifest(projectRoot, [
-        withInputs(writeKit(projectRoot, 'default'), projectVersion(projectRoot, '1.0.0')),
-      ]);
-      writePackageJson(projectRoot, {});
+    it('reports a projected file whose picked field is gone', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      writeKitManifest(temp.dir, [withInputs(writeKit(temp.dir, 'default'), projectVersion(temp.dir, '1.0.0'))]);
+      writePackageJson(temp.dir, {});
 
       const results = await runFreshness();
 
@@ -373,9 +418,11 @@ describe('default kit', () => {
       });
     });
 
-    it('reports an inlined module that is no longer there', async () => {
-      writeKitManifest(projectRoot, [withInputs(writeKit(projectRoot, 'default'), inlineHelper(projectRoot, '1'))]);
-      rmSync(path.join(projectRoot, '.readyup', FIXTURE_INLINED_MODULE_PATH));
+    it('reports an inlined module that is no longer there', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      writeKitManifest(temp.dir, [withInputs(writeKit(temp.dir, 'default'), inlineHelper(temp.dir, '1'))]);
+      rmSync(path.join(temp.dir, '.readyup', FIXTURE_INLINED_MODULE_PATH));
 
       const results = await runFreshness();
 
@@ -386,9 +433,11 @@ describe('default kit', () => {
     });
 
     // An entry compiled before readyup recorded the closure says nothing about whether the kit is stale.
-    it('skips the comparison for an entry recording no inputs', async () => {
-      const { inputs, ...entry } = writeKit(projectRoot, 'default');
-      writeKitManifest(projectRoot, [entry]);
+    it('skips the comparison for an entry recording no inputs', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      const { inputs, ...entry } = writeKit(temp.dir, 'default');
+      writeKitManifest(temp.dir, [entry]);
 
       const results = await runFreshness();
 
@@ -398,11 +447,11 @@ describe('default kit', () => {
       });
     });
 
-    it('reports an inlined JSON file that is no longer there', async () => {
-      writeKitManifest(projectRoot, [
-        withInputs(writeKit(projectRoot, 'default'), projectVersion(projectRoot, '1.0.0')),
-      ]);
-      rmSync(path.join(projectRoot, 'package.json'));
+    it('reports an inlined JSON file that is no longer there', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      writeKitManifest(temp.dir, [withInputs(writeKit(temp.dir, 'default'), projectVersion(temp.dir, '1.0.0'))]);
+      rmSync(path.join(temp.dir, 'package.json'));
 
       const results = await runFreshness();
 
@@ -414,10 +463,12 @@ describe('default kit', () => {
 
     // The kit reads raw JSON rather than the manifest schema, so these two guards, rather than
     // validation, reject a record that no compile would have written.
-    it('reports an inline record whose path specifier is not one', async () => {
-      const entry = writeKit(projectRoot, 'default');
+    it('reports an inline record whose path specifier is not one', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      const entry = writeKit(temp.dir, 'default');
       const input = { hash: '0badcafe', kind: 'inline', path: PROJECTED_JSON_PATH, paths: [42] };
-      writeRawKitManifest(projectRoot, [{ ...entry, inputs: [input] }]);
+      writeRawKitManifest(temp.dir, [{ ...entry, inputs: [input] }]);
 
       const results = await runFreshness();
 
@@ -427,10 +478,12 @@ describe('default kit', () => {
       });
     });
 
-    it('names only the fields missing from an incomplete input record', async () => {
-      const entry = writeKit(projectRoot, 'default');
+    it('names only the fields missing from an incomplete input record', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      const entry = writeKit(temp.dir, 'default');
       const input = { path: path.join('kits', 'demo.ts'), hash: '0badcafe' };
-      writeRawKitManifest(projectRoot, [{ ...entry, inputs: [input] }]);
+      writeRawKitManifest(temp.dir, [{ ...entry, inputs: [input] }]);
 
       const results = await runFreshness();
 
@@ -441,9 +494,11 @@ describe('default kit', () => {
     });
 
     // A record with no path has nothing to lead with, so the message names the input instead.
-    it('names every absent field of an input record that has no path to lead with', async () => {
-      const entry = writeKit(projectRoot, 'default');
-      writeRawKitManifest(projectRoot, [{ ...entry, inputs: [{ kind: 'module' }] }]);
+    it('names every absent field of an input record that has no path to lead with', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      const entry = writeKit(temp.dir, 'default');
+      writeRawKitManifest(temp.dir, [{ ...entry, inputs: [{ kind: 'module' }] }]);
 
       const results = await runFreshness();
 
@@ -453,8 +508,10 @@ describe('default kit', () => {
       });
     });
 
-    it('skips when the project compiles nothing', async () => {
-      mkdirSync(path.join(projectRoot, FIXTURE_KITS_DIR), { recursive: true });
+    it('skips when the project compiles nothing', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      mkdirSync(path.join(temp.dir, FIXTURE_KITS_DIR), { recursive: true });
 
       const results = await runFreshness();
 
@@ -464,8 +521,10 @@ describe('default kit', () => {
       ]);
     });
 
-    it('reports bundles that no manifest accounts for', async () => {
-      writeKit(projectRoot, 'default');
+    it('reports bundles that no manifest accounts for', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      writeKit(temp.dir, 'default');
 
       const results = await runFreshness();
 
@@ -478,10 +537,12 @@ describe('default kit', () => {
     });
 
     // A compile removes a deleted kit's entry, and a bundle left behind stays loadable by name.
-    it('names each bundle that the manifest does not record, beside the kits that it does', async () => {
-      writeKitManifest(projectRoot, [writeKit(projectRoot, 'default')]);
-      writeKit(projectRoot, 'legacy');
-      writeKit(projectRoot, 'retired');
+    it('names each bundle that the manifest does not record, beside the kits that it does', async ({ temp }) => {
+      using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+      writeKitManifest(temp.dir, [writeKit(temp.dir, 'default')]);
+      writeKit(temp.dir, 'legacy');
+      writeKit(temp.dir, 'retired');
 
       const results = await runFreshness();
 
@@ -494,9 +555,11 @@ describe('default kit', () => {
   });
 
   // The kit is meant to be safe to run at any moment, including mid-edit, so nothing it finds has blocking severity.
-  it('raises nothing above advisory severity', async () => {
-    writeKit(projectRoot, 'default');
-    writeKitManifest(projectRoot, [{ name: 'default' }]);
+  it('raises nothing above advisory severity', async ({ temp }) => {
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
+    writeKit(temp.dir, 'default');
+    writeKitManifest(temp.dir, [{ name: 'default' }]);
 
     const results = [...(await runSetup()), ...(await runFreshness())];
 

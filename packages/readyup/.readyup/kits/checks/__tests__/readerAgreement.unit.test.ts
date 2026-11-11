@@ -1,9 +1,9 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { writeFileSync } from 'node:fs';
 import path from 'node:path';
-import process from 'node:process';
 
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { describe, expect, it as baseIt } from 'vitest';
 
 import { computeHash } from '../../../../src/check-utils/hashing.ts';
 import type { RdyResult } from '../../../../src/kits/types.ts';
@@ -21,6 +21,11 @@ import {
 
 const EDITED_BUNDLE = `${SELF_CONTAINED_BUNDLE}// edited by hand\n`;
 
+const it = baseIt.extend(
+  'temp',
+  makeFixture(() => createTempTree({}, { prefix: 'reader-agreement-' })),
+);
+
 /**
  * Asserts that `rdy verify` and the `freshness` kit reach one verdict on a manifest that neither wrote.
  *
@@ -30,33 +35,23 @@ const EDITED_BUNDLE = `${SELF_CONTAINED_BUNDLE}// edited by hand\n`;
  * meaningful.
  */
 describe('recorded-hash readers', () => {
-  let projectRoot: string;
-  let originalCwd: string;
+  it.for([12, 64])('both pass an unchanged bundle recorded with a %i-character hash', async (length, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
 
-  beforeEach(() => {
-    projectRoot = mkdtempSync(path.join(tmpdir(), 'reader-agreement-'));
-    originalCwd = process.cwd();
-    process.chdir(projectRoot);
-  });
-
-  afterEach(() => {
-    process.chdir(originalCwd);
-    rmSync(projectRoot, { recursive: true, force: true });
-  });
-
-  it.each([12, 64])('both pass an unchanged bundle recorded with a %i-character hash', async (length) => {
     const targetHash = computeHash(SELF_CONTAINED_BUNDLE).slice(0, length);
-    const entry = { ...writeKit(projectRoot, 'default'), targetHash };
-    writeKitManifest(projectRoot, [entry]);
+    const entry = { ...writeKit(temp.dir, 'default'), targetHash };
+    writeKitManifest(temp.dir, [entry]);
 
     await expect(readsAsFresh(entry)).resolves.toStrictEqual({ kit: true, verify: true });
   });
 
-  it.each([12, 64])('both fail an edited bundle recorded with a %i-character hash', async (length) => {
+  it.for([12, 64])('both fail an edited bundle recorded with a %i-character hash', async (length, { temp }) => {
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
     const targetHash = computeHash(SELF_CONTAINED_BUNDLE).slice(0, length);
-    const entry = { ...writeKit(projectRoot, 'default'), targetHash };
-    writeKitManifest(projectRoot, [entry]);
-    writeFileSync(path.join(projectRoot, FIXTURE_KITS_DIR, 'default.js'), EDITED_BUNDLE);
+    const entry = { ...writeKit(temp.dir, 'default'), targetHash };
+    writeKitManifest(temp.dir, [entry]);
+    writeFileSync(path.join(temp.dir, FIXTURE_KITS_DIR, 'default.js'), EDITED_BUNDLE);
 
     await expect(readsAsFresh(entry)).resolves.toStrictEqual({ kit: false, verify: false });
   });
@@ -64,9 +59,11 @@ describe('recorded-hash readers', () => {
   // Below the floor the two readers agree through the schema rather than through the comparison:
   // `readManifest` rejects the record before `checkDrift` sees it, and `checkDrift` called directly on
   // a truthful seven-character prefix would return `ok` whereas the kit reports a malformed record.
-  it('both reject a bundle recorded with a hash shorter than the format admits', async () => {
+  it('both reject a bundle recorded with a hash shorter than the format admits', async ({ temp }) => {
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
     const targetHash = computeHash(SELF_CONTAINED_BUNDLE).slice(0, 7);
-    writeKitManifest(projectRoot, [{ ...writeKit(projectRoot, 'default'), targetHash }]);
+    writeKitManifest(temp.dir, [{ ...writeKit(temp.dir, 'default'), targetHash }]);
 
     expect(() => readManifest(FIXTURE_MANIFEST_PATH)).toThrow(/lowercase hex digest prefix/);
 
