@@ -7,10 +7,13 @@ import type { ReportedWarning } from '../output/writeWarnings.ts';
 import { type JsonListKitEntry, type JsonListOutput, SCHEMA_VERSION } from '../schemas/listOutputSchema.ts';
 
 /** Builds the `--json` document of a listing, in which each row keeps its check names only under `--checks`. */
-export function buildListOutput({ availableSources = [], kits }: ListResult, showChecks: boolean): JsonListOutput {
+export function buildListOutput(
+  { availableSources = [], kits }: ListResult,
+  shouldShowChecks: boolean,
+): JsonListOutput {
   return {
     schemaVersion: SCHEMA_VERSION,
-    kits: showChecks ? kits : kits.map(({ checklistChecks: _omitted, ...kit }) => kit),
+    kits: shouldShowChecks ? kits : kits.map(({ checklistChecks: _omitted, ...kit }) => kit),
     ...(availableSources.length > 0 && { availableSources }),
   };
 }

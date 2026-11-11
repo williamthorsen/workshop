@@ -23,7 +23,7 @@ import {
 
 /** Enumerates the kits named by the project config, adding a warning for each part of the listing that it skips. */
 export async function runOwnerMode(
-  showChecks: boolean,
+  shouldShowChecks: boolean,
   configPath: string | undefined,
   remote: RemoteFetchContext,
   warnings: ReportedWarning[],
@@ -83,7 +83,7 @@ export async function runOwnerMode(
       sourceKind: kit.provenance.kind === 'repository' ? 'repository' : 'package',
     })),
     availableSources,
-    showChecks,
+    shouldShowChecks,
   });
 
   const entries: JsonListKitEntry[] = [
