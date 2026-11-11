@@ -38,7 +38,7 @@ describe(findNearestWord, () => {
   });
 
   it('prefers the nearer candidate over the earlier one', () => {
-    expect(findNearestWord('ab', ['ac', 'ab'])).toBe('ab');
+    expect(findNearestWord('abd', ['axe', 'abe'])).toBe('abe');
   });
 
   it('breaks a tie on candidate order, which an alphabetized list makes alphabetical', () => {
