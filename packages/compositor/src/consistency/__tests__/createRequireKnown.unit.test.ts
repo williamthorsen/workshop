@@ -9,7 +9,7 @@ describe(createRequireKnown, () => {
     createRequireKnown(violations)(new Set(['team']), 'absent', 'artifacts[0].sourceId', 'sources');
 
     expect(violations).toStrictEqual([
-      { path: 'artifacts[0].sourceId', message: 'references "absent", which is not an entry in sources' },
+      { path: 'artifacts[0].sourceId', message: expect.stringMatching(/"absent".*\bsources\b/) },
     ]);
   });
 

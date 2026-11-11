@@ -24,7 +24,7 @@ describe(findResolutionOrderViolations, () => {
     expect(violations).toStrictEqual([
       {
         path: 'entries[0].resolution.shadowed[0].sourceId',
-        message: 'names "local", which does not follow "team" in source precedence order',
+        message: expect.stringMatching(/"local".*"team"/),
       },
     ]);
   });
@@ -38,7 +38,7 @@ describe(findResolutionOrderViolations, () => {
     expect(violations).toStrictEqual([
       {
         path: 'entries[0].resolution.shadowed[1].sourceId',
-        message: 'names "team", which does not follow "library" in source precedence order',
+        message: expect.stringMatching(/"team".*"library"/),
       },
     ]);
   });

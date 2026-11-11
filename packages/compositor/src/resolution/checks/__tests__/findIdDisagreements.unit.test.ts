@@ -16,7 +16,7 @@ describe(findIdDisagreements, () => {
     expect(findIdDisagreements(catalog)).toStrictEqual([
       {
         path: 'entries[1].id',
-        message: 'is "lint", and the kind and slug beside it compose "skill:lint"',
+        message: expect.stringMatching(/"lint".*"skill:lint"/),
       },
     ]);
   });

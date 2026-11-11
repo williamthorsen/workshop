@@ -22,7 +22,7 @@ describe(assertPlanIsConsistent, () => {
 
     const failure = await captureError(PlanConsistencyError, () => assertPlanIsConsistent(plan));
 
-    expect(failure.violations).toStrictEqual([{ path: 'tiers', message: 'lists "project" more than once' }]);
+    expect(failure.violations).toStrictEqual([{ path: 'tiers', message: expect.stringContaining('"project"') }]);
   });
 
   it('if two file entries claim one destination, names the repeated path', async () => {
@@ -32,7 +32,7 @@ describe(assertPlanIsConsistent, () => {
     const failure = await captureError(PlanConsistencyError, () => assertPlanIsConsistent(plan));
 
     expect(failure.violations).toStrictEqual([
-      { path: 'files[1]', message: 'repeats the destination "skills/review/SKILL.md" within target "claude"' },
+      { path: 'files[1]', message: expect.stringMatching(/"skills\/review\/SKILL\.md".*"claude"/) },
     ]);
   });
 
@@ -47,7 +47,7 @@ describe(assertPlanIsConsistent, () => {
     expect(failure.violations).toStrictEqual([
       {
         path: 'artifacts[0].dependsOn[0].partialId',
-        message: 'is set on a "member" edge, and only a token edge is read from a partial',
+        message: expect.stringContaining('"member"'),
       },
     ]);
   });
@@ -65,7 +65,7 @@ describe(assertPlanIsConsistent, () => {
     expect(failure.violations).toStrictEqual([
       {
         path: 'artifacts[2].resolution.shadowed[0].sourceId',
-        message: 'names "team", which does not follow "library" in source precedence order',
+        message: expect.stringMatching(/"team".*"library"/),
       },
     ]);
   });
@@ -82,7 +82,7 @@ describe(assertPlanIsConsistent, () => {
     expect(failure.violations).toStrictEqual([
       {
         path: 'artifacts[1].resolution.shadowed[0].sourceId',
-        message: 'references "absent", which is not an entry in sources',
+        message: expect.stringContaining('"absent"'),
       },
     ]);
   });

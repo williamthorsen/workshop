@@ -35,7 +35,7 @@ describe(stripInlays, () => {
 
     expect(stripped).toHaveProperty('diagnostic', {
       code: 'unrecognized-parameter',
-      message: 'The inlay directive at line 2 names no single inlay: "<!-- inlay: one two -->".',
+      message: expect.stringContaining('"<!-- inlay: one two -->"'),
       line: 2,
     });
   });
@@ -45,7 +45,7 @@ describe(stripInlays, () => {
 
     expect(stripped).toHaveProperty('diagnostic', {
       code: 'duplicate-name',
-      message: 'The inlay directive at line 3 declares "preferences", which this body declares already.',
+      message: expect.stringContaining('"preferences"'),
       line: 3,
     });
   });

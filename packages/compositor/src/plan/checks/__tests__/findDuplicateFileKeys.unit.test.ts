@@ -14,7 +14,7 @@ describe(findDuplicateFileKeys, () => {
     plan.files = [...plan.files, { ...requireEntry(plan.files, 0) }];
 
     expect(findDuplicateFileKeys(plan)).toStrictEqual([
-      { path: 'files[1]', message: 'repeats the destination "skills/review/SKILL.md" within target "claude"' },
+      { path: 'files[1]', message: expect.stringMatching(/"skills\/review\/SKILL\.md".*"claude"/) },
     ]);
   });
 

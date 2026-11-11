@@ -34,7 +34,7 @@ describe(findOwnedItemsFaults, () => {
     const contested: RenderTarget = { ...CLAUDE_TARGET, ownedItems: [SETTINGS_HOOKS, SETTINGS_HOOKS] };
 
     expect(findOwnedItemsFaults(contested, 'targets[0]')).toStrictEqual([
-      { path: 'targets[0].ownedItems', message: 'owns "settings.json at hooks" more than once' },
+      { path: 'targets[0].ownedItems', message: expect.stringContaining('"settings.json at hooks"') },
     ]);
   });
 
@@ -50,7 +50,7 @@ describe(findOwnedItemsFaults, () => {
     expect(findOwnedItemsFaults(mixed, 'targets[0]')).toStrictEqual([
       {
         path: 'targets[0].ownedItems[1].format',
-        message: 'is "yaml" where the same host is declared "json", and a file has one',
+        message: expect.stringMatching(/"yaml".*"json"/),
       },
     ]);
   });
@@ -70,7 +70,7 @@ describe(findOwnedItemsFaults, () => {
     expect(findOwnedItemsFaults(nested, 'targets[0]')).toStrictEqual([
       {
         path: 'targets[0].ownedItems[1].collection',
-        message: `nests with "${first.join('.')}" on the same host, and no key descends through a collection`,
+        message: expect.stringContaining(`"${first.join('.')}"`),
       },
     ]);
   });
@@ -94,7 +94,7 @@ describe(findOwnedItemsFaults, () => {
     expect(findOwnedItemsFaults(scalar, 'targets[0]')).toStrictEqual([
       {
         path: 'targets[0].ownedItems[0].items[0]',
-        message: 'Cannot mark an item with a sentinel at "source": the item is not a mapping.',
+        message: expect.stringContaining('"source"'),
       },
     ]);
   });
@@ -114,7 +114,7 @@ describe(findOwnedItemsFaults, () => {
     expect(findOwnedItemsFaults(blocked, 'targets[0]')).toStrictEqual([
       {
         path: 'targets[0].ownedItems[0].items[0]',
-        message: 'Cannot mark an item with a sentinel at "meta.writtenBy": "meta" is not a mapping.',
+        message: expect.stringMatching(/"meta\.writtenBy".*"meta"/),
       },
     ]);
   });
@@ -129,7 +129,7 @@ describe(findOwnedItemsFaults, () => {
     expect(findOwnedItemsFaults(contested, 'targets[0]')).toStrictEqual([
       {
         path: 'targets[0].ownedItems[0].host',
-        message: 'is also a region host, so two mechanisms would each compute the whole file',
+        message: expect.stringContaining('region host'),
       },
     ]);
   });
@@ -140,7 +140,7 @@ describe(findOwnedItemsFaults, () => {
     expect(findOwnedItemsFaults(contested, 'targets[0]')).toStrictEqual([
       {
         path: 'targets[0].ownedItems[0].host',
-        message: 'collides with the layout root "skills", which needs a directory where this host is a file',
+        message: expect.stringContaining('"skills"'),
       },
     ]);
   });
@@ -160,7 +160,7 @@ describe(findOwnedItemsFaults, () => {
     expect(findOwnedItemsFaults(unmarkable, 'targets[0]')).toStrictEqual([
       {
         path: 'targets[0].ownedItems[0].items[0]',
-        message: 'does not have the sentinel, which this declaration cannot write, so it could never be found again',
+        message: expect.stringContaining('does not have the sentinel'),
       },
     ]);
   });

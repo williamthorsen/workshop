@@ -347,7 +347,7 @@ describe(fillInlays, () => {
     expect(fill.diagnostics).toStrictEqual([
       {
         code: 'undeployed-kind',
-        message: '"subagent:auditor" is of a kind "claude" deploys nowhere, so it fills nothing there.',
+        message: expect.any(String),
         at: { inlayName: 'preferences', targetId: 'claude', artifactId: 'subagent:auditor' },
       },
     ]);

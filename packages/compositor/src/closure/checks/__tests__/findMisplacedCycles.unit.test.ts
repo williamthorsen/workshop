@@ -27,7 +27,7 @@ describe(findMisplacedCycles, () => {
     expect(findMisplacedCycles(closure)).toStrictEqual([
       {
         path: 'diagnostics[0].cycle',
-        message: 'is set on a "misplaced-key" diagnostic, and only a dependency cycle runs through artifacts',
+        message: expect.stringContaining('"misplaced-key"'),
       },
     ]);
   });

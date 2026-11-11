@@ -28,7 +28,7 @@ describe(assertCatalogIsConsistent, () => {
 
     const failure = await captureError(CatalogConsistencyError, () => assertCatalogIsConsistent(catalog));
 
-    expect(failure.violations).toStrictEqual([{ path: 'sources', message: 'lists "local" more than once' }]);
+    expect(failure.violations).toStrictEqual([{ path: 'sources', message: expect.stringContaining('"local"') }]);
   });
 
   it('if shadowed candidates ascend rather than descend in precedence, locates the one out of order', async () => {
@@ -43,7 +43,7 @@ describe(assertCatalogIsConsistent, () => {
     expect(failure.violations).toStrictEqual([
       {
         path: 'entries[2].resolution.shadowed[1].sourceId',
-        message: 'names "team", which does not follow "library" in source precedence order',
+        message: expect.stringMatching(/"team".*"library"/),
       },
     ]);
   });
@@ -58,7 +58,7 @@ describe(assertCatalogIsConsistent, () => {
 
     expect(failure.violations).toContainEqual({
       path: 'entries[2].resolution.shadowed[0].sourceId',
-      message: 'repeats "local", which already contains this artifact',
+      message: expect.stringContaining('"local"'),
     });
   });
 

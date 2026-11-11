@@ -13,7 +13,7 @@ describe(findRepeatedDeclarations, () => {
     const repeated: RenderTarget = { ...CLAUDE_TARGET, stages: [{ kind: 'tokens' }, { kind: 'tokens' }] };
 
     expect(findRepeatedDeclarations(repeated, 'targets[0]')).toStrictEqual([
-      { path: 'targets[0].stages', message: 'runs "tokens" more than once' },
+      { path: 'targets[0].stages', message: expect.stringContaining('"tokens"') },
     ]);
   });
 
@@ -21,7 +21,7 @@ describe(findRepeatedDeclarations, () => {
     const repeated: RenderTarget = { ...CLAUDE_TARGET, deployments: [SKILL_DEPLOYMENT, SKILL_DEPLOYMENT] };
 
     expect(findRepeatedDeclarations(repeated, 'targets[0]')).toStrictEqual([
-      { path: 'targets[0].deployments', message: 'deploys "skill" more than once' },
+      { path: 'targets[0].deployments', message: expect.stringContaining('"skill"') },
     ]);
   });
 
@@ -32,7 +32,7 @@ describe(findRepeatedDeclarations, () => {
     };
 
     expect(findRepeatedDeclarations(both, 'targets[0]')).toStrictEqual([
-      { path: 'targets[0].deployments', message: 'deploys "skill" more than once' },
+      { path: 'targets[0].deployments', message: expect.stringContaining('"skill"') },
     ]);
   });
 

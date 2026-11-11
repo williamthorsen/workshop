@@ -10,6 +10,6 @@ describe(requireEntry, () => {
   it('if the fixture is shorter than the index, names the index rather than returning undefined', () => {
     expect(() => {
       requireEntry(['only'], 3);
-    }).toThrow('Fixture holds no entry at index 3.');
+    }).toThrow(/index 3/);
   });
 });

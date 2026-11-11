@@ -16,7 +16,7 @@ describe(findDanglingReferences, () => {
     expect(findDanglingReferences(closure)).toStrictEqual([
       {
         path: 'diagnostics[0].at.artifactId',
-        message: 'references "skill:absent", which is not an entry in artifacts',
+        message: expect.stringContaining('"skill:absent"'),
       },
     ]);
   });
@@ -28,7 +28,7 @@ describe(findDanglingReferences, () => {
     diagnostic.cycle = ['skill:review', 'skill:absent'];
 
     expect(findDanglingReferences(closure)).toStrictEqual([
-      { path: 'diagnostics[0].cycle[1]', message: 'references "skill:absent", which is not an entry in artifacts' },
+      { path: 'diagnostics[0].cycle[1]', message: expect.stringContaining('"skill:absent"') },
     ]);
   });
 

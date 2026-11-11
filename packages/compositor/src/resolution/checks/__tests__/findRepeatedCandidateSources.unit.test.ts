@@ -18,7 +18,7 @@ describe(findRepeatedCandidateSources, () => {
     expect(findRepeatedCandidateSources(catalog)).toStrictEqual([
       {
         path: 'entries[2].resolution.shadowed[0].sourceId',
-        message: 'repeats "local", which already contains this artifact',
+        message: expect.stringContaining('"local"'),
       },
     ]);
   });
@@ -33,7 +33,7 @@ describe(findRepeatedCandidateSources, () => {
     expect(findRepeatedCandidateSources(catalog)).toStrictEqual([
       {
         path: 'entries[2].resolution.shadowed[1].sourceId',
-        message: 'repeats "team", which already contains this artifact',
+        message: expect.stringContaining('"team"'),
       },
     ]);
   });

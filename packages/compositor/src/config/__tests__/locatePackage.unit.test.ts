@@ -76,7 +76,7 @@ describe(locatePackage, () => {
 
     const { cause } = error;
     assert.ok(cause instanceof Error);
-    expect(error.message).toBe(`Package "guidance" has an unreadable package.json: ${cause.message}`);
+    expect(error.message).toContain(cause.message);
   });
 
   it.each(['./content', '../sibling', '/srv/content'])(

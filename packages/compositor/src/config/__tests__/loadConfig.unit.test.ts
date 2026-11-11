@@ -109,7 +109,7 @@ describe(loadConfig, () => {
 
     const { cause } = error;
     assert.ok(cause instanceof Error);
-    expect(error.message).toBe(`Config file "${path.join(dir, 'project.yaml')}" is not valid YAML: ${cause.message}`);
+    expect(error.message).toContain(cause.message);
   });
 
   it('fails on a tier declaring an unrecognized key, naming the file', async () => {

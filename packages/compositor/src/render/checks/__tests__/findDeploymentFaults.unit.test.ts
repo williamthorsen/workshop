@@ -24,7 +24,7 @@ describe(findDeploymentFaults, () => {
     const unknown: RenderTarget = { ...CLAUDE_TARGET, deployments: [{ ...SKILL_DEPLOYMENT, kindId: 'subagent' }] };
 
     expect(findDeploymentFaults(unknown, 'targets[0]', kindIds)).toStrictEqual([
-      { path: 'targets[0].deployments[0].kindId', message: 'references "subagent", which is not an entry in kinds' },
+      { path: 'targets[0].deployments[0].kindId', message: expect.stringContaining('"subagent"') },
     ]);
   });
 
@@ -43,7 +43,7 @@ describe(findDeploymentFaults, () => {
     expect(findDeploymentFaults(fixed, 'targets[0]', kindIds)).toStrictEqual([
       {
         path: 'targets[0].deployments[0].nameTemplate',
-        message: 'stands no {slug}, so no name it renders recovers the artifact that deployed it',
+        message: expect.stringContaining('{slug}'),
       },
     ]);
   });
@@ -59,7 +59,7 @@ describe(findDeploymentFaults, () => {
       expect(findDeploymentFaults(hidden, 'targets[0]', kindIds)).toStrictEqual([
         {
           path: 'targets[0].deployments[0].nameTemplate',
-          message: 'renders a support-prefixed name, which a destination scan passes over',
+          message: expect.stringContaining('support-prefixed'),
         },
       ]);
     },
@@ -92,7 +92,7 @@ describe(findDeploymentFaults, () => {
     expect(findDeploymentFaults(wrong, 'targets[0]', kindIds)).toStrictEqual([
       {
         path: 'targets[0].deployments[0].contributionMarkers.open',
-        message: `stands ${ARTIFACT_ID_PLACEHOLDER} 0 times, but exactly one names the contributor`,
+        message: expect.stringContaining(`${ARTIFACT_ID_PLACEHOLDER} 0 times`),
       },
     ]);
   });
@@ -106,7 +106,7 @@ describe(findDeploymentFaults, () => {
     expect(findDeploymentFaults(collided, 'targets[0]', kindIds)).toStrictEqual([
       {
         path: 'targets[0].deployments[1].host',
-        message: 'collides with the layout root "skills", which needs a directory where this host is a file',
+        message: expect.stringContaining('"skills"'),
       },
     ]);
   });

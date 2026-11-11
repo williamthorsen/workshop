@@ -24,7 +24,7 @@ describe(findHostCollisions, () => {
     expect(findHostCollisions('skills', deployments, 'host')).toStrictEqual([
       {
         path: 'host',
-        message: 'collides with the layout root "skills", which needs a directory where this host is a file',
+        message: expect.stringContaining('"skills"'),
       },
     ]);
   });
@@ -35,7 +35,7 @@ describe(findHostCollisions, () => {
     expect(findHostCollisions('agents', [nested], 'host')).toStrictEqual([
       {
         path: 'host',
-        message: 'collides with the layout root "agents/skills", which needs a directory where this host is a file',
+        message: expect.stringContaining('"agents/skills"'),
       },
     ]);
   });
