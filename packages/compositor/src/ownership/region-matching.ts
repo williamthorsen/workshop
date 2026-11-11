@@ -4,21 +4,15 @@ import { escapeForRegExp } from '../portable/escapeForRegExp.ts';
 import type { RegionMarkers } from './RegionMarkers.ts';
 
 /**
- * Throws unless the markers can delimit a region at all: neither blank, neither spanning a line break, and not equal.
+ * Throws unless the markers can delimit a region at all, with the reason that `findMarkerFault` returns.
  *
  * These are faults in the declaration a consumer wrote rather than in the host, so they throw where a damaged host
- * blocks. A marker holding a line break would defeat the line anchoring every pattern here rests on, and equal markers
- * would have an open marker close the region it opened.
+ * blocks.
  */
 export function assertMarkersAreUsable(markers: RegionMarkers): void {
-  if (markers.open.trim() === '' || markers.close.trim() === '') {
-    throw new Error('A region marker must not be blank.');
-  }
-  if (markers.open.includes('\n') || markers.close.includes('\n')) {
-    throw new Error('A region marker must occupy a single line.');
-  }
-  if (markers.open.trim() === markers.close.trim()) {
-    throw new Error(`Region markers must differ, but both read "${markers.open.trim()}".`);
+  const reason = findMarkerFault(markers);
+  if (reason !== undefined) {
+    throw new Error(reason);
   }
 }
 
@@ -40,6 +34,26 @@ export function buildRegionPattern(markers: RegionMarkers): RegExp {
 /** Counts the lines holding `marker` alone, which is the count a region's well-formedness is decided by. */
 export function countMarkerLines(content: string, marker: string): number {
   return (content.match(new RegExp(`${toMarkerLineSource(marker)}$`, 'gm')) ?? []).length;
+}
+
+/**
+ * Returns why the markers could not delimit a region, or `undefined` when they can: neither blank, neither spanning a
+ * line break, and not equal.
+ *
+ * A marker holding a line break would defeat the line anchoring every pattern here rests on, and equal markers would
+ * have an open marker close the region it opened.
+ */
+export function findMarkerFault(markers: RegionMarkers): string | undefined {
+  if (markers.open.trim() === '' || markers.close.trim() === '') {
+    return 'A region marker must not be blank.';
+  }
+  if (markers.open.includes('\n') || markers.close.includes('\n')) {
+    return 'A region marker must occupy a single line.';
+  }
+  if (markers.open.trim() === markers.close.trim()) {
+    return `Region markers must differ, but both read "${markers.open.trim()}".`;
+  }
+  return undefined;
 }
 
 // region | Helpers

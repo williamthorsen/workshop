@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { OwnedItemsSpec } from '../../../schemas/owned-items-schemas.ts';
-import { allowsStamping, applySentinel, hasSentinel, stampSentinel } from '../sentinel.ts';
+import { allowsStamping, applySentinel, findStampFault, hasSentinel, stampSentinel } from '../sentinel.ts';
 
 type Sentinel = OwnedItemsSpec['sentinel'];
 
@@ -20,6 +20,42 @@ const CLAUDE_GROUP = {
   hooks: [{ type: 'command', command: 'node relay.mjs --hook Stop --sentinel codeassembly-agents' }],
 };
 const ROVO_ENTRY = { name: 'on_session_start', commands: ['node relay.mjs --sentinel codeassembly-agents'] };
+
+describe(findStampFault, () => {
+  it('returns nothing for an item the sentinel can be written into', () => {
+    expect(findStampFault({ name: 'relay' }, NESTED)).toBeUndefined();
+  });
+
+  it('returns nothing where the path runs through a key the item does not have yet', () => {
+    expect(findStampFault({ meta: null }, NESTED)).toBeUndefined();
+  });
+
+  it('if the sentinel names no key, says so', () => {
+    expect(findStampFault({ name: 'relay' }, { path: [], value: 'compositor' })).toBe(
+      'A sentinel must name at least one key, since a whole item cannot be its own mark.',
+    );
+  });
+
+  it('if the sentinel names no single place to write, says so', () => {
+    expect(findStampFault(CLAUDE_GROUP, CLAUDE_HOOK)).toBe(
+      'Cannot write the sentinel at "hooks.*.command": it names no single place to write at.',
+    );
+  });
+
+  it('if the item is not a mapping, says so', () => {
+    expect(findStampFault('relay', SENTINEL)).toBe(
+      'Cannot mark an item with a sentinel at "source": the item is not a mapping.',
+    );
+  });
+
+  it('if the path runs through a value that is not a mapping, names the path remaining at that level', () => {
+    const deep: Sentinel = { path: ['meta', 'writer', 'name'], value: 'compositor' };
+
+    expect(findStampFault({ meta: { writer: 'vendor-tool' } }, deep)).toBe(
+      'Cannot mark an item with a sentinel at "writer.name": "writer" is not a mapping.',
+    );
+  });
+});
 
 describe(hasSentinel, () => {
   it('if the item has the value at the sentinel path, claims it', () => {
