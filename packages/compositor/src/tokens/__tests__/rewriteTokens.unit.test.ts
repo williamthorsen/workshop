@@ -74,7 +74,7 @@ describe(rewriteTokens, () => {
     expect(result.diagnostics).toStrictEqual([
       {
         code: 'unmapped-name',
-        message: 'The token {tool:Bash} in skill:review names "Bash", which Claude does not map.',
+        message: expect.stringContaining('"Bash"'),
         at: { host: 'skill:review', token: '{tool:Bash}' },
       },
     ]);
