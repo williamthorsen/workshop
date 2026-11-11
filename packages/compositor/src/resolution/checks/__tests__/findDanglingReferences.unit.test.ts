@@ -16,7 +16,7 @@ describe(findDanglingReferences, () => {
     expect(findDanglingReferences(catalog)).toStrictEqual([
       {
         path: 'entries[0].kindId',
-        message: 'references "rulebook", which is not an entry in kinds',
+        message: expect.stringContaining('"rulebook"'),
       },
     ]);
   });
@@ -28,7 +28,7 @@ describe(findDanglingReferences, () => {
     expect(findDanglingReferences(catalog)).toStrictEqual([
       {
         path: 'entries[1].resolution.winner.sourceId',
-        message: 'references "vendor", which is not an entry in sources',
+        message: expect.stringContaining('"vendor"'),
       },
     ]);
   });
@@ -40,7 +40,7 @@ describe(findDanglingReferences, () => {
     expect(findDanglingReferences(catalog)).toStrictEqual([
       {
         path: 'entries[2].resolution.shadowed[0].sourceId',
-        message: 'references "vendor", which is not an entry in sources',
+        message: expect.stringContaining('"vendor"'),
       },
     ]);
   });

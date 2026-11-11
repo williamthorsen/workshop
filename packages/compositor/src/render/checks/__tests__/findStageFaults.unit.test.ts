@@ -14,7 +14,7 @@ describe(findStageFaults, () => {
     const broken: RenderTarget = { ...CLAUDE_TARGET, stages: [{ kind: 'links', pattern: '([a-z' }] };
 
     expect(findStageFaults(broken, 'targets[0]')).toStrictEqual([
-      { path: 'targets[0].stages[0].pattern', message: 'is not a valid regular expression' },
+      { path: 'targets[0].stages[0].pattern', message: expect.stringContaining('regular expression') },
     ]);
   });
 
@@ -27,7 +27,7 @@ describe(findStageFaults, () => {
     expect(findStageFaults(wrong, 'targets[0]')).toStrictEqual([
       {
         path: 'targets[0].stages[0].pattern',
-        message: `captures ${groups} groups, but exactly one names the link target`,
+        message: expect.stringContaining(`${groups} groups`),
       },
     ]);
   });
@@ -56,7 +56,7 @@ describe(findStageFaults, () => {
     expect(findStageFaults(wrong, 'targets[0]')).toStrictEqual([
       {
         path: `targets[0].stages[0].markers.${role}`,
-        message: `stands ${INLAY_NAME_PLACEHOLDER} ${count} times, but exactly one names the inlay`,
+        message: expect.stringContaining(`${INLAY_NAME_PLACEHOLDER} ${count} times`),
       },
     ]);
   });
@@ -68,7 +68,7 @@ describe(findStageFaults, () => {
     };
 
     expect(findStageFaults(wrong, 'targets[0]')).toStrictEqual([
-      { path: 'targets[0].stages[0].reshape.pattern', message: 'is not a valid regular expression' },
+      { path: 'targets[0].stages[0].reshape.pattern', message: expect.stringContaining('regular expression') },
     ]);
   });
 

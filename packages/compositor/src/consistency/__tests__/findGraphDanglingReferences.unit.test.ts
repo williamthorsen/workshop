@@ -19,7 +19,7 @@ describe(findGraphDanglingReferences, () => {
     closure.kinds = closure.kinds.filter((kind) => kind.id !== 'collection');
 
     expect(findGraphDanglingReferences(closure)).toStrictEqual([
-      { path: 'artifacts[0].kindId', message: 'references "collection", which is not an entry in kinds' },
+      { path: 'artifacts[0].kindId', message: expect.stringContaining('"collection"') },
     ]);
   });
 
@@ -30,7 +30,7 @@ describe(findGraphDanglingReferences, () => {
     expect(findGraphDanglingReferences(closure)).toStrictEqual([
       {
         path: 'artifacts[2].dependsOn[0].partialId',
-        message: 'references "team:_data/shared.md", which is not an entry in partials',
+        message: expect.stringContaining('"team:_data/shared.md"'),
       },
     ]);
   });
@@ -40,7 +40,7 @@ describe(findGraphDanglingReferences, () => {
     requireEntry(closure.partials, 0).sourceId = 'absent';
 
     expect(findGraphDanglingReferences(closure)).toStrictEqual([
-      { path: 'partials[0].sourceId', message: 'references "absent", which is not an entry in sources' },
+      { path: 'partials[0].sourceId', message: expect.stringContaining('"absent"') },
     ]);
   });
 

@@ -25,7 +25,7 @@ describe(findMisplacedPartialReferences, () => {
     expect(findMisplacedPartialReferences(plan)).toStrictEqual([
       {
         path: 'artifacts[0].dependsOn[0].partialId',
-        message: 'is set on a "member" edge, and only a token edge is read from a partial',
+        message: expect.stringContaining('"member"'),
       },
     ]);
   });

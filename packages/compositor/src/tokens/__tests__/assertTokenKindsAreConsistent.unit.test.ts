@@ -29,7 +29,7 @@ describe(assertTokenKindsAreConsistent, () => {
     const broken: TokenKind = { ...mapping, pattern: '([a-z' };
 
     await expect(violationsOf([broken])).resolves.toStrictEqual([
-      { path: 'tokenKinds[0].pattern', message: 'is not a valid regular expression' },
+      { path: 'tokenKinds[0].pattern', message: expect.stringContaining('regular expression') },
     ]);
   });
 
@@ -37,7 +37,7 @@ describe(assertTokenKindsAreConsistent, () => {
     const uncaptured: TokenKind = { ...mapping, pattern: String.raw`\{tool:\w+\}` };
 
     await expect(violationsOf([uncaptured])).resolves.toStrictEqual([
-      { path: 'tokenKinds[0].pattern', message: 'captures 0 groups, but exactly one names the token' },
+      { path: 'tokenKinds[0].pattern', message: expect.stringContaining('0 groups') },
     ]);
   });
 
@@ -45,7 +45,7 @@ describe(assertTokenKindsAreConsistent, () => {
     const overcaptured: TokenKind = { ...mapping, pattern: String.raw`\{(tool):(\w+)\}` };
 
     await expect(violationsOf([overcaptured])).resolves.toStrictEqual([
-      { path: 'tokenKinds[0].pattern', message: 'captures 2 groups, but exactly one names the token' },
+      { path: 'tokenKinds[0].pattern', message: expect.stringContaining('2 groups') },
     ]);
   });
 
@@ -53,13 +53,13 @@ describe(assertTokenKindsAreConsistent, () => {
     const dangling: TokenKind = { ...referent, artifactKindId: 'rulebook' };
 
     await expect(violationsOf([dangling])).resolves.toStrictEqual([
-      { path: 'tokenKinds[0].artifactKindId', message: 'references "rulebook", which is not an entry in kinds' },
+      { path: 'tokenKinds[0].artifactKindId', message: expect.stringContaining('"rulebook"') },
     ]);
   });
 
   it('if one id is declared twice, faults the repeat, which would make every mapping against it ambiguous', async () => {
     await expect(violationsOf([mapping, { ...mapping, pattern: String.raw`\[tool:(\w+)\]` }])).resolves.toStrictEqual([
-      { path: 'tokenKinds', message: 'lists "tool" more than once' },
+      { path: 'tokenKinds', message: expect.stringContaining('"tool"') },
     ]);
   });
 

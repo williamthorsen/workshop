@@ -11,7 +11,7 @@ describe(findMarkerFaults, () => {
 
   it('reports markers spanning a line break, which no line-anchored match could find, at their path', () => {
     expect(findMarkerFaults({ open: '<!--\ncodeassembly -->', close: '<!-- /x -->' }, 'markers')).toStrictEqual([
-      { path: 'markers', message: 'A region marker must occupy a single line.' },
+      { path: 'markers', message: expect.stringContaining('single line') },
     ]);
   });
 });

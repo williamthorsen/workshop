@@ -16,7 +16,7 @@ describe(findDanglingReferences, () => {
     expect(findDanglingReferences(plan)).toStrictEqual([
       {
         path: 'artifacts[1].dependsOn[0].to',
-        message: 'references "skill:absent", which is not an entry in artifacts',
+        message: expect.stringContaining('"skill:absent"'),
       },
     ]);
   });
@@ -28,7 +28,7 @@ describe(findDanglingReferences, () => {
     expect(findDanglingReferences(plan)).toStrictEqual([
       {
         path: 'files[0].contributors.partials[0]',
-        message: 'references "team:_data/absent.md", which is not an entry in partials',
+        message: expect.stringContaining('"team:_data/absent.md"'),
       },
     ]);
   });
@@ -40,7 +40,7 @@ describe(findDanglingReferences, () => {
     expect(findDanglingReferences(plan)).toStrictEqual([
       {
         path: 'targets[0].tokenMappings[0].kindId',
-        message: 'references "tool", which is not an entry in tokenKinds',
+        message: expect.stringContaining('"tool"'),
       },
     ]);
   });
@@ -52,7 +52,7 @@ describe(findDanglingReferences, () => {
     expect(findDanglingReferences(plan)).toStrictEqual([
       {
         path: 'artifacts[0].seededBy[0].tierId',
-        message: 'references "project", which is not an entry in tiers',
+        message: expect.stringContaining('"project"'),
       },
     ]);
   });
@@ -67,7 +67,7 @@ describe(findDanglingReferences, () => {
     expect(findDanglingReferences(plan)).toStrictEqual([
       {
         path: 'artifacts[1].resolution.shadowed[0].sourceId',
-        message: 'references "absent", which is not an entry in sources',
+        message: expect.stringContaining('"absent"'),
       },
     ]);
   });

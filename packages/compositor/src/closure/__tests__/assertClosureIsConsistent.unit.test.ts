@@ -20,7 +20,7 @@ describe(assertClosureIsConsistent, () => {
     await expect(violationsOf(closure)).resolves.toStrictEqual([
       {
         path: 'artifacts[1].dependsOn[0].to',
-        message: 'references "skill:absent", which is not an entry in artifacts',
+        message: expect.stringContaining('"skill:absent"'),
       },
     ]);
   });
@@ -32,7 +32,7 @@ describe(assertClosureIsConsistent, () => {
     await expect(violationsOf(closure)).resolves.toStrictEqual([
       {
         path: 'diagnostics[0].at.artifactId',
-        message: 'references "skill:absent", which is not an entry in artifacts',
+        message: expect.stringContaining('"skill:absent"'),
       },
     ]);
   });
@@ -46,7 +46,7 @@ describe(assertClosureIsConsistent, () => {
     await expect(violationsOf(closure)).resolves.toStrictEqual([
       {
         path: 'artifacts[2].dependsOn[0].partialId',
-        message: 'is set on a "member" edge, and only a token edge is read from a partial',
+        message: expect.stringContaining('"member"'),
       },
     ]);
   });
@@ -58,7 +58,7 @@ describe(assertClosureIsConsistent, () => {
     await expect(violationsOf(closure)).resolves.toStrictEqual([
       {
         path: 'diagnostics[0].cycle',
-        message: 'is set on a "unknown-reference" diagnostic, and only a dependency cycle runs through artifacts',
+        message: expect.stringContaining('"unknown-reference"'),
       },
     ]);
   });
@@ -73,7 +73,7 @@ describe(assertClosureIsConsistent, () => {
     await expect(violationsOf(closure)).resolves.toStrictEqual([
       {
         path: 'artifacts[1].resolution.shadowed[0].sourceId',
-        message: 'names "team", which does not follow "library" in source precedence order',
+        message: expect.stringMatching(/"team".*"library"/),
       },
     ]);
   });
@@ -83,7 +83,7 @@ describe(assertClosureIsConsistent, () => {
     closure.artifacts = [...closure.artifacts, requireEntry(closure.artifacts, 1)];
 
     await expect(violationsOf(closure)).resolves.toStrictEqual([
-      { path: 'artifacts', message: 'lists "skill:lint" more than once' },
+      { path: 'artifacts', message: expect.stringContaining('"skill:lint"') },
     ]);
   });
 

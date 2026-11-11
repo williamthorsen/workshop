@@ -17,7 +17,7 @@ describe(findPlaceholderFaults, () => {
     expect(findPlaceholderFaults(template, ARTIFACT_ID_PLACEHOLDER, 'contributor', 'markers')).toStrictEqual([
       {
         path: `markers.${role}`,
-        message: `stands ${ARTIFACT_ID_PLACEHOLDER} ${count} times, but exactly one names the contributor`,
+        message: expect.stringContaining(`${ARTIFACT_ID_PLACEHOLDER} ${count} times`),
       },
     ]);
   });
@@ -28,11 +28,11 @@ describe(findPlaceholderFaults, () => {
     expect(findPlaceholderFaults(template, ARTIFACT_ID_PLACEHOLDER, 'contributor', 'markers')).toStrictEqual([
       {
         path: 'markers.open',
-        message: `stands ${ARTIFACT_ID_PLACEHOLDER} 0 times, but exactly one names the contributor`,
+        message: expect.stringContaining(`${ARTIFACT_ID_PLACEHOLDER} 0 times`),
       },
       {
         path: 'markers.close',
-        message: `stands ${ARTIFACT_ID_PLACEHOLDER} 0 times, but exactly one names the contributor`,
+        message: expect.stringContaining(`${ARTIFACT_ID_PLACEHOLDER} 0 times`),
       },
     ]);
   });

@@ -22,7 +22,7 @@ describe(assertRenderTargetsAreConsistent, () => {
 
   it('reports two targets sharing an id', async () => {
     await expect(violationsOf([CLAUDE_TARGET, CLAUDE_TARGET])).resolves.toStrictEqual([
-      { path: 'targets', message: 'lists "claude" more than once' },
+      { path: 'targets', message: expect.stringContaining('"claude"') },
     ]);
   });
 

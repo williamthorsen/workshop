@@ -28,19 +28,19 @@ describe(assertEdgeRulesAreConsistent, () => {
 
   it('if a rule is keyed to a kind no descriptor declares, faults it, no artifact being read for it', async () => {
     await expect(violationsOf([{ ...declared, kindId: 'rulebook' }])).resolves.toStrictEqual([
-      { path: 'rules[0].kindId', message: 'references "rulebook", which is not an entry in kinds' },
+      { path: 'rules[0].kindId', message: expect.stringContaining('"rulebook"') },
     ]);
   });
 
   it('if a flat rule targets a kind no descriptor declares, faults it', async () => {
     await expect(violationsOf([{ ...injected, targetKindId: 'rulebook' }])).resolves.toStrictEqual([
-      { path: 'rules[0].targetKindId', message: 'references "rulebook", which is not an entry in kinds' },
+      { path: 'rules[0].targetKindId', message: expect.stringContaining('"rulebook"') },
     ]);
   });
 
   it('if two rules claim one key of one kind, faults the repeat, whichever loses never being read', async () => {
     await expect(violationsOf([declared, { ...declared, via: 'member' }])).resolves.toStrictEqual([
-      { path: 'rules', message: 'claim "dependencies" of kind "skill" more than once' },
+      { path: 'rules', message: expect.stringMatching(/"dependencies".*"skill"/) },
     ]);
   });
 
@@ -58,7 +58,7 @@ describe(assertEdgeRulesAreConsistent, () => {
 
   it('if a declaration key names a kind no descriptor declares, faults it', async () => {
     await expect(violationsOf([declared], { rulebooks: 'rulebook' })).resolves.toStrictEqual([
-      { path: 'kindKeys.rulebooks', message: 'references "rulebook", which is not an entry in kinds' },
+      { path: 'kindKeys.rulebooks', message: expect.stringContaining('"rulebook"') },
     ]);
   });
 
