@@ -85,7 +85,7 @@ describe('kits that readyup publishes', () => {
   it('runs the default kit on a bare invocation', async () => {
     const { entries } = await resolveKitSources({ ...baseArgs, fromValue: 'npm:readyup' });
 
-    await runCommand({ kitEntries: entries, json: true, remote: createUncachedRemoteContext() });
+    await runCommand({ kitEntries: entries, isJson: true, remote: createUncachedRemoteContext() });
 
     const kit = pickKitResult(ReportSchema.parse(JSON.parse(stdout.join(''))), 'default');
     expect(kit).toMatchObject({ origin: { source: 'npm:readyup' } });
@@ -99,7 +99,7 @@ describe('kits that readyup publishes', () => {
       kitSpecifiers: [{ kitName: 'publishing', checklists: [] }],
     });
 
-    await runCommand({ kitEntries: entries, json: true, remote: createUncachedRemoteContext() });
+    await runCommand({ kitEntries: entries, isJson: true, remote: createUncachedRemoteContext() });
 
     const kit = pickKitResult(ReportSchema.parse(JSON.parse(stdout.join(''))), 'publishing');
     expect(kit.checklists.map((checklist) => checklist.name)).toStrictEqual([
@@ -115,7 +115,7 @@ describe('kits that readyup publishes', () => {
   it('judges the consuming project rather than the package from which it came', async () => {
     const { entries } = await resolveKitSources({ ...baseArgs, fromValue: 'npm:readyup' });
 
-    const exitCode = await runCommand({ kitEntries: entries, json: true, remote: createUncachedRemoteContext() });
+    const exitCode = await runCommand({ kitEntries: entries, isJson: true, remote: createUncachedRemoteContext() });
 
     const kit = pickKitResult(ReportSchema.parse(JSON.parse(stdout.join(''))), 'default');
     const setup = kit.checklists.find((checklist) => checklist.name === 'setup');

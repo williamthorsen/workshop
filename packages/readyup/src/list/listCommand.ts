@@ -45,7 +45,7 @@ export async function listCommand(args: string[]): Promise<number> {
 
   const configArg = values.config;
   const fromArg = values.from;
-  const json = values.json === true;
+  const isJson = values.json === true;
   const manifestArg = values.manifest;
   const sources = values.sources === true;
   const recursive = values.recursive === true;
@@ -65,8 +65,8 @@ export async function listCommand(args: string[]): Promise<number> {
     writeWarnings(warnings);
   }
 
-  writeHuman(result.view + '\n', json);
-  if (json) {
+  writeHuman(result.view + '\n', isJson);
+  if (isJson) {
     process.stdout.write(JSON.stringify(buildListOutput(result, showChecks)) + '\n');
   }
   return EXIT_OK;

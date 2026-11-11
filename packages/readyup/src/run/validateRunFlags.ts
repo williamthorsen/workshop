@@ -12,7 +12,7 @@ export interface RunFlagConstraints {
   from: string | undefined;
   internal: boolean;
   jit: boolean;
-  json: boolean;
+  isJson: boolean;
   quiet: boolean;
   sources: boolean;
   url: string | undefined;
@@ -157,12 +157,12 @@ function validateChecklistsSelection(sourceType: string | undefined, kitSpecifie
  */
 function validateOutputFlags(parsed: RunFlagConstraints): void {
   // `--detail` selects how much of the JSON payload to emit, so it does not apply to the human report.
-  if (parsed.detail !== undefined && !parsed.json) {
+  if (parsed.detail !== undefined && !parsed.isJson) {
     throw usageError('--detail requires --json; it selects how much of the JSON report to emit');
   }
 
   // `--quiet` hides passed lines in the human detail tree, which `--json` does not emit.
-  if (parsed.quiet && parsed.json) {
+  if (parsed.quiet && parsed.isJson) {
     throw usageError('--quiet cannot be combined with --json; it hides passed lines from human output only');
   }
 }

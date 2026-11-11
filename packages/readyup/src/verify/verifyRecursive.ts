@@ -28,7 +28,7 @@ import {
 /** Arguments for the recursive verify path. */
 export interface VerifyRecursiveArgs {
   rebuild: boolean;
-  json: boolean;
+  isJson: boolean;
 }
 
 /**
@@ -42,7 +42,7 @@ export async function verifyRecursive(
   args: VerifyRecursiveArgs,
   dependencies: VerifyDependencies = defaultVerifyDependencies,
 ): Promise<number> {
-  const { rebuild, json } = args;
+  const { rebuild, isJson } = args;
   const root = process.cwd();
   const discoveryWarnings: ReportedWarning[] = [];
   let projects: Project[];
@@ -54,8 +54,8 @@ export async function verifyRecursive(
   }
 
   if (projects.length === 0) {
-    writeHuman('No kit projects found.\n', json);
-    return finishVerify({ kits: [], passed: true, projects: [], uncompiled: [] }, json);
+    writeHuman('No kit projects found.\n', isJson);
+    return finishVerify({ kits: [], passed: true, projects: [], uncompiled: [] }, isJson);
   }
 
   const kits: JsonVerifyKitEntry[] = [];
@@ -71,7 +71,7 @@ export async function verifyRecursive(
     }
 
     // No block is written for a project that fails before verifying, so separation follows the blocks actually written.
-    if (hasWrittenBlock) writeHuman('\n', json);
+    if (hasWrittenBlock) writeHuman('\n', isJson);
     hasWrittenBlock = true;
 
     const outcome = await verifyManifest(
@@ -79,7 +79,7 @@ export async function verifyRecursive(
         manifest: loaded.manifest,
         manifestPath: project.manifestPath,
         rebuild,
-        json,
+        isJson,
         project: project.dir,
         uncompiled: loaded.uncompiled,
       },
@@ -94,11 +94,11 @@ export async function verifyRecursive(
   if (failedDirs.length > 0) {
     writeHuman(
       `\nProblems in ${failedDirs.length} of ${pluralizeWithCount(projects.length, 'project')}: ${failedDirs.join(', ')}\n`,
-      json,
+      isJson,
     );
   }
 
-  return finishVerify({ kits, passed: failedDirs.length === 0, projects: projectEntries, uncompiled }, json);
+  return finishVerify({ kits, passed: failedDirs.length === 0, projects: projectEntries, uncompiled }, isJson);
 }
 
 // region | Helpers

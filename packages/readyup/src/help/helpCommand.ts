@@ -18,7 +18,7 @@ export const HELP_FLAGS = new Set(['--help', '-h']);
  * A command takes precedence over a topic of the same name, so `rdy help <subcommand>` always prints that
  * command's own help.
  */
-export function helpCommand(flags: string[], json: boolean): number {
+export function helpCommand(flags: string[], isJson: boolean): number {
   const helpOptions = {
     help: { type: 'boolean', short: 'h' },
     // Declared so that strict parsing accepts it; `routeCommand` read it before dispatch.
@@ -29,23 +29,23 @@ export function helpCommand(flags: string[], json: boolean): number {
 
   const [subject, ...extra] = parsed.positionals;
   if (extra.length > 0) throw usageError('Usage: rdy help [<command|topic>]');
-  if (subject === undefined) return writeHelp(HELP, json);
+  if (subject === undefined) return writeHelp(HELP, isJson);
 
   const commandHelp = Object.hasOwn(COMMAND_HELP, subject) ? COMMAND_HELP[subject] : undefined;
-  if (commandHelp !== undefined) return writeHelp(commandHelp, json);
+  if (commandHelp !== undefined) return writeHelp(commandHelp, isJson);
 
   const topic = findTopic(subject);
   if (topic !== undefined) {
     const options = { style: getStyle(), topicByStem: TOPIC_NAMES_BY_STEM, width: getWidth() };
-    return writeHelp(renderTopic(readDoc(topic.file), options), json);
+    return writeHelp(renderTopic(readDoc(topic.file), options), isJson);
   }
 
   throw usageError(describeUnknownSubject(subject), { hint: "Run 'rdy help' for a list of topics." });
 }
 
 /** Emits help text through the human channel and reports success. */
-export function writeHelp(text: string, json: boolean): number {
-  writeHuman(`${text}\n`, json);
+export function writeHelp(text: string, isJson: boolean): number {
+  writeHuman(`${text}\n`, isJson);
   return EXIT_OK;
 }
 

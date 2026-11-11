@@ -9,7 +9,7 @@ export function parsedRunArgs(overrides?: Record<string, unknown>): Record<strin
     urlValue: undefined,
     jit: false,
     internal: false,
-    json: false,
+    isJson: false,
     ...overrides,
   };
 }

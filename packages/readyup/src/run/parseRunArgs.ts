@@ -20,7 +20,7 @@ export interface ParsedRunArgs {
   fromValue: string | undefined;
   internal: boolean;
   jit: boolean;
-  json: boolean;
+  isJson: boolean;
   kitSpecifiers: KitSpecifier[];
   noCache: boolean;
   quiet: boolean;
@@ -93,7 +93,7 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
     from: values.from,
     internal: values.internal === true,
     jit: values.jit === true,
-    json: values.json === true,
+    isJson: values.json === true,
     noCache: values['no-cache'] === true,
     quiet: values.quiet === true,
     sources: values.sources === true,
@@ -135,7 +135,7 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
     fromValue: parsed.from,
     internal: parsed.internal,
     jit: parsed.jit,
-    json: parsed.json,
+    isJson: parsed.isJson,
     kitSpecifiers,
     noCache: parsed.noCache,
     quiet: parsed.quiet,

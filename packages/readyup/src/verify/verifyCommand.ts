@@ -48,7 +48,7 @@ export async function verifyCommand(
     throw usageError('rdy verify does not accept positional arguments.');
   }
 
-  const json = values.json === true;
+  const isJson = values.json === true;
   const rebuild = values.rebuild === true;
   const recursive = values.recursive === true;
 
@@ -68,7 +68,7 @@ export async function verifyCommand(
   if (rebuild) await requireEsbuild(dependencies);
 
   if (recursive) {
-    return verifyRecursive({ rebuild, json }, dependencies);
+    return verifyRecursive({ rebuild, isJson }, dependencies);
   }
 
   const manifestPath = path.resolve(process.cwd(), values.manifest ?? DEFAULT_MANIFEST_PATH);
@@ -81,5 +81,8 @@ export async function verifyCommand(
     srcDir: path.resolve(projectDir, config.compile.srcDir),
     selection: config.compile,
   });
-  return finishVerify(await verifyManifest({ manifest, manifestPath, rebuild, json, uncompiled }, dependencies), json);
+  return finishVerify(
+    await verifyManifest({ manifest, manifestPath, rebuild, isJson, uncompiled }, dependencies),
+    isJson,
+  );
 }

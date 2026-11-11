@@ -25,11 +25,11 @@ describe(validateRunFlags, () => {
     });
 
     it('accepts --detail alongside --json', () => {
-      expect(() => validateRunFlags(buildConstraints({ detail: 'summary', json: true }), [])).not.toThrow();
+      expect(() => validateRunFlags(buildConstraints({ detail: 'summary', isJson: true }), [])).not.toThrow();
     });
 
     it('rejects --quiet with --json rather than ignoring it', () => {
-      expect(() => validateRunFlags(buildConstraints({ json: true, quiet: true }), [])).toThrow(
+      expect(() => validateRunFlags(buildConstraints({ isJson: true, quiet: true }), [])).toThrow(
         '--quiet cannot be combined with --json; it hides passed lines from human output only',
       );
     });
@@ -253,7 +253,7 @@ function buildConstraints(overrides: Partial<RunFlagConstraints> = {}): RunFlagC
     from: undefined,
     internal: false,
     jit: false,
-    json: false,
+    isJson: false,
     sources: false,
     quiet: false,
     url: undefined,

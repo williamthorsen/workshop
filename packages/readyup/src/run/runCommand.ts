@@ -8,7 +8,7 @@ import { runJsonMode } from './runJsonMode.ts';
 
 interface RunCommandOptions {
   kitEntries: ResolvedKitEntry[];
-  json: boolean;
+  isJson: boolean;
   detail?: JsonDetail;
   diagnose?: boolean;
   failOn?: Severity;
@@ -29,11 +29,11 @@ const defaultRunCommandDependencies: RunCommandDependencies = { runHumanMode, ru
 
 /** Runs rdy checklists across one or more kits, returning the exit code that they produced. */
 export async function runCommand(
-  { kitEntries, json, detail, diagnose, failOn, quiet, remote, reportOn, unrunSources = [] }: RunCommandOptions,
+  { kitEntries, isJson, detail, diagnose, failOn, quiet, remote, reportOn, unrunSources = [] }: RunCommandOptions,
   isJit = false,
   dependencies: RunCommandDependencies = defaultRunCommandDependencies,
 ): Promise<number> {
-  if (json) {
+  if (isJson) {
     return dependencies.runJsonMode(
       kitEntries,
       { detail: detail ?? 'full', diagnose: diagnose === true, failOn, remote, reportOn, unrunSources },

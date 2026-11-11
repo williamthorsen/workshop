@@ -11,7 +11,7 @@ describe(parseRunArgs, () => {
     expect(result.filePath).toBeUndefined();
     expect(result.fromValue).toBeUndefined();
     expect(result.urlValue).toBeUndefined();
-    expect(result.json).toBe(false);
+    expect(result.isJson).toBe(false);
     expect(result.jit).toBe(false);
     expect(result.internal).toBe(false);
   });
@@ -163,14 +163,14 @@ describe(parseRunArgs, () => {
   it('parses --json flag', () => {
     const result = parseRunArgs(['--json']);
 
-    expect(result.json).toBe(true);
+    expect(result.isJson).toBe(true);
     expect(result.kitSpecifiers).toStrictEqual([]);
   });
 
   it('parses --json with positional kit names', () => {
     const result = parseRunArgs(['--json', 'deploy']);
 
-    expect(result.json).toBe(true);
+    expect(result.isJson).toBe(true);
     expect(result.kitSpecifiers).toStrictEqual([{ kitName: 'deploy', checklists: [] }]);
   });
 
@@ -213,7 +213,7 @@ describe(parseRunArgs, () => {
   it.each([
     { long: '--internal', args: ['--internal'], expected: { internal: true } },
     { long: '--jit', args: ['--jit'], expected: { jit: true } },
-    { long: '--json', args: ['--json'], expected: { json: true } },
+    { long: '--json', args: ['--json'], expected: { isJson: true } },
     { long: '--fail-on', args: ['--fail-on', 'warn'], expected: { failOn: 'warn' } },
     { long: '--report-on', args: ['--report-on', 'error'], expected: { reportOn: 'error' } },
     {

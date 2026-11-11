@@ -92,7 +92,7 @@ describe(routeCommand, () => {
       urlValue: undefined,
       jit: false,
       internal: false,
-      json: false,
+      isJson: false,
     });
     mockRunCommand.mockResolvedValue(0);
 
@@ -102,7 +102,7 @@ describe(routeCommand, () => {
     expect(mockRunCommand).toHaveBeenCalledWith(
       expect.objectContaining({
         kitEntries: [{ name: 'default', source: { path: '.readyup/kits/default.js' }, checklists: [] }],
-        json: false,
+        isJson: false,
       }),
       false,
     );
@@ -119,7 +119,7 @@ describe(routeCommand, () => {
       urlValue: undefined,
       jit: true,
       internal: false,
-      json: false,
+      isJson: false,
     });
     mockRunCommand.mockResolvedValue(0);
 
@@ -139,7 +139,7 @@ describe(routeCommand, () => {
       urlValue: undefined,
       jit: false,
       internal: false,
-      json: true,
+      isJson: true,
     });
     mockRunCommand.mockResolvedValue(0);
 
@@ -147,7 +147,7 @@ describe(routeCommand, () => {
 
     expect(mockRunCommand).toHaveBeenCalledWith(
       expect.objectContaining({
-        json: true,
+        isJson: true,
       }),
       false,
     );
@@ -164,7 +164,7 @@ describe(routeCommand, () => {
       urlValue: undefined,
       jit: false,
       internal: false,
-      json: false,
+      isJson: false,
       diagnose: true,
     });
     mockRunCommand.mockResolvedValue(0);
@@ -189,7 +189,7 @@ describe(routeCommand, () => {
       urlValue: undefined,
       jit: false,
       internal: false,
-      json: false,
+      isJson: false,
       noCache,
     });
     mockRunCommand.mockResolvedValue(0);
@@ -225,7 +225,7 @@ describe(routeCommand, () => {
       urlValue: undefined,
       jit: false,
       internal: false,
-      json: false,
+      isJson: false,
     });
     mockResolveKitSources.mockImplementation(() => {
       throw new Error('resolution failed');
@@ -247,7 +247,7 @@ describe(routeCommand, () => {
       urlValue: undefined,
       jit: false,
       internal: false,
-      json: false,
+      isJson: false,
     });
     mockLoadConfig.mockRejectedValue(new Error('bad config'));
 
@@ -279,7 +279,7 @@ describe(routeCommand, () => {
   });
 
   it('forwards an install hint from a config file whose imports could not be resolved', async () => {
-    mockParseRunArgs.mockReturnValue(parsedRunArgs({ json: true }));
+    mockParseRunArgs.mockReturnValue(parsedRunArgs({ isJson: true }));
     mockLoadConfig.mockRejectedValue(
       Object.assign(new Error("Cannot resolve 'some-lib' while evaluating config.ts."), {
         hint: 'Install it with: pnpm add --save-dev some-lib',
@@ -321,7 +321,7 @@ describe(routeCommand, () => {
       urlValue: undefined,
       jit: false,
       internal: false,
-      json: false,
+      isJson: false,
     });
     mockResolveKitSources.mockReturnValue({
       entries: [{ name: 'kit.ts', source: { path: 'kit.ts' }, checklists: [] }],
@@ -344,7 +344,7 @@ describe(routeCommand, () => {
       urlValue: undefined,
       jit: false,
       internal: false,
-      json: false,
+      isJson: false,
     });
     mockResolveKitSources.mockReturnValue({
       entries: [{ name: 'deploy', source: { url: 'https://example.com/deploy.js' }, checklists: [] }],
@@ -367,7 +367,7 @@ describe(routeCommand, () => {
       urlValue: 'https://example.com/kit.js',
       jit: false,
       internal: false,
-      json: false,
+      isJson: false,
     });
     mockResolveKitSources.mockReturnValue({
       entries: [{ name: 'https://example.com/kit.js', source: { url: 'https://example.com/kit.js' }, checklists: [] }],
@@ -390,7 +390,7 @@ describe(routeCommand, () => {
       urlValue: undefined,
       jit: false,
       internal: false,
-      json: false,
+      isJson: false,
     });
     mockRunCommand.mockResolvedValue(0);
 
@@ -409,7 +409,7 @@ describe(routeCommand, () => {
       urlValue: undefined,
       jit: false,
       internal: true,
-      json: false,
+      isJson: false,
     });
     mockRunCommand.mockResolvedValue(0);
 

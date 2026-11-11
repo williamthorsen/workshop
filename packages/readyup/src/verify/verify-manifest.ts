@@ -77,8 +77,8 @@ export interface FindUncompiledKitsArgs {
 }
 
 /** Emits the verify payload under `--json` and turns the run's verdict into an exit code. */
-export function finishVerify({ kits, passed, projects, uncompiled }: VerifyOutcome, json: boolean): number {
-  if (json) {
+export function finishVerify({ kits, passed, projects, uncompiled }: VerifyOutcome, isJson: boolean): number {
+  if (isJson) {
     const output: JsonVerifyOutput = {
       schemaVersion: SCHEMA_VERSION,
       passed,
@@ -183,14 +183,14 @@ export async function verifyManifest(
   args: VerifyManifestArgs,
   dependencies: VerifyDependencies = defaultVerifyDependencies,
 ): Promise<ManifestVerification> {
-  const { manifest, manifestPath, rebuild, json, project, uncompiled } = args;
+  const { manifest, manifestPath, rebuild, isJson, project, uncompiled } = args;
   const manifestDir = path.dirname(manifestPath);
 
   const relManifestPath = path.relative(process.cwd(), manifestPath);
-  writeHuman(`${getLayout().formatHeading(`Verifying kits against ${relManifestPath}`, 'section')}\n`, json);
+  writeHuman(`${getLayout().formatHeading(`Verifying kits against ${relManifestPath}`, 'section')}\n`, isJson);
 
   if (manifest.kits.length === 0) {
-    writeHuman('(no kits in manifest)\n', json);
+    writeHuman('(no kits in manifest)\n', isJson);
   }
 
   const entries: JsonVerifyKitEntry[] = [];
@@ -202,7 +202,7 @@ export async function verifyManifest(
       rebuild: rebuild ? await dependencies.checkRebuild(kit, manifestDir) : undefined,
       source: dependencies.checkSourceDrift(kit, manifestDir),
     };
-    writeHuman(formatStatusLine(kit, verdicts), json);
+    writeHuman(formatStatusLine(kit, verdicts), isJson);
     entries.push(buildVerifyEntry(kit.name, verdicts, project));
     if (!isPassingVerdict(verdicts)) {
       failed += 1;
@@ -210,12 +210,12 @@ export async function verifyManifest(
   }
 
   for (const entry of uncompiled) {
-    writeHuman(formatUncompiledLine(entry), json);
+    writeHuman(formatUncompiledLine(entry), isJson);
   }
   failed += uncompiled.length;
 
   if (failed > 0) {
-    writeHuman(`\n${failed} of ${manifest.kits.length + uncompiled.length} kits failed verification.\n`, json);
+    writeHuman(`\n${failed} of ${manifest.kits.length + uncompiled.length} kits failed verification.\n`, isJson);
   }
 
   return { kits: entries, passed: failed === 0, uncompiled };
@@ -226,7 +226,7 @@ export interface VerifyManifestArgs {
   manifest: RdyManifest;
   manifestPath: string;
   rebuild: boolean;
-  json: boolean;
+  isJson: boolean;
   /** The project named on each kit's JSON entry, given by a recursive verify alone. */
   project?: string;
   /** The kits that the compile settings select and the manifest does not record. */

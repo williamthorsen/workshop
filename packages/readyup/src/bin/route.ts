@@ -56,7 +56,7 @@ const STYLE_FLAG = '--style';
  * error envelope on stdout when `--json` is in argv -- so no command needs an error-reporting path of its own.
  */
 export async function routeCommand(args: string[]): Promise<number> {
-  const json = hasJsonFlag(args);
+  const isJson = hasJsonFlag(args);
 
   // Binding the style precedes the try because the catch renders through it: A style named in argv has
   // to apply to the usage error that argv itself provokes. A value naming no style still yields one to
@@ -74,9 +74,9 @@ export async function routeCommand(args: string[]): Promise<number> {
 
   try {
     if (invalid !== undefined) throw usageError(describeInvalidOutputStyle(invalid));
-    return await dispatchCommand(args, json);
+    return await dispatchCommand(args, isJson);
   } catch (error: unknown) {
-    return reportFailure(error, json);
+    return reportFailure(error, isJson);
   }
 }
 
@@ -86,12 +86,12 @@ export async function routeCommand(args: string[]): Promise<number> {
  * The escape is itself the defect, so the failure is a crash classified `internal` whatever the escaped
  * value's own classification, and its message is kept in the text.
  */
-export function reportEscapedFailure(error: unknown, json: boolean): number {
+export function reportEscapedFailure(error: unknown, isJson: boolean): number {
   const escaped = internalError(`Nothing awaited this failure: ${describeError(error)}`, {
     cause: error,
     hint: 'A check that starts async work must await it or return it.',
   });
-  if (json) {
+  if (isJson) {
     process.stdout.write(formatJsonError(escaped) + '\n');
   } else {
     writeCrash(escaped.message, error, escaped.hint);
@@ -108,9 +108,9 @@ export function reportEscapedFailure(error: unknown, json: boolean): number {
  * Exported so that the runner's outer boundary reports a failure that escaped `routeCommand`
  * through the same channel.
  */
-export function reportFailure(error: unknown, json: boolean): number {
+export function reportFailure(error: unknown, isJson: boolean): number {
   const rdyError = toRdyError(error);
-  if (json) {
+  if (isJson) {
     process.stdout.write(formatJsonError(rdyError) + '\n');
   } else if (isAnticipated(error)) {
     writeError(rdyError.message);
@@ -122,49 +122,49 @@ export function reportFailure(error: unknown, json: boolean): number {
 }
 
 /** Selects and runs the subcommand named by the first argument. */
-async function dispatchCommand(argv: string[], json: boolean): Promise<number> {
+async function dispatchCommand(argv: string[], isJson: boolean): Promise<number> {
   const args = dropLeadingStyleFlag(argv);
   const command = args[0];
 
   if (command === undefined || HELP_FLAGS.has(command)) {
-    return writeHelp(HELP, json);
+    return writeHelp(HELP, isJson);
   }
 
   if (command === '--version' || command === '-V') {
-    writeHuman(`${VERSION}\n`, json);
+    writeHuman(`${VERSION}\n`, isJson);
     return EXIT_OK;
   }
 
   if (command === 'run') {
-    return handleRun(args.slice(1), json);
+    return handleRun(args.slice(1), isJson);
   }
 
   if (command === 'compile') {
     const flags = args.slice(1);
-    return wantsHelp(flags) ? writeHelp(COMPILE_HELP, json) : compileCommand(flags);
+    return wantsHelp(flags) ? writeHelp(COMPILE_HELP, isJson) : compileCommand(flags);
   }
 
   if (command === 'help') {
-    return helpCommand(args.slice(1), json);
+    return helpCommand(args.slice(1), isJson);
   }
 
   if (command === 'init') {
     const flags = args.slice(1);
-    return wantsHelp(flags) ? writeHelp(INIT_HELP, json) : handleInit(flags);
+    return wantsHelp(flags) ? writeHelp(INIT_HELP, isJson) : handleInit(flags);
   }
 
   if (command === 'list') {
     const flags = args.slice(1);
-    return wantsHelp(flags) ? writeHelp(LIST_HELP, json) : listCommand(flags);
+    return wantsHelp(flags) ? writeHelp(LIST_HELP, isJson) : listCommand(flags);
   }
 
   if (command === 'verify') {
     const flags = args.slice(1);
-    return wantsHelp(flags) ? writeHelp(VERIFY_HELP, json) : verifyCommand(flags);
+    return wantsHelp(flags) ? writeHelp(VERIFY_HELP, isJson) : verifyCommand(flags);
   }
 
   // Everything else is `run` arguments. A leading flag leaves no bare word to probe.
-  if (command.startsWith('-')) return handleRun(args, json);
+  if (command.startsWith('-')) return handleRun(args, isJson);
 
   // A bare word that names a kit is always run as that kit; one that names none is reported as a command
   // that does not exist. The check is here rather than in `handleRun` so that an explicit `rdy run <word>`
@@ -180,12 +180,12 @@ async function dispatchCommand(argv: string[], json: boolean): Promise<number> {
     });
   }
 
-  return handleRun(args, json, probe.config);
+  return handleRun(args, isJson, probe.config);
 }
 
 /** Parses and executes the `run` subcommand, reading `config` when the caller already loaded it. */
-async function handleRun(flags: string[], json: boolean, config?: ResolvedRdyConfig): Promise<number> {
-  if (wantsHelp(flags)) return writeHelp(RUN_HELP, json);
+async function handleRun(flags: string[], isJson: boolean, config?: ResolvedRdyConfig): Promise<number> {
+  if (wantsHelp(flags)) return writeHelp(RUN_HELP, isJson);
 
   const parsed = parseRunArgs(flags);
 
@@ -232,7 +232,7 @@ async function handleRun(flags: string[], json: boolean, config?: ResolvedRdyCon
     {
       kitEntries,
       unrunSources,
-      json: parsed.json,
+      isJson: parsed.isJson,
       diagnose: parsed.diagnose,
       quiet: parsed.quiet,
       remote,
