@@ -1,10 +1,10 @@
 import assert from 'node:assert';
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { afterEach, beforeEach, describe, expect, it as baseIt, vi } from 'vitest';
 
 import { compileConfig } from '../../../src/compile/compileConfig.ts';
 import { validateCompiledOutput } from '../../../src/compile/validateCompiledOutput.ts';
@@ -33,6 +33,14 @@ const baseArgs = {
   remote: createUncachedRemoteContext(),
 };
 
+// eslint-disable-next-line no-empty-pattern -- vitest reads a fixture's dependencies from a destructured first parameter.
+const it = baseIt.extend('temp', { scope: 'file' }, async ({}, { onCleanup }) => {
+  const tree = createTempTree({}, { prefix: 'bundled-kits-' });
+  onCleanup(() => tree[Symbol.dispose]());
+  await installReadyupKits(tree.dir);
+  return tree;
+});
+
 /**
  * Loads the kits that readyup publishes the way a consuming project does, through `--from npm:readyup`
  * against a real `node_modules` tree.
@@ -43,14 +51,7 @@ const baseArgs = {
  * an installed package, and that the manifest beside them is what `list` reports.
  */
 describe('kits that readyup publishes', () => {
-  let projectRoot: string;
-  let originalCwd: string;
   let stdout: string[];
-
-  beforeAll(async () => {
-    projectRoot = realpathSync(mkdtempSync(path.join(tmpdir(), 'bundled-kits-')));
-    await installReadyupKits(projectRoot);
-  });
 
   beforeEach(() => {
     stdout = [];
@@ -59,20 +60,15 @@ describe('kits that readyup publishes', () => {
       return true;
     });
     vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
-    originalCwd = process.cwd();
-    process.chdir(projectRoot);
   });
 
   afterEach(() => {
-    process.chdir(originalCwd);
     vi.restoreAllMocks();
   });
 
-  afterAll(() => {
-    rmSync(projectRoot, { recursive: true, force: true });
-  });
+  it('lists both kits with the checklists that each one declares', async ({ temp }) => {
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
 
-  it('lists both kits with the checklists that each one declares', async () => {
     const exitCode = await listCommand(['--from', 'npm:readyup', '--json']);
 
     expect(exitCode).toBe(0);
@@ -82,7 +78,9 @@ describe('kits that readyup publishes', () => {
     expect(listed.kits[1]).toMatchObject({ checklists: ['packaging', 'freshness', 'self-containment'] });
   });
 
-  it('runs the default kit on a bare invocation', async () => {
+  it('runs the default kit on a bare invocation', async ({ temp }) => {
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
     const { entries } = await resolveKitSources({ ...baseArgs, fromValue: 'npm:readyup' });
 
     await runCommand({ kitEntries: entries, isJson: true, remote: createUncachedRemoteContext() });
@@ -92,7 +90,9 @@ describe('kits that readyup publishes', () => {
     expect(kit.checklists.map((checklist) => checklist.name)).toStrictEqual(['setup', 'freshness']);
   });
 
-  it('runs the publishing kit when it is named', async () => {
+  it('runs the publishing kit when it is named', async ({ temp }) => {
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
     const { entries } = await resolveKitSources({
       ...baseArgs,
       fromValue: 'npm:readyup',
@@ -112,7 +112,9 @@ describe('kits that readyup publishes', () => {
   // The kits read the consuming project's working directory, and this one defines no kits of its own.
   // The test therefore expects every setup check to skip: A pass would mean they had judged readyup's own
   // kit directory, which was installed with the package.
-  it('judges the consuming project rather than the package from which it came', async () => {
+  it('judges the consuming project rather than the package from which it came', async ({ temp }) => {
+    using _cwd = pointCwdAt(temp.dir, { chdir: true });
+
     const { entries } = await resolveKitSources({ ...baseArgs, fromValue: 'npm:readyup' });
 
     const exitCode = await runCommand({ kitEntries: entries, isJson: true, remote: createUncachedRemoteContext() });
