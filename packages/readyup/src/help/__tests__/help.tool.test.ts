@@ -12,7 +12,6 @@ import { TOPIC_NAMES_BY_STEM, TOPICS } from '../topics.ts';
 
 const packageDir = path.resolve(import.meta.dirname, '../../..');
 const sourceCli = path.join(packageDir, 'src/bin/rdy.ts');
-const publishedCli = path.join(packageDir, 'bin/rdy.js');
 const buildOutput = path.join(packageDir, 'dist/esm/bin/rdy.js');
 
 /**
@@ -36,11 +35,12 @@ describe('rdy help, spawned', () => {
     expect(stdout.trimEnd()).toBe(readTopicDoc('concepts').trimEnd());
   });
 
-  // The published entry runs from `dist/esm/bin/`, two directories deeper than the source entry, so it
-  // is the only spawn that shows the package root still resolving to the directory that contains `docs/`.
-  // It needs build output, which `nmr ci` produces before it checks and a bare `nmr test` does not.
-  it.skipIf(!existsSync(buildOutput))('resolves the doc files from the published entry point', () => {
-    const stdout = runHelp(publishedCli, 'concepts', tmpdir());
+  // The build entry runs from `dist/esm/bin/`, two directories deeper than the source entry, so it is the only
+  // spawn that shows the package root still resolving to the directory that contains `docs/`. It is spawned
+  // directly because the bin wrapper loads the source in a checkout. It needs build output, which `nmr ci`
+  // produces before it checks and a bare `nmr test` does not.
+  it.skipIf(!existsSync(buildOutput))('resolves the doc files from the build entry point', () => {
+    const stdout = runHelp(buildOutput, 'concepts', tmpdir());
 
     expect(stdout.trimEnd()).toBe(readTopicDoc('concepts').trimEnd());
   });
