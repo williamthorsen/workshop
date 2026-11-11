@@ -4,17 +4,17 @@ import type { KitSpecifier } from './parseKitSpecifiers.ts';
 
 /** The subset of parsed run flags whose combinations are constrained. */
 export interface RunFlagConstraints {
-  all: boolean;
   checklists: string | undefined;
   config: string | undefined;
   detail: string | undefined;
   file: string | undefined;
   from: string | undefined;
   internal: boolean;
-  jit: boolean;
-  json: boolean;
+  isJit: boolean;
+  isJson: boolean;
   quiet: boolean;
-  sources: boolean;
+  shouldSelectAll: boolean;
+  shouldSelectSources: boolean;
   url: string | undefined;
 }
 
@@ -40,21 +40,21 @@ export function validateRunFlags(parsed: RunFlagConstraints, kitSpecifiers: KitS
     throw usageError(describeSourceFlagConflict(sourceFlags));
   }
 
-  if (parsed.all) {
+  if (parsed.shouldSelectAll) {
     validateAllSelection(parsed, kitSpecifiers);
   }
 
   // A positional narrows the run: It names the kit to select in every configured source. Checklist
   // selection cannot: It names checklists within one kit, and `--sources` may select that kit in several
   // sources. Both spellings of that selection are rejected for the same reason.
-  if (parsed.sources && parsed.checklists !== undefined) {
+  if (parsed.shouldSelectSources && parsed.checklists !== undefined) {
     const kitName = kitSpecifiers[0]?.kitName ?? DEFAULT_KIT_NAME;
     throw usageError(`--sources cannot be combined with --checklists; ${SOURCES_CHECKLISTS_REASON}`, {
       hint: buildFromHint(`${kitName} --checklists ${parsed.checklists}`),
     });
   }
   const filteredSpec = kitSpecifiers.find((spec) => spec.checklists.length > 0);
-  if (parsed.sources && filteredSpec !== undefined) {
+  if (parsed.shouldSelectSources && filteredSpec !== undefined) {
     throw usageError(
       `--sources cannot be combined with the ":" checklist filter on "${filteredSpec.kitName}"; ` +
         SOURCES_CHECKLISTS_REASON,
@@ -64,7 +64,7 @@ export function validateRunFlags(parsed: RunFlagConstraints, kitSpecifiers: KitS
 
   const sourceType = sourceFlags[0];
 
-  if (parsed.jit && sourceType !== undefined) {
+  if (parsed.isJit && sourceType !== undefined) {
     throw usageError(`--jit cannot be combined with ${sourceType}`);
   }
   if (parsed.internal && sourceType !== undefined) {
@@ -97,7 +97,7 @@ function collectSourceFlags(parsed: RunFlagConstraints): string[] {
   const sourceFlags: string[] = [];
   if (parsed.file !== undefined) sourceFlags.push('--file');
   if (parsed.from !== undefined) sourceFlags.push('--from');
-  if (parsed.sources) sourceFlags.push('--sources');
+  if (parsed.shouldSelectSources) sourceFlags.push('--sources');
   if (parsed.url !== undefined) sourceFlags.push('--url');
   return sourceFlags;
 }
@@ -157,12 +157,12 @@ function validateChecklistsSelection(sourceType: string | undefined, kitSpecifie
  */
 function validateOutputFlags(parsed: RunFlagConstraints): void {
   // `--detail` selects how much of the JSON payload to emit, so it does not apply to the human report.
-  if (parsed.detail !== undefined && !parsed.json) {
+  if (parsed.detail !== undefined && !parsed.isJson) {
     throw usageError('--detail requires --json; it selects how much of the JSON report to emit');
   }
 
   // `--quiet` hides passed lines in the human detail tree, which `--json` does not emit.
-  if (parsed.quiet && parsed.json) {
+  if (parsed.quiet && parsed.isJson) {
     throw usageError('--quiet cannot be combined with --json; it hides passed lines from human output only');
   }
 }

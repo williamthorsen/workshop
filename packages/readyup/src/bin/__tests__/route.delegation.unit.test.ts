@@ -90,9 +90,9 @@ describe(routeCommand, () => {
       filePath: undefined,
       fromValue: undefined,
       urlValue: undefined,
-      jit: false,
+      isJit: false,
       internal: false,
-      json: false,
+      isJson: false,
     });
     mockRunCommand.mockResolvedValue(0);
 
@@ -102,7 +102,7 @@ describe(routeCommand, () => {
     expect(mockRunCommand).toHaveBeenCalledWith(
       expect.objectContaining({
         kitEntries: [{ name: 'default', source: { path: '.readyup/kits/default.js' }, checklists: [] }],
-        json: false,
+        isJson: false,
       }),
       false,
     );
@@ -117,9 +117,9 @@ describe(routeCommand, () => {
       filePath: undefined,
       fromValue: undefined,
       urlValue: undefined,
-      jit: true,
+      isJit: true,
       internal: false,
-      json: false,
+      isJson: false,
     });
     mockRunCommand.mockResolvedValue(0);
 
@@ -137,9 +137,9 @@ describe(routeCommand, () => {
       filePath: undefined,
       fromValue: undefined,
       urlValue: undefined,
-      jit: false,
+      isJit: false,
       internal: false,
-      json: true,
+      isJson: true,
     });
     mockRunCommand.mockResolvedValue(0);
 
@@ -147,7 +147,7 @@ describe(routeCommand, () => {
 
     expect(mockRunCommand).toHaveBeenCalledWith(
       expect.objectContaining({
-        json: true,
+        isJson: true,
       }),
       false,
     );
@@ -162,47 +162,50 @@ describe(routeCommand, () => {
       filePath: undefined,
       fromValue: undefined,
       urlValue: undefined,
-      jit: false,
+      isJit: false,
       internal: false,
-      json: false,
-      diagnose: true,
+      isJson: false,
+      shouldDiagnose: true,
     });
     mockRunCommand.mockResolvedValue(0);
 
     const { exitCode } = await routeCli(['run', '--diagnose']);
 
-    expect(mockRunCommand).toHaveBeenCalledWith(expect.objectContaining({ diagnose: true }), false);
+    expect(mockRunCommand).toHaveBeenCalledWith(expect.objectContaining({ shouldDiagnose: true }), false);
     expect(exitCode).toBe(0);
   });
 
   it.each([
-    { label: 'reloads', noCache: true },
-    { label: 'does not reload', noCache: false },
-  ])('hands runCommand a remote fetch context that $label when --no-cache is $noCache', async ({ noCache }) => {
-    vi.stubEnv('XDG_CACHE_HOME', '/var/cache-home');
-    mockParseRunArgs.mockReturnValue({
-      kitSpecifiers: [],
-      checklists: undefined,
-      checklistChecks: undefined,
-      filePath: undefined,
-      fromValue: undefined,
-      urlValue: undefined,
-      jit: false,
-      internal: false,
-      json: false,
-      noCache,
-    });
-    mockRunCommand.mockResolvedValue(0);
+    { label: 'reloads', shouldBypassCache: true },
+    { label: 'does not reload', shouldBypassCache: false },
+  ])(
+    'hands runCommand a remote fetch context that $label when --no-cache is $shouldBypassCache',
+    async ({ shouldBypassCache }) => {
+      vi.stubEnv('XDG_CACHE_HOME', '/var/cache-home');
+      mockParseRunArgs.mockReturnValue({
+        kitSpecifiers: [],
+        checklists: undefined,
+        checklistChecks: undefined,
+        filePath: undefined,
+        fromValue: undefined,
+        urlValue: undefined,
+        isJit: false,
+        internal: false,
+        isJson: false,
+        shouldBypassCache,
+      });
+      mockRunCommand.mockResolvedValue(0);
 
-    await routeCli(noCache ? ['run', '--no-cache'] : ['run']);
+      await routeCli(shouldBypassCache ? ['run', '--no-cache'] : ['run']);
 
-    expect(mockRunCommand).toHaveBeenCalledWith(
-      expect.objectContaining({
-        remote: expect.objectContaining({ cache: expect.objectContaining({ reload: noCache }) }),
-      }),
-      false,
-    );
-  });
+      expect(mockRunCommand).toHaveBeenCalledWith(
+        expect.objectContaining({
+          remote: expect.objectContaining({ cache: expect.objectContaining({ shouldReload: shouldBypassCache }) }),
+        }),
+        false,
+      );
+    },
+  );
 
   it('returns 2 and writes to stderr when parseRunArgs throws', async () => {
     mockParseRunArgs.mockImplementation(() => {
@@ -223,9 +226,9 @@ describe(routeCommand, () => {
       filePath: 'path.ts',
       fromValue: undefined,
       urlValue: undefined,
-      jit: false,
+      isJit: false,
       internal: false,
-      json: false,
+      isJson: false,
     });
     mockResolveKitSources.mockImplementation(() => {
       throw new Error('resolution failed');
@@ -245,9 +248,9 @@ describe(routeCommand, () => {
       filePath: undefined,
       fromValue: undefined,
       urlValue: undefined,
-      jit: false,
+      isJit: false,
       internal: false,
-      json: false,
+      isJson: false,
     });
     mockLoadConfig.mockRejectedValue(new Error('bad config'));
 
@@ -279,7 +282,7 @@ describe(routeCommand, () => {
   });
 
   it('forwards an install hint from a config file whose imports could not be resolved', async () => {
-    mockParseRunArgs.mockReturnValue(parsedRunArgs({ json: true }));
+    mockParseRunArgs.mockReturnValue(parsedRunArgs({ isJson: true }));
     mockLoadConfig.mockRejectedValue(
       Object.assign(new Error("Cannot resolve 'some-lib' while evaluating config.ts."), {
         hint: 'Install it with: pnpm add --save-dev some-lib',
@@ -319,9 +322,9 @@ describe(routeCommand, () => {
       filePath: 'kit.ts',
       fromValue: undefined,
       urlValue: undefined,
-      jit: false,
+      isJit: false,
       internal: false,
-      json: false,
+      isJson: false,
     });
     mockResolveKitSources.mockReturnValue({
       entries: [{ name: 'kit.ts', source: { path: 'kit.ts' }, checklists: [] }],
@@ -342,9 +345,9 @@ describe(routeCommand, () => {
       filePath: undefined,
       fromValue: 'github:org/repo',
       urlValue: undefined,
-      jit: false,
+      isJit: false,
       internal: false,
-      json: false,
+      isJson: false,
     });
     mockResolveKitSources.mockReturnValue({
       entries: [{ name: 'deploy', source: { url: 'https://example.com/deploy.js' }, checklists: [] }],
@@ -365,9 +368,9 @@ describe(routeCommand, () => {
       filePath: undefined,
       fromValue: undefined,
       urlValue: 'https://example.com/kit.js',
-      jit: false,
+      isJit: false,
       internal: false,
-      json: false,
+      isJson: false,
     });
     mockResolveKitSources.mockReturnValue({
       entries: [{ name: 'https://example.com/kit.js', source: { url: 'https://example.com/kit.js' }, checklists: [] }],
@@ -388,9 +391,9 @@ describe(routeCommand, () => {
       filePath: undefined,
       fromValue: undefined,
       urlValue: undefined,
-      jit: false,
+      isJit: false,
       internal: false,
-      json: false,
+      isJson: false,
     });
     mockRunCommand.mockResolvedValue(0);
 
@@ -407,9 +410,9 @@ describe(routeCommand, () => {
       filePath: undefined,
       fromValue: undefined,
       urlValue: undefined,
-      jit: false,
+      isJit: false,
       internal: true,
-      json: false,
+      isJson: false,
     });
     mockRunCommand.mockResolvedValue(0);
 
@@ -464,7 +467,7 @@ describe(routeCommand, () => {
 
     const { exitCode } = await routeCli(['init']);
 
-    expect(mockInitCommand).toHaveBeenCalledWith({ dryRun: false, force: false });
+    expect(mockInitCommand).toHaveBeenCalledWith({ isDryRun: false, shouldForce: false });
     expect(exitCode).toBe(0);
   });
 
@@ -473,7 +476,7 @@ describe(routeCommand, () => {
 
     const { exitCode } = await routeCli(['init', '--dry-run', '--force']);
 
-    expect(mockInitCommand).toHaveBeenCalledWith({ dryRun: true, force: true });
+    expect(mockInitCommand).toHaveBeenCalledWith({ isDryRun: true, shouldForce: true });
     expect(exitCode).toBe(0);
   });
 
@@ -482,7 +485,7 @@ describe(routeCommand, () => {
 
     const { exitCode } = await routeCli(['init', '-n']);
 
-    expect(mockInitCommand).toHaveBeenCalledWith({ dryRun: true, force: false });
+    expect(mockInitCommand).toHaveBeenCalledWith({ isDryRun: true, shouldForce: false });
     expect(exitCode).toBe(0);
   });
 

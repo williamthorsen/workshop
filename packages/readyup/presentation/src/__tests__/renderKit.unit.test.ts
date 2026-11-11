@@ -100,8 +100,8 @@ describe(renderKit, () => {
     [{}, 'rdy run preflight'],
     [{ failOn: 'error' }, 'rdy run preflight'],
     [{ failOn: 'recommend' }, 'rdy run preflight --fail-on=recommend'],
-    [{ json: true }, 'rdy run preflight --json'],
-    [{ failOn: 'warn', json: true }, 'rdy run preflight --fail-on=warn --json'],
+    [{ isJson: true }, 'rdy run preflight --json'],
+    [{ failOn: 'warn', isJson: true }, 'rdy run preflight --fail-on=warn --json'],
   ] satisfies Array<[RenderOptions, string]>)('opens the run with %j as `%s`', (options, command) => {
     const rendered = renderKit(TWO_CHECKLIST_KIT, { port: true }, options);
 

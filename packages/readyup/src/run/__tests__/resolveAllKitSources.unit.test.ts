@@ -19,8 +19,8 @@ import { resolveKitSources } from '../resolveKitSources.ts';
 const baseOptions = {
   fromValue: undefined,
   internal: false,
-  jit: false,
-  sources: false,
+  isJit: false,
+  shouldSelectSources: false,
   remote: createUncachedRemoteContext(),
 };
 
@@ -107,9 +107,9 @@ describe(resolveAllKitSources, () => {
     it('resolves every TypeScript source under --jit, as naming each would', async ({ temp }) => {
       temp.writeAll({ '.readyup/kits/smoke.ts': '', '.readyup/kits/deploy.ts': '', '.readyup/kits/deploy.js': '' });
 
-      const selection = await resolveAllKitSources({ ...baseOptions, jit: true });
+      const selection = await resolveAllKitSources({ ...baseOptions, isJit: true });
 
-      expect(selection).toStrictEqual(await resolveKitSources({ ...buildNamedArgs(['deploy', 'smoke']), jit: true }));
+      expect(selection).toStrictEqual(await resolveKitSources({ ...buildNamedArgs(['deploy', 'smoke']), isJit: true }));
     });
 
     it('resolves only the infixed kits of the internal directory under --internal', async ({ temp }) => {
@@ -118,7 +118,7 @@ describe(resolveAllKitSources, () => {
         '.readyup/kits/internal/audit.int.ts': '',
         '.readyup/kits/internal/notes.ts': '',
       });
-      const internalFlags = { internal: true, internalDir: 'internal', internalInfix: 'int', jit: true };
+      const internalFlags = { internal: true, internalDir: 'internal', internalInfix: 'int', isJit: true };
 
       const selection = await resolveAllKitSources({ ...baseOptions, ...internalFlags });
 
@@ -128,7 +128,7 @@ describe(resolveAllKitSources, () => {
     it('roots --internal on the configured source directory', async ({ temp }) => {
       temp.writeAll({ 'kits/src/internal/audit.ts': '', '.readyup/kits/internal/stale.ts': '' });
       const compile = { srcDir: 'kits/src', outDir: 'dist/kits', include: undefined, exclude: [] };
-      const internalFlags = { internal: true, internalDir: 'internal', jit: true };
+      const internalFlags = { internal: true, internalDir: 'internal', isJit: true };
 
       const selection = await resolveAllKitSources({ ...baseOptions, ...internalFlags, compile });
 
@@ -138,7 +138,7 @@ describe(resolveAllKitSources, () => {
     });
 
     it('fails naming the directory when the kits directory contains no source', async () => {
-      const error = await captureError(RdyError, () => resolveAllKitSources({ ...baseOptions, jit: true }));
+      const error = await captureError(RdyError, () => resolveAllKitSources({ ...baseOptions, isJit: true }));
 
       expect(error.code).toBe('kit-load');
       expect(error.message).toBe('--all found no kit sources in .readyup/kits.');
@@ -147,27 +147,29 @@ describe(resolveAllKitSources, () => {
     it('resolves a nested source under --jit, as naming it would', async ({ temp }) => {
       temp.writeAll({ '.readyup/kits/ops/deploy.ts': '', '.readyup/kits/top.ts': '' });
 
-      const selection = await resolveAllKitSources({ ...baseOptions, jit: true });
+      const selection = await resolveAllKitSources({ ...baseOptions, isJit: true });
 
-      expect(selection).toStrictEqual(await resolveKitSources({ ...buildNamedArgs(['ops/deploy', 'top']), jit: true }));
+      expect(selection).toStrictEqual(
+        await resolveKitSources({ ...buildNamedArgs(['ops/deploy', 'top']), isJit: true }),
+      );
     });
 
     it('omits a source that compile.exclude removes', async ({ temp }) => {
       temp.writeAll({ '.readyup/kits/deploy.ts': '', '.readyup/kits/helpers/shared.ts': '' });
       const compile = { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: undefined, exclude: ['helpers/**'] };
 
-      const selection = await resolveAllKitSources({ ...baseOptions, jit: true, compile });
+      const selection = await resolveAllKitSources({ ...baseOptions, isJit: true, compile });
 
-      expect(selection).toStrictEqual(await resolveKitSources({ ...buildNamedArgs(['deploy']), jit: true, compile }));
+      expect(selection).toStrictEqual(await resolveKitSources({ ...buildNamedArgs(['deploy']), isJit: true, compile }));
     });
 
     it('omits a source that compile.include does not select', async ({ temp }) => {
       temp.writeAll({ '.readyup/kits/deploy.ts': '', '.readyup/kits/helpers/shared.ts': '' });
       const compile = { srcDir: '.readyup/kits', outDir: '.readyup/kits', include: ['*.ts'], exclude: [] };
 
-      const selection = await resolveAllKitSources({ ...baseOptions, jit: true, compile });
+      const selection = await resolveAllKitSources({ ...baseOptions, isJit: true, compile });
 
-      expect(selection).toStrictEqual(await resolveKitSources({ ...buildNamedArgs(['deploy']), jit: true, compile }));
+      expect(selection).toStrictEqual(await resolveKitSources({ ...buildNamedArgs(['deploy']), isJit: true, compile }));
     });
 
     it('covers the same kits under --jit as a compiled --all', async ({ temp }) => {
@@ -179,7 +181,7 @@ describe(resolveAllKitSources, () => {
       });
 
       const { entries: compiled } = await resolveAllKitSources(baseOptions);
-      const { entries: sources } = await resolveAllKitSources({ ...baseOptions, jit: true });
+      const { entries: sources } = await resolveAllKitSources({ ...baseOptions, isJit: true });
 
       expect(sources.map((entry) => entry.name)).toStrictEqual(compiled.map((entry) => entry.name));
     });
@@ -228,7 +230,7 @@ describe(resolveAllKitSources, () => {
 
     const { entries } = await resolveAllKitSources({
       ...baseOptions,
-      sources: true,
+      shouldSelectSources: true,
       configuredSources: [parseConfiguredSource('npm:@acme/kits')],
     });
 
@@ -247,7 +249,7 @@ function buildNamedArgs(names: string[]) {
     filePath: undefined,
     fromValue: undefined,
     internal: false,
-    jit: false,
+    isJit: false,
     kitSpecifiers: names.map((kitName) => ({ kitName, checklists: [] })),
     urlValue: undefined,
   };

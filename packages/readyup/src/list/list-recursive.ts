@@ -27,7 +27,7 @@ import { buildSourceKitEntry } from './source-kit-entries.ts';
  * `--internal` reject every source flag, and a configured package's kits belong to the dependency axis.
  * What is left is exactly the set that a reader can run from the working directory.
  */
-export async function runRecursiveMode(showChecks: boolean, warnings: ReportedWarning[]): Promise<ListResult> {
+export async function runRecursiveMode(shouldShowChecks: boolean, warnings: ReportedWarning[]): Promise<ListResult> {
   const root = process.cwd();
   const projects = await discoverKitProjects({ root }, warnings);
   warnOfDefaultedConfigs(projects, warnings);
@@ -50,7 +50,7 @@ export async function runRecursiveMode(showChecks: boolean, warnings: ReportedWa
     entries.push(...kits);
   }
 
-  return { view: formatRecursiveView({ projects: views, showChecks }), kits: entries };
+  return { view: formatRecursiveView({ projects: views, shouldShowChecks }), kits: entries };
 }
 
 /**
@@ -65,7 +65,7 @@ export async function runRecursiveMode(showChecks: boolean, warnings: ReportedWa
  * projects name, and that cannot be fetched, is warned of once per project naming it.
  */
 export async function runRecursiveSourcesMode(
-  showChecks: boolean,
+  shouldShowChecks: boolean,
   remote: RemoteFetchContext,
   warnings: ReportedWarning[],
 ): Promise<ListResult> {
@@ -89,7 +89,7 @@ export async function runRecursiveSourcesMode(
     );
   }
 
-  return { view: formatRecursiveSourcesView({ projects: views, showChecks }), kits: entries };
+  return { view: formatRecursiveSourcesView({ projects: views, shouldShowChecks }), kits: entries };
 }
 
 // region | Helpers

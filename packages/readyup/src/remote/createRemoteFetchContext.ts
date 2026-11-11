@@ -16,12 +16,12 @@ export interface RemoteFetchContext {
  * The context resolves each provider's credential at most once, so a run fetching several kits from one provider
  * spawns `gh auth token` no more than once. The cache is absent when no cache directory can be resolved.
  */
-export function createRemoteFetchContext({ reload }: { reload: boolean }): RemoteFetchContext {
+export function createRemoteFetchContext({ shouldReload }: { shouldReload: boolean }): RemoteFetchContext {
   const cacheDir = resolveHttpCacheDir();
   const resolvedHeaders = new Map<RemoteProvider | undefined, Record<string, string> | undefined>();
 
   return {
-    cache: cacheDir === undefined ? undefined : { dir: cacheDir, reload },
+    cache: cacheDir === undefined ? undefined : { dir: cacheDir, shouldReload },
     resolveAuthHeaders(provider) {
       if (!resolvedHeaders.has(provider)) {
         resolvedHeaders.set(provider, resolveRemoteAuthHeaders(provider));

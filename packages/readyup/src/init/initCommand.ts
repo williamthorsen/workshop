@@ -19,8 +19,8 @@ const STANDARD_NEXT_STEPS = [
 ];
 
 interface InitOptions {
-  dryRun: boolean;
-  force: boolean;
+  isDryRun: boolean;
+  shouldForce: boolean;
 }
 
 /**
@@ -29,21 +29,21 @@ interface InitOptions {
  * Scaffolds a starter config file and kit file, then prints next steps. Scaffolding is
  * either completed or not attempted, so the only outcomes are success and a thrown failure.
  */
-export function initCommand({ dryRun, force }: InitOptions): number {
-  if (dryRun) {
+export function initCommand({ isDryRun, shouldForce }: InitOptions): number {
+  if (isDryRun) {
     console.info('[dry-run mode]');
   }
 
   printStep('Scaffolding config');
   let result: ReturnType<typeof scaffoldConfig>;
   try {
-    result = scaffoldConfig({ dryRun, force });
+    result = scaffoldConfig({ isDryRun, shouldForce });
   } catch (error: unknown) {
     throw configError(`Failed to scaffold config: ${describeError(error)}`, { cause: error });
   }
 
-  reportWriteResult(result.configResult, dryRun);
-  reportWriteResult(result.kitResult, dryRun);
+  reportWriteResult(result.configResult, isDryRun);
+  reportWriteResult(result.kitResult, isDryRun);
 
   // Keep the thrown message terse, because `reportWriteResult` has already printed the per-file reason.
   const failure = [result.configResult, result.kitResult].find((r) => r.outcome === 'failed');
@@ -51,7 +51,7 @@ export function initCommand({ dryRun, force }: InitOptions): number {
     throw configError(`Failed to scaffold ${failure.filePath}`);
   }
 
-  if (!dryRun) {
+  if (!isDryRun) {
     printStep('Next steps');
     console.info(`${buildNextSteps()}\n`);
   }

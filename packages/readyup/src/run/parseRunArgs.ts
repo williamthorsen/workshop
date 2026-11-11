@@ -10,22 +10,22 @@ import { validateRunFlags } from './validateRunFlags.ts';
 
 /** The run-subcommand flags and positionals, parsed and validated. */
 export interface ParsedRunArgs {
-  all: boolean;
   checklists: string[] | undefined;
   configPath: string | undefined;
   detail?: JsonDetail;
-  diagnose: boolean;
   failOn?: Severity;
   filePath: string | undefined;
   fromValue: string | undefined;
   internal: boolean;
-  jit: boolean;
-  json: boolean;
+  isJit: boolean;
+  isJson: boolean;
   kitSpecifiers: KitSpecifier[];
-  noCache: boolean;
   quiet: boolean;
   reportOn?: Severity;
-  sources: boolean;
+  shouldBypassCache: boolean;
+  shouldDiagnose: boolean;
+  shouldSelectAll: boolean;
+  shouldSelectSources: boolean;
   urlValue: string | undefined;
 }
 
@@ -84,19 +84,19 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
   });
 
   const parsed = {
-    all: values.all === true,
     checklists: values.checklists,
     config: values.config,
     detail: values.detail,
-    diagnose: values.diagnose === true,
     file: values.file,
     from: values.from,
     internal: values.internal === true,
-    jit: values.jit === true,
-    json: values.json === true,
-    noCache: values['no-cache'] === true,
+    isJit: values.jit === true,
+    isJson: values.json === true,
     quiet: values.quiet === true,
-    sources: values.sources === true,
+    shouldBypassCache: values['no-cache'] === true,
+    shouldDiagnose: values.diagnose === true,
+    shouldSelectAll: values.all === true,
+    shouldSelectSources: values.sources === true,
     url: values.url,
     failOn: values['fail-on'],
     reportOn: values['report-on'],
@@ -127,19 +127,19 @@ export function parseRunArgs(flags: string[]): ParsedRunArgs {
   const detail = parsed.detail !== undefined ? parseDetailFlag(parsed.detail) : undefined;
 
   const parsedArgs: ParsedRunArgs = {
-    all: parsed.all,
     checklists,
     configPath: parsed.config,
-    diagnose: parsed.diagnose,
     filePath: parsed.file,
     fromValue: parsed.from,
     internal: parsed.internal,
-    jit: parsed.jit,
-    json: parsed.json,
+    isJit: parsed.isJit,
+    isJson: parsed.isJson,
     kitSpecifiers,
-    noCache: parsed.noCache,
     quiet: parsed.quiet,
-    sources: parsed.sources,
+    shouldBypassCache: parsed.shouldBypassCache,
+    shouldDiagnose: parsed.shouldDiagnose,
+    shouldSelectAll: parsed.shouldSelectAll,
+    shouldSelectSources: parsed.shouldSelectSources,
     urlValue: parsed.url,
   };
   if (detail !== undefined) parsedArgs.detail = detail;

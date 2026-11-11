@@ -3623,7 +3623,7 @@
           var id = slide.getAttribute('data-kit');
           var kit = ReadyupDeck.KITS[id];
           var env = {};
-          var options = { failOn: 'error', json: false };
+          var options = { failOn: 'error', isJson: false };
           var cmdrow = slide.querySelector('.cmdrow');
           var envBox = slide.querySelector('.env');
           var panes = {
@@ -3659,7 +3659,7 @@
 
           var jsonInput = cmdrow.querySelector('input[type="checkbox"]');
           jsonInput.addEventListener('change', function () {
-            options.json = jsonInput.checked;
+            options.isJson = jsonInput.checked;
             draw();
             returnFocus(jsonInput);
           });
@@ -3716,8 +3716,8 @@
               .join('');
             panes.json.querySelector('code').innerHTML =
               '<span class="dim">' + esc('$ ' + r.command) + '</span>\n' + highlightJson(r.json);
-            panes.run.hidden = options.json;
-            panes.json.hidden = !options.json;
+            panes.run.hidden = options.isJson;
+            panes.json.hidden = !options.isJson;
             exitBox.textContent = 'exit ' + r.exit;
             exitBox.setAttribute('data-at', r.exitAt);
             slide.setAttribute('data-check-steps', r.checkSteps.join(' '));

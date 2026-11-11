@@ -32,7 +32,7 @@ export interface RunRdyOptions {
   failOn?: Severity;
 
   /** Whether to ask each skipped check what its `check` would have concluded. */
-  diagnose?: boolean;
+  shouldDiagnose?: boolean;
 
   /** Where the kit came from, which namespaces its checks' ids. */
   provenance?: KitProvenance | undefined;
@@ -445,7 +445,7 @@ export async function runRdy(
   const passed = results.every((r) => !(r.status === 'failed' && meetsThreshold(r.severity, failOn)));
 
   const diagnoses: SkipDiagnosis[] | undefined =
-    options.diagnose === true
+    options.shouldDiagnose === true
       ? await diagnoseSkips(orderByResult(results, run.pendingDiagnoses), run.provenance)
       : undefined;
 

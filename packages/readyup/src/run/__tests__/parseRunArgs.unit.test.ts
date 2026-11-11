@@ -11,8 +11,8 @@ describe(parseRunArgs, () => {
     expect(result.filePath).toBeUndefined();
     expect(result.fromValue).toBeUndefined();
     expect(result.urlValue).toBeUndefined();
-    expect(result.json).toBe(false);
-    expect(result.jit).toBe(false);
+    expect(result.isJson).toBe(false);
+    expect(result.isJit).toBe(false);
     expect(result.internal).toBe(false);
   });
 
@@ -149,7 +149,7 @@ describe(parseRunArgs, () => {
   it('parses --jit flag', () => {
     const result = parseRunArgs(['--jit']);
 
-    expect(result.jit).toBe(true);
+    expect(result.isJit).toBe(true);
   });
 
   // --internal flag
@@ -163,14 +163,14 @@ describe(parseRunArgs, () => {
   it('parses --json flag', () => {
     const result = parseRunArgs(['--json']);
 
-    expect(result.json).toBe(true);
+    expect(result.isJson).toBe(true);
     expect(result.kitSpecifiers).toStrictEqual([]);
   });
 
   it('parses --json with positional kit names', () => {
     const result = parseRunArgs(['--json', 'deploy']);
 
-    expect(result.json).toBe(true);
+    expect(result.isJson).toBe(true);
     expect(result.kitSpecifiers).toStrictEqual([{ kitName: 'deploy', checklists: [] }]);
   });
 
@@ -212,8 +212,8 @@ describe(parseRunArgs, () => {
 
   it.each([
     { long: '--internal', args: ['--internal'], expected: { internal: true } },
-    { long: '--jit', args: ['--jit'], expected: { jit: true } },
-    { long: '--json', args: ['--json'], expected: { json: true } },
+    { long: '--jit', args: ['--jit'], expected: { isJit: true } },
+    { long: '--json', args: ['--json'], expected: { isJson: true } },
     { long: '--fail-on', args: ['--fail-on', 'warn'], expected: { failOn: 'warn' } },
     { long: '--report-on', args: ['--report-on', 'error'], expected: { reportOn: 'error' } },
     {
@@ -337,11 +337,11 @@ describe(parseRunArgs, () => {
 
   describe('--all', () => {
     it('parses as a boolean', () => {
-      expect(parseRunArgs(['--all']).all).toBe(true);
+      expect(parseRunArgs(['--all']).shouldSelectAll).toBe(true);
     });
 
     it('defaults to false', () => {
-      expect(parseRunArgs([]).all).toBe(false);
+      expect(parseRunArgs([]).shouldSelectAll).toBe(false);
     });
 
     it('rejects a kit named alongside it as a usage error', () => {
@@ -353,11 +353,11 @@ describe(parseRunArgs, () => {
 
   describe('--no-cache', () => {
     it('parses as a boolean', () => {
-      expect(parseRunArgs(['--no-cache']).noCache).toBe(true);
+      expect(parseRunArgs(['--no-cache']).shouldBypassCache).toBe(true);
     });
 
     it('defaults to false', () => {
-      expect(parseRunArgs([]).noCache).toBe(false);
+      expect(parseRunArgs([]).shouldBypassCache).toBe(false);
     });
 
     it.each([
@@ -367,17 +367,17 @@ describe(parseRunArgs, () => {
       ['--jit', ['--no-cache', '--jit']],
       ['--url', ['--no-cache', '--url', 'https://example.com/kit.js']],
     ])('composes with %s, including sources that fetch nothing', (_label, flags) => {
-      expect(parseRunArgs(flags).noCache).toBe(true);
+      expect(parseRunArgs(flags).shouldBypassCache).toBe(true);
     });
   });
 
   describe('--diagnose', () => {
     it('parses as a boolean', () => {
-      expect(parseRunArgs(['--diagnose']).diagnose).toBe(true);
+      expect(parseRunArgs(['--diagnose']).shouldDiagnose).toBe(true);
     });
 
     it('defaults to false', () => {
-      expect(parseRunArgs([]).diagnose).toBe(false);
+      expect(parseRunArgs([]).shouldDiagnose).toBe(false);
     });
 
     it.each([
@@ -388,13 +388,13 @@ describe(parseRunArgs, () => {
       ['--file', ['--diagnose', '--file', 'kit.js']],
       ['--url', ['--diagnose', '--url', 'https://example.com/kit.js']],
     ])('composes with %s, which it constrains in no way', (_label, flags) => {
-      expect(parseRunArgs(flags).diagnose).toBe(true);
+      expect(parseRunArgs(flags).shouldDiagnose).toBe(true);
     });
 
     it('composes with a kit selection', () => {
       const parsed = parseRunArgs(['--diagnose', 'deploy']);
 
-      expect(parsed.diagnose).toBe(true);
+      expect(parsed.shouldDiagnose).toBe(true);
       expect(parsed.kitSpecifiers).toStrictEqual([{ kitName: 'deploy', checklists: [] }]);
     });
   });

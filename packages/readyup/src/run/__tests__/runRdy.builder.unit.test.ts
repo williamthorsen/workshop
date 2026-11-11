@@ -109,7 +109,7 @@ describe(runRdy, () => {
         ],
       };
 
-      const report = await runRdy(checklist, { diagnose: true });
+      const report = await runRdy(checklist, { shouldDiagnose: true });
 
       expect(report.diagnoses).toStrictEqual([{ name: 'masked', verdict: 'masked-pass' }]);
     });

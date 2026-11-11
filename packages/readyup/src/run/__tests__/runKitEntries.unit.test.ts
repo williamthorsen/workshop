@@ -184,10 +184,16 @@ describe(runKitEntries, () => {
       fakes.runRdy.mockResolvedValue(PASSING_REPORT);
 
       await collectEvents(buildSingleKitEntry(['deploy']), fakes);
-      expect(fakes.runRdy).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ diagnose: false }));
+      expect(fakes.runRdy).toHaveBeenLastCalledWith(
+        expect.anything(),
+        expect.objectContaining({ shouldDiagnose: false }),
+      );
 
-      await collectEvents(buildSingleKitEntry(['deploy']), fakes, { diagnose: true });
-      expect(fakes.runRdy).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ diagnose: true }));
+      await collectEvents(buildSingleKitEntry(['deploy']), fakes, { shouldDiagnose: true });
+      expect(fakes.runRdy).toHaveBeenLastCalledWith(
+        expect.anything(),
+        expect.objectContaining({ shouldDiagnose: true }),
+      );
     });
 
     it('passes the kit’s resolved failOn to runRdy', async () => {
@@ -311,7 +317,7 @@ async function collectEvents(
 ): Promise<KitRunEvent[]> {
   const events: KitRunEvent[] = [];
   const fullSettings: KitRunSettings = {
-    diagnose: false,
+    shouldDiagnose: false,
     failOn: undefined,
     remote: createUncachedRemoteContext(),
     reportOn: undefined,

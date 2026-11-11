@@ -38,7 +38,7 @@ describe('--sources run path wiring', () => {
 
     const { entries } = await resolveKitSources({
       ...baseArgs,
-      sources: true,
+      shouldSelectSources: true,
       configuredSources: buildNpmSources('@acme/kits'),
     });
 
@@ -57,7 +57,7 @@ describe('--sources run path wiring', () => {
 
     const { entries } = await resolveKitSources({
       ...baseArgs,
-      sources: true,
+      shouldSelectSources: true,
       configuredSources: buildNpmSources('@acme/kits'),
     });
 
@@ -70,7 +70,7 @@ describe('--sources run path wiring', () => {
 
     const { entries } = await resolveKitSources({
       ...baseArgs,
-      sources: true,
+      shouldSelectSources: true,
       configuredSources: buildNpmSources('plain-kit', '@acme/kits'),
       kitSpecifiers: [{ kitName: 'preflight', checklists: [] }],
     });
@@ -87,7 +87,7 @@ describe('--sources run path wiring', () => {
 
     const { entries } = await resolveKitSources({
       ...baseArgs,
-      sources: true,
+      shouldSelectSources: true,
       configuredSources: buildNpmSources('plain-kit'),
     });
 
@@ -101,7 +101,7 @@ describe('--sources run path wiring', () => {
 
     const { entries } = await resolveKitSources({
       ...baseArgs,
-      sources: true,
+      shouldSelectSources: true,
       configuredSources: buildNpmSources('plain-kit', '@acme/kits'),
     });
 
@@ -114,11 +114,11 @@ describe('--sources run path wiring', () => {
     installPackage(temp, '@acme/kits', ['drift']);
     const { entries, unrunSources } = await resolveKitSources({
       ...baseArgs,
-      sources: true,
+      shouldSelectSources: true,
       configuredSources: buildNpmSources('@acme/kits'),
     });
 
-    const { exitCode, stderr, stdout } = await run({ kitEntries: entries, json: false, unrunSources });
+    const { exitCode, stderr, stdout } = await run({ kitEntries: entries, isJson: false, unrunSources });
 
     expect(exitCode).toBe(0);
     expect(stdout).toMatch(/^No kits to run: no configured source publishes a kit named "default"\./);
@@ -131,11 +131,11 @@ describe('--sources run path wiring', () => {
     installPackage(temp, '@acme/kits', ['drift']);
     const { entries, unrunSources } = await resolveKitSources({
       ...baseArgs,
-      sources: true,
+      shouldSelectSources: true,
       configuredSources: buildNpmSources('plain-kit', '@acme/kits'),
     });
 
-    const { stdout } = await run({ kitEntries: entries, json: true, unrunSources });
+    const { stdout } = await run({ kitEntries: entries, isJson: true, unrunSources });
 
     const report = ReportSchema.parse(JSON.parse(stdout));
     expect(report.warnings).toStrictEqual([expect.objectContaining({ code: 'source-not-run' })]);
@@ -145,11 +145,11 @@ describe('--sources run path wiring', () => {
     installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0' });
     const { entries } = await resolveKitSources({
       ...baseArgs,
-      sources: true,
+      shouldSelectSources: true,
       configuredSources: buildNpmSources('@acme/kits'),
     });
 
-    const { exitCode, stdout } = await run({ kitEntries: entries, json: true });
+    const { exitCode, stdout } = await run({ kitEntries: entries, isJson: true });
 
     expect(exitCode).toBe(0);
     const report = ReportSchema.parse(JSON.parse(stdout));
@@ -160,11 +160,11 @@ describe('--sources run path wiring', () => {
     installPackage(temp, '@acme/kits', ['default']);
     const { entries } = await resolveKitSources({
       ...baseArgs,
-      sources: true,
+      shouldSelectSources: true,
       configuredSources: buildNpmSources('@acme/kits'),
     });
 
-    const { stdout } = await run({ kitEntries: entries, json: true });
+    const { stdout } = await run({ kitEntries: entries, isJson: true });
 
     const report = ReportSchema.parse(JSON.parse(stdout));
     expect(report.kits[0]).toMatchObject({ origin: { source: 'npm:@acme/kits' } });
@@ -175,11 +175,11 @@ describe('--sources run path wiring', () => {
     installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0', readyupVersion: '0.19.2' });
     const { entries } = await resolveKitSources({
       ...baseArgs,
-      sources: true,
+      shouldSelectSources: true,
       configuredSources: buildNpmSources('@acme/kits'),
     });
 
-    const { stdout } = await run({ kitEntries: entries, json: true });
+    const { stdout } = await run({ kitEntries: entries, isJson: true });
 
     const report = ReportSchema.parse(JSON.parse(stdout));
     expect(report.kits[0]).toMatchObject({ compiledWith: '0.19.2', origin: { source: 'npm:@acme/kits' } });
@@ -191,11 +191,11 @@ describe('--sources run path wiring', () => {
     installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0' });
     const { entries } = await resolveKitSources({
       ...baseArgs,
-      sources: true,
+      shouldSelectSources: true,
       configuredSources: buildNpmSources('@acme/kits'),
     });
 
-    const { stdout } = await run({ kitEntries: entries, json: false });
+    const { stdout } = await run({ kitEntries: entries, isJson: false });
 
     expect(stdout).toContain('\u{1F4E6} @acme/kits@2.1.0 / \u{1F4D3} default');
   });
@@ -206,11 +206,11 @@ describe('--sources run path wiring', () => {
     installPackage(temp, '@acme/kits', ['default'], { version: '2.1.0' });
     const { entries } = await resolveKitSources({
       ...baseArgs,
-      sources: true,
+      shouldSelectSources: true,
       configuredSources: buildNpmSources('plain-kit', '@acme/kits'),
     });
 
-    const { stdout } = await run({ kitEntries: entries, json: false });
+    const { stdout } = await run({ kitEntries: entries, isJson: false });
     const lines = stdout.trimEnd().split('\n');
 
     // Heading, rule, one row per checklist, rule, total, then a blank and the verdict.
@@ -227,11 +227,11 @@ describe('--sources run path wiring', () => {
     installPackage(temp, 'plain-kit', ['default'], { version: '1.0.0' });
     const { entries } = await resolveKitSources({
       ...baseArgs,
-      sources: true,
+      shouldSelectSources: true,
       configuredSources: buildNpmSources('@acme/kits', 'plain-kit'),
     });
 
-    const { stdout } = await run({ kitEntries: entries, json: false });
+    const { stdout } = await run({ kitEntries: entries, isJson: false });
     const headings = stdout
       .matchAll(/^\u{2501}\u{2501} \u{1F4E6} (?<crumb>.+)$/gmu)
       .map((match) => (match.groups?.['crumb'] ?? '').replaceAll(/\p{Emoji_Presentation} /gu, ''))
@@ -254,11 +254,11 @@ describe('--sources run path wiring', () => {
     );
     const { entries } = await resolveKitSources({
       ...baseArgs,
-      sources: true,
+      shouldSelectSources: true,
       configuredSources: buildNpmSources('@acme/kits', 'broken-kit', 'plain-kit'),
     });
 
-    const { stdout } = await run({ kitEntries: entries, json: false });
+    const { stdout } = await run({ kitEntries: entries, isJson: false });
     const table = stdout.split('\u{2501}\u{2501} Summary\n', 2)[1] ?? '';
 
     expect(table).toContain('@acme/kits@2.1.0 / default');
@@ -278,7 +278,7 @@ const baseArgs = {
   kitSpecifiers: [],
   checklists: undefined,
   checklistChecks: undefined,
-  jit: false,
+  isJit: false,
   internal: false,
   remote: createUncachedRemoteContext(),
 };

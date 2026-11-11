@@ -134,7 +134,7 @@ describe(loadRemoteManifest, () => {
 
   it('rejects a schema-invalid body served from the cache, as it rejects a fetched one', async () => {
     using tree = createTempTree({}, { prefix: 'readyup-remote-manifest-cache-' });
-    const options = { cache: { dir: tree.dir, reload: false }, resolveHeaders: () => undefined };
+    const options = { cache: { dir: tree.dir, shouldReload: false }, resolveHeaders: () => undefined };
     const invalidBody = JSON.stringify({ version: 1, kits: 'none' });
     mockFetch.mockResolvedValueOnce(new Response(invalidBody, { headers: { 'Cache-Control': 'max-age=300' } }));
     await captureError(() => loadRemoteManifest({ url: 'https://example.com/manifest.json', ...options }));

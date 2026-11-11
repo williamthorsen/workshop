@@ -44,7 +44,7 @@ describe('scaffolded kit', () => {
     using _silent = silenceConsole(['error', 'info']);
 
     vi.stubEnv('NODE_ENV', 'production');
-    initCommand({ dryRun: false, force: false });
+    initCommand({ isDryRun: false, shouldForce: false });
 
     const results = await runScaffoldedKit();
 
@@ -58,7 +58,7 @@ describe('scaffolded kit', () => {
     using _silent = silenceConsole(['error', 'info']);
 
     vi.stubEnv('NODE_ENV', undefined);
-    initCommand({ dryRun: false, force: false });
+    initCommand({ isDryRun: false, shouldForce: false });
 
     const results = await runScaffoldedKit();
 

@@ -258,7 +258,7 @@ describe(fetchWithCache, () => {
 
     it('returns the response when the cache cannot be written', async () => {
       using tree = createCacheTree({ blocker: '' });
-      const cache: HttpCacheSettings = { dir: tree.resolve('blocker/http'), reload: false };
+      const cache: HttpCacheSettings = { dir: tree.resolve('blocker/http'), shouldReload: false };
       mockFetch.mockResolvedValue(buildKitResponse({ 'Cache-Control': 'max-age=300' }));
 
       const response = await fetchWithCache(KIT_URL, { cache, resolveHeaders: () => undefined });
@@ -303,7 +303,10 @@ describe(fetchWithCache, () => {
       await fetchWithCache(KIT_URL, { cache: buildCache(tree), resolveHeaders: () => undefined });
 
       mockFetch.mockResolvedValueOnce(buildKitResponse({ 'Cache-Control': 'max-age=300', ETag: '"v1"' }));
-      await fetchWithCache(KIT_URL, { cache: buildCache(tree, { reload: true }), resolveHeaders: () => undefined });
+      await fetchWithCache(KIT_URL, {
+        cache: buildCache(tree, { shouldReload: true }),
+        resolveHeaders: () => undefined,
+      });
 
       expect(mockFetch).toHaveBeenCalledTimes(2);
       expect(mockFetch).toHaveBeenLastCalledWith(KIT_URL, { headers: {}, signal: expect.any(AbortSignal) });
@@ -312,7 +315,10 @@ describe(fetchWithCache, () => {
     it('stores the response that it fetches', async () => {
       using tree = createCacheTree();
       mockFetch.mockResolvedValueOnce(buildKitResponse({ 'Cache-Control': 'max-age=300' }));
-      await fetchWithCache(KIT_URL, { cache: buildCache(tree, { reload: true }), resolveHeaders: () => undefined });
+      await fetchWithCache(KIT_URL, {
+        cache: buildCache(tree, { shouldReload: true }),
+        resolveHeaders: () => undefined,
+      });
 
       await fetchWithCache(KIT_URL, { cache: buildCache(tree), resolveHeaders: () => undefined });
 
@@ -324,8 +330,8 @@ describe(fetchWithCache, () => {
 // region | Helpers
 
 /** Returns cache settings rooted in a temp tree. */
-function buildCache(tree: TempTree, { reload = false }: { reload?: boolean } = {}): HttpCacheSettings {
-  return { dir: tree.dir, reload };
+function buildCache(tree: TempTree, { shouldReload = false }: { shouldReload?: boolean } = {}): HttpCacheSettings {
+  return { dir: tree.dir, shouldReload };
 }
 
 /** Returns a successful kit response with the given headers. */

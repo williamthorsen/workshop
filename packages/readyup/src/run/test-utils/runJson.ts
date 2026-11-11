@@ -11,9 +11,9 @@ import { createRunFakes, type RunFakes } from './createRunFakes.ts';
 /** The settings named by a test, over the defaults that the dispatch would have resolved. */
 export interface JsonRunOptions {
   detail?: JsonDetail;
-  diagnose?: boolean;
   failOn?: Severity;
   reportOn?: Severity;
+  shouldDiagnose?: boolean;
   unrunSources?: UnrunSource[];
 }
 
@@ -30,16 +30,21 @@ export interface JsonRunResult {
  */
 export async function runJson(
   kitEntries: ResolvedKitEntry[],
-  { detail = 'full', diagnose = false, failOn, reportOn, unrunSources = [] }: JsonRunOptions = {},
+  { detail = 'full', failOn, reportOn, shouldDiagnose = false, unrunSources = [] }: JsonRunOptions = {},
   fakes: Partial<RunFakes> = {},
 ): Promise<JsonRunResult> {
   using io = captureStdio();
 
   const remote = createUncachedRemoteContext();
-  const exitCode = await runJsonMode(kitEntries, { detail, diagnose, failOn, remote, reportOn, unrunSources }, false, {
-    ...createRunFakes(),
-    ...fakes,
-  });
+  const exitCode = await runJsonMode(
+    kitEntries,
+    { detail, failOn, remote, reportOn, shouldDiagnose, unrunSources },
+    false,
+    {
+      ...createRunFakes(),
+      ...fakes,
+    },
+  );
 
   return { exitCode, stdout: io.stdout, stderr: io.stderr };
 }

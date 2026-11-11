@@ -11,7 +11,7 @@ export interface HttpCacheSettings {
   dir: string;
 
   /** Whether to fetch unconditionally without reading stored entries; what the fetch returns is still stored. */
-  reload: boolean;
+  shouldReload: boolean;
 }
 
 export interface FetchWithCacheOptions {
@@ -44,7 +44,7 @@ export async function fetchWithCache(
     return sendRequest(url, resolveHeaders() ?? {}, timeoutMs);
   }
 
-  const storedEntry = cache.reload ? undefined : await readCacheEntry(cache.dir, url);
+  const storedEntry = cache.shouldReload ? undefined : await readCacheEntry(cache.dir, url);
   if (storedEntry !== undefined && isFresh(storedEntry)) {
     return buildCachedResponse(storedEntry.body);
   }

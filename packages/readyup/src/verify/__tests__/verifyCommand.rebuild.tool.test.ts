@@ -205,7 +205,7 @@ describe('verifyCommand --rebuild', () => {
   it('leaves every rebuild field out of the payload without the flag', async ({ temp }) => {
     temp.write('data.json', JSON.stringify({ name: 'demo', version: '2.0.0' }));
 
-    const { exitCode, stdout } = await runVerify({ rebuild: false });
+    const { exitCode, stdout } = await runVerify({ shouldRebuild: false });
 
     expect(exitCode).toBe(0);
     expect(readPayload(stdout).kits[0]).not.toHaveProperty('rebuildStatus');
@@ -287,10 +287,10 @@ function restampBundle(tree: TempTree, version: string): void {
  * `--json` sends the payload to stdout and every human-readable line to stderr, so a test reading the
  * remedies reads stderr.
  */
-async function runVerify({ rebuild = true, manifestPath = 'manifest.json' } = {}) {
+async function runVerify({ shouldRebuild = true, manifestPath = 'manifest.json' } = {}) {
   using io = captureStdio();
 
-  const rebuildFlag = rebuild ? ['--rebuild'] : [];
+  const rebuildFlag = shouldRebuild ? ['--rebuild'] : [];
   const exitCode = await verifyCommand(['--manifest', manifestPath, ...rebuildFlag, '--json']);
 
   return { exitCode, stderr: io.stderr, stdout: io.stdout };

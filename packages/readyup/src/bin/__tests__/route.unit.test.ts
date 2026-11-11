@@ -272,7 +272,7 @@ describe(routeCommand, () => {
     });
 
     it('classifies a config-load failure as a config error in the envelope', async () => {
-      mockParseRunArgs.mockReturnValue(parsedRunArgs({ json: true }));
+      mockParseRunArgs.mockReturnValue(parsedRunArgs({ isJson: true }));
       mockLoadConfig.mockRejectedValue(new Error('bad config'));
 
       const { exitCode, stdout } = await routeCli(['run', '--json']);
@@ -330,9 +330,9 @@ describe(routeCommand, () => {
         filePath: 'foo.ts',
         fromValue: undefined,
         urlValue: undefined,
-        jit: false,
+        isJit: false,
         internal: false,
-        json: false,
+        isJson: false,
       });
       mockRunCommand.mockResolvedValue(0);
 
@@ -352,9 +352,9 @@ describe(routeCommand, () => {
         filePath: undefined,
         fromValue: undefined,
         urlValue: undefined,
-        jit: false,
+        isJit: false,
         internal: false,
-        json: false,
+        isJson: false,
       });
       mockRunCommand.mockResolvedValue(0);
 

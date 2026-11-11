@@ -189,11 +189,11 @@ function renderResult(result: RdyResult, fixLocation: FixLocation): string[] {
  *
  * Each is present only when the result has it; a result with none yields an empty list.
  */
-function collectReasons(result: FailedResult, includeFix: boolean): string[] {
+function collectReasons(result: FailedResult, shouldIncludeFix: boolean): string[] {
   const reasons: string[] = [];
   if (result.detail !== null) reasons.push(result.detail);
   if (result.error !== null) reasons.push(`Error: ${result.error.message}`);
-  if (includeFix && result.fix !== null) reasons.push(getLayout().formatFix(result.fix));
+  if (shouldIncludeFix && result.fix !== null) reasons.push(getLayout().formatFix(result.fix));
   return reasons;
 }
 

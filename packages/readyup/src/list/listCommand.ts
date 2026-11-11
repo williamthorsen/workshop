@@ -45,29 +45,29 @@ export async function listCommand(args: string[]): Promise<number> {
 
   const configArg = values.config;
   const fromArg = values.from;
-  const json = values.json === true;
+  const isJson = values.json === true;
   const manifestArg = values.manifest;
-  const sources = values.sources === true;
+  const shouldSelectSources = values.sources === true;
   const recursive = values.recursive === true;
-  const showChecks = values.checks === true;
+  const shouldShowChecks = values.checks === true;
 
-  rejectConflictingFlags({ configArg, fromArg, manifestArg, recursive, sources });
-  const noCache = values['no-cache'] === true;
+  rejectConflictingFlags({ configArg, fromArg, manifestArg, recursive, shouldSelectSources });
+  const shouldBypassCache = values['no-cache'] === true;
 
   const warnings: ReportedWarning[] = [];
   let result: ListResult;
   try {
     result = await runSelectedMode(
-      { configArg, fromArg, manifestArg, noCache, recursive, showChecks, sources },
+      { configArg, fromArg, manifestArg, recursive, shouldBypassCache, shouldSelectSources, shouldShowChecks },
       warnings,
     );
   } finally {
     writeWarnings(warnings);
   }
 
-  writeHuman(result.view + '\n', json);
-  if (json) {
-    process.stdout.write(JSON.stringify(buildListOutput(result, showChecks)) + '\n');
+  writeHuman(result.view + '\n', isJson);
+  if (isJson) {
+    process.stdout.write(JSON.stringify(buildListOutput(result, shouldShowChecks)) + '\n');
   }
   return EXIT_OK;
 }
@@ -77,14 +77,14 @@ interface ListFlagConstraints {
   configArg: string | undefined;
   fromArg: string | undefined;
   manifestArg: string | undefined;
-  sources: boolean;
   recursive: boolean;
+  shouldSelectSources: boolean;
 }
 
 /** The `list` flags that select a listing and decide what it reads. */
 interface ListSelection extends ListFlagConstraints {
-  noCache: boolean;
-  showChecks: boolean;
+  shouldBypassCache: boolean;
+  shouldShowChecks: boolean;
 }
 
 // region | Helpers
@@ -93,7 +93,13 @@ interface ListSelection extends ListFlagConstraints {
  * Rejects a combination of flags naming listings that cannot be produced together, or naming a config that the
  * listing would not read.
  */
-function rejectConflictingFlags({ configArg, fromArg, manifestArg, recursive, sources }: ListFlagConstraints): void {
+function rejectConflictingFlags({
+  configArg,
+  fromArg,
+  manifestArg,
+  recursive,
+  shouldSelectSources,
+}: ListFlagConstraints): void {
   if (fromArg !== undefined && manifestArg !== undefined) {
     throw usageError('--from and --manifest are mutually exclusive');
   }
@@ -108,11 +114,11 @@ function rejectConflictingFlags({ configArg, fromArg, manifestArg, recursive, so
   }
 
   // `--sources` reports this directory's dependencies and configured sources, which no foreign source has.
-  if (sources && fromArg !== undefined) {
+  if (shouldSelectSources && fromArg !== undefined) {
     throw usageError('--sources and --from are mutually exclusive');
   }
 
-  if (sources && manifestArg !== undefined) {
+  if (shouldSelectSources && manifestArg !== undefined) {
     throw usageError('--sources and --manifest are mutually exclusive');
   }
 
@@ -131,8 +137,15 @@ function rejectConflictingFlags({ configArg, fromArg, manifestArg, recursive, so
 }
 
 /** Lists the kits in a `--from` source. */
-async function runFromMode(fromArg: string, showChecks: boolean, noCache: boolean): Promise<ListResult> {
-  const sourceKits = await collectSourceKits(parseFromArgument(fromArg), createRemoteFetchContext({ reload: noCache }));
+async function runFromMode(
+  fromArg: string,
+  shouldShowChecks: boolean,
+  shouldBypassCache: boolean,
+): Promise<ListResult> {
+  const sourceKits = await collectSourceKits(
+    parseFromArgument(fromArg),
+    createRemoteFetchContext({ shouldReload: shouldBypassCache }),
+  );
 
   const view =
     sourceKits.kind === 'remote'
@@ -140,7 +153,7 @@ async function runFromMode(fromArg: string, showChecks: boolean, noCache: boolea
           fromArg,
           kits: sourceKits.kits,
           manifestPath: sourceKits.manifestUrl,
-          showChecks,
+          shouldShowChecks,
         })
       : formatConsumerView({
           compiledKits: sourceKits.kits.map(({ name, checklists, checklistChecks }) => ({
@@ -150,50 +163,65 @@ async function runFromMode(fromArg: string, showChecks: boolean, noCache: boolea
           })),
           fromArg,
           kitsDir: path.relative(process.cwd(), sourceKits.kitsDir) || '.',
-          showChecks,
+          shouldShowChecks,
         });
 
   return { view, kits: sourceKits.kits };
 }
 
 /** Lists the kits declared by a manifest file. */
-function runManifestMode(manifestArg: string, showChecks: boolean): ListResult {
+function runManifestMode(manifestArg: string, shouldShowChecks: boolean): ListResult {
   const manifestPath = path.resolve(process.cwd(), manifestArg);
   const manifest = readManifest(manifestPath);
 
   const relPath = path.relative(process.cwd(), manifestPath);
   return {
-    view: formatManifestView({ kits: manifest.kits, manifestPath: relPath, showChecks }),
+    view: formatManifestView({ kits: manifest.kits, manifestPath: relPath, shouldShowChecks }),
     kits: manifest.kits.map((kit) => buildManifestEntry(kit, path.dirname(manifestPath))),
   };
 }
 
 /** Runs the listing that the flags select, adding the warnings that it raises to `warnings`. */
 async function runSelectedMode(selection: ListSelection, warnings: ReportedWarning[]): Promise<ListResult> {
-  const { configArg, fromArg, manifestArg, noCache, recursive, showChecks, sources } = selection;
+  const { configArg, fromArg, manifestArg, recursive, shouldBypassCache, shouldSelectSources, shouldShowChecks } =
+    selection;
 
   // The pair composes rather than conflicting: locality from one flag, provenance from the other.
-  if (sources && recursive) {
-    return runRecursiveSourcesMode(showChecks, createRemoteFetchContext({ reload: noCache }), warnings);
+  if (shouldSelectSources && recursive) {
+    return runRecursiveSourcesMode(
+      shouldShowChecks,
+      createRemoteFetchContext({ shouldReload: shouldBypassCache }),
+      warnings,
+    );
   }
 
   if (recursive) {
-    return runRecursiveMode(showChecks, warnings);
+    return runRecursiveMode(shouldShowChecks, warnings);
   }
 
   if (manifestArg !== undefined) {
-    return runManifestMode(manifestArg, showChecks);
+    return runManifestMode(manifestArg, shouldShowChecks);
   }
 
   if (fromArg !== undefined) {
-    return runFromMode(fromArg, showChecks, noCache);
+    return runFromMode(fromArg, shouldShowChecks, shouldBypassCache);
   }
 
-  if (sources) {
-    return runSourcesMode(showChecks, configArg, createRemoteFetchContext({ reload: noCache }), warnings);
+  if (shouldSelectSources) {
+    return runSourcesMode(
+      shouldShowChecks,
+      configArg,
+      createRemoteFetchContext({ shouldReload: shouldBypassCache }),
+      warnings,
+    );
   }
 
-  return runOwnerMode(showChecks, configArg, createRemoteFetchContext({ reload: noCache }), warnings);
+  return runOwnerMode(
+    shouldShowChecks,
+    configArg,
+    createRemoteFetchContext({ shouldReload: shouldBypassCache }),
+    warnings,
+  );
 }
 
 /**
@@ -205,7 +233,7 @@ async function runSelectedMode(selection: ListSelection, warnings: ReportedWarni
  * and so is every repository that the config names.
  */
 async function runSourcesMode(
-  showChecks: boolean,
+  shouldShowChecks: boolean,
   configPath: string | undefined,
   remote: RemoteFetchContext,
   warnings: ReportedWarning[],
@@ -220,7 +248,7 @@ async function runSourcesMode(
   warnings.push(...sourceWarnings);
 
   return {
-    view: formatSourcesView({ groups, showChecks }),
+    view: formatSourcesView({ groups, shouldShowChecks }),
     kits: groups.flatMap((group) => group.kits.map((kit) => buildSourceKitEntry(kit, group.configured))),
   };
 }

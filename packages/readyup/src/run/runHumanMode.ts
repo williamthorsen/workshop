@@ -217,7 +217,7 @@ interface KitInProgress {
   hasDroppedBlock: boolean;
   kitSegments: BreadcrumbSegment[];
   rows: SummaryRow[];
-  showChecklistSegment: boolean;
+  shouldShowChecklistSegment: boolean;
   thresholds: { failOn: Severity; reportOn: Severity };
   willTabulate: boolean;
   /** Failed checks that meet the failure threshold but not the reporting threshold. */
@@ -240,7 +240,7 @@ function reportChecklist(
     reportOn,
   });
 
-  const segments: BreadcrumbSegment[] = kit.showChecklistSegment
+  const segments: BreadcrumbSegment[] = kit.shouldShowChecklistSegment
     ? [...kit.kitSegments, { role: 'checklist', text: checklist.name }]
     : kit.kitSegments;
 
@@ -299,7 +299,7 @@ function startKit(event: Extract<KitRunEvent, { kind: 'kitLoaded' }>, isMultiKit
     hasDroppedBlock: false,
     kitSegments: buildKitSegments(entry, isMultiKit),
     rows: [],
-    showChecklistSegment: checklists.length > 1,
+    shouldShowChecklistSegment: checklists.length > 1,
     thresholds,
     // A block may go unwritten only when the summary table will show the row that it leaves behind. A run of
     // one checklist tabulates nothing, so its block is written however little it has to say.
