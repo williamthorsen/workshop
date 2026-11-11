@@ -20,8 +20,17 @@ describe(findNearestWord, () => {
     { label: 'the empty string', input: '' },
     { label: 'a long flag', input: '--json' },
     { label: 'a short flag', input: '-h' },
+    { label: 'a two-letter typo, which is as many edits away as it has characters', input: 'ls' },
   ])('returns undefined for $label', ({ input }) => {
     expect(findNearestWord(input, COMMANDS)).toBeUndefined();
+  });
+
+  it('prefers an abbreviation over a nearer typo', () => {
+    expect(findNearestWord('lis', ['lit', 'listing'])).toBe('listing');
+  });
+
+  it('prefers the shortest abbreviated candidate', () => {
+    expect(findNearestWord('hel', ['hello', 'help'])).toBe('help');
   });
 
   it('returns undefined when the candidate list is empty', () => {

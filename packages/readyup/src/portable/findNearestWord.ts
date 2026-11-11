@@ -1,57 +1,31 @@
-/** Edits (insertions, deletions, or substitutions) that a word may be from a candidate and still match it. */
-const MAX_TYPO_DISTANCE = 2;
+import { findCloseMatch } from '@williamthorsen/toolbelt.strings/candidate';
 
 /**
  * Finds the candidate that a bare word most likely misspells, or `undefined` when none is close enough.
  *
- * A word qualifies by abbreviating a candidate or by being within a couple of edits of one, so a
- * transposed or wrong letter is caught alongside a truncation. Ties go to the nearest candidate and then
- * to the earlier one in `candidates`. An alphabetized list yields an alphabetical tie-break. Words
- * starting with `-` are flags, which the argument parser reports on its own.
+ * A word that abbreviates a candidate matches the shortest such candidate, before any typo is considered. Otherwise a
+ * word matches the candidate within two edits, counting a transposition as one, provided that it is fewer edits away
+ * than the word has characters, so `ls` is too short to match `list`. Ties go to the earlier candidate in
+ * `candidates`, so an alphabetized list yields an alphabetical tie-break. Words starting with `-` are flags, which the
+ * argument parser reports on its own.
  */
 export function findNearestWord(input: string, candidates: readonly string[]): string | undefined {
   if (input === '' || input.startsWith('-')) return undefined;
 
-  let best: { candidate: string; distance: number } | undefined;
-  for (const candidate of candidates) {
-    const distance = measureEditDistance(input, candidate);
-    const isCandidate = distance <= MAX_TYPO_DISTANCE || candidate.startsWith(input);
-    if (isCandidate && (best === undefined || distance < best.distance)) {
-      best = { candidate, distance };
-    }
-  }
-  return best?.candidate;
+  return findShortestAbbreviated(input, candidates) ?? findCloseMatch(input, candidates);
 }
 
 // region | Helpers
 
-/** Computes the Levenshtein edit distance between two words. */
-function measureEditDistance(source: string, target: string): number {
-  const targetCharacters = Array.from(target);
-
-  // Each row stores the distance from one prefix of the source to every non-empty prefix of the
-  // target. Column zero is kept in a scalar rather than the row because its value is always the
-  // row's own index, which keeps every read a plain iteration.
-  let previousRow = targetCharacters.map((character, index) => ({ character, distance: index + 1 }));
-
-  for (const [rowIndex, sourceCharacter] of Array.from(source).entries()) {
-    let diagonal = rowIndex;
-    let left = rowIndex + 1;
-    const currentRow: typeof previousRow = [];
-
-    for (const { character, distance: above } of previousRow) {
-      const substitution = diagonal + (sourceCharacter === character ? 0 : 1);
-      const distance = Math.min(above + 1, left + 1, substitution);
-      currentRow.push({ character, distance });
-      diagonal = above;
-      left = distance;
+/** Returns the shortest candidate that starts with `input`, ties going to the earlier one. */
+function findShortestAbbreviated(input: string, candidates: readonly string[]): string | undefined {
+  let shortest: string | undefined;
+  for (const candidate of candidates) {
+    if (candidate.startsWith(input) && (shortest === undefined || candidate.length < shortest.length)) {
+      shortest = candidate;
     }
-
-    previousRow = currentRow;
   }
-
-  // An empty target leaves every row empty, and the distance is then the source's length alone.
-  return previousRow.at(-1)?.distance ?? source.length;
+  return shortest;
 }
 
 // endregion | Helpers
