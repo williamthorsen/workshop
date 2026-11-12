@@ -5,15 +5,8 @@ export function allowDirenv(dir: string): string | undefined {
   return describeDirenvRun(runDirenv(['allow', dir]));
 }
 
-/** Reports whether direnv can be run on this machine. */
-export function isDirenvInstalled(): boolean {
-  return describeDirenvRun(runDirenv(['version'])) !== 'absent';
-}
-
-// region | Helpers
-
 /** Returns `'absent'` for a run that found no direnv, the reason for another failure, or `undefined` on success. */
-function describeDirenvRun(
+export function describeDirenvRun(
   run: Pick<SpawnSyncReturns<string>, 'error' | 'signal' | 'status' | 'stderr'>,
 ): string | undefined {
   if (run.error !== undefined) {
@@ -23,6 +16,13 @@ function describeDirenvRun(
   if (run.status === 0) return undefined;
   return run.stderr.trim().split('\n').at(-1) || `direnv exited ${run.status ?? 'without a status'}`;
 }
+
+/** Reports whether direnv can be run on this machine. */
+export function isDirenvInstalled(): boolean {
+  return describeDirenvRun(runDirenv(['version'])) !== 'absent';
+}
+
+// region | Helpers
 
 /** Runs direnv with its output captured. */
 function runDirenv(args: readonly string[]): SpawnSyncReturns<string> {
