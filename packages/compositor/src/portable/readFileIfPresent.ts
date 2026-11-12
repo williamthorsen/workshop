@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 
-import { reportsMissingPath } from './reportsMissingPath.ts';
+import { isMissingPathError } from '@williamthorsen/toolbelt.errors/candidate';
 
 /**
  * Reads `filePath`, resolving to `undefined` when it is absent.
@@ -12,7 +12,7 @@ export async function readFileIfPresent(filePath: string): Promise<string | unde
   try {
     return await readFile(filePath, 'utf8');
   } catch (error: unknown) {
-    if (reportsMissingPath(error)) {
+    if (isMissingPathError(error)) {
       return undefined;
     }
     throw error;

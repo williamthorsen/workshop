@@ -1,10 +1,11 @@
 import { mkdir, readFile, rm, rmdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
+import { isMissingPathError } from '@williamthorsen/toolbelt.errors/candidate';
+
 import { decodeBlob } from '../portable/decodeBlob.ts';
 import { expandPath } from '../portable/expandPath.ts';
 import { hashBytes } from '../portable/hash-content.ts';
-import { reportsMissingPath } from '../portable/reportsMissingPath.ts';
 import type { Blob, FileEntry } from '../schemas/file-schemas.ts';
 import type { Plan } from '../schemas/plan-schemas.ts';
 import type { Hash, TargetId } from '../schemas/scalar-schemas.ts';
@@ -147,7 +148,7 @@ async function hashIfPresent(destination: string): Promise<Hash | undefined> {
   try {
     return hashBytes(await readFile(destination));
   } catch (error: unknown) {
-    if (reportsMissingPath(error)) {
+    if (isMissingPathError(error)) {
       return undefined;
     }
     throw error;
@@ -204,7 +205,7 @@ async function removeDir(dir: string): Promise<boolean> {
     await rmdir(dir);
     return true;
   } catch (error: unknown) {
-    if (reportsMissingPath(error) || reportsPopulatedDirectory(error)) {
+    if (isMissingPathError(error) || reportsPopulatedDirectory(error)) {
       return false;
     }
     throw error;
