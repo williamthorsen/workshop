@@ -30,6 +30,12 @@ repos:
     stack: [nextjs, react]
 `;
 
+/** `REGISTRY` with a prefix on `alpha` and on `gamma`. */
+const PREFIXED_REGISTRY = REGISTRY.replace('    repo: owner/alpha\n', '    repo: owner/alpha\n    prefix: A\n').replace(
+  '    repo: owner/gamma\n',
+  '    repo: owner/gamma\n    prefix: G\n',
+);
+
 /** Clones whose files signal exactly the stack that `REGISTRY` declares. */
 const CURRENT_CLONES = {
   alpha: buildClone({ 'package.json': { '@williamthorsen/nmr': '1' } }),
@@ -97,6 +103,24 @@ describe('REPO_COMMANDS', () => {
           { name: 'beta', path: '~/repos/beta', repo: 'owner/beta', tags: ['live', 'vault'], visibility: 'private' },
         ],
       });
+    });
+
+    it('emits the prefix of an entry that declares one', async () => {
+      const { result } = await run(['list', '--json'], { registry: PREFIXED_REGISTRY });
+      expect(JSON.parse(result.stdout)).toStrictEqual({
+        repos: [
+          expect.objectContaining({ name: 'alpha', prefix: 'A' }),
+          expect.not.objectContaining({ prefix: expect.anything() }),
+          expect.objectContaining({ name: 'gamma', prefix: 'G' }),
+        ],
+      });
+    });
+
+    it('refuses a registry in which two prefixes differ only in case', async () => {
+      const registry = PREFIXED_REGISTRY.replace('    repo: owner/beta\n', '    repo: owner/beta\n    prefix: a\n');
+      const { result } = await run(['list'], { registry });
+      expect(result.status).toBe(1);
+      expect(result.stderr).toContain("entries 1 (alpha) and 2 (beta) declare the same prefix: 'A' and 'a'");
     });
 
     it('narrows by visibility and by runner', async () => {
@@ -211,6 +235,18 @@ describe('REPO_COMMANDS', () => {
         REGISTRY.replace('    runner: imac2\n', '').replace(
           '    visibility: private\n    tags: [live, vault]\n',
           '    visibility: public\n    runner: m1\n    tags: [live, vault]\n    stack: [vercel]\n',
+        ),
+      );
+    });
+
+    it('keeps the prefix of an entry whose stack, visibility, and runner it rewrites', async () => {
+      const clones = { ...CURRENT_CLONES, alpha: buildClone({}) };
+      const github = { ...CURRENT_GITHUB, 'owner/alpha': facts('public', 'm1') };
+      const { registryText } = await run(['scan', '--write'], { clones, github, registry: PREFIXED_REGISTRY });
+      expect(registryText).toBe(
+        PREFIXED_REGISTRY.replace(
+          '    visibility: private\n    runner: imac2\n    tags: [live]\n    stack: [nmr]\n',
+          '    visibility: public\n    runner: m1\n    tags: [live]\n',
         ),
       );
     });

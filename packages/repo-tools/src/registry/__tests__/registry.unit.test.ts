@@ -103,10 +103,10 @@ describe(parseRegistry, () => {
   });
 
   it.each([
-    ['empty', "''"],
-    ['containing a space', 'T R'],
-    ['containing a tab', '"T\\tR"'],
-    ['containing a period', 'T.R'],
+    ['that is empty', "''"],
+    ['that contains a space', 'T R'],
+    ['that contains a tab', '"T\\tR"'],
+    ['that contains a period', 'T.R'],
   ])('refuses a prefix %s', (_, value) => {
     expect(parseRegistry(`repos:\n  - path: ~/a\n  - path: ~/b\n    prefix: ${value}\n`)).toBe(
       "entry 2: 'prefix' must be a non-empty string without whitespace or a period",
