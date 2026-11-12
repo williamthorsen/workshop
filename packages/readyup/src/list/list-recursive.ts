@@ -10,14 +10,14 @@ import type { RemoteFetchContext } from '../remote/createRemoteFetchContext.ts';
 import type { JsonListKitEntry } from '../schemas/listOutputSchema.ts';
 import { collectSourceGroups } from '../sources/collectSourceGroups.ts';
 import { collectCompiledKits } from './collectCompiledKits.ts';
+import type { ListResult } from './list-output.ts';
 import {
   formatRecursiveSourcesView,
   formatRecursiveView,
   type ProjectSourcesView,
   type RecursiveProjectView,
   resolveCompiledStyle,
-} from './formatList.ts';
-import type { ListResult } from './list-output.ts';
+} from './recursive-views.ts';
 import { buildSourceKitEntry } from './source-kit-entries.ts';
 
 /**

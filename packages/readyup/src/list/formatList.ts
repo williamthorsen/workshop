@@ -1,72 +1,18 @@
-/* eslint-disable max-lines -- #829 splits this module. */
-import path from 'node:path';
-
-import { KITS_DIR } from '../kits/kitsDir.ts';
 import { getLayout } from '../layout/engine.ts';
 import type { TokenName } from '../layout/formatter.ts';
-import type { RdyManifestChecklistChecks } from '../manifest/manifestSchema.ts';
 import type { SourceGroup } from '../sources/collectSourceGroups.ts';
-import type { SourceKit } from '../sources/expandConfiguredSources.ts';
-
-/** Blank line separating one listed section from the next. A section supplies none of its own. */
-const SECTION_SEPARATOR = '\n\n';
-
-/** Detail marking a package that the readyup config's `sources` list does not name. */
-const UNCONFIGURED_DETAIL = 'not listed in the readyup config';
-
-/**
- * Command that runs a kit by file, which takes no kit name and so selects checklists by flag alone.
- *
- * The kits of another project below the sweep root are reachable only this way: Naming one resolves it
- * against the config of the reader's working directory, which is not the config that set where the kit was
- * compiled.
- */
-const FILE_RUN_COMMAND = 'rdy run --file <file path> [--checklists <checklist>,...]';
-
-// -- Kit rows --
-
-/** The detail appended to a kit whose manifest records its checklists without their check names. */
-const UNRECORDED_CHECKS_DETAIL = '(checks not recorded; recompile to record them)';
-
-/** One listed kit, with the description and checklist names that its manifest records. */
-export interface KitView {
-  name: string;
-  description?: string | undefined;
-  checklists?: readonly string[] | undefined;
-  checklistChecks?: readonly RdyManifestChecklistChecks[] | undefined;
-}
-
-// -- Compiled-section style discriminants --
-
-export interface LocalConventionStyle {
-  kind: 'local-convention';
-}
-
-export interface CustomOutDirStyle {
-  kind: 'custom-outDir';
-  outDirRel: string;
-}
-
-export type CompiledStyle = LocalConventionStyle | CustomOutDirStyle;
-
-/**
- * Determines the compiled-section display style for a project's `outDir`.
- *
- * Whether an `outDir` is the convention is a fact about the project, so it is settled against
- * `projectDir`. Because the path shown to a reader has to resolve from the reader's working directory, it is
- * named against `renderFrom`. They coincide for a listing of the working directory, and diverge for a sweep rendering
- * another project's kits.
- */
-export function resolveCompiledStyle(projectDir: string, outDir: string, renderFrom: string): CompiledStyle {
-  const resolvedOutDir = path.resolve(projectDir, outDir);
-  const defaultOutDir = path.resolve(projectDir, KITS_DIR);
-
-  if (resolvedOutDir === defaultOutDir) {
-    return { kind: 'local-convention' };
-  }
-
-  return { kind: 'custom-outDir', outDirRel: path.relative(renderFrom, resolvedOutDir) };
-}
+import {
+  buildKitSelectionHint,
+  buildRunLine,
+  buildSourceHint,
+  buildSourceLabel,
+  formatKitRows,
+  type KitView,
+  resolveSourceToken,
+  SECTION_SEPARATOR,
+  toKitView,
+  UNCONFIGURED_DETAIL,
+} from './list-rows.ts';
 
 // -- Owner view --
 
@@ -207,73 +153,6 @@ export function formatSourcesView({ groups, shouldShowChecks = false }: SourcesV
     : groups.map((group) => formatSourceBlock(group, shouldShowChecks)).join(SECTION_SEPARATOR);
 }
 
-// -- Recursive view --
-
-/** One discovered project's contribution to a recursive listing. */
-export interface RecursiveProjectView {
-  /** Path relative to the sweep root, POSIX-separated; `'.'` for the root itself. */
-  dir: string;
-  compiledKits: KitView[];
-  /** Resolved against the sweep root, so a custom-`outDir` row names a path that works from there. */
-  compiledStyle: CompiledStyle;
-}
-
-interface RecursiveViewOptions {
-  projects: RecursiveProjectView[];
-  shouldShowChecks?: boolean;
-}
-
-/**
- * Formats the repo-wide output: one block per project, headed by the directory in which its kits live.
- *
- * A caller may hand over every project found by discovery, because a project with nothing compiled
- * contributes no block at all, heading included. A sweep left with no block returns the empty-sweep message.
- */
-export function formatRecursiveView({ projects, shouldShowChecks = false }: RecursiveViewOptions): string {
-  const blocks = projects
-    .filter((project) => project.compiledKits.length > 0)
-    .map((project) => formatProjectBlock(project, shouldShowChecks));
-
-  return blocks.length === 0 ? formatEmpty('recursive') : blocks.join(SECTION_SEPARATOR);
-}
-
-// -- Repo-wide dependency view --
-
-/** One discovered project's contribution to a repo-wide dependency listing. */
-export interface ProjectSourcesView {
-  /** Path relative to the sweep root, POSIX-separated; `'.'` for the root itself. */
-  dir: string;
-  groups: SourceGroup[];
-}
-
-interface RecursiveSourcesViewOptions {
-  projects: ProjectSourcesView[];
-  shouldShowChecks?: boolean;
-}
-
-/**
- * Formats the repo-wide dependency output: each project's directory, then a block per kit-publishing dependency.
- *
- * Nesting comes from the glyph and the indentation rather than from a heading rule. The two heading rules
- * that this view would otherwise need differ only in stroke weight, and the glyphs already distinguish the
- * roles that they would mark; in plain style, whose role glyphs are empty, the indent alone shows the same
- * three levels.
- *
- * A project with no kit-publishing dependency contributes no block at all, its directory line included, so
- * a caller may hand over every project found by discovery. A sweep left with no block returns the empty
- * message.
- */
-export function formatRecursiveSourcesView({
-  projects,
-  shouldShowChecks = false,
-}: RecursiveSourcesViewOptions): string {
-  const blocks = projects
-    .filter((project) => project.groups.length > 0)
-    .map((project) => formatProjectSourcesBlock(project, shouldShowChecks));
-
-  return blocks.length === 0 ? formatEmpty('recursive-sources') : blocks.join(SECTION_SEPARATOR);
-}
-
 // -- Empty messages --
 
 /** Returns the "no kits found" message that suits the given mode. */
@@ -341,79 +220,6 @@ export function formatManifestView({
 
 // region | Helpers
 
-/** Returns `hint` wrapped in brackets when `kits` contains a default, which a run naming no kit selects. */
-function bracketIfDefault(hint: string, kits: readonly string[]): string {
-  return kits.includes('default') ? `[${hint}]` : hint;
-}
-
-/**
- * Returns the kit placeholder for a source that selects kits by name alone, bracketed when `kits` contains a default.
- *
- * `--sources` is that source: It rejects a checklist filter, since the kit that it names may be published by
- * several configured sources.
- */
-function buildKitHint(kits: readonly string[]): string {
-  return bracketIfDefault('<kit>', kits);
-}
-
-/**
- * Returns the kit placeholder with the checklist filter that may follow it, bracketed when `kits` contains a default.
- *
- * The bracket wraps the filter too, because a filter needs a kit name before it.
- */
-function buildKitSelectionHint(kits: readonly string[]): string {
-  return bracketIfDefault('<kit>[:<checklist>,...]', kits);
-}
-
-/** Returns the command that runs a project's kits from the reader's working directory. */
-function buildProjectHint(project: RecursiveProjectView): string {
-  if (project.compiledStyle.kind === 'custom-outDir') {
-    return FILE_RUN_COMMAND;
-  }
-
-  const selectionHint = buildKitSelectionHint(project.compiledKits.map((kit) => kit.name));
-  return project.dir === '.' ? `rdy run ${selectionHint}` : `rdy run --from ${project.dir} ${selectionHint}`;
-}
-
-/**
- * Returns what a dependency command needs to run from the sweep root, which is an empty string at the root itself.
- *
- * A workspace's own dependency is reachable from nowhere else: `rdy run` takes no directory, and `--from`
- * names a kit source rather than a working directory.
- */
-function buildProjectPrefix(dir: string): string {
-  return dir === '.' ? '' : `cd ${dir} && `;
-}
-
-/**
- * Returns the indented line naming the command that runs the kits beneath it.
- *
- * The label separates the line from the kit rows sharing its column: The role glyphs shown by those rows
- * are empty in plain style, so without it the command looks like one more kit row.
- */
-function buildRunLine(command: string, depth = 1): string {
-  return `${getLayout().indent(depth)}To run: ${command}`;
-}
-
-/**
- * Returns the command that runs a source's kits, which also marks the source as configured.
- *
- * `rdy run --sources` includes only the sources named by the config, and every other package is reachable
- * by the `--from` source naming it directly. So one hint covers both what to run and whether a `--sources` run
- * would include it, and every kit listed stays reachable by the command above it.
- */
-function buildSourceHint(group: SourceGroup): string {
-  const kitNames = group.kits.map((kit) => kit.kitName);
-  return group.configured
-    ? `rdy run --sources ${buildKitHint(kitNames)}`
-    : `rdy run --from ${group.source} ${buildKitSelectionHint(kitNames)}`;
-}
-
-/** Returns a package's name with the version that its own manifest records, if it records one, or a repository's spelling. */
-function buildSourceLabel(group: SourceGroup): string {
-  return group.version === undefined ? group.name : `${group.name}@${group.version}`;
-}
-
 /**
  * Returns the section naming installed packages that publish kits not listed in the config.
  *
@@ -426,71 +232,6 @@ function formatAvailableSection(availableSources: string[]): string {
   const instruction = `${getLayout().indent(1)}Add to "sources" in the readyup config, e.g. ${example}`;
   const items = availableSources.map((name) => ({ name }));
   return formatSection('Available', instruction, items, 'sourcePackage');
-}
-
-/**
- * Returns a kit's line, then a line one level deeper for each checklist that its manifest records.
- *
- * The checklists keep the manifest's order, which is the order in which the kit declares and runs them. With
- * `shouldShowChecks`, each checklist is followed by its check names one level deeper still, matched to it by
- * position, and a kit whose manifest records checklists without check names says so in its line's detail.
- */
-function formatKitRows(
-  kit: KitView,
-  token: TokenName,
-  { depth = 0, shouldShowChecks = false }: { depth?: number; shouldShowChecks?: boolean } = {},
-): string[] {
-  const checklists = kit.checklists ?? [];
-  const isUnrecorded = shouldShowChecks && checklists.length > 0 && kit.checklistChecks === undefined;
-  const detail = [kit.description, isUnrecorded ? UNRECORDED_CHECKS_DETAIL : undefined]
-    .filter((part) => part !== undefined)
-    .join(' ');
-  const kitLine = getLayout().formatCheckLine({ token, name: kit.name, depth, ...(detail !== '' && { detail }) });
-  const checklistLines = checklists.flatMap((name, index) => [
-    getLayout().formatCheckLine({ token: 'checklist', name, depth: depth + 1 }),
-    ...(shouldShowChecks ? (kit.checklistChecks?.[index]?.checks ?? []) : []).map((checkName) =>
-      getLayout().formatCheckLine({ token: 'check', name: checkName, depth: depth + 2 }),
-    ),
-  ]);
-
-  return [kitLine, ...checklistLines];
-}
-
-/** Returns one source's line under a project's directory, the command running its kits, and a line per kit. */
-function formatNestedSourceBlock(group: SourceGroup, runPrefix: string, shouldShowChecks: boolean): string {
-  const sourceLine = getLayout().formatCheckLine({
-    token: resolveSourceToken(group.kind),
-    name: buildSourceLabel(group),
-    depth: 1,
-    ...(!group.configured && { detail: UNCONFIGURED_DETAIL }),
-  });
-  const items = group.kits.flatMap((kit) => formatKitRows(toKitView(kit), 'kit', { depth: 2, shouldShowChecks }));
-
-  return [sourceLine, buildRunLine(`${runPrefix}${buildSourceHint(group)}`, 2), ...items].join('\n');
-}
-
-/** Returns one project's heading, the command running its kits, and a line per kit. */
-function formatProjectBlock(project: RecursiveProjectView, shouldShowChecks: boolean): string {
-  const heading = getLayout().formatBreadcrumb([{ role: 'sourceDirectory', text: `${project.dir}/` }], 'kit');
-  const items = project.compiledKits.flatMap((kit) =>
-    formatKitRows({ ...kit, name: resolveKitLabel(project.compiledStyle, kit.name) }, 'kit', { shouldShowChecks }),
-  );
-
-  return [heading, buildRunLine(buildProjectHint(project)), ...items].join('\n');
-}
-
-/**
- * Returns one project's directory line, then a block per kit-publishing dependency beneath it.
- *
- * The directory line is directly above its first source, so a reader takes the blank lines within the
- * block as separating one source from the next rather than the directory from what it heads.
- */
-function formatProjectSourcesBlock(project: ProjectSourcesView, shouldShowChecks: boolean): string {
-  const directory = getLayout().formatCheckLine({ token: 'sourceDirectory', name: `${project.dir}/` });
-  const runPrefix = buildProjectPrefix(project.dir);
-  const blocks = project.groups.map((group) => formatNestedSourceBlock(group, runPrefix, shouldShowChecks));
-
-  return [directory, blocks.join(SECTION_SEPARATOR)].join('\n');
 }
 
 /**
@@ -522,28 +263,6 @@ function formatSourceBlock(group: SourceGroup, shouldShowChecks: boolean): strin
   const items = group.kits.flatMap((kit) => formatKitRows(toKitView(kit), 'kit', { shouldShowChecks }));
 
   return [heading, buildRunLine(buildSourceHint(group)), ...items].join('\n');
-}
-
-/** Returns what a kit's row is named: its bare name, or the path needed by a `--file` invocation. */
-function resolveKitLabel(compiledStyle: CompiledStyle, name: string): string {
-  return compiledStyle.kind === 'custom-outDir' ? `${compiledStyle.outDirRel}/${name}.js` : name;
-}
-
-/**
- * Returns the glyph token that heads a source of the given kind: a package's, or a remote location's for a repository.
- */
-function resolveSourceToken(kind: SourceGroup['kind']): 'sourcePackage' | 'sourceRemote' {
-  return kind === 'repository' ? 'sourceRemote' : 'sourcePackage';
-}
-
-/** Returns the row that a source's kit is listed as, named by the kit alone. */
-function toKitView(kit: SourceKit): KitView {
-  return {
-    name: kit.kitName,
-    description: kit.description,
-    checklists: kit.checklists,
-    checklistChecks: kit.checklistChecks,
-  };
 }
 
 // endregion | Helpers

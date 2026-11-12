@@ -1,6 +1,6 @@
 import type { SourceGroup } from '../../sources/collectSourceGroups.ts';
 import type { SourceKit } from '../../sources/expandConfiguredSources.ts';
-import type { ProjectSourcesView } from '../formatList.ts';
+import type { ProjectSourcesView } from '../recursive-views.ts';
 
 /**
  * Builds a configured package group containing the named kits, each undescribed.

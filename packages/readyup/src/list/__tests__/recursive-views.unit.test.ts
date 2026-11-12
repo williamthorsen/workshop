@@ -1,8 +1,15 @@
+import path from 'node:path';
+
 import { afterEach, describe, expect, it } from 'vitest';
 
 import { setStyle } from '../../layout/engine.ts';
 import { richFormatter } from '../../layout/formatter.ts';
-import { formatRecursiveSourcesView, formatRecursiveView, type RecursiveProjectView } from '../formatList.ts';
+import {
+  formatRecursiveSourcesView,
+  formatRecursiveView,
+  type RecursiveProjectView,
+  resolveCompiledStyle,
+} from '../recursive-views.ts';
 import { buildGroup, buildKit, buildProjectSources } from '../test-utils/source-group-fixtures.ts';
 
 const COMPILED = richFormatter.tokens.kit.text;
@@ -329,6 +336,32 @@ describe(formatRecursiveSourcesView, () => {
     });
 
     expect(result.split('\n').slice(-2)).toStrictEqual(['                  smoke', '                        boot']);
+  });
+});
+
+describe(resolveCompiledStyle, () => {
+  it('reports the local convention when outDir is the default kits directory', () => {
+    const style = resolveCompiledStyle('/repo', '.readyup/kits', '/repo');
+
+    expect(style).toStrictEqual({ kind: 'local-convention' });
+  });
+
+  it('reports a custom outDir relative to the directory being rendered from', () => {
+    const style = resolveCompiledStyle('/repo', 'dist/kits', '/repo');
+
+    expect(style).toStrictEqual({ kind: 'custom-outDir', outDirRel: path.join('dist', 'kits') });
+  });
+
+  it('settles the convention against the project while naming the path against the sweep root', () => {
+    const style = resolveCompiledStyle('/repo/packages/tooling', 'dist/kits', '/repo');
+
+    expect(style).toStrictEqual({ kind: 'custom-outDir', outDirRel: path.join('packages/tooling/dist/kits') });
+  });
+
+  it('reports the local convention for a nested project on the default outDir', () => {
+    const style = resolveCompiledStyle('/repo/packages/ui', '.readyup/kits', '/repo');
+
+    expect(style).toStrictEqual({ kind: 'local-convention' });
   });
 });
 
