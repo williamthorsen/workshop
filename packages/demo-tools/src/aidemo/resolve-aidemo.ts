@@ -2,8 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { describeError } from '@williamthorsen/toolbelt.errors';
-
-import { isRecord } from '../portable/is-record.ts';
+import { isRecord } from '@williamthorsen/toolbelt.objects';
 
 /**
  * The oldest aidemo whose `voice.json` records each scene's provider and voice, which an archived take's provenance

@@ -2,10 +2,10 @@ import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
+import { isRecord } from '@williamthorsen/toolbelt.objects';
 import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
-import { isRecord } from '../../portable/is-record.ts';
 import { commitAll } from '../../test-utils/scratch-git-repo.ts';
 import { createDemoRepo } from '../test-utils/create-demo-repo.ts';
 import { runThorDemo } from '../test-utils/run-thor-demo.ts';
