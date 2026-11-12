@@ -22,7 +22,7 @@ export function buildClone(files: Record<string, string | Record<string, string>
 
 /**
  * Returns adapters over clones at `~/repos/<name>`, with the given origins and the registry's branch. Every clone has
- * no linked worktrees, and every rename fails, so that a test reaching one fails visibly.
+ * no linked worktrees, direnv is not installed, and every rename fails, so that a test reaching one fails visibly.
  */
 export function buildFakeAdapters(
   clones: Record<string, FakeClone>,
@@ -33,7 +33,7 @@ export function buildFakeAdapters(
     allowDirenv: () => 'not exercised',
     isDirectory: (dir) => clones[cloneName(dir) ?? ''] !== undefined,
     isDirenvInstalled: () => false,
-    listDirectory: () => 'not exercised',
+    listDirectory: (dir) => (dir === `${FAKE_HOME}/repos` ? Object.keys(clones) : []),
     listTrackedFiles: (dir) => clones[cloneName(dir) ?? '']?.tracked ?? 'fatal: not a git repository',
     listWorktrees: () => [],
     makeDirectory: () => 'not exercised',

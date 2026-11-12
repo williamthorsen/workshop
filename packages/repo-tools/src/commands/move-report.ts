@@ -1,4 +1,5 @@
 import { type Move, type MovePlan, planMove } from '../move/move-plan.ts';
+import { settleMove } from '../move/settle-move.ts';
 import { expandTilde, formatDisplayPath } from '../portable/paths.ts';
 import { findReferences } from '../references/find-references.ts';
 import type { RegistryEntry } from '../registry/registry.ts';
@@ -53,6 +54,28 @@ export function printReferences(
   }
   if (report.references.length > 0) {
     run.stderr(`${PROG}: ${report.references.length} remaining references to the old paths`);
+  }
+}
+
+/**
+ * Settles what the moves left behind, given the worktrees that moved and the top-level renames, and prints each action
+ * on stdout and each problem on stderr.
+ */
+export function printSettlement(
+  run: VerbRun,
+  relocated: readonly Move[],
+  moves: readonly Move[],
+  isDryRun: boolean,
+): void {
+  const lines = settleMove(relocated, moves, {
+    adapters: run.adapters,
+    home: run.home,
+    isDryRun,
+    sessionsDir: run.sessionsDir,
+  });
+  for (const line of lines) {
+    if (line.stream === 'stdout') run.stdout(line.text);
+    else run.stderr(`${PROG}: ${line.text}`);
   }
 }
 

@@ -3,10 +3,14 @@ import path from 'node:path';
 import type { CloneAdapters } from '../commands/verb-run.ts';
 import type { Move, MovePlan } from './move-plan.ts';
 
-/** What `executeMove` did: the renames that completed, those that it did not attempt, and the first failure. */
+/**
+ * What `executeMove` did: the renames that completed, those that it did not attempt, and the first failure, with the
+ * worktrees that moved: each completed rename's, and each one inside the primary once the primary has moved.
+ */
 export interface MoveOutcome {
   completed: Move[];
   failure: string | undefined;
+  relocated: Move[];
   remaining: Move[];
 }
 
@@ -31,7 +35,12 @@ export function executeMove(plan: MovePlan, adapters: ExecuteAdapters): MoveOutc
     }
     completed.push(move);
   }
-  if (completed.length === 0 || plan.repaired.length === 0) return { completed, failure: renameFailure, remaining };
+  const relocated = plan.relocated.filter((tree) =>
+    completed.includes(plan.moves.includes(tree) ? tree : plan.primary),
+  );
+  if (completed.length === 0 || plan.repaired.length === 0) {
+    return { completed, failure: renameFailure, relocated, remaining };
+  }
 
   const located = plan.repaired.map((planned) => remaining.find((move) => move.to === planned)?.from ?? planned);
   const repairFailure = adapters.repairWorktrees(plan.primary.to, located);
@@ -39,5 +48,5 @@ export function executeMove(plan: MovePlan, adapters: ExecuteAdapters): MoveOutc
     renameFailure,
     repairFailure === undefined ? undefined : `cannot repair the worktrees of ${plan.primary.to}: ${repairFailure}`,
   ].filter((failure) => failure !== undefined);
-  return { completed, failure: failures.length === 0 ? undefined : failures.join('; '), remaining };
+  return { completed, failure: failures.length === 0 ? undefined : failures.join('; '), relocated, remaining };
 }

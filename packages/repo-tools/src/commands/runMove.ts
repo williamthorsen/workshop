@@ -7,7 +7,7 @@ import { executeMove } from '../move/move-clone.ts';
 import type { MovePlan } from '../move/move-plan.ts';
 import { expandTilde, formatDisplayPath, normalizePath } from '../portable/paths.ts';
 import { assertWritable, readRegistry, recordMove, type RegistryEntry, saveRegistry } from '../registry/registry.ts';
-import { planCloneMove, printMove, printReferences, reportSkippedWorktrees } from './move-report.ts';
+import { planCloneMove, printMove, printReferences, printSettlement, reportSkippedWorktrees } from './move-report.ts';
 import { PROG, reportFailure, type VerbRun } from './verb-run.ts';
 
 /** How a `move` or `apply-moves` run behaves. */
@@ -54,6 +54,7 @@ export function runMove(run: VerbRun, name: string, target: string, options: Mov
   const oldPaths = plan.moves.map((move) => move.from);
   if (options.isDryRun) {
     for (const move of plan.moves) printMove(run, move, true);
+    printSettlement(run, plan.relocated, plan.moves, true);
     printReferences(run, oldPaths, registry.entries, options.searchPaths);
     run.stderr(`${PROG}: nothing moved; run without --dry-run to move ${name}`);
     return 0;
@@ -67,6 +68,7 @@ export function runMove(run: VerbRun, name: string, target: string, options: Mov
     }
     run.stderr(`${PROG}: ${outcome.failure}`);
   }
+  printSettlement(run, outcome.relocated, outcome.completed, false);
   const newPath = formatDisplayPath(to, run.home);
   if (outcome.completed.length > 0) {
     recordMove(registry, entry, newPath);
