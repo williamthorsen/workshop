@@ -29,18 +29,12 @@ export interface CaptureCompositionOptions {
   readonly input?: Partial<CaptureSnapshotInput>;
 }
 
-/**
- * Captures a composition over a temporary source tree and target root, both removed when the test ends.
- *
- * The whole point of the seam under test is that composing reads nothing, so a fixture that captured from mocks would
- * exercise the wrong half. What varies between tests is the content of the two trees and the config read against them.
- */
-export async function captureComposition(options: CaptureCompositionOptions = {}): Promise<CompositionFixture> {
-  const sourceFiles = options.sourceFiles ?? buildCompositionSourceFiles();
-  const { dir: sourceDir } = disposeOnTestFinished(createTempTree(sourceFiles, { prefix: 'compositor-source-' }));
-  const targetFiles = options.targetFiles ?? { '.keep': '' };
-  const { dir: targetRoot } = disposeOnTestFinished(createTempTree(targetFiles, { prefix: 'compositor-target-' }));
-
+/** Builds the input a capture over `sourceDir` and `targetRoot` reads, for a test that manages its own directories. */
+export function buildCompositionInput(
+  sourceDir: string,
+  targetRoot: string,
+  options: Omit<CaptureCompositionOptions, 'sourceFiles' | 'targetFiles'> = {},
+): CaptureSnapshotInput {
   const config = buildConfig([
     {
       id: 'project',
@@ -54,7 +48,7 @@ export async function captureComposition(options: CaptureCompositionOptions = {}
     },
   ]);
 
-  const snapshot = await captureSnapshot({
+  return {
     config,
     baseDir: targetRoot,
     kinds: COMPOSITION_KINDS,
@@ -64,7 +58,23 @@ export async function captureComposition(options: CaptureCompositionOptions = {}
     kindKeys: {},
     contentKeyPath: ['compositor', 'content'],
     ...options.input,
-  });
+  };
+}
 
-  return { config, snapshot, sourceDir, targetRoot };
+/**
+ * Captures a composition over a temporary source tree and target root, both removed when the test ends.
+ *
+ * The whole point of the seam under test is that composing reads nothing, so a fixture that captured from mocks would
+ * exercise the wrong half. What varies between tests is the content of the two trees and the config read against them.
+ */
+export async function captureComposition(options: CaptureCompositionOptions = {}): Promise<CompositionFixture> {
+  const sourceFiles = options.sourceFiles ?? buildCompositionSourceFiles();
+  const { dir: sourceDir } = disposeOnTestFinished(createTempTree(sourceFiles, { prefix: 'compositor-source-' }));
+  const targetFiles = options.targetFiles ?? { '.keep': '' };
+  const { dir: targetRoot } = disposeOnTestFinished(createTempTree(targetFiles, { prefix: 'compositor-target-' }));
+
+  const input = buildCompositionInput(sourceDir, targetRoot, options);
+  const snapshot = await captureSnapshot(input);
+
+  return { config: input.config, snapshot, sourceDir, targetRoot };
 }
