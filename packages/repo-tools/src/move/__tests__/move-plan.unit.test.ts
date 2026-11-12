@@ -6,7 +6,7 @@ import { type PlanAdapters, planMove } from '../move-plan.ts';
 const PRIMARY = { from: '/r/oss/app', to: '/r/tools/kit' };
 
 describe(planMove, () => {
-  it('moves a sibling worktree beside the new primary, keeping its suffix, and leaves one elsewhere in place', () => {
+  it('moves a sibling worktree beside the new primary, keeping its suffix, relocates one inside it, and leaves one elsewhere in place', () => {
     const plan = planMove(
       PRIMARY,
       [
@@ -21,6 +21,11 @@ describe(planMove, () => {
     expect(plan).toStrictEqual({
       moves: [PRIMARY, { from: '/r/oss/app.live', to: '/r/tools/kit.live' }],
       primary: PRIMARY,
+      relocated: [
+        PRIMARY,
+        { from: '/r/oss/app.live', to: '/r/tools/kit.live' },
+        { from: '/r/oss/app/.worktrees/spike', to: '/r/tools/kit/.worktrees/spike' },
+      ],
       repaired: ['/r/tools/kit.live', '/r/tools/kit/.worktrees/spike', '/tmp/scratch', '/r/oss/application'],
       skipped: ['/r/oss/app.gone'],
     });
@@ -44,8 +49,9 @@ describe(planMove, () => {
 });
 
 describe(executeMove, () => {
-  it("stops at the first failed rename and repairs the links at the worktrees' actual locations", () => {
+  it("stops at the first failed rename, repairs the links at the worktrees' actual locations, and names what moved", () => {
     const moves = [PRIMARY, { from: '/r/oss/app.live', to: '/r/tools/kit.live' }];
+    const nested = { from: '/r/oss/app/.worktrees/spike', to: '/r/tools/kit/.worktrees/spike' };
     const repairs: string[][] = [];
     const adapters: ExecuteAdapters = {
       makeDirectory: () => undefined,
@@ -55,10 +61,14 @@ describe(executeMove, () => {
         return undefined;
       },
     };
-    const outcome = executeMove({ moves, primary: PRIMARY, repaired: ['/r/tools/kit.live'], skipped: [] }, adapters);
+    const outcome = executeMove(
+      { moves, primary: PRIMARY, relocated: [...moves, nested], repaired: ['/r/tools/kit.live'], skipped: [] },
+      adapters,
+    );
     expect(outcome).toStrictEqual({
       completed: [PRIMARY],
       failure: 'cannot move /r/oss/app.live to /r/tools/kit.live: EACCES',
+      relocated: [PRIMARY, nested],
       remaining: [moves[1]],
     });
     expect(repairs).toStrictEqual([['/r/oss/app.live']]);
@@ -70,10 +80,14 @@ describe(executeMove, () => {
       renamePath: () => undefined,
       repairWorktrees: () => 'fatal: bad path',
     };
-    const outcome = executeMove({ moves: [PRIMARY], primary: PRIMARY, repaired: ['/tmp/x'], skipped: [] }, adapters);
+    const outcome = executeMove(
+      { moves: [PRIMARY], primary: PRIMARY, relocated: [PRIMARY], repaired: ['/tmp/x'], skipped: [] },
+      adapters,
+    );
     expect(outcome).toStrictEqual({
       completed: [PRIMARY],
       failure: 'cannot repair the worktrees of /r/tools/kit: fatal: bad path',
+      relocated: [PRIMARY],
       remaining: [],
     });
   });

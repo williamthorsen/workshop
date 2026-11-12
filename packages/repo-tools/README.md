@@ -46,13 +46,13 @@ thor-repo scan --write --file path/to/branch-worktree/repos.yaml
 thor-repo add ~/repos/example --write
 ```
 
-`move` moves a registered clone to a new path, with each linked worktree beside it, whose name keeps its suffix under the new name (`app.live` becomes `kit.live`), and repairs every worktree's link. It sets the entry's `path` and appends the former path to `formerPaths`, then prints each remaining reference to the old paths in the tracked files of the registered clones on this machine. `--search <path>`, which repeats, adds the text files and the symlink targets under a directory to that report, and `--dry-run` reports the moves and the references without changing anything:
+`move` moves a registered clone to a new path, with each linked worktree beside it, whose name keeps its suffix under the new name (`app.live` becomes `kit.live`), and repairs every worktree's link. For each moved worktree, including one inside the clone, it then runs `direnv allow` when the worktree has an `.envrc` at its root, and gives its Claude Code session directory, under `$CLAUDE_CONFIG_DIR/projects` or else `~/.claude/projects`, the name that matches the new path. It removes a former parent directory that the move leaves empty, ignoring a `.DS_Store`. It reports a failure in these follow-ups, or a session directory whose new name is taken, on stderr without changing the exit status. It sets the entry's `path` and appends the former path to `formerPaths`, then prints each remaining reference to the old paths in the tracked files of the registered clones on this machine. `--search <path>`, which repeats, adds the text files and the symlink targets under a directory to that report, and `--dry-run` reports the moves, the follow-ups, and the references without changing anything:
 
 ```bash
 thor-repo move app ~/repos/tools/kit --dry-run --search ~/.config
 ```
 
-`apply-moves` runs on each other machine that shares the registry. It moves each clone that it finds at one of its entry's `formerPaths` while the entry's `path` is absent, in the same way, and does nothing when no clone needs moving:
+`apply-moves` runs on each other machine that shares the registry. It moves each clone that it finds at one of its entry's `formerPaths` while the entry's `path` is absent, in the same way, follow-ups included, and does nothing when no clone needs moving:
 
 ```bash
 thor-repo apply-moves

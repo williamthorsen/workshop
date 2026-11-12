@@ -16,6 +16,8 @@ export interface Move {
 export interface MovePlan {
   moves: Move[];
   primary: Move;
+  /** Every worktree whose path changes, the primary first: each renamed one and each one inside the primary. */
+  relocated: Move[];
   repaired: string[];
   skipped: string[];
 }
@@ -35,6 +37,7 @@ export function planMove(
   adapters: PlanAdapters,
 ): MovePlan | string[] {
   const moves: Move[] = [primary];
+  const relocated: Move[] = [primary];
   const repaired: string[] = [];
   const skipped: string[] = [];
   for (const worktree of worktrees) {
@@ -43,7 +46,9 @@ export function planMove(
       continue;
     }
     if (worktree.path.startsWith(`${primary.from}/`)) {
-      repaired.push(`${primary.to}${worktree.path.slice(primary.from.length)}`);
+      const to = `${primary.to}${worktree.path.slice(primary.from.length)}`;
+      relocated.push({ from: worktree.path, to });
+      repaired.push(to);
       continue;
     }
     const suffix = readSiblingSuffix(primary.from, worktree.path);
@@ -51,13 +56,14 @@ export function planMove(
       repaired.push(worktree.path);
       continue;
     }
-    const to = `${primary.to}${suffix}`;
-    moves.push({ from: worktree.path, to });
-    repaired.push(to);
+    const move = { from: worktree.path, to: `${primary.to}${suffix}` };
+    moves.push(move);
+    relocated.push(move);
+    repaired.push(move.to);
   }
 
   const refusals = checkMoves(moves, adapters);
-  return refusals.length > 0 ? refusals : { moves, primary, repaired, skipped };
+  return refusals.length > 0 ? refusals : { moves, primary, relocated, repaired, skipped };
 }
 
 // region | Helpers

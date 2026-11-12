@@ -1,5 +1,6 @@
 import type { Writer } from '@williamthorsen/toolbelt.cli/candidate';
 
+import { readSessionsDir } from '../claude/claude-sessions.ts';
 import type { LinkedWorktree } from '../git/git-clone.ts';
 import type { GitHubReader } from '../github/github-repo.ts';
 import { readHome } from '../portable/paths.ts';
@@ -17,6 +18,7 @@ export function buildVerbRun(context: RepoContext, file: string | undefined, std
     file: file ?? `${home}/.config/repos.yaml`,
     github: context.github,
     home,
+    sessionsDir: readSessionsDir(context.env, home),
     stderr: (line) => stderr.write(`${line}\n`),
     stdout: (line) => stdout.write(`${line}\n`),
   };
@@ -49,7 +51,12 @@ export function reportFailure(run: VerbRun, message: string): number {
  * own.
  */
 export interface CloneAdapters {
+  /** Runs `direnv allow` on a directory, returning `'absent'` when direnv is not installed, or the reason for a failure. */
+  allowDirenv: (dir: string) => string | undefined;
   isDirectory: (dir: string) => boolean;
+  isDirenvInstalled: () => boolean;
+  /** Returns the names of a directory's entries, or the reason for a failure. */
+  listDirectory: (dir: string) => string[] | string;
   listTrackedFiles: (cloneDir: string) => string[] | string;
   listWorktrees: (primary: string) => LinkedWorktree[] | string;
   /** Creates a directory and its missing ancestors, returning the reason for a failure. */
@@ -64,6 +71,10 @@ export interface CloneAdapters {
   readCloneRoot: (dir: string) => string | undefined;
   /** Returns a path with every symlink in it resolved, or the path unchanged when nothing exists at it. */
   resolvePath: (target: string) => string;
+  /** Removes an empty directory, returning the reason for a failure. */
+  removeDirectory: (dir: string) => string | undefined;
+  /** Removes a file, returning the reason for a failure. */
+  removeFile: (file: string) => string | undefined;
   /** Renames a path, returning the reason for a failure. */
   renamePath: (from: string, to: string) => string | undefined;
   repairWorktrees: (primary: string, worktreePaths: readonly string[]) => string | undefined;
@@ -90,6 +101,8 @@ export interface VerbRun {
   file: string;
   github: GitHubReader;
   home: string;
+  /** The directory that holds Claude Code's session directories. */
+  sessionsDir: string;
   stderr: (line: string) => void;
   stdout: (line: string) => void;
 }

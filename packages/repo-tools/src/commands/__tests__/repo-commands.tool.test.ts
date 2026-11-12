@@ -152,6 +152,7 @@ describe('REPO_COMMANDS with git', () => {
         [
           '~/repos/oss/app -> ~/repos/tools/kit',
           '~/repos/oss/app.live -> ~/repos/tools/kit.live',
+          'removed ~/repos/oss',
           'notes: README.md:1: The app lives at ~/repos/oss/app.',
           `~/config: linked -> ${homeDir}/repos/oss/app.live/profile`,
         ].join('\n'),
@@ -180,7 +181,9 @@ describe('REPO_COMMANDS with git', () => {
       const result = await runCaptured(['move', 'app', '~/repos/tools/kit', '--file', registryFile], {
         env: { HOME: homeDir },
       });
-      expect(result.stdout).toBe('~/disk/oss/app -> ~/repos/tools/kit\n~/disk/oss/app.live -> ~/repos/tools/kit.live');
+      expect(result.stdout).toBe(
+        '~/disk/oss/app -> ~/repos/tools/kit\n~/disk/oss/app.live -> ~/repos/tools/kit.live\nremoved ~/disk/oss',
+      );
       expect(result.status).toBe(0);
       expect(git(`${homeDir}/repos/tools/kit.live`, 'status', '--short')).toBe('');
       expect(fs.readFileSync(registryFile, 'utf8')).toContain(
@@ -201,7 +204,7 @@ describe('REPO_COMMANDS with git', () => {
       const result = await runCaptured(['move', 'app', '~/repos/tools/kit', '--dry-run', '--file', registryFile], {
         env: { HOME: homeDir },
       });
-      expect(result.stdout).toBe('would move ~/repos/oss/app -> ~/repos/tools/kit');
+      expect(result.stdout).toBe('would move ~/repos/oss/app -> ~/repos/tools/kit\nwould remove ~/repos/oss');
       expect(result.stderr).toBe('thor-repo: nothing moved; run without --dry-run to move app');
       expect(result.status).toBe(0);
       expect(fs.existsSync(`${homeDir}/repos/oss/app`)).toBe(true);
@@ -240,7 +243,9 @@ describe('apply-moves with git', () => {
     const registryFile = writeRegistry(homeDir, registryText);
 
     const first = await runCaptured(['apply-moves', '--file', registryFile], { env: { HOME: homeDir } });
-    expect(first.stdout).toBe('~/repos/oss/app -> ~/repos/tools/kit\n~/repos/oss/app.live -> ~/repos/tools/kit.live');
+    expect(first.stdout).toBe(
+      '~/repos/oss/app -> ~/repos/tools/kit\n~/repos/oss/app.live -> ~/repos/tools/kit.live\nremoved ~/repos/oss',
+    );
     expect(first.status).toBe(0);
     for (const dir of ['repos/tools/kit', 'repos/tools/kit.live']) {
       expect(git(`${homeDir}/${dir}`, 'status', '--short')).toBe('');
@@ -266,7 +271,7 @@ describe('apply-moves with git', () => {
 
     const result = await runCaptured(['apply-moves', '--dry-run', '--file', registryFile], { env: { HOME: homeDir } });
     expect(result.stdout).toBe(
-      'would move ~/repos/oss/app -> ~/repos/tools/kit\napp: README.md:1: Clone at ~/repos/oss/app.',
+      'would move ~/repos/oss/app -> ~/repos/tools/kit\nwould remove ~/repos/oss\napp: README.md:1: Clone at ~/repos/oss/app.',
     );
     expect(result.status).toBe(0);
     expect(fs.existsSync(`${homeDir}/repos/oss/app`)).toBe(true);
