@@ -1,3 +1,5 @@
+import { listDuplicateItems } from '@williamthorsen/toolbelt.arrays/candidate';
+
 import type { Violation } from './Violation.ts';
 
 /** One id-keyed table to check, with the name a violation against it is reported under. */
@@ -10,15 +12,10 @@ export type IdTable = readonly [name: string, entries: ReadonlyArray<{ id: strin
  * Violations follow the order of `tables`, so the caller's list decides the order they are reported in.
  */
 export function findDuplicateIds(tables: ReadonlyArray<IdTable>): Array<Violation> {
-  return tables.flatMap(([name, entries]) => {
-    const seen = new Set<string>();
-    const repeated = new Set<string>();
-    for (const { id } of entries) {
-      if (seen.has(id)) {
-        repeated.add(id);
-      }
-      seen.add(id);
-    }
-    return [...repeated].map((id) => ({ path: name, message: `lists "${id}" more than once` }));
-  });
+  return tables.flatMap(([name, entries]) =>
+    listDuplicateItems(entries.map(({ id }) => id)).map((id) => ({
+      path: name,
+      message: `lists "${id}" more than once`,
+    })),
+  );
 }

@@ -1,5 +1,6 @@
 import path from 'node:path';
 
+import { listDuplicateItems } from '@williamthorsen/toolbelt.arrays/candidate';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 import { parse as parseYaml } from 'yaml';
 import { z } from 'zod';
@@ -40,12 +41,9 @@ export async function loadConfig(tiers: ReadonlyArray<TierFile>): Promise<Compos
 
 /** Throws when two tier files share an id, naming the repeat. */
 function assertTierIdsAreUnique(tiers: ReadonlyArray<TierFile>): void {
-  const seen = new Set<string>();
-  for (const { id } of tiers) {
-    if (seen.has(id)) {
-      throw new DeclarationError(`Tier "${id}" is declared more than once; a tier id names one tier.`);
-    }
-    seen.add(id);
+  const [repeated] = listDuplicateItems(tiers.map(({ id }) => id));
+  if (repeated !== undefined) {
+    throw new DeclarationError(`Tier "${repeated}" is declared more than once; a tier id names one tier.`);
   }
 }
 
