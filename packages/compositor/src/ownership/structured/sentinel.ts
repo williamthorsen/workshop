@@ -5,7 +5,7 @@ import type { OwnedItemsSpec } from '../../schemas/owned-items-schemas.ts';
 type Sentinel = OwnedItemsSpec['sentinel'];
 
 /** The path segment standing for every element of the array at that position. */
-export const WILDCARD_SEGMENT = '*';
+const WILDCARD_SEGMENT = '*';
 
 /**
  * Reports whether the sentinel names a place the engine can write, which is what decides how an item is marked.

@@ -136,10 +136,10 @@ export const CONTRIBUTION_MARKERS: MarkerPair = {
 };
 
 /** A PNG signature, standing in for an asset a skill ships and no target transforms. */
-export const DIAGRAM_BYTES = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+const DIAGRAM_BYTES = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 
 /** The markers delimiting one filler's block within a filled inlay. */
-export const FILL_MARKERS: MarkerPair = {
+const FILL_MARKERS: MarkerPair = {
   open: '<!-- fill:{artifactId} -->',
   close: '<!-- /fill:{artifactId} -->',
 };
@@ -148,7 +148,7 @@ export const FILL_MARKERS: MarkerPair = {
 export const HOST_PATH = 'CLAUDE.md';
 
 /** The markers fencing a whole filled inlay in the body that declared it. */
-export const INLAY_MARKERS: MarkerPair = {
+const INLAY_MARKERS: MarkerPair = {
   open: '<!-- inlay:{inlayName}:start -->',
   close: '<!-- inlay:{inlayName}:end -->',
 };

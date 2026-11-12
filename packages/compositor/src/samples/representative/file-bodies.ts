@@ -5,9 +5,9 @@ import { Buffer } from 'node:buffer';
 // The bodies below interpolate these markers, so alphabetizing the module would break its initialization.
 export const FILL_CLOSE = '<!-- /fill:rulebook:naming -->';
 export const FILL_OPEN = '<!-- fill:rulebook:naming -->';
-export const INLAY_CLOSE = '<!-- inlay:preferences:end -->';
-export const INLAY_OPEN = '<!-- inlay:preferences:start -->';
-export const NAMING_RULE = 'Name functions with a leading verb.';
+const INLAY_CLOSE = '<!-- inlay:preferences:end -->';
+const INLAY_OPEN = '<!-- inlay:preferences:start -->';
+const NAMING_RULE = 'Name functions with a leading verb.';
 export const REGION_CLOSE = '<!-- ambient:end -->';
 export const REGION_OPEN = '<!-- ambient:start -->';
 
