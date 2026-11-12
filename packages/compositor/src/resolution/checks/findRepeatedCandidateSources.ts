@@ -10,15 +10,15 @@ import type { Catalog } from '../../schemas/catalog-schemas.ts';
 export function findRepeatedCandidateSources(catalog: Catalog): Array<Violation> {
   const violations: Array<Violation> = [];
   for (const [index, entry] of catalog.entries.entries()) {
-    const seen = new Set([entry.resolution.winner.sourceId]);
+    const seenSourceIds = new Set([entry.resolution.winner.sourceId]);
     for (const [loserIndex, loser] of entry.resolution.shadowed.entries()) {
-      if (seen.has(loser.sourceId)) {
+      if (seenSourceIds.has(loser.sourceId)) {
         violations.push({
           path: `entries[${index}].resolution.shadowed[${loserIndex}].sourceId`,
           message: `repeats "${loser.sourceId}", which already contains this artifact`,
         });
       }
-      seen.add(loser.sourceId);
+      seenSourceIds.add(loser.sourceId);
     }
   }
   return violations;

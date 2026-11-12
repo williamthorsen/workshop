@@ -25,7 +25,7 @@ export function extractTokenEdges(
     .filter((kind) => kind.form === 'referent')
     .map((kind) => ({ artifactKindId: kind.artifactKindId, pattern: compileTokenPattern(kind) }));
   const edges: Array<DependencyEdge> = [];
-  const seen = new Set<string>();
+  const seenEdgeKeys = new Set<string>();
 
   for (const segment of segments) {
     for (const line of segment.lines) {
@@ -36,10 +36,10 @@ export function extractTokenEdges(
           }
           const edge = createEdge(composeArtifactId(referent.artifactKindId, slug), segment.partialId);
           const key = JSON.stringify([edge.to, edge.partialId]);
-          if (seen.has(key)) {
+          if (seenEdgeKeys.has(key)) {
             continue;
           }
-          seen.add(key);
+          seenEdgeKeys.add(key);
           edges.push(edge);
         }
       }

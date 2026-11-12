@@ -27,14 +27,14 @@ export interface CatalogSpec {
  */
 export function buildCatalogFromSpec(spec: CatalogSpec): Catalog {
   const kindIds = spec.kinds ?? [...new Set(spec.entries.map(({ kindId }) => kindId))];
-  const traversalOnly = new Set(spec.traversalOnlyKinds);
+  const traversalOnlyKindIds = new Set(spec.traversalOnlyKinds);
 
   return {
     schemaVersion: CATALOG_SCHEMA_VERSION,
     kinds: kindIds.map((id) => ({
       id,
       label: id,
-      emitsFiles: !traversalOnly.has(id),
+      emitsFiles: !traversalOnlyKindIds.has(id),
       layout: { form: 'file' as const, root: id, extension: '.md' },
     })),
     sources: spec.sources.map((name) => ({

@@ -24,20 +24,20 @@ export interface FindUnmatchedBindingsInput {
  * not to put any there. This is the other direction -- a config asking for a fill with nowhere to put it.
  */
 export function findUnmatchedBindings(input: FindUnmatchedBindingsInput): Array<BindingDiagnostic> {
-  const declared = new Set<string>();
-  for (const column of input.renders.values()) {
-    for (const [artifactId, render] of column) {
+  const declaredInlayNames = new Set<string>();
+  for (const targetRenders of input.renders.values()) {
+    for (const [artifactId, render] of targetRenders) {
       if (render.status !== 'rendered' || !input.reached.has(artifactId)) {
         continue;
       }
       for (const site of render.inlays) {
-        declared.add(site.name);
+        declaredInlayNames.add(site.name);
       }
     }
   }
 
   return input.bindings
-    .filter(({ inlayName }) => !declared.has(inlayName))
+    .filter(({ inlayName }) => !declaredInlayNames.has(inlayName))
     .map(({ inlayName }) => ({
       code: 'unmatched-inlay' as const,
       message: `The binding to inlay "${inlayName}" names an inlay no artifact declares.`,

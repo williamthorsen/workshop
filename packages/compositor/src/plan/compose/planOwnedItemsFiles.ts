@@ -25,12 +25,12 @@ export function planOwnedItemsFiles(
   context: TargetPlanContext,
   declarations: ReadonlyArray<OwnedItemsDeclaration>,
 ): Array<FileEntry> {
-  const byHost = new Map<string, Array<OwnedItemsDeclaration>>();
+  const declarationsByHost = new Map<string, Array<OwnedItemsDeclaration>>();
   for (const declaration of declarations) {
-    appendTo(byHost, declaration.host, declaration);
+    appendTo(declarationsByHost, declaration.host, declaration);
   }
 
-  return byHost
+  return declarationsByHost
     .entries()
     .flatMap(([host, owned]) => {
       // Collection-path order, so reordering the declarations cannot move the body they compose to.

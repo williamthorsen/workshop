@@ -74,8 +74,8 @@ export function composePlan(config: CompositorConfig, snapshot: CompositionSnaps
  * files is what makes `contentAvailability: 'complete'` exactly their bodies and nothing besides.
  */
 function collectBlobs(files: ReadonlyArray<FileEntry>, blobs: BlobStore): Record<Hash, Blob> {
-  const named = new Set(files.flatMap((file) => [file.current?.hash, file.planned?.hash]));
-  return Object.fromEntries(Object.entries(blobs.toTable()).filter(([hash]) => named.has(hash)));
+  const namedHashes = new Set(files.flatMap((file) => [file.current?.hash, file.planned?.hash]));
+  return Object.fromEntries(Object.entries(blobs.toTable()).filter(([hash]) => namedHashes.has(hash)));
 }
 
 /**
@@ -105,12 +105,12 @@ function collectPartials(
   files: ReadonlyArray<{ contributors: { partials: ReadonlyArray<PartialId> } }>,
   snapshot: CompositionSnapshot,
 ): Array<PartialEntry> {
-  const known = new Map(named.map((partial) => [partial.id, partial]));
-  for (const column of snapshot.renders.values()) {
-    for (const render of column.values()) {
+  const knownPartials = new Map(named.map((partial) => [partial.id, partial]));
+  for (const targetRenders of snapshot.renders.values()) {
+    for (const render of targetRenders.values()) {
       if (render.status === 'rendered') {
         for (const partial of render.partials) {
-          known.set(partial.id, partial);
+          knownPartials.set(partial.id, partial);
         }
       }
     }
@@ -120,7 +120,7 @@ function collectPartials(
     ...named.map(({ id }) => id),
     ...files.flatMap((file) => file.contributors.partials),
   ]);
-  return known
+  return knownPartials
     .values()
     .filter((partial) => referencedPartialIds.has(partial.id))
     .toArray()

@@ -40,7 +40,7 @@ export function readContributions(content: string, patterns: ContributionPattern
   const closes = content.matchAll(toGlobalPattern(patterns.close, 'close')).toArray();
 
   const contributions: Array<Contribution> = [];
-  const claimed = new Set<number>();
+  const claimedCloseIndexes = new Set<number>();
 
   for (const open of opens) {
     const key = open[1];
@@ -48,11 +48,11 @@ export function readContributions(content: string, patterns: ContributionPattern
       continue;
     }
     const bodyStart = open.index + open[0].length;
-    const close = findClosingMarker(closes, claimed, key, bodyStart);
+    const close = findClosingMarker(closes, claimedCloseIndexes, key, bodyStart);
     if (close === undefined) {
       continue;
     }
-    claimed.add(close.index);
+    claimedCloseIndexes.add(close.index);
     contributions.push({ key, body: content.slice(bodyStart, close.bodyEnd).replace(/^\n/, '').replace(/\n+$/, '') });
   }
 
@@ -64,12 +64,12 @@ export function readContributions(content: string, patterns: ContributionPattern
 /** Locates the first unclaimed close marker that follows `bodyStart` and captures `key`. */
 function findClosingMarker(
   closes: ReadonlyArray<RegExpExecArray>,
-  claimed: ReadonlySet<number>,
+  claimedCloseIndexes: ReadonlySet<number>,
   key: string,
   bodyStart: number,
 ): { index: number; bodyEnd: number } | undefined {
   for (const [index, close] of closes.entries()) {
-    if (!claimed.has(index) && close.index >= bodyStart && close[1] === key) {
+    if (!claimedCloseIndexes.has(index) && close.index >= bodyStart && close[1] === key) {
       return { index, bodyEnd: close.index };
     }
   }

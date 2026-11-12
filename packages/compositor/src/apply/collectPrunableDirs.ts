@@ -8,9 +8,9 @@ export interface CollectPrunableDirsInput {
   /** The target's root on disk. */
   readonly root: string;
   /** The destinations the run removes, POSIX and relative to the root. */
-  readonly removed: ReadonlySet<string>;
+  readonly removedPaths: ReadonlySet<string>;
   /** The destinations the run writes, POSIX and relative to the root. */
-  readonly written: ReadonlySet<string>;
+  readonly writtenPaths: ReadonlySet<string>;
   /** The directories the target holds independently of the composition, POSIX and relative to the root. */
   readonly containerDirs: ReadonlySet<string>;
 }
@@ -21,8 +21,8 @@ export interface CollectPrunableDirsInput {
  * Emptiness is computed rather than observed: a directory is empty when everything it holds is either a destination
  * this run removes or a directory this run already took away, and when nothing the run writes lands anywhere beneath
  * it. Both halves of the run have to be read. A real run has deleted its files and written its own by the time it
- * asks, and a dry run has done neither, so a listing reports differently for the two; `removed` and `written` are what
- * make them agree without a second code path.
+ * asks, and a dry run has done neither, so a listing reports differently for the two; `removedPaths` and `writtenPaths`
+ * are what make them agree without a second code path.
  *
  * The walk climbs from each removed destination and stops at a container directory, which the target holds whether or
  * not the composition leaves anything in it. Nothing stops the climb at the target's root, no candidate reaching it:
@@ -32,26 +32,26 @@ export interface CollectPrunableDirsInput {
  * meets a directory its own children still occupy.
  */
 export async function collectPrunableDirs(input: CollectPrunableDirsInput): Promise<Array<string>> {
-  const { containerDirs, removed, root, written } = input;
-  const occupied = new Set([...written].flatMap((filePath) => collectAncestors(filePath)));
-  const candidates = [...new Set([...removed].flatMap((filePath) => collectAncestors(filePath)))]
-    .filter((dir) => !containerDirs.has(dir) && !occupied.has(dir))
+  const { containerDirs, removedPaths, root, writtenPaths } = input;
+  const occupiedDirs = new Set([...writtenPaths].flatMap((filePath) => collectAncestors(filePath)));
+  const candidates = [...new Set([...removedPaths].flatMap((filePath) => collectAncestors(filePath)))]
+    .filter((dir) => !containerDirs.has(dir) && !occupiedDirs.has(dir))
     .toSorted((left, right) => measureDepth(right) - measureDepth(left) || compareStrings(left, right));
 
-  const prunable = new Set<string>();
+  const prunableDirs = new Set<string>();
   for (const dir of candidates) {
     const names = await readDirNames(path.join(root, dir));
     const held = names.filter((name) => {
       const entry = path.posix.join(dir, name);
-      return !removed.has(entry) && !prunable.has(entry);
+      return !removedPaths.has(entry) && !prunableDirs.has(entry);
     });
 
     if (held.length === 0) {
-      prunable.add(dir);
+      prunableDirs.add(dir);
     }
   }
 
-  return candidates.filter((dir) => prunable.has(dir));
+  return candidates.filter((dir) => prunableDirs.has(dir));
 }
 
 // region | Helpers

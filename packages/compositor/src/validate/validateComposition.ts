@@ -45,7 +45,7 @@ export function validateComposition(config: CompositorConfig, snapshot: Composit
   const tiers = config.tiers.map(({ id, label }) => ({ id, label }));
   const selection = selectArtifacts(config, snapshot.catalog);
   const closure = computeClosure({ graph: snapshot.edgeGraph, selection, tiers });
-  const reached = new Set(closure.artifacts.map(({ id }) => id));
+  const reachedArtifactIds = new Set(closure.artifacts.map(({ id }) => id));
   // Both collectors read one ordering, so neither reports in the order a consumer happened to declare its targets in.
   const targets = snapshot.targets.toSorted((left, right) => compareStrings(left.id, right.id));
   const fills = new Map(
@@ -55,7 +55,7 @@ export function validateComposition(config: CompositorConfig, snapshot: Composit
         target,
         renders: snapshot.renders.get(target.id) ?? new Map(),
         bindings: selection.bindings,
-        reached,
+        reached: reachedArtifactIds,
       }),
     ]),
   );
@@ -64,11 +64,13 @@ export function validateComposition(config: CompositorConfig, snapshot: Composit
     diagnostics: [
       ...selection.diagnostics.map((diagnostic) => ({ domain: 'selection' as const, diagnostic })),
       ...closure.diagnostics.map((diagnostic) => ({ domain: 'closure' as const, diagnostic })),
-      ...collectRenderDiagnostics(snapshot.renders, targets, reached),
+      ...collectRenderDiagnostics(snapshot.renders, targets, reachedArtifactIds),
       ...collectBindingDiagnostics(fills, targets),
-      ...findUnmatchedBindings({ bindings: selection.bindings, renders: snapshot.renders, reached }).map(
-        (diagnostic) => ({ domain: 'binding' as const, diagnostic }),
-      ),
+      ...findUnmatchedBindings({
+        bindings: selection.bindings,
+        renders: snapshot.renders,
+        reached: reachedArtifactIds,
+      }).map((diagnostic) => ({ domain: 'binding' as const, diagnostic })),
       ...findDeploymentCollisions({ artifacts: closure.artifacts, kinds: closure.kinds, targets }).map(
         (diagnostic) => ({ domain: 'deployment' as const, diagnostic }),
       ),
@@ -98,18 +100,18 @@ function collectBindingDiagnostics(
 function collectRenderDiagnostics(
   renders: ReadonlyMap<TargetId, ReadonlyMap<ArtifactId, ArtifactRender>>,
   targets: ReadonlyArray<RenderTarget>,
-  reached: ReadonlySet<ArtifactId>,
+  reachedArtifactIds: ReadonlySet<ArtifactId>,
 ): Array<ValidationDiagnostic> {
   return targets.flatMap(({ id: targetId }): Array<ValidationDiagnostic> => {
-    const column = renders.get(targetId);
-    if (column === undefined) {
+    const targetRenders = renders.get(targetId);
+    if (targetRenders === undefined) {
       return [];
     }
-    const rendered = [...column].toSorted(([left], [right]) => compareStrings(left, right));
+    const rendered = [...targetRenders].toSorted(([left], [right]) => compareStrings(left, right));
 
     return rendered.flatMap(([artifactId, render]): Array<ValidationDiagnostic> => {
       const at = { targetId, artifactId };
-      if (!reached.has(artifactId)) {
+      if (!reachedArtifactIds.has(artifactId)) {
         return [];
       }
       if (render.status !== 'failed') {

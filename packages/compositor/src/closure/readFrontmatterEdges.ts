@@ -119,15 +119,15 @@ function createFault(artifactId: ArtifactId, diagnostics: Array<ClosureDiagnosti
 
 /** Drops each edge a later one repeats exactly, one slug named twice under one key being one fact. */
 function dedupeEdges(edges: ReadonlyArray<DependencyEdge>): Array<DependencyEdge> {
-  const seen = new Set<string>();
+  const seenEdgeKeys = new Set<string>();
   const deduped: Array<DependencyEdge> = [];
   for (const edge of edges) {
     const key = JSON.stringify([edge.to, edge.via, edge.partialId]);
-    if (seen.has(key)) {
+    if (seenEdgeKeys.has(key)) {
       continue;
     }
 
-    seen.add(key);
+    seenEdgeKeys.add(key);
     deduped.push(edge);
   }
   return deduped;

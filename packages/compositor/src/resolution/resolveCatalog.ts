@@ -37,7 +37,7 @@ export async function resolveCatalog(input: ResolveCatalogInput): Promise<Catalo
   const perSource = await Promise.all(sources.map((source) => enumerateSource(source, kinds)));
 
   const candidates = new Map<string, Array<ResolutionCandidate>>();
-  const identities = new Map<string, SourceArtifact>();
+  const sourceArtifactsById = new Map<string, SourceArtifact>();
   for (const [index, artifacts] of perSource.entries()) {
     const source = sources[index];
     if (source === undefined) {
@@ -48,12 +48,12 @@ export async function resolveCatalog(input: ResolveCatalogInput): Promise<Catalo
       const forId = candidates.get(id) ?? [];
       forId.push({ sourceId: source.id, path: artifact.path, hash: artifact.hash });
       candidates.set(id, forId);
-      identities.set(id, artifact);
+      sourceArtifactsById.set(id, artifact);
     }
   }
 
   const entries = [...candidates]
-    .map(([id, forId]) => buildEntry(id, forId, identities))
+    .map(([id, forId]) => buildEntry(id, forId, sourceArtifactsById))
     .filter((entry): entry is CatalogEntry => entry !== undefined)
     .toSorted((left, right) => compareStrings(left.id, right.id));
 
@@ -71,10 +71,10 @@ export async function resolveCatalog(input: ResolveCatalogInput): Promise<Catalo
 function buildEntry(
   id: string,
   candidates: ReadonlyArray<ResolutionCandidate>,
-  identities: ReadonlyMap<string, SourceArtifact>,
+  sourceArtifactsById: ReadonlyMap<string, SourceArtifact>,
 ): CatalogEntry | undefined {
   const [winner, ...shadowed] = candidates;
-  const identity = identities.get(id);
+  const identity = sourceArtifactsById.get(id);
   if (winner === undefined || identity === undefined) {
     return undefined;
   }

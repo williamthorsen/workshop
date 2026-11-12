@@ -226,9 +226,9 @@ function reconcileBindings(fold: Fold): Array<InlayBinding> {
     .filter(({ artifactIds }) => artifactIds.length > 0)
     .toSorted((left, right) => compareStrings(left.inlayName, right.inlayName));
 
-  const stillBound = new Set(bindings.flatMap(({ artifactIds }) => artifactIds));
+  const stillBoundArtifactIds = new Set(bindings.flatMap(({ artifactIds }) => artifactIds));
   for (const [artifactId, seeds] of fold.seeds) {
-    if (stillBound.has(artifactId) || !hasBindingSeed(fold, artifactId)) {
+    if (stillBoundArtifactIds.has(artifactId) || !hasBindingSeed(fold, artifactId)) {
       continue;
     }
     const kept = seeds.filter((seed) => seed.via !== 'binding');

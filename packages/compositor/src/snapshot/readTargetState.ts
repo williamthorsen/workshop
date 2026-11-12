@@ -180,17 +180,17 @@ function digestState(
   hosts: ReadonlyArray<HostState>,
   ownedHosts: ReadonlyArray<OwnedHostState>,
 ): Hash {
-  const byPath = new Map<string, Hash>();
+  const hashesByPath = new Map<string, Hash>();
   for (const file of claimed) {
-    byPath.set(file.path, file.hash);
+    hashesByPath.set(file.path, file.hash);
   }
   for (const host of [...hosts, ...ownedHosts]) {
     if (host.state === 'present') {
-      byPath.set(host.path, host.hash);
+      hashesByPath.set(host.path, host.hash);
     }
   }
 
-  const lines = [...byPath]
+  const lines = [...hashesByPath]
     .toSorted(([left], [right]) => compareStrings(left, right))
     .map(([filePath, hash]) => `${filePath}\n${hash}`);
   return hashUtf8(lines.join('\n'));
@@ -253,16 +253,16 @@ async function readClaims(
   matched: ReadonlyArray<Claim>,
   hostPaths: ReadonlySet<string>,
 ): Promise<Array<ClaimedFile>> {
-  const byPath = new Map<string, Map<ArtifactId, ClaimedArtifact>>();
+  const claimsByPath = new Map<string, Map<ArtifactId, ClaimedArtifact>>();
   for (const claim of matched) {
     if (hostPaths.has(claim.path)) {
       continue;
     }
-    const claims = byPath.get(claim.path) ?? new Map<ArtifactId, ClaimedArtifact>();
-    byPath.set(claim.path, claims.set(claim.artifact.id, claim.artifact));
+    const claims = claimsByPath.get(claim.path) ?? new Map<ArtifactId, ClaimedArtifact>();
+    claimsByPath.set(claim.path, claims.set(claim.artifact.id, claim.artifact));
   }
 
-  const gathered = [...byPath]
+  const gathered = [...claimsByPath]
     .map(([filePath, claims]) => ({
       path: filePath,
       claims: claims

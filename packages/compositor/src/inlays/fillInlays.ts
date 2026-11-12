@@ -63,21 +63,21 @@ export function fillInlays(input: FillInlaysInput): InlayFill {
   const context: FillContext = {
     stage,
     reshape: stage.reshape === undefined ? undefined : compileReshape(stage.reshape),
-    bound: new Map(input.bindings.map(({ inlayName, artifactIds }) => [inlayName, artifactIds])),
+    artifactIdsByInlay: new Map(input.bindings.map(({ inlayName, artifactIds }) => [inlayName, artifactIds])),
     diagnostics: [],
     reads: new Map(),
     renders: input.renders,
     targetId: input.target.id,
   };
-  const filled = new Map(input.renders);
+  const filledRenders = new Map(input.renders);
 
   for (const [hostId, render] of input.renders) {
     if (input.reached.has(hostId) && render.status === 'rendered' && render.inlays.length > 0) {
-      filled.set(hostId, fillHost(context, hostId, render));
+      filledRenders.set(hostId, fillHost(context, hostId, render));
     }
   }
 
-  return { renders: filled, diagnostics: context.diagnostics };
+  return { renders: filledRenders, diagnostics: context.diagnostics };
 }
 
 // region | Helpers
@@ -133,7 +133,7 @@ interface FillContext {
   readonly stage: InlayStage;
   readonly reshape: CompiledReshape | undefined;
   /** Keyed by inlay name, each list in the order a fill splices it. */
-  readonly bound: ReadonlyMap<string, ReadonlyArray<ArtifactId>>;
+  readonly artifactIdsByInlay: ReadonlyMap<string, ReadonlyArray<ArtifactId>>;
   readonly diagnostics: Array<BindingDiagnostic>;
   /** Each inlay's fillers, read once and reused by every host declaring it. */
   readonly reads: Map<string, FillerRead>;
@@ -237,13 +237,13 @@ function mergeContributors(host: FileContributors, fillers: ReadonlyArray<Filler
 
 /** Names the partials whose text reached the host, its own and every filler's, in id order. */
 function mergePartials(host: ReadonlyArray<PartialEntry>, fillers: ReadonlyArray<Filler>): Array<PartialEntry> {
-  const known = new Map(host.map((partial) => [partial.id, partial]));
+  const knownPartials = new Map(host.map((partial) => [partial.id, partial]));
   for (const filler of fillers) {
     for (const partial of filler.partials) {
-      known.set(partial.id, partial);
+      knownPartials.set(partial.id, partial);
     }
   }
-  return known
+  return knownPartials
     .values()
     .toArray()
     .toSorted((left, right) => compareStrings(left.id, right.id));
@@ -252,7 +252,7 @@ function mergePartials(host: ReadonlyArray<PartialEntry>, fillers: ReadonlyArray
 /** Reads every filler one inlay is bound to, reporting each the target deploys nowhere and stopping at the first block. */
 function readFillers(context: FillContext, inlayName: string): FillerRead {
   const fillers: Array<Filler> = [];
-  const boundHere = context.bound.get(inlayName) ?? [];
+  const boundHere = context.artifactIdsByInlay.get(inlayName) ?? [];
 
   for (const artifactId of boundHere) {
     const render = context.renders.get(artifactId);

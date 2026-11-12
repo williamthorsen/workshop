@@ -41,44 +41,54 @@ export interface SourceResolution {
  * `StaleSnapshotError`, which only a config naming a package the walk never saw can produce.
  */
 export function foldSourceTiers(config: CompositorConfig, locations: ReadonlyArray<PackageLocation>): SourceResolution {
-  const adopted = new Map<string, FoldedSource>();
-  const declined = new Set<string>();
+  const adoptedSources = new Map<string, FoldedSource>();
+  const declinedNames = new Set<string>();
 
   for (const [tierIndex, tier] of config.tiers.entries()) {
     if (tier.shouldReset) {
-      adopted.clear();
-      declined.clear();
+      adoptedSources.clear();
+      declinedNames.clear();
     }
     for (const [order, source] of tier.sources.use.entries()) {
-      adopted.set(source.name, { origin: source.origin, baseDir: tier.baseDir, label: tier.label, tierIndex, order });
-      declined.delete(source.name);
+      adoptedSources.set(source.name, {
+        origin: source.origin,
+        baseDir: tier.baseDir,
+        label: tier.label,
+        tierIndex,
+        order,
+      });
+      declinedNames.delete(source.name);
     }
     for (const name of tier.sources.drop) {
-      adopted.delete(name);
-      declined.add(name);
+      adoptedSources.delete(name);
+      declinedNames.add(name);
     }
   }
 
-  const located = new Map(
+  const locationsByName = new Map(
     locations.map((location) => [composeLocationKey(location.baseDir, location.package), location]),
   );
-  const ordered = [...adopted].toSorted(([, left], [, right]) => comparePrecedence(left, right));
-  const sources = ordered.map(([name, folded]) => buildSpec(name, folded, located));
+  const ordered = [...adoptedSources].toSorted(([, left], [, right]) => comparePrecedence(left, right));
+  const sources = ordered.map(([name, folded]) => buildSpec(name, folded, locationsByName));
 
-  return { sources, declined: [...declined].toSorted(compareStrings) };
+  return { sources, declined: [...declinedNames].toSorted(compareStrings) };
 }
 
 // region | Helpers
 
 /** Builds one source's spec, naming the tier it came from on any failure. */
-function buildSpec(name: string, folded: FoldedSource, located: ReadonlyMap<string, PackageLocation>): SourceSpec {
+function buildSpec(
+  name: string,
+  folded: FoldedSource,
+  locationsByName: ReadonlyMap<string, PackageLocation>,
+): SourceSpec {
   const { origin, baseDir, label } = folded;
 
   if (origin.kind !== 'package') {
     return { id: name, name, origin, dir: expandPath(origin.location, baseDir) };
   }
 
-  const location = located.get(composeLocationKey(baseDir, origin.location));
+  const location = locationsByName.get(composeLocationKey(baseDir, origin.location));
   if (location === undefined) {
     throw new StaleSnapshotError(
       `Source "${name}", declared by tier "${label}": package "${origin.location}" has no location ` +

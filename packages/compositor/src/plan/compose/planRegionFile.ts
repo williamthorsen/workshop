@@ -132,10 +132,10 @@ function judgeContributions(
   contributions: ReadonlyArray<RenderedContribution>,
   host: HostState | undefined,
 ): Array<ArtifactVerdict> {
-  const held = new Map(host?.state === 'present' ? host.contributions.map(({ key, body }) => [key, body]) : []);
+  const heldBodies = new Map(host?.state === 'present' ? host.contributions.map(({ key, body }) => [key, body]) : []);
 
   return contributions.map(({ artifact, content }) => {
-    const before = held.get(artifact.id);
+    const before = heldBodies.get(artifact.id);
     if (before === undefined) {
       return { artifactId: artifact.id, verdict: 'added' };
     }
@@ -168,7 +168,7 @@ function nameContributors(
   const artifacts = new Map<ArtifactId, ArtifactContribution>(
     routed.map((artifact) => [artifact.id, { artifactId: artifact.id, marker: renderMarkers(deployment, artifact) }]),
   );
-  const named = new Set<PartialId>();
+  const namedPartialIds = new Set<PartialId>();
 
   for (const { contributors } of contributions) {
     for (const contribution of contributors.artifacts) {
@@ -177,11 +177,11 @@ function nameContributors(
       }
     }
     for (const partial of contributors.partials) {
-      named.add(partial);
+      namedPartialIds.add(partial);
     }
   }
 
-  return { artifacts: artifacts.values().toArray(), partials: [...named].toSorted(compareStrings) };
+  return { artifacts: artifacts.values().toArray(), partials: [...namedPartialIds].toSorted(compareStrings) };
 }
 
 /** Locates the destination a region deployment writes, which is the host itself. */

@@ -12,7 +12,7 @@ export function expandSelector(
   diagnostics: Array<SelectionDiagnostic>,
 ): ReadonlyArray<ArtifactId> {
   if ('artifact' in selector) {
-    const artifactId = index.bySlug.get(kindId)?.get(selector.artifact);
+    const artifactId = index.slugIndexesByKind.get(kindId)?.get(selector.artifact);
     if (artifactId === undefined) {
       diagnostics.push({
         code: 'unknown-artifact',
@@ -29,7 +29,7 @@ export function expandSelector(
     return [];
   }
 
-  const sourceArtifactIds = index.bySource.get(kindId)?.get(selector.source) ?? [];
+  const sourceArtifactIds = index.sourceIndexesByKind.get(kindId)?.get(selector.source) ?? [];
   if (sourceArtifactIds.length === 0) {
     diagnostics.push({
       code: 'empty-source',

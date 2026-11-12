@@ -121,19 +121,19 @@ function groupRulesByKind(
   rules: ReadonlyArray<EdgeRule>,
   kindIds: ReadonlyArray<KindId>,
 ): ReadonlyMap<KindId, KindEdgeRules> {
-  const byKind = new Map<KindId, Array<EdgeRule>>();
+  const edgeRulesByKind = new Map<KindId, Array<EdgeRule>>();
   for (const rule of rules) {
-    byKind.set(rule.kindId, [...(byKind.get(rule.kindId) ?? []), rule]);
+    edgeRulesByKind.set(rule.kindId, [...(edgeRulesByKind.get(rule.kindId) ?? []), rule]);
   }
 
-  const grouped = new Map<KindId, KindEdgeRules>();
+  const rulesByKind = new Map<KindId, KindEdgeRules>();
   for (const kindId of kindIds) {
-    const own = byKind.get(kindId) ?? [];
+    const own = edgeRulesByKind.get(kindId) ?? [];
     const ownKeys = new Set(own.map(({ key }) => key));
     const foreignKeys = new Set(rules.map(({ key }) => key).filter((key) => !ownKeys.has(key)));
-    grouped.set(kindId, { rules: own, foreignKeys });
+    rulesByKind.set(kindId, { rules: own, foreignKeys });
   }
-  return grouped;
+  return rulesByKind;
 }
 
 /** Reads one entry's declared and contributed edges, and the partials the contribution came from. */

@@ -28,7 +28,7 @@ export function stripInlays(content: string, syntax: DirectiveSyntax): InlayStri
   const patterns = buildInlayPatterns(syntax);
   const kept: Array<string> = [];
   const sites: Array<InlaySite> = [];
-  const declared = new Set<string>();
+  const declaredInlayNames = new Set<string>();
 
   for (const [index, line] of content.split('\n').entries()) {
     const name = patterns.inlay.exec(line)?.[1];
@@ -42,12 +42,12 @@ export function stripInlays(content: string, syntax: DirectiveSyntax): InlayStri
       continue;
     }
 
-    if (declared.has(name)) {
+    if (declaredInlayNames.has(name)) {
       const detail = `declares "${name}", which this body declares already`;
       return { status: 'failed', diagnostic: buildDiagnostic('duplicate-name', detail, index + 1) };
     }
 
-    declared.add(name);
+    declaredInlayNames.add(name);
     sites.push({ name, insertAt: kept.length });
   }
 
