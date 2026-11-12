@@ -36,7 +36,7 @@ import { extractTokenEdges } from '../tokens/extractTokenEdges.ts';
 import { buildConfig } from './buildConfig.ts';
 
 /** Builds the source tree the fixture composes over. */
-export function buildGenericitySourceFiles(): Record<string, string | Uint8Array> {
+function buildGenericitySourceFiles(): Record<string, string | Uint8Array> {
   return {
     'clauses/governing-law.adoc': '= Governing law\n\nThe laws of the stated jurisdiction govern this agreement.\n',
     'clauses/indemnity.adoc': [
@@ -66,7 +66,7 @@ export function buildGenericitySourceFiles(): Record<string, string | Uint8Array
  * The clause deployment is rooted at `articles` while the source roots the kind at `clauses`, so a layout read from the
  * source rather than from the target's own declaration lands the file in the wrong tree.
  */
-export function buildJurisdictionTarget(targetRoot: string): RenderTarget {
+function buildJurisdictionTarget(targetRoot: string): RenderTarget {
   return {
     id: 'de',
     label: 'Germany',
@@ -152,13 +152,13 @@ export async function captureGenericityComposition(): Promise<GenericityFixture>
 export const CONTRACT_HOST_PATH = 'master-agreement.adoc';
 
 /** The markers delimiting one contributor's block within the fixture's host, in AsciiDoc's tagged-region syntax. */
-export const CONTRIBUTION_MARKERS: MarkerPair = {
+const CONTRIBUTION_MARKERS: MarkerPair = {
   open: '// tag::{artifactId}[]',
   close: '// end::{artifactId}[]',
 };
 
 /** The markers delimiting one filler's block within a filled inlay, in a syntax of the fixture's own. */
-export const FILL_MARKERS: MarkerPair = {
+const FILL_MARKERS: MarkerPair = {
   open: '// fill::{artifactId}[]',
   close: '// end-fill::{artifactId}[]',
 };
@@ -169,7 +169,7 @@ export const FILL_MARKERS: MarkerPair = {
  * `clause` is one file per artifact and deploys under a name template; `definition` routes into a shared host; and
  * `exhibit` is a directory per artifact, so it ships an asset beside the entry file containing its body.
  */
-export const GENERICITY_KINDS: ReadonlyArray<ResolveKind> = [
+const GENERICITY_KINDS: ReadonlyArray<ResolveKind> = [
   {
     id: 'clause',
     label: 'Clause',
@@ -196,7 +196,7 @@ export const GENERICITY_KINDS: ReadonlyArray<ResolveKind> = [
  * `clause-reference` resolves to the name its clause deploys under, and `party` resolves through the target's own
  * mapping table.
  */
-export const GENERICITY_TOKEN_KINDS: ReadonlyArray<TokenKind> = [
+const GENERICITY_TOKEN_KINDS: ReadonlyArray<TokenKind> = [
   {
     id: 'clause-reference',
     label: 'Clause reference',
@@ -216,7 +216,7 @@ export interface GenericityFixture {
 }
 
 /** The markers fencing a whole filled inlay in the clause that declared it. */
-export const INLAY_MARKERS: MarkerPair = {
+const INLAY_MARKERS: MarkerPair = {
   open: '// inlay::{inlayName}[]',
   close: '// end-inlay::{inlayName}[]',
 };
