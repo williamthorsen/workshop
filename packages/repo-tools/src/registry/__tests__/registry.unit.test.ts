@@ -8,6 +8,7 @@ import {
   appendEntry,
   parseRegistry,
   readRegistry,
+  recordMove,
   type Registry,
   saveRegistry,
   selectEntries,
@@ -262,6 +263,49 @@ describe(appendEntry, () => {
     appendEntry(registry, { name: 'delta', path: '~/repos/delta', repo: 'owner/delta', stack: [] });
     expect(serializeRegistry(registry)).toBe(
       `${FIXTURE}  - name: delta\n    path: ~/repos/delta\n    repo: owner/delta\n`,
+    );
+  });
+});
+
+describe(recordMove, () => {
+  it('sets the path and adds formerPaths after it as a flow list', () => {
+    const registry = parse(FIXTURE);
+    const target = entry(registry, 'alpha');
+    recordMove(registry, target, '~/repos/tools/alpha');
+    expect(serializeRegistry(registry)).toContain(
+      '  - name: alpha\n    path: ~/repos/tools/alpha\n    formerPaths: [~/repos/alpha]\n    repo: owner/alpha\n',
+    );
+    expect(target.formerPaths).toStrictEqual(['~/repos/alpha']);
+  });
+
+  it('appends to an existing list, oldest first, and skips a path that the list contains', () => {
+    const registry = parse(FIXTURE);
+    const target = entry(registry, 'alpha');
+    recordMove(registry, target, '~/repos/b/alpha');
+    recordMove(registry, target, '~/repos/c/alpha');
+    recordMove(registry, target, '~/repos/alpha');
+    recordMove(registry, target, '~/repos/b/alpha');
+    expect(serializeRegistry(registry)).toContain(
+      'path: ~/repos/b/alpha\n    formerPaths: [~/repos/alpha, ~/repos/b/alpha, ~/repos/c/alpha]\n',
+    );
+    const reparsed = parse(serializeRegistry(registry)).entries[0];
+    expect(reparsed?.formerPaths).toStrictEqual(['~/repos/alpha', '~/repos/b/alpha', '~/repos/c/alpha']);
+  });
+
+  it('leaves the other entries byte for byte', () => {
+    const registry = parse(FIXTURE);
+    const target = entry(registry, 'beta');
+    recordMove(registry, target, '~/repos/web/beta');
+    const expected = FIXTURE.replace(
+      '    path: ~/repos/beta\n',
+      '    path: ~/repos/web/beta\n    formerPaths: [~/repos/beta]\n',
+    );
+    expect(serializeRegistry(registry)).toBe(expected);
+  });
+
+  it('reports a formerPaths value that is not a list of strings', () => {
+    expect(parseRegistry('repos:\n  - name: alpha\n    formerPaths: 3\n')).toBe(
+      "entry 1: 'formerPaths' is not a list of strings",
     );
   });
 });
