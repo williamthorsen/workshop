@@ -38,7 +38,7 @@ export function resolveDeployedNames(
   artifacts: ReadonlyArray<DeployableArtifact>,
   targets: ReadonlyArray<RenderTarget>,
 ): DeployedNameLookup {
-  const byTarget = new Map<TargetId, Map<ArtifactId, string>>();
+  const namesByTarget = new Map<TargetId, Map<ArtifactId, string>>();
 
   for (const target of targets) {
     const deployments = new Map(target.deployments.map((deployment) => [deployment.kindId, deployment]));
@@ -55,8 +55,8 @@ export function resolveDeployedNames(
           : (artifact.deployedName ?? renderDeployedName(deployment.nameTemplate, artifact.slug)),
       );
     }
-    byTarget.set(target.id, names);
+    namesByTarget.set(target.id, names);
   }
 
-  return (targetId, artifactId) => byTarget.get(targetId)?.get(artifactId);
+  return (targetId, artifactId) => namesByTarget.get(targetId)?.get(artifactId);
 }

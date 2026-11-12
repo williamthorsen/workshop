@@ -55,14 +55,14 @@ export function resolveInclusionPaths(view: DependencyGraphView, artifactId: Art
   const edges = buildForwardEdges(view);
   const paths: Array<Array<ArtifactId>> = [];
   const trail: Array<ArtifactId> = [];
-  const onTrail = new Set<ArtifactId>();
+  const trailArtifactIds = new Set<ArtifactId>();
 
   function walk(from: ArtifactId): void {
-    if (onTrail.has(from)) {
+    if (trailArtifactIds.has(from)) {
       return;
     }
     trail.push(from);
-    onTrail.add(from);
+    trailArtifactIds.add(from);
 
     if (from === artifactId) {
       paths.push([...trail]);
@@ -74,7 +74,7 @@ export function resolveInclusionPaths(view: DependencyGraphView, artifactId: Art
     }
 
     trail.pop();
-    onTrail.delete(from);
+    trailArtifactIds.delete(from);
   }
 
   for (const seed of findSeeds(view)) {

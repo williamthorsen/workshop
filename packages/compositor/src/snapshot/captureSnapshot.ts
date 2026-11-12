@@ -246,10 +246,12 @@ async function renderTarget(
   tokenKinds: ReadonlyArray<TokenKind>,
   resolveDeployedName: DeployedNameLookup,
 ): Promise<TargetRenders> {
-  const emitting = new Set(catalog.kinds.filter((kind) => kind.emitsFiles).map(({ id }) => id));
-  const deployed = new Set(target.deployments.map(({ kindId }) => kindId));
+  const emittingKindIds = new Set(catalog.kinds.filter((kind) => kind.emitsFiles).map(({ id }) => id));
+  const deployedKindIds = new Set(target.deployments.map(({ kindId }) => kindId));
   const sources = new Map(catalog.sources.map((source) => [source.id, source]));
-  const entries = catalog.entries.filter((entry) => emitting.has(entry.kindId) && deployed.has(entry.kindId));
+  const entries = catalog.entries.filter(
+    (entry) => emittingKindIds.has(entry.kindId) && deployedKindIds.has(entry.kindId),
+  );
 
   // Entries render concurrently; the map below is built in catalog order, so the order they finish in cannot reach the
   // matrix.

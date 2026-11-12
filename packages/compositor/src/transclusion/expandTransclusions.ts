@@ -55,7 +55,7 @@ export async function expandTransclusions(
     patterns: buildDirectivePatterns(syntax),
     root: path.resolve(source.dir),
     sourceId: source.id,
-    visited: new Set(),
+    visitedPaths: new Set(),
   };
 
   try {
@@ -102,7 +102,7 @@ async function expandFile(
   context: ExpansionContext,
   attribution: PartialId | undefined,
 ): Promise<Array<MutableSegment>> {
-  context.visited.add(filePath);
+  context.visitedPaths.add(filePath);
   try {
     const host = toPosix(path.relative(context.root, filePath));
     const lines = (await readFile(filePath, 'utf8')).split('\n');
@@ -161,7 +161,7 @@ async function expandFile(
 
     return out;
   } finally {
-    context.visited.delete(filePath);
+    context.visitedPaths.delete(filePath);
   }
 }
 
@@ -179,8 +179,8 @@ async function expandPartial(
 ): Promise<Array<MutableSegment>> {
   const partialPosixPath = toPosix(path.relative(context.root, partialPath));
 
-  if (context.visited.has(partialPath)) {
-    const chain = [...context.visited, partialPath].map((entry) => toPosix(path.relative(context.root, entry)));
+  if (context.visitedPaths.has(partialPath)) {
+    const chain = [...context.visitedPaths, partialPath].map((entry) => toPosix(path.relative(context.root, entry)));
     throw fail('cycle', `reaches a file already being expanded: ${chain.join(' -> ')}`, at);
   }
 
@@ -212,7 +212,7 @@ interface ExpansionContext {
   readonly patterns: DirectivePatterns;
   readonly root: string;
   readonly sourceId: SourceId;
-  readonly visited: Set<string>;
+  readonly visitedPaths: Set<string>;
 }
 
 /** Raises a diagnostic naming what the directive at `at` could not do. */

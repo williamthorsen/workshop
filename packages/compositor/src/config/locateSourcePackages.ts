@@ -41,12 +41,12 @@ export async function locateSourcePackages(
   config: CompositorConfig,
   options: LocateSourcePackagesOptions,
 ): Promise<ReadonlyArray<PackageLocation>> {
-  const requested = new Map<string, { baseDir: string; package: string }>();
+  const requestedPackages = new Map<string, { baseDir: string; package: string }>();
 
   for (const tier of config.tiers) {
     for (const source of tier.sources.use) {
       if (source.origin.kind === 'package') {
-        requested.set(composeLocationKey(tier.baseDir, source.origin.location), {
+        requestedPackages.set(composeLocationKey(tier.baseDir, source.origin.location), {
           baseDir: tier.baseDir,
           package: source.origin.location,
         });
@@ -54,7 +54,7 @@ export async function locateSourcePackages(
     }
   }
 
-  return Promise.all(requested.values().map((request) => locateOne(request, options)));
+  return Promise.all(requestedPackages.values().map((request) => locateOne(request, options)));
 }
 
 // region | Helpers

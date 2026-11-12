@@ -9,11 +9,11 @@ import type { Plan } from '../../schemas/plan-schemas.ts';
  * ownership, and contributors.
  */
 export function findDuplicateFileKeys(plan: Plan): Array<Violation> {
-  const claimed = new Map<string, Set<string>>();
+  const claimedPathsByTarget = new Map<string, Set<string>>();
   const violations: Array<Violation> = [];
 
   for (const [index, file] of plan.files.entries()) {
-    const paths = claimed.get(file.targetId) ?? new Set<string>();
+    const paths = claimedPathsByTarget.get(file.targetId) ?? new Set<string>();
     if (paths.has(file.path)) {
       violations.push({
         path: `files[${index}]`,
@@ -21,7 +21,7 @@ export function findDuplicateFileKeys(plan: Plan): Array<Violation> {
       });
     }
     paths.add(file.path);
-    claimed.set(file.targetId, paths);
+    claimedPathsByTarget.set(file.targetId, paths);
   }
 
   return violations;

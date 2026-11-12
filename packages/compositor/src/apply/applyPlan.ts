@@ -58,7 +58,7 @@ export async function applyPlan(plan: Plan, options: ApplyPlanOptions): Promise<
   const roots = new Map(plan.targets.map((target) => [target.id, expandPath(target.root, options.baseDir)]));
 
   const files: Array<AppliedFile> = [];
-  const touched = new Map<TargetId, TouchedPaths>();
+  const touchedPathsByTarget = new Map<TargetId, TouchedPaths>();
 
   for (const file of plan.files) {
     const root = requireRoot(roots, file);
@@ -69,12 +69,20 @@ export async function applyPlan(plan: Plan, options: ApplyPlanOptions): Promise<
       continue;
     }
 
-    const paths = touched.get(file.targetId) ?? { removed: new Set<string>(), written: new Set<string>() };
-    paths[applied.action].add(file.path);
-    touched.set(file.targetId, paths);
+    const paths = touchedPathsByTarget.get(file.targetId) ?? {
+      removedPaths: new Set<string>(),
+      writtenPaths: new Set<string>(),
+    };
+    paths[`${applied.action}Paths`].add(file.path);
+    touchedPathsByTarget.set(file.targetId, paths);
   }
 
-  return { fingerprint: plan.fingerprint, dryRun, files, prunedDirs: await pruneEmptied(plan, roots, touched, dryRun) };
+  return {
+    fingerprint: plan.fingerprint,
+    dryRun,
+    files,
+    prunedDirs: await pruneEmptied(plan, roots, touchedPathsByTarget, dryRun),
+  };
 }
 
 // region | Helpers
@@ -150,14 +158,14 @@ async function hashIfPresent(destination: string): Promise<Hash | undefined> {
 async function pruneEmptied(
   plan: Plan,
   roots: ReadonlyMap<TargetId, string>,
-  touched: ReadonlyMap<TargetId, TouchedPaths>,
+  touchedPathsByTarget: ReadonlyMap<TargetId, TouchedPaths>,
   dryRun: boolean,
 ): Promise<Array<PrunedDirectory>> {
   const pruned: Array<PrunedDirectory> = [];
 
   for (const target of plan.targets) {
     const root = roots.get(target.id);
-    const paths = touched.get(target.id);
+    const paths = touchedPathsByTarget.get(target.id);
     // A target stating no container directories leaves the climb unbounded, so every directory it holds stands.
     if (root === undefined || paths === undefined || target.containerDirs === undefined) {
       continue;
@@ -165,8 +173,8 @@ async function pruneEmptied(
 
     const dirs = await collectPrunableDirs({
       root,
-      removed: paths.removed,
-      written: paths.written,
+      removedPaths: paths.removedPaths,
+      writtenPaths: paths.writtenPaths,
       containerDirs: new Set(target.containerDirs),
     });
     for (const dir of dirs) {
@@ -232,8 +240,8 @@ function requireRoot(roots: ReadonlyMap<TargetId, string>, file: FileEntry): str
 
 /** The destinations one target's run acted on, which decide which of its directories are left empty. */
 interface TouchedPaths {
-  readonly removed: Set<string>;
-  readonly written: Set<string>;
+  readonly removedPaths: Set<string>;
+  readonly writtenPaths: Set<string>;
 }
 
 // endregion | Helpers

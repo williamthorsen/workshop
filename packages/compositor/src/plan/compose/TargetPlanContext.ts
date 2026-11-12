@@ -38,7 +38,7 @@ export interface TargetPlanContext {
   readonly renders: ReadonlyMap<ArtifactId, ArtifactRender>;
   readonly assets: ReadonlyMap<ArtifactId, ReadonlyArray<ArtifactAsset>>;
   /** What the target holds now, by path. */
-  readonly claimed: ReadonlyMap<string, ClaimedFile>;
+  readonly claimedFiles: ReadonlyMap<string, ClaimedFile>;
   /** What the target's region hosts hold now, by the kind whose deployment declared each. */
   readonly hosts: ReadonlyMap<KindId, HostState>;
   /** What the target's entries hosts hold now, by path: an entries host belongs to no kind. */

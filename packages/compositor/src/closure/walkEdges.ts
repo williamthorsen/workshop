@@ -34,18 +34,18 @@ export interface WalkResult {
  */
 export function walkEdges(input: WalkInput): WalkResult {
   const { entries, edges, seeds } = input;
-  const seededBy = new Map(seeds.map(({ artifactId, seededBy: records }) => [artifactId, records]));
-  const reached = new Map<ArtifactId, ClosureArtifact>();
+  const seedsByArtifact = new Map(seeds.map(({ artifactId, seededBy: records }) => [artifactId, records]));
+  const reachedArtifacts = new Map<ArtifactId, ClosureArtifact>();
   const diagnostics: Array<ClosureDiagnostic> = [];
   const reportedCycles = new Set<string>();
   const trail: Array<ArtifactId> = [];
-  const onTrail = new Set<ArtifactId>();
+  const trailArtifactIds = new Set<ArtifactId>();
 
   function visit(entry: CatalogEntry): void {
-    if (onTrail.has(entry.id)) {
+    if (trailArtifactIds.has(entry.id)) {
       return;
     }
-    if (reached.has(entry.id)) {
+    if (reachedArtifacts.has(entry.id)) {
       return;
     }
 
@@ -63,26 +63,26 @@ export function walkEdges(input: WalkInput): WalkResult {
       });
     }
 
-    reached.set(entry.id, {
+    reachedArtifacts.set(entry.id, {
       id: entry.id,
       kindId: entry.kindId,
       slug: entry.slug,
-      seededBy: [...(seededBy.get(entry.id) ?? [])],
+      seededBy: [...(seedsByArtifact.get(entry.id) ?? [])],
       dependsOn: outgoing,
       resolution: entry.resolution,
     });
 
     trail.push(entry.id);
-    onTrail.add(entry.id);
+    trailArtifactIds.add(entry.id);
     for (const edge of outgoing) {
-      reportCycle(edge.to, diagnostics, reportedCycles, trail, onTrail);
+      reportCycle(edge.to, diagnostics, reportedCycles, trail, trailArtifactIds);
       const next = entries.get(edge.to);
       if (next !== undefined) {
         visit(next);
       }
     }
     trail.pop();
-    onTrail.delete(entry.id);
+    trailArtifactIds.delete(entry.id);
   }
 
   for (const seed of seeds) {
@@ -93,7 +93,7 @@ export function walkEdges(input: WalkInput): WalkResult {
     visit(entry);
   }
 
-  return { artifacts: reached.values().toArray(), diagnostics };
+  return { artifacts: reachedArtifacts.values().toArray(), diagnostics };
 }
 
 // region | Helpers
@@ -118,20 +118,20 @@ function describeOrigin(edge: DependencyEdge): string {
 function reportCycle(
   to: ArtifactId,
   diagnostics: Array<ClosureDiagnostic>,
-  reported: Set<string>,
+  reportedCycles: Set<string>,
   trail: ReadonlyArray<ArtifactId>,
-  onTrail: ReadonlySet<ArtifactId>,
+  trailArtifactIds: ReadonlySet<ArtifactId>,
 ): void {
   const from = trail.at(-1);
-  if (from === undefined || !onTrail.has(to)) {
+  if (from === undefined || !trailArtifactIds.has(to)) {
     return;
   }
 
   const closing = JSON.stringify([from, to]);
-  if (reported.has(closing)) {
+  if (reportedCycles.has(closing)) {
     return;
   }
-  reported.add(closing);
+  reportedCycles.add(closing);
 
   const cycle = trail.slice(trail.indexOf(to));
   diagnostics.push({

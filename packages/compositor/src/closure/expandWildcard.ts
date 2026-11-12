@@ -24,6 +24,6 @@ export function expandWildcard(
 ): ReadonlyArray<ArtifactId> {
   const { sourceId } = entry.resolution.winner;
   return emittingKindIds
-    .flatMap((kindId) => index.bySource.get(kindId)?.get(sourceId) ?? [])
+    .flatMap((kindId) => index.sourceIndexesByKind.get(kindId)?.get(sourceId) ?? [])
     .filter((artifactId) => artifactId !== entry.id);
 }

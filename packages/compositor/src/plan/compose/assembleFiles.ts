@@ -54,8 +54,8 @@ export interface FileAssembly {
  */
 export function assembleFiles(input: AssembleFilesInput): FileAssembly {
   const { artifacts, blobs, snapshot } = input;
-  const reached = new Set(artifacts.map(({ id }) => id));
-  const claimable = new Map(
+  const reachedArtifactIds = new Set(artifacts.map(({ id }) => id));
+  const claimableArtifacts = new Map(
     snapshot.catalog.entries.map(({ id, kindId, slug }) => [id, { id, kindId, slug }] as const),
   );
   const artifactsByKind = groupByKind(artifacts);
@@ -64,7 +64,7 @@ export function assembleFiles(input: AssembleFilesInput): FileAssembly {
 
   const files: Array<FileEntry> = [];
   const verdicts = new Map<ArtifactId, Array<ContentVerdict>>();
-  const departed = new Map<ArtifactId, ClaimedArtifact>();
+  const departedArtifacts = new Map<ArtifactId, ClaimedArtifact>();
 
   const targets = snapshot.targets.toSorted((left, right) => compareStrings(left.id, right.id));
 
@@ -79,7 +79,7 @@ export function assembleFiles(input: AssembleFilesInput): FileAssembly {
       target,
       renders: snapshot.renders.get(target.id) ?? new Map(),
       bindings: input.bindings,
-      reached,
+      reached: reachedArtifactIds,
     });
 
     const context: TargetPlanContext = {
@@ -88,7 +88,7 @@ export function assembleFiles(input: AssembleFilesInput): FileAssembly {
       artifactsByKind,
       renders: fill.renders,
       assets: snapshot.assets,
-      claimed: new Map(state.claimed.map((claimed) => [claimed.path, claimed])),
+      claimedFiles: new Map(state.claimed.map((claimed) => [claimed.path, claimed])),
       hosts: new Map(state.hosts.map((host) => [host.kindId, host])),
       ownedHosts: new Map(state.ownedHosts.map((host) => [host.path, host])),
       resolveDeployedName,
@@ -106,9 +106,12 @@ export function assembleFiles(input: AssembleFilesInput): FileAssembly {
     drafted.push(...planOwnedItemsFiles(context, target.ownedItems ?? []));
 
     const planned = resolveCollisions(context, drafted);
-    const removals = planRemovals(context, state, new Set(planned.map(({ path }) => path)), reached);
-    for (const artifact of [...removals.departed, ...findDepartedContributors(state, reached, claimable)]) {
-      departed.set(artifact.id, artifact);
+    const removals = planRemovals(context, state, new Set(planned.map(({ path }) => path)), reachedArtifactIds);
+    for (const artifact of [
+      ...removals.departed,
+      ...findDepartedContributors(state, reachedArtifactIds, claimableArtifacts),
+    ]) {
+      departedArtifacts.set(artifact.id, artifact);
     }
 
     files.push(...[...planned, ...removals.files].toSorted((left, right) => compareStrings(left.path, right.path)));
@@ -117,7 +120,7 @@ export function assembleFiles(input: AssembleFilesInput): FileAssembly {
   return {
     files,
     verdicts,
-    departed: departed
+    departed: departedArtifacts
       .values()
       .toArray()
       .toSorted((left, right) => compareStrings(left.id, right.id)),
@@ -140,8 +143,8 @@ function describeContestedDestination(contributors: FileContributors): string {
  */
 function findDepartedContributors(
   state: TargetState,
-  reached: ReadonlySet<ArtifactId>,
-  claimable: ReadonlyMap<ArtifactId, ClaimedArtifact>,
+  reachedArtifactIds: ReadonlySet<ArtifactId>,
+  claimableArtifacts: ReadonlyMap<ArtifactId, ClaimedArtifact>,
 ): Array<ClaimedArtifact> {
   const departed: Array<ClaimedArtifact> = [];
 
@@ -150,8 +153,8 @@ function findDepartedContributors(
       continue;
     }
     for (const contribution of host.contributions) {
-      const artifact = claimable.get(contribution.key);
-      if (artifact !== undefined && !reached.has(contribution.key)) {
+      const artifact = claimableArtifacts.get(contribution.key);
+      if (artifact !== undefined && !reachedArtifactIds.has(contribution.key)) {
         departed.push(artifact);
       }
     }
@@ -162,11 +165,11 @@ function findDepartedContributors(
 
 /** Groups the closure's artifacts by kind, keeping the id order they are given in. */
 function groupByKind(artifacts: ReadonlyArray<ClosureArtifact>): ReadonlyMap<KindId, ReadonlyArray<ClosureArtifact>> {
-  const byKind = new Map<KindId, Array<ClosureArtifact>>();
+  const artifactsByKind = new Map<KindId, Array<ClosureArtifact>>();
   for (const artifact of artifacts) {
-    appendTo(byKind, artifact.kindId, artifact);
+    appendTo(artifactsByKind, artifact.kindId, artifact);
   }
-  return byKind;
+  return artifactsByKind;
 }
 
 /**
@@ -204,7 +207,7 @@ function planRemovals(
   context: TargetPlanContext,
   state: TargetState,
   plannedPaths: ReadonlySet<string>,
-  reached: ReadonlySet<ArtifactId>,
+  reachedArtifactIds: ReadonlySet<ArtifactId>,
 ): Removals {
   const files: Array<FileEntry> = [];
   const departed: Array<ClaimedArtifact> = [];
@@ -223,7 +226,7 @@ function planRemovals(
       current: context.blobs.addEncoded(claimed.hash, claimed.body),
       contributors: { artifacts: claimed.claims.map(({ id }) => ({ artifactId: id })), partials: [] },
     });
-    departed.push(...claimed.claims.filter(({ id }) => !reached.has(id)));
+    departed.push(...claimed.claims.filter(({ id }) => !reachedArtifactIds.has(id)));
   }
 
   return { files, departed };
@@ -249,12 +252,12 @@ interface Removals {
  * destination is the file's to say, and `blocked` is where it says it.
  */
 function resolveCollisions(context: TargetPlanContext, drafted: ReadonlyArray<FileEntry>): Array<FileEntry> {
-  const byPath = new Map<string, Array<FileEntry>>();
+  const filesByPath = new Map<string, Array<FileEntry>>();
   for (const entry of drafted) {
-    appendTo(byPath, entry.path, entry);
+    appendTo(filesByPath, entry.path, entry);
   }
 
-  return byPath
+  return filesByPath
     .values()
     .flatMap((entries) => {
       const [first, ...rest] = entries;

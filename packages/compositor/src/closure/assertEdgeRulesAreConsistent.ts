@@ -57,19 +57,19 @@ export function assertEdgeRulesAreConsistent(
 
 /** Reports each key claimed twice for one kind, where whichever rule loses is never read. */
 function findRepeatedClaims(rules: ReadonlyArray<EdgeRule>): Array<Violation> {
-  const seen = new Set<string>();
-  const repeated = new Map<string, Violation>();
+  const seenClaims = new Set<string>();
+  const violationsByClaim = new Map<string, Violation>();
   for (const rule of rules) {
     const claim = JSON.stringify([rule.kindId, rule.key]);
-    if (seen.has(claim)) {
-      repeated.set(claim, {
+    if (seenClaims.has(claim)) {
+      violationsByClaim.set(claim, {
         path: 'rules',
         message: `claim "${rule.key}" of kind "${rule.kindId}" more than once`,
       });
     }
-    seen.add(claim);
+    seenClaims.add(claim);
   }
-  return repeated.values().toArray();
+  return violationsByClaim.values().toArray();
 }
 
 // endregion | Helpers

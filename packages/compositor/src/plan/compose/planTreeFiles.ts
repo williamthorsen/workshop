@@ -32,7 +32,7 @@ export function planTreeFiles(context: TargetPlanContext, deployment: TreeKindDe
     }
 
     for (const destination of collectDestinations(context, deployment, artifact, deployedName, render)) {
-      const claimed = context.claimed.get(destination.path);
+      const claimed = context.claimedFiles.get(destination.path);
       const current = readCurrentSide(context.blobs, claimed);
 
       if (destination.planned === undefined) {

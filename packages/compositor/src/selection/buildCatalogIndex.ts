@@ -7,9 +7,9 @@ export interface CatalogIndex {
   readonly kindIds: ReadonlySet<KindId>;
   readonly sourceIds: ReadonlySet<Id>;
   /** Keyed by kind, then slug. */
-  readonly bySlug: ReadonlyMap<KindId, ReadonlyMap<string, ArtifactId>>;
+  readonly slugIndexesByKind: ReadonlyMap<KindId, ReadonlyMap<string, ArtifactId>>;
   /** Keyed by kind, then source, in catalog order. Indexes an artifact under every source that has a copy of it. */
-  readonly bySource: ReadonlyMap<KindId, ReadonlyMap<Id, ReadonlyArray<ArtifactId>>>;
+  readonly sourceIndexesByKind: ReadonlyMap<KindId, ReadonlyMap<Id, ReadonlyArray<ArtifactId>>>;
 }
 
 /**
@@ -20,25 +20,25 @@ export interface CatalogIndex {
  * took whole contains the artifact whether or not it won it.
  */
 export function buildCatalogIndex(catalog: Catalog): CatalogIndex {
-  const bySlug = new Map<KindId, Map<string, ArtifactId>>();
-  const bySource = new Map<KindId, Map<Id, Array<ArtifactId>>>();
+  const slugIndexesByKind = new Map<KindId, Map<string, ArtifactId>>();
+  const sourceIndexesByKind = new Map<KindId, Map<Id, Array<ArtifactId>>>();
 
   for (const entry of catalog.entries) {
-    const slugs = bySlug.get(entry.kindId) ?? new Map<string, ArtifactId>();
-    slugs.set(entry.slug, entry.id);
-    bySlug.set(entry.kindId, slugs);
+    const artifactIdsBySlug = slugIndexesByKind.get(entry.kindId) ?? new Map<string, ArtifactId>();
+    artifactIdsBySlug.set(entry.slug, entry.id);
+    slugIndexesByKind.set(entry.kindId, artifactIdsBySlug);
 
-    const sources = bySource.get(entry.kindId) ?? new Map<Id, Array<ArtifactId>>();
+    const artifactIdsBySource = sourceIndexesByKind.get(entry.kindId) ?? new Map<Id, Array<ArtifactId>>();
     for (const candidate of [entry.resolution.winner, ...entry.resolution.shadowed]) {
-      appendTo(sources, candidate.sourceId, entry.id);
+      appendTo(artifactIdsBySource, candidate.sourceId, entry.id);
     }
-    bySource.set(entry.kindId, sources);
+    sourceIndexesByKind.set(entry.kindId, artifactIdsBySource);
   }
 
   return {
     kindIds: new Set(catalog.kinds.map(({ id }) => id)),
     sourceIds: new Set(catalog.sources.map(({ id }) => id)),
-    bySlug,
-    bySource,
+    slugIndexesByKind,
+    sourceIndexesByKind,
   };
 }

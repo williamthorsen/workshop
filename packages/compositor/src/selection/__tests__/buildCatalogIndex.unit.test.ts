@@ -23,22 +23,22 @@ describe(buildCatalogIndex, () => {
   });
 
   it('maps a slug to its artifact id, keyed by kind', () => {
-    expect(buildCatalogIndex(catalog).bySlug.get('skill')?.get('lint')).toBe('skill:lint');
+    expect(buildCatalogIndex(catalog).slugIndexesByKind.get('skill')?.get('lint')).toBe('skill:lint');
   });
 
   it('keeps one kind’s slugs out of another’s, so two kinds may share a slug', () => {
-    expect(buildCatalogIndex(catalog).bySlug.get('rulebook')?.get('lint')).toBeUndefined();
+    expect(buildCatalogIndex(catalog).slugIndexesByKind.get('rulebook')?.get('lint')).toBeUndefined();
   });
 
   it('indexes an artifact under the source that won it', () => {
-    expect(buildCatalogIndex(catalog).bySource.get('skill')?.get('acme')).toContain('skill:lint');
+    expect(buildCatalogIndex(catalog).sourceIndexesByKind.get('skill')?.get('acme')).toContain('skill:lint');
   });
 
   it('indexes an artifact under a source whose copy is shadowed, not the winner alone', () => {
-    expect(buildCatalogIndex(catalog).bySource.get('skill')?.get('local')).toStrictEqual(['skill:review']);
+    expect(buildCatalogIndex(catalog).sourceIndexesByKind.get('skill')?.get('local')).toStrictEqual(['skill:review']);
   });
 
   it('omits a source with no entries of a kind from the index', () => {
-    expect(buildCatalogIndex(catalog).bySource.get('rulebook')?.get('acme')).toBeUndefined();
+    expect(buildCatalogIndex(catalog).sourceIndexesByKind.get('rulebook')?.get('acme')).toBeUndefined();
   });
 });

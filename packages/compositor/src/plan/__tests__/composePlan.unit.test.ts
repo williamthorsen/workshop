@@ -171,9 +171,9 @@ describe(composePlan, () => {
       targetFiles: { 'skills/consult-naming/SKILL.md': '# Held\n' },
     });
     const plan = composePlan(config, snapshot);
-    const named = new Set(plan.files.flatMap(({ current, planned }) => [current?.hash, planned?.hash]));
+    const namedHashes = new Set(plan.files.flatMap(({ current, planned }) => [current?.hash, planned?.hash]));
 
-    expect(Object.keys(plan.blobs).filter((hash) => !named.has(hash))).toStrictEqual([]);
+    expect(Object.keys(plan.blobs).filter((hash) => !namedHashes.has(hash))).toStrictEqual([]);
   });
 
   it('leaves a contested destination’s contenders at the status their own content decided', async () => {

@@ -13,8 +13,8 @@ const publishedModules = await readPublishedModules();
 
 describe('package entry', () => {
   it.each(publishedModules)('re-exports every runtime member of %s', (_specifier, module) => {
-    const exported = new Set(Object.keys(entry));
-    const missing = Object.keys(module).filter((name) => !exported.has(name));
+    const exportedNames = new Set(Object.keys(entry));
+    const missing = Object.keys(module).filter((name) => !exportedNames.has(name));
 
     expect(missing).toStrictEqual([]);
   });

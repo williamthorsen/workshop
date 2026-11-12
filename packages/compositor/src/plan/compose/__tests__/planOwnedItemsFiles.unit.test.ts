@@ -133,7 +133,7 @@ function plan(
     artifactsByKind: new Map(),
     renders: new Map(),
     assets: new Map(),
-    claimed: new Map(),
+    claimedFiles: new Map(),
     hosts: new Map(),
     ownedHosts: new Map(
       Object.entries(held).map(([path, content]) => [path, { path, state: 'present', content, hash: path }] as const),

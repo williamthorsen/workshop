@@ -40,8 +40,8 @@ export function computeClosure(input: ComputeClosureInput): Closure {
   const walk = walkEdges({ entries, edges: graph.edges, seeds: selection.seeded });
 
   const artifacts = walk.artifacts.toSorted((left, right) => compareStrings(left.id, right.id));
-  const reached = new Set(artifacts.map(({ id }) => id));
-  const named = collectNamedPartials(artifacts);
+  const reachedArtifactIds = new Set(artifacts.map(({ id }) => id));
+  const namedPartialIds = collectNamedPartials(artifacts);
 
   return {
     schemaVersion: CLOSURE_SCHEMA_VERSION,
@@ -49,8 +49,8 @@ export function computeClosure(input: ComputeClosureInput): Closure {
     sources: graph.catalog.sources.map(({ id, name, origin }) => ({ id, name, origin })),
     tiers: tiers.map(({ id, label }) => ({ id, label })),
     artifacts,
-    partials: graph.partials.filter((partial) => named.has(partial.id)),
-    diagnostics: [...graph.diagnostics.filter(({ at }) => reached.has(at.artifactId)), ...walk.diagnostics],
+    partials: graph.partials.filter((partial) => namedPartialIds.has(partial.id)),
+    diagnostics: [...graph.diagnostics.filter(({ at }) => reachedArtifactIds.has(at.artifactId)), ...walk.diagnostics],
   };
 }
 
@@ -58,15 +58,15 @@ export function computeClosure(input: ComputeClosureInput): Closure {
 
 /** Collects the partials the surviving token edges name, the only ones a closure has to keep. */
 function collectNamedPartials(artifacts: ReadonlyArray<ClosureArtifact>): ReadonlySet<PartialId> {
-  const named = new Set<PartialId>();
+  const namedPartialIds = new Set<PartialId>();
   for (const artifact of artifacts) {
     for (const edge of artifact.dependsOn) {
       if (edge.partialId !== undefined) {
-        named.add(edge.partialId);
+        namedPartialIds.add(edge.partialId);
       }
     }
   }
-  return named;
+  return namedPartialIds;
 }
 
 // endregion | Helpers

@@ -43,37 +43,40 @@ export interface FindDeploymentCollisionsInput {
  */
 export function findDeploymentCollisions(input: FindDeploymentCollisionsInput): Array<DeploymentDiagnostic> {
   const { artifacts, targets } = input;
-  const emitting = new Set(input.kinds.filter((kind) => kind.emitsFiles).map(({ id }) => id));
-  const deployed = artifacts.filter((artifact) => emitting.has(artifact.kindId));
+  const emittingKindIds = new Set(input.kinds.filter((kind) => kind.emitsFiles).map(({ id }) => id));
+  const deployed = artifacts.filter((artifact) => emittingKindIds.has(artifact.kindId));
   const resolveDeployedName = resolveDeployedNames(deployed, targets);
 
-  const byKind = new Map<KindId, Array<ClosureArtifact>>();
+  const artifactsByKind = new Map<KindId, Array<ClosureArtifact>>();
   for (const artifact of deployed) {
-    appendTo(byKind, artifact.kindId, artifact);
+    appendTo(artifactsByKind, artifact.kindId, artifact);
   }
 
   return targets.flatMap((target) => {
-    const byPath = new Map<string, Array<Writer>>();
+    const writersByPath = new Map<string, Array<Writer>>();
 
     for (const deployment of target.deployments) {
       const { kindId } = deployment;
-      const routed = byKind.get(kindId) ?? [];
+      const routed = artifactsByKind.get(kindId) ?? [];
       if (routed.length === 0) {
         continue;
       }
       if (deployment.form === 'region') {
-        appendTo(byPath, deployment.host, { kindId, artifactIds: routed.map(({ id }) => id) });
+        appendTo(writersByPath, deployment.host, { kindId, artifactIds: routed.map(({ id }) => id) });
         continue;
       }
       for (const artifact of routed) {
         const deployedName = resolveDeployedName(target.id, artifact.id);
         if (deployedName !== undefined) {
-          appendTo(byPath, resolveDeployedPath(deployment, deployedName), { kindId, artifactIds: [artifact.id] });
+          appendTo(writersByPath, resolveDeployedPath(deployment, deployedName), {
+            kindId,
+            artifactIds: [artifact.id],
+          });
         }
       }
     }
 
-    return [...byPath]
+    return [...writersByPath]
       .filter(([, writers]) => writers.length > 1)
       .toSorted(([left], [right]) => compareStrings(left, right))
       .map(([path, writers]) => describeCollision(target.id, path, writers));
