@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import { createCli } from '@williamthorsen/toolbelt.cli/candidate';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
+import { allowDirenv, isDirenvInstalled } from '../direnv/direnv.ts';
 import {
   listTrackedFiles,
   listWorktrees,
@@ -21,7 +22,16 @@ import { runScan } from './runScan.ts';
 import { buildVerbRun, type CloneAdapters, PROG, type RepoContext, reportFailure, type VerbRun } from './verb-run.ts';
 
 export const GIT_ADAPTERS: CloneAdapters = {
+  allowDirenv,
   isDirectory: (dir) => fs.statSync(dir, { throwIfNoEntry: false })?.isDirectory() ?? false,
+  isDirenvInstalled,
+  listDirectory: (dir) => {
+    try {
+      return fs.readdirSync(dir);
+    } catch (error) {
+      return describeError(error);
+    }
+  },
   listTrackedFiles,
   listWorktrees,
   makeDirectory: (dir) => describeFsFailure(() => fs.mkdirSync(dir, { recursive: true })),
@@ -31,6 +41,8 @@ export const GIT_ADAPTERS: CloneAdapters = {
   readFile: (file) => fs.readFileSync(file, 'utf8'),
   readOriginUrl,
   readCloneRoot,
+  removeDirectory: (dir) => describeFsFailure(() => fs.rmdirSync(dir)),
+  removeFile: (file) => describeFsFailure(() => fs.unlinkSync(file)),
   renamePath: (from, to) => describeFsFailure(() => fs.renameSync(from, to)),
   resolvePath: (target) => (fs.existsSync(target) ? fs.realpathSync(target) : target),
   repairWorktrees,

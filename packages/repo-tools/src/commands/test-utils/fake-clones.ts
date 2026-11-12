@@ -30,7 +30,10 @@ export function buildFakeAdapters(
   branch = 'main',
 ): CloneAdapters {
   return {
+    allowDirenv: () => 'not exercised',
     isDirectory: (dir) => clones[cloneName(dir) ?? ''] !== undefined,
+    isDirenvInstalled: () => false,
+    listDirectory: () => 'not exercised',
     listTrackedFiles: (dir) => clones[cloneName(dir) ?? '']?.tracked ?? 'fatal: not a git repository',
     listWorktrees: () => [],
     makeDirectory: () => 'not exercised',
@@ -48,6 +51,8 @@ export function buildFakeAdapters(
       const name = cloneName(dir);
       return name !== undefined && clones[name] !== undefined ? `${FAKE_HOME}/repos/${name}` : undefined;
     },
+    removeDirectory: () => 'not exercised',
+    removeFile: () => 'not exercised',
     renamePath: () => 'not exercised',
     resolvePath: (target) => target,
     repairWorktrees: () => 'not exercised',
