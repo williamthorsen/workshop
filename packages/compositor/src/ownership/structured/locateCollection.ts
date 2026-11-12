@@ -1,3 +1,4 @@
+import { DeclarationError } from '../../declaration/DeclarationError.ts';
 import type { FileBlock } from '../../schemas/file-schemas.ts';
 import type { DocumentAccess, ItemHandle } from './document-access.ts';
 
@@ -18,7 +19,7 @@ export type LocatedCollection =
  */
 export function locateCollection(document: DocumentAccess, path: ReadonlyArray<string>): LocatedCollection {
   if (path.length === 0) {
-    throw new Error('A collection path must name at least one key; the document root cannot be owned.');
+    throw new DeclarationError('A collection path must name at least one key; the document root cannot be owned.');
   }
 
   const read = document.readCollection(path);

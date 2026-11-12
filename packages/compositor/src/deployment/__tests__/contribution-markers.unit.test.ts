@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { DeclarationError } from '../../declaration/DeclarationError.ts';
 import { readContributions } from '../../ownership/readContributions.ts';
 import { renderContribution } from '../../ownership/renderContribution.ts';
 import type { MarkerPair } from '../../schemas/render-target-schemas.ts';
@@ -79,6 +80,7 @@ describe(buildContributionPatterns, () => {
     expect(() => readContributions('# open x\n# close', buildContributionPatterns(fixed))).toThrow(
       /exactly one capture group/,
     );
+    expect(() => readContributions('# open x\n# close', buildContributionPatterns(fixed))).toThrow(DeclarationError);
   });
 });
 

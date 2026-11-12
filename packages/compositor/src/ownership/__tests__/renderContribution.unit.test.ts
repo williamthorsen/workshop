@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { DeclarationError } from '../../declaration/DeclarationError.ts';
 import type { RegionMarkers } from '../RegionMarkers.ts';
 import { renderContribution } from '../renderContribution.ts';
 
@@ -30,5 +31,6 @@ describe(renderContribution, () => {
 
   it('if the markers are equal, throws', () => {
     expect(() => renderContribution({ open: '# x', close: '# x' }, 'body')).toThrow(/must differ/);
+    expect(() => renderContribution({ open: '# x', close: '# x' }, 'body')).toThrow(DeclarationError);
   });
 });

@@ -1,5 +1,6 @@
 /** Region matching: the anchored line patterns every region transform reads a host through. */
 
+import { DeclarationError } from '../declaration/DeclarationError.ts';
 import { escapeForRegExp } from '../portable/escapeForRegExp.ts';
 import type { RegionMarkers } from './RegionMarkers.ts';
 
@@ -12,7 +13,7 @@ import type { RegionMarkers } from './RegionMarkers.ts';
 export function assertMarkersAreUsable(markers: RegionMarkers): void {
   const reason = findMarkerFault(markers);
   if (reason !== undefined) {
-    throw new Error(reason);
+    throw new DeclarationError(reason);
   }
 }
 

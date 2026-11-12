@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { DeclarationError } from '../../declaration/DeclarationError.ts';
 import { classifyRegion } from '../classifyRegion.ts';
 import type { RegionMarkers } from '../RegionMarkers.ts';
 
@@ -70,6 +71,7 @@ describe(classifyRegion, () => {
 
   it('if the markers are equal, throws rather than blocking, the fault being the declaration and not the host', () => {
     expect(() => classifyRegion('', { open: '# x', close: '# x' })).toThrow(/must differ/);
+    expect(() => classifyRegion('', { open: '# x', close: '# x' })).toThrow(DeclarationError);
   });
 
   it('if a marker is blank, throws', () => {

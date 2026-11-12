@@ -1,5 +1,7 @@
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
+import { DeclarationError } from '../../declaration/DeclarationError.ts';
 import { type ContributionPatterns, readContributions } from '../readContributions.ts';
 import { renderContribution } from '../renderContribution.ts';
 
@@ -74,11 +76,22 @@ describe(readContributions, () => {
     expect(() => readContributions('', { ...PATTERNS, open: '<!-- rulebook -->' })).toThrow(
       /exactly one capture group/,
     );
+    expect(() => readContributions('', { ...PATTERNS, open: '<!-- rulebook -->' })).toThrow(DeclarationError);
   });
 
   it('if a pattern captures more than the key, throws', () => {
     expect(() => readContributions('', { ...PATTERNS, open: '<!-- ([a-z]+):([a-z]+) -->' })).toThrow(
       /exactly one capture group/,
     );
+  });
+
+  it('if a pattern does not compile, throws a declaration error carrying the compile failure', async () => {
+    const error = await captureError(DeclarationError, () =>
+      readContributions('', { ...PATTERNS, close: '^<!-- /rulebook:([a-z-]+ -->$' }),
+    );
+
+    expect(error.name).toBe('DeclarationError');
+    expect(error.message).toMatch(/close pattern.*does not compile/);
+    expect(error.cause).toBeInstanceOf(SyntaxError);
   });
 });

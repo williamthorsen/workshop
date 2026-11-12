@@ -1,5 +1,6 @@
 /** Sentinels: reading and writing the mark that tells an engine's item from a foreign one. */
 
+import { DeclarationError } from '../../declaration/DeclarationError.ts';
 import type { OwnedItemsSpec } from '../../schemas/owned-items-schemas.ts';
 
 type Sentinel = OwnedItemsSpec['sentinel'];
@@ -30,7 +31,7 @@ export function applySentinel(item: unknown, sentinel: Sentinel): unknown {
     return stampSentinel(item, sentinel);
   }
   if (!hasSentinel(item, sentinel)) {
-    throw new Error(
+    throw new DeclarationError(
       `Cannot mark an item with the sentinel at "${sentinel.path.join('.')}": the sentinel cannot be written, and the ` +
         'item does not already have it.',
     );
@@ -71,7 +72,7 @@ export function stampSentinel(item: unknown, sentinel: Sentinel): unknown {
   const reason = findStampFault(item, sentinel);
   // `findStampFault` refuses an item that is not a mapping, so the second test only narrows the type.
   if (reason !== undefined || !isRecord(item)) {
-    throw new Error(reason);
+    throw new DeclarationError(reason);
   }
   return writeAtPath(item, sentinel.path, sentinel.value);
 }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { DeclarationError } from '../../../declaration/DeclarationError.ts';
 import type { OwnedItemsSpec } from '../../../schemas/owned-items-schemas.ts';
 import { allowsStamping, applySentinel, findStampFault, hasSentinel, stampSentinel } from '../sentinel.ts';
 
@@ -140,6 +141,7 @@ describe(applySentinel, () => {
     expect(() => applySentinel({ hooks: [{ command: 'vendor-tool sync' }] }, CLAUDE_HOOK)).toThrow(
       /hooks\.\*\.command.*does not already have it/s,
     );
+    expect(() => applySentinel({ hooks: [{ command: 'vendor-tool sync' }] }, CLAUDE_HOOK)).toThrow(DeclarationError);
   });
 });
 
@@ -171,13 +173,16 @@ describe(stampSentinel, () => {
 
   it('if the item cannot hold the sentinel, throws rather than writing an unfindable item', () => {
     expect(() => stampSentinel('relay', SENTINEL)).toThrow(/not a mapping/);
+    expect(() => stampSentinel('relay', SENTINEL)).toThrow(DeclarationError);
   });
 
   it('if the sentinel names no key, throws', () => {
     expect(() => stampSentinel({ name: 'relay' }, { path: [], value: 'compositor' })).toThrow(/at least one key/);
+    expect(() => stampSentinel({ name: 'relay' }, { path: [], value: 'compositor' })).toThrow(DeclarationError);
   });
 
   it('if the sentinel names no single place to write, throws', () => {
     expect(() => stampSentinel(CLAUDE_GROUP, CLAUDE_HOOK)).toThrow(/no single place to write/);
+    expect(() => stampSentinel(CLAUDE_GROUP, CLAUDE_HOOK)).toThrow(DeclarationError);
   });
 });
