@@ -58,7 +58,7 @@ describe('REPO_COMMANDS', () => {
       const { stdout } = await runCaptured(['--help']);
       expect(stdout).toContain(`Stack names: ${Object.keys(STACK_DETECTORS).join(', ')}`);
       expect(stdout).toContain(
-        '--write refuses a registry whose resolved file is in a checkout on a branch named live',
+        '--write and move refuse a registry whose resolved file is in a checkout on a branch named live',
       );
     });
 

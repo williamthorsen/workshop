@@ -2,7 +2,7 @@
 
 # @williamthorsen/repo-tools
 
-A CLI that lists, scans, and registers the repositories indexed by a machine-local registry, `~/.config/repos.yaml`, so that scripts and agents can target the repos on a machine as a set.
+A CLI that lists, scans, registers, and moves the repositories indexed by a machine-local registry, `~/.config/repos.yaml`, so that scripts and agents can target the repos on a machine as a set.
 
 <!-- section:release-notes --><!-- /section:release-notes -->
 
@@ -46,6 +46,18 @@ thor-repo scan --write --file path/to/branch-worktree/repos.yaml
 thor-repo add ~/repos/example --write
 ```
 
+`move` moves a registered clone to a new path, with each linked worktree beside it, whose name keeps its suffix under the new name (`app.live` becomes `kit.live`), and repairs every worktree's link. It sets the entry's `path` and appends the former path to `formerPaths`, then prints each remaining reference to the old paths in the tracked files of the registered clones on this machine. `--search <path>`, which repeats, adds the text files and the symlink targets under a directory to that report, and `--dry-run` reports the moves and the references without changing anything:
+
+```bash
+thor-repo move app ~/repos/tools/kit --dry-run --search ~/.config
+```
+
+`apply-moves` runs on each other machine that shares the registry. It moves each clone that it finds at one of its entry's `formerPaths` while the entry's `path` is absent, in the same way, and does nothing when no clone needs moving:
+
+```bash
+thor-repo apply-moves
+```
+
 Every verb reads `~/.config/repos.yaml` unless `--file` names another registry. `thor-repo --help` and `thor-repo <verb> --help` print the full options and the stack names that `--stack` accepts.
 
 ## Registry format
@@ -54,6 +66,7 @@ Every verb reads `~/.config/repos.yaml` unless `--file` names another registry. 
 repos:
   - name: example
     path: ~/repos/example
+    formerPaths: [~/repos/old/example]
     repo: owner/example
     visibility: private
     runner: imac2
@@ -63,6 +76,7 @@ repos:
 
 - `name`: the repo's name on its remote.
 - `path`: the clone's location, written with a leading `~`; `list` expands it, and `list --json` leaves it as written.
+- `formerPaths`: optional, the paths from which `move` moved the clone, oldest first. `apply-moves` reads them to find a clone that another machine has not moved yet.
 - `repo`: the GitHub path, in the `owner/name` form that `gh --repo` takes; absent for a repo hosted elsewhere.
 - `visibility`: `public` or `private`, the repo's visibility on GitHub, absent when the entry has no `repo`. `scan` writes it.
 - `runner`: optional, the label that the repo's `CI_RUNS_ON` Actions variable selects: a bare label as written, or a JSON string decoded. `scan` writes it, removes it when the variable is unset, and keeps it, with a report, when the variable holds a list or an object.
@@ -71,4 +85,4 @@ repos:
 
 ## The `live` guard
 
-`--write` refuses a registry whose resolved file is in a checkout on a branch named `live`, because that checkout deploys verified code rather than work in progress. When `~/.config/repos.yaml` is a link into a `live` worktree, pass `--file` naming the registry's copy in a branch worktree.
+`--write` and `move` refuse a registry whose resolved file is in a checkout on a branch named `live`, because that checkout deploys verified code rather than work in progress. When `~/.config/repos.yaml` is a link into a `live` worktree, pass `--file` naming the registry's copy in a branch worktree.

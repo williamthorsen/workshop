@@ -165,13 +165,13 @@ const scan = defineCommand({
 
 /** The `thor-repo` command tree. */
 export const REPO_COMMANDS = defineGroup({
-  summary: 'List, scan, or register the repos on this machine, as recorded in ~/.config/repos.yaml',
+  summary: 'List, scan, register, or move the repos on this machine, as recorded in ~/.config/repos.yaml',
   commands: { add, 'apply-moves': applyMoves, list, move, scan },
   epilog: `Stack names: ${STACK_NAMES.join(', ')}
 
 scan and add read visibility and runner through gh. runner is the label that a repo's CI_RUNS_ON Actions variable selects: a bare label, or a JSON string.
 
---write refuses a registry whose resolved file is in a checkout on a branch named live. When ~/.config/repos.yaml links into a live worktree, pass --file naming the copy in a branch worktree.
+--write and move refuse a registry whose resolved file is in a checkout on a branch named live. When ~/.config/repos.yaml links into a live worktree, pass --file naming the copy in a branch worktree.
 
 Examples:
   ${PROG} list --tag live
@@ -179,7 +179,9 @@ Examples:
   ${PROG} list --clone absent
   ${PROG} list --visibility public --runner imac2
   ${PROG} scan --write --file path/to/branch-worktree/repos.yaml
-  ${PROG} add ~/repos/example --write`,
+  ${PROG} add ~/repos/example --write
+  ${PROG} move example ~/repos/tools/example --dry-run --search ~/.config
+  ${PROG} apply-moves`,
 });
 
 // region | Helpers
