@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
+import { git, initWithCommit } from '../../test-utils/git-fixture.ts';
 import { buildLargeListingTree, LARGE_LISTING_FILE_COUNT } from '../../test-utils/large-listing.ts';
 import { listTrackedFiles, listWorktrees, repairWorktrees } from '../git-clone.ts';
 
@@ -53,19 +54,3 @@ describe(repairWorktrees, () => {
     expect(git(tree.resolve('moved.one'), 'status', '--short')).toBe('');
   });
 });
-
-// region | Helpers
-
-/** Runs git in a directory and returns its stdout. */
-function git(dir: string, ...args: string[]): string {
-  return execFileSync('git', ['-C', dir, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-}
-
-/** Initializes a repository in a directory and commits its files. */
-function initWithCommit(dir: string): void {
-  git(dir, 'init', '--quiet', '--initial-branch', 'main');
-  git(dir, 'add', '.');
-  git(dir, '-c', 'user.name=spec', '-c', 'user.email=spec@example.com', 'commit', '--quiet', '-m', 'init');
-}
-
-// endregion | Helpers

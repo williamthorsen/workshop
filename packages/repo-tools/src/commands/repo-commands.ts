@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 
 import { createCli } from '@williamthorsen/toolbelt.cli/candidate';
+import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import {
   listTrackedFiles,
@@ -146,7 +147,7 @@ function describeFsFailure(operation: () => unknown): string | undefined {
     operation();
     return undefined;
   } catch (error) {
-    return error instanceof Error ? error.message : String(error);
+    return describeError(error);
   }
 }
 
