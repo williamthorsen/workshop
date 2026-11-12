@@ -17,6 +17,38 @@ export function describeGitFailure(args: readonly string[], run: GitRun): string
   return run.stderr.trim().split('\n', 1)[0] || `git ${subcommand} exited ${run.status ?? 'without a status'}`;
 }
 
+/**
+ * Searches the tracked files of a clone for lines containing any of the fixed strings, skipping binary files, or
+ * returns the reason that git cannot. A search without a match returns an empty list.
+ */
+export function grepTrackedFiles(cloneDir: string, needles: readonly string[]): GrepMatch[] | string {
+  const args = [
+    'grep',
+    '--fixed-strings',
+    '--line-number',
+    '-I',
+    '--null',
+    ...needles.flatMap((needle) => ['-e', needle]),
+  ];
+  const result = spawnSync('git', ['-C', cloneDir, ...args], {
+    encoding: 'utf8',
+    maxBuffer: Infinity,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  // `git grep` exits 1, without a message, when nothing matches.
+  if (result.status === 1 && result.error === undefined && result.stderr === '') return [];
+  const failure = describeGitFailure(args, result);
+  if (failure !== undefined) return failure;
+  return result.stdout
+    .split('\n')
+    .filter((line) => line !== '')
+    .flatMap((line): GrepMatch[] => {
+      const [file, lineNumber, ...rest] = line.split('\0');
+      if (file === undefined || lineNumber === undefined) return [];
+      return [{ file, line: Number(lineNumber), text: rest.join('\0') }];
+    });
+}
+
 /** Lists the paths that git tracks in a clone, relative to its root, or returns the reason that git cannot. */
 export function listTrackedFiles(cloneDir: string): string[] | string {
   const outcome = runGitForOutcome(cloneDir, ['ls-files', '-z']);
@@ -71,6 +103,13 @@ export function readOriginUrl(cloneDir: string): string | undefined {
 export function repairWorktrees(primary: string, worktreePaths: readonly string[]): string | undefined {
   const outcome = runGitForOutcome(primary, ['worktree', 'repair', ...worktreePaths]);
   return 'failure' in outcome ? outcome.failure : undefined;
+}
+
+/** A line of a tracked file that `grepTrackedFiles` matched. */
+export interface GrepMatch {
+  file: string;
+  line: number;
+  text: string;
 }
 
 /** A linked worktree of a clone, as `git worktree list` reports it. */
