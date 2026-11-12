@@ -6,7 +6,7 @@ import { type PlanAdapters, planMove } from '../move-plan.ts';
 const PRIMARY = { from: '/r/oss/app', to: '/r/tools/kit' };
 
 describe(planMove, () => {
-  it('moves a sibling worktree beside the new primary, keeping its suffix, and leaves one elsewhere in place', () => {
+  it('moves a sibling worktree beside the new primary, keeping its suffix, relocates one inside it, and leaves one elsewhere in place', () => {
     const plan = planMove(
       PRIMARY,
       [
@@ -21,6 +21,11 @@ describe(planMove, () => {
     expect(plan).toStrictEqual({
       moves: [PRIMARY, { from: '/r/oss/app.live', to: '/r/tools/kit.live' }],
       primary: PRIMARY,
+      relocated: [
+        PRIMARY,
+        { from: '/r/oss/app.live', to: '/r/tools/kit.live' },
+        { from: '/r/oss/app/.worktrees/spike', to: '/r/tools/kit/.worktrees/spike' },
+      ],
       repaired: ['/r/tools/kit.live', '/r/tools/kit/.worktrees/spike', '/tmp/scratch', '/r/oss/application'],
       skipped: ['/r/oss/app.gone'],
     });
@@ -55,7 +60,10 @@ describe(executeMove, () => {
         return undefined;
       },
     };
-    const outcome = executeMove({ moves, primary: PRIMARY, repaired: ['/r/tools/kit.live'], skipped: [] }, adapters);
+    const outcome = executeMove(
+      { moves, primary: PRIMARY, relocated: moves, repaired: ['/r/tools/kit.live'], skipped: [] },
+      adapters,
+    );
     expect(outcome).toStrictEqual({
       completed: [PRIMARY],
       failure: 'cannot move /r/oss/app.live to /r/tools/kit.live: EACCES',
@@ -70,7 +78,10 @@ describe(executeMove, () => {
       renamePath: () => undefined,
       repairWorktrees: () => 'fatal: bad path',
     };
-    const outcome = executeMove({ moves: [PRIMARY], primary: PRIMARY, repaired: ['/tmp/x'], skipped: [] }, adapters);
+    const outcome = executeMove(
+      { moves: [PRIMARY], primary: PRIMARY, relocated: [PRIMARY], repaired: ['/tmp/x'], skipped: [] },
+      adapters,
+    );
     expect(outcome).toStrictEqual({
       completed: [PRIMARY],
       failure: 'cannot repair the worktrees of /r/tools/kit: fatal: bad path',
