@@ -21,6 +21,7 @@ catalog:
   '@williamthorsen/toolbelt.git': 0.7.4
   '@williamthorsen/toolbelt.nodejs': 4.1.2
   '@williamthorsen/toolbelt.numbers': 8.0.0
+  '@williamthorsen/toolbelt.objects': 4.4.2
   '@williamthorsen/toolbelt.packaging': 0.7.2
   '@williamthorsen/toolbelt.secrets': 0.6.2
   '@williamthorsen/toolbelt.strings': 8.2.3
