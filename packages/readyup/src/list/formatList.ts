@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- #829 splits this module. */
 import path from 'node:path';
 
 import { KITS_DIR } from '../kits/kitsDir.ts';
