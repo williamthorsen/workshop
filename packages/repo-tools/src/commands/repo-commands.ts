@@ -2,7 +2,14 @@ import fs from 'node:fs';
 
 import { createCli } from '@williamthorsen/toolbelt.cli/candidate';
 
-import { listTrackedFiles, readCloneRoot, readCurrentBranch, readOriginUrl } from '../git/git-clone.ts';
+import {
+  listTrackedFiles,
+  listWorktrees,
+  readCloneRoot,
+  readCurrentBranch,
+  readOriginUrl,
+  repairWorktrees,
+} from '../git/git-clone.ts';
 import { expandTilde } from '../portable/paths.ts';
 import { readRegistry, selectEntries } from '../registry/registry.ts';
 import { STACK_DETECTORS } from '../stacks/stack-detectors.ts';
@@ -13,10 +20,16 @@ import { buildVerbRun, type CloneAdapters, PROG, type RepoContext, reportFailure
 export const GIT_ADAPTERS: CloneAdapters = {
   isDirectory: (dir) => fs.statSync(dir, { throwIfNoEntry: false })?.isDirectory() ?? false,
   listTrackedFiles,
+  listWorktrees,
+  makeDirectory: (dir) => describeFsFailure(() => fs.mkdirSync(dir, { recursive: true })),
+  pathExists: (target) => fs.lstatSync(target, { throwIfNoEntry: false }) !== undefined,
   readCurrentBranch,
+  readDeviceId: (target) => fs.statSync(target, { throwIfNoEntry: false })?.dev,
   readFile: (file) => fs.readFileSync(file, 'utf8'),
   readOriginUrl,
   readCloneRoot,
+  renamePath: (from, to) => describeFsFailure(() => fs.renameSync(from, to)),
+  repairWorktrees,
 };
 
 const { defineCommand, defineGroup } = createCli<RepoContext>();
@@ -126,6 +139,16 @@ Examples:
 });
 
 // region | Helpers
+
+/** Runs a filesystem operation, returning the message of the error that it throws, or `undefined`. */
+function describeFsFailure(operation: () => unknown): string | undefined {
+  try {
+    operation();
+    return undefined;
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error);
+  }
+}
 
 /** The selection and output form of a `list` run. */
 interface ListOptions {

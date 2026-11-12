@@ -464,7 +464,11 @@ function fakeAdapters(
   return {
     isDirectory: (dir) => clones[cloneName(dir) ?? ''] !== undefined,
     listTrackedFiles: (dir) => clones[cloneName(dir) ?? '']?.tracked ?? 'fatal: not a git repository',
+    listWorktrees: () => [],
+    makeDirectory: () => 'not exercised',
+    pathExists: (target) => clones[cloneName(target) ?? ''] !== undefined,
     readCurrentBranch: () => branch,
+    readDeviceId: () => 1,
     readFile: (file) => {
       const name = cloneName(file) ?? '';
       const content = clones[name]?.files[file.slice(`${HOME}/repos/${name}/`.length)];
@@ -476,6 +480,8 @@ function fakeAdapters(
       const name = cloneName(dir);
       return name !== undefined && clones[name] !== undefined ? `${HOME}/repos/${name}` : undefined;
     },
+    renamePath: () => 'not exercised',
+    repairWorktrees: () => 'not exercised',
   };
 }
 

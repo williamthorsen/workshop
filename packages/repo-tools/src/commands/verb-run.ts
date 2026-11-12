@@ -1,5 +1,6 @@
 import type { Writer } from '@williamthorsen/toolbelt.cli/candidate';
 
+import type { LinkedWorktree } from '../git/git-clone.ts';
 import type { GitHubReader } from '../github/github-repo.ts';
 import { readHome } from '../portable/paths.ts';
 import type { RegistryEntry } from '../registry/registry.ts';
@@ -50,10 +51,20 @@ export function reportFailure(run: VerbRun, message: string): number {
 export interface CloneAdapters {
   isDirectory: (dir: string) => boolean;
   listTrackedFiles: (cloneDir: string) => string[] | string;
+  listWorktrees: (primary: string) => LinkedWorktree[] | string;
+  /** Creates a directory and its missing ancestors, returning the reason for a failure. */
+  makeDirectory: (dir: string) => string | undefined;
+  /** Reports whether anything, a dangling symlink included, exists at a path. */
+  pathExists: (target: string) => boolean;
   readCurrentBranch: (dir: string) => string | undefined;
+  /** Returns the id of the device that holds a path, or `undefined` when nothing exists at it. */
+  readDeviceId: (target: string) => number | undefined;
   readFile: (file: string) => string;
   readOriginUrl: (cloneDir: string) => string | undefined;
   readCloneRoot: (dir: string) => string | undefined;
+  /** Renames a path, returning the reason for a failure. */
+  renamePath: (from: string, to: string) => string | undefined;
+  repairWorktrees: (primary: string, worktreePaths: readonly string[]) => string | undefined;
 }
 
 /** The parts of a remote URL that `add` reads. */

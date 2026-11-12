@@ -25,6 +25,23 @@ export function listTrackedFiles(cloneDir: string): string[] | string {
 }
 
 /**
+ * Lists the linked worktrees of a clone, excluding its main worktree, or returns the reason that git cannot. A
+ * worktree whose directory git reports as missing is marked prunable.
+ */
+export function listWorktrees(primary: string): LinkedWorktree[] | string {
+  const outcome = runGitForOutcome(primary, ['worktree', 'list', '--porcelain', '-z']);
+  if ('failure' in outcome) return outcome.failure;
+  // Each record is a run of NUL-terminated `key value` lines, and an empty line ends it.
+  const records = outcome.stdout.split('\0\0').filter((record) => record !== '');
+  return records.slice(1).flatMap((record): LinkedWorktree[] => {
+    const lines = record.split('\0');
+    const worktreePath = lines.find((line) => line.startsWith('worktree '))?.slice('worktree '.length);
+    if (worktreePath === undefined) return [];
+    return [{ isPrunable: lines.some((line) => line.startsWith('prunable')), path: worktreePath }];
+  });
+}
+
+/**
  * Returns the root of the clone's main worktree for a directory in any of its worktrees, or `undefined` when the
  * directory is in no checkout. A checkout whose git directory is not a `.git` beside its root, such as a submodule or
  * a worktree of a bare repository, has no main worktree, and its own root is returned.
@@ -45,6 +62,21 @@ export function readCurrentBranch(dir: string): string | undefined {
 /** Returns the URL of a clone's `origin` remote, or `undefined` when it has none. */
 export function readOriginUrl(cloneDir: string): string | undefined {
   return runGit(cloneDir, ['remote', 'get-url', 'origin'])?.trim() || undefined;
+}
+
+/**
+ * Restores the links between a clone's main worktree and its linked worktrees at the given paths, in both directions,
+ * after any of them moved. Returns the reason that git failed, or `undefined`.
+ */
+export function repairWorktrees(primary: string, worktreePaths: readonly string[]): string | undefined {
+  const outcome = runGitForOutcome(primary, ['worktree', 'repair', ...worktreePaths]);
+  return 'failure' in outcome ? outcome.failure : undefined;
+}
+
+/** A linked worktree of a clone, as `git worktree list` reports it. */
+export interface LinkedWorktree {
+  isPrunable: boolean;
+  path: string;
 }
 
 // region | Helpers
