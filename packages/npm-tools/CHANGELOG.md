@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.2 — 2026-11-12
+
+### 📦 Dependencies
+
+- Upgrades the version catalog's toolbelt packages and `@williamthorsen/nmr`, along with `prettier`, `@williamthorsen/release-kit`, `codeassembly`, `v11y-check`, and the `@williamthorsen/nmr-core` dependency of `npm-tools`, including the breaking bumps of `@williamthorsen/toolbelt.numbers` to 8.0.0 and `@williamthorsen/toolbelt.errors` to 0.10.0, without changing any source file that imports them. (#833)
+
 ## 0.2.1 — 2026-11-12
 
 ### Notes

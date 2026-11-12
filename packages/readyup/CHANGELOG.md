@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.46.2 — 2026-11-12
+
+### ♻️ Refactoring
+
+- Moves the shared kit-row and hint builders out of `formatList.ts` into `list-rows.ts`, and the repo-wide list views and `resolveCompiledStyle` into `recursive-views.ts`, so that `formatList.ts` passes the `max-lines` rule without its `eslint-disable` directive. (#834)
+
+### ⚙️ Tooling
+
+- Suppresses ESLint's `max-lines` rule in `packages/readyup/src/list/formatList.ts` with a file-level `eslint-disable` directive. (#833)
+
+### 📦 Dependencies
+
+- Upgrades `@williamthorsen/toolbelt.terminal` from 0.3.0 to 0.3.1, and makes readyup's `build:deck` resolve `node:util` to a module that exports `strip-ansi` as `stripVTControlCharacters`, because the browser bundle cannot otherwise resolve the `node:util` import added by the new `cli-truncate` version. (#832)
+
 ## 0.46.1 — 2026-11-12
 
 ### Notes

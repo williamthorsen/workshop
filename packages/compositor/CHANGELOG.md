@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.6.1 — 2026-11-12
+
+### ♻️ Refactoring
+
+- Replaces the loops in `compositor` that find repeated ids and names with calls to `listDuplicateItems` from `@williamthorsen/toolbelt.arrays`, which is added as a runtime dependency of the package. (#825)
+- Renames the `Set` and `Map` variables, parameters, and fields in `compositor` that were named by a bare participle or by their key alone, so that each name states what the collection holds, such as `removedPaths` for `removed` and `slugIndexesByKind` for `bySlug`. (#826)
+
 ## 0.6.0 — 2026-11-12
 
 ### 🎉 Features

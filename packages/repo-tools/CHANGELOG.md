@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.6.0 — 2026-11-12
+
+### 🎉 Features
+
+- Makes `thor-repo move` and `thor-repo apply-moves` run `direnv allow` in each moved worktree that has an `.envrc` at its root, when direnv is installed, so that a moved `.envrc` doesn't need a manual `direnv allow` at its new path. (#828)
+- Makes `thor-repo move` and `thor-repo apply-moves` rename each moved worktree's Claude Code session directory, under `$CLAUDE_CONFIG_DIR/projects` or else `~/.claude/projects`, to the name that Claude Code derives from the worktree's new path, and reports on stderr a directory whose new name is already taken, leaving it to be merged by hand. (#828)
+- Makes `thor-repo move` and `thor-repo apply-moves` remove each former parent directory that the move leaves empty apart from a `.DS_Store`. (#828)
+
 ## 0.5.0 — 2026-11-12
 
 ### 🎉 Features

@@ -1,5 +1,27 @@
 [
   {
+    "version": "0.6.1",
+    "date": "2026-11-12",
+    "sections": [
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Replaces the loops in `compositor` that find repeated ids and names with calls to `listDuplicateItems` from `@williamthorsen/toolbelt.arrays`, which is added as a runtime dependency of the package. (#825)",
+            "hash": "9eea154a5ec3e0ffd0e48a07bc8fdd02da3c776e",
+            "entry": 1
+          },
+          {
+            "description": "Renames the `Set` and `Map` variables, parameters, and fields in `compositor` that were named by a bare participle or by their key alone, so that each name states what the collection holds, such as `removedPaths` for `removed` and `slugIndexesByKind` for `bySlug`. (#826)",
+            "hash": "b18c1faf5cb02f4bdaea75b33f277de17c9e5e31",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.6.0",
     "date": "2026-11-12",
     "sections": [

@@ -1,5 +1,32 @@
 [
   {
+    "version": "0.6.0",
+    "date": "2026-11-12",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Makes `thor-repo move` and `thor-repo apply-moves` run `direnv allow` in each moved worktree that has an `.envrc` at its root, when direnv is installed, so that a moved `.envrc` doesn't need a manual `direnv allow` at its new path. (#828)",
+            "hash": "03601b3d512a217b0dce1b06eb50bb48e60724db",
+            "entry": 1
+          },
+          {
+            "description": "Makes `thor-repo move` and `thor-repo apply-moves` rename each moved worktree's Claude Code session directory, under `$CLAUDE_CONFIG_DIR/projects` or else `~/.claude/projects`, to the name that Claude Code derives from the worktree's new path, and reports on stderr a directory whose new name is already taken, leaving it to be merged by hand. (#828)",
+            "hash": "03601b3d512a217b0dce1b06eb50bb48e60724db",
+            "entry": 2
+          },
+          {
+            "description": "Makes `thor-repo move` and `thor-repo apply-moves` remove each former parent directory that the move leaves empty apart from a `.DS_Store`. (#828)",
+            "hash": "03601b3d512a217b0dce1b06eb50bb48e60724db",
+            "entry": 3
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.5.0",
     "date": "2026-11-12",
     "sections": [

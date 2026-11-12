@@ -1,5 +1,44 @@
 [
   {
+    "version": "0.46.2",
+    "date": "2026-11-12",
+    "sections": [
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Moves the shared kit-row and hint builders out of `formatList.ts` into `list-rows.ts`, and the repo-wide list views and `resolveCompiledStyle` into `recursive-views.ts`, so that `formatList.ts` passes the `max-lines` rule without its `eslint-disable` directive. (#834)",
+            "hash": "e0db9689878a08058ab70983c2b8685d63747e3c",
+            "entry": 1
+          }
+        ]
+      },
+      {
+        "title": "⚙️ Tooling",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Suppresses ESLint's `max-lines` rule in `packages/readyup/src/list/formatList.ts` with a file-level `eslint-disable` directive. (#833)",
+            "hash": "1d1d77f2a1ffbc125c1ac883b53de0bf482935cb",
+            "entry": 2
+          }
+        ]
+      },
+      {
+        "title": "📦 Dependencies",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Upgrades `@williamthorsen/toolbelt.terminal` from 0.3.0 to 0.3.1, and makes readyup's `build:deck` resolve `node:util` to a module that exports `strip-ansi` as `stripVTControlCharacters`, because the browser bundle cannot otherwise resolve the `node:util` import added by the new `cli-truncate` version. (#832)",
+            "hash": "7f315c6b2a2a688d31684f702d5b01deef0a15ec",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.46.1",
     "date": "2026-11-12",
     "sections": [{ "title": "Notes", "audience": "dev", "items": [{ "description": "Forced version bump." }] }]
