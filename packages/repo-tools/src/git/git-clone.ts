@@ -17,11 +17,60 @@ export function describeGitFailure(args: readonly string[], run: GitRun): string
   return run.stderr.trim().split('\n', 1)[0] || `git ${subcommand} exited ${run.status ?? 'without a status'}`;
 }
 
+/**
+ * Searches the tracked files of a clone for lines containing any of the fixed strings, skipping binary files, or
+ * returns the reason that git cannot. A search without a match returns an empty list.
+ */
+export function grepTrackedFiles(cloneDir: string, needles: readonly string[]): GrepMatch[] | string {
+  const args = [
+    'grep',
+    '--fixed-strings',
+    '--line-number',
+    '-I',
+    '--null',
+    ...needles.flatMap((needle) => ['-e', needle]),
+  ];
+  const result = spawnSync('git', ['-C', cloneDir, ...args], {
+    encoding: 'utf8',
+    maxBuffer: Infinity,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  // `git grep` exits 1, without a message, when nothing matches.
+  if (result.status === 1 && result.error === undefined && result.stderr === '') return [];
+  const failure = describeGitFailure(args, result);
+  if (failure !== undefined) return failure;
+  return result.stdout
+    .split('\n')
+    .filter((line) => line !== '')
+    .flatMap((line): GrepMatch[] => {
+      const [file, lineNumber, ...rest] = line.split('\0');
+      if (file === undefined || lineNumber === undefined) return [];
+      return [{ file, line: Number(lineNumber), text: rest.join('\0') }];
+    });
+}
+
 /** Lists the paths that git tracks in a clone, relative to its root, or returns the reason that git cannot. */
 export function listTrackedFiles(cloneDir: string): string[] | string {
   const outcome = runGitForOutcome(cloneDir, ['ls-files', '-z']);
   if ('failure' in outcome) return outcome.failure;
   return outcome.stdout.split('\0').filter((trackedPath) => trackedPath !== '');
+}
+
+/**
+ * Lists the linked worktrees of a clone, excluding its main worktree, or returns the reason that git cannot. A
+ * worktree whose directory git reports as missing is marked prunable.
+ */
+export function listWorktrees(primary: string): LinkedWorktree[] | string {
+  const outcome = runGitForOutcome(primary, ['worktree', 'list', '--porcelain', '-z']);
+  if ('failure' in outcome) return outcome.failure;
+  // Each record is a run of NUL-terminated `key value` lines, and an empty line ends it.
+  const records = outcome.stdout.split('\0\0').filter((record) => record !== '');
+  return records.slice(1).flatMap((record): LinkedWorktree[] => {
+    const lines = record.split('\0');
+    const worktreePath = lines.find((line) => line.startsWith('worktree '))?.slice('worktree '.length);
+    if (worktreePath === undefined) return [];
+    return [{ isPrunable: lines.some((line) => line.startsWith('prunable')), path: worktreePath }];
+  });
 }
 
 /**
@@ -45,6 +94,28 @@ export function readCurrentBranch(dir: string): string | undefined {
 /** Returns the URL of a clone's `origin` remote, or `undefined` when it has none. */
 export function readOriginUrl(cloneDir: string): string | undefined {
   return runGit(cloneDir, ['remote', 'get-url', 'origin'])?.trim() || undefined;
+}
+
+/**
+ * Restores the links between a clone's main worktree and its linked worktrees at the given paths, in both directions,
+ * after any of them moved. Returns the reason that git failed, or `undefined`.
+ */
+export function repairWorktrees(primary: string, worktreePaths: readonly string[]): string | undefined {
+  const outcome = runGitForOutcome(primary, ['worktree', 'repair', ...worktreePaths]);
+  return 'failure' in outcome ? outcome.failure : undefined;
+}
+
+/** A line of a tracked file that `grepTrackedFiles` matched. */
+export interface GrepMatch {
+  file: string;
+  line: number;
+  text: string;
+}
+
+/** A linked worktree of a clone, as `git worktree list` reports it. */
+export interface LinkedWorktree {
+  isPrunable: boolean;
+  path: string;
 }
 
 // region | Helpers

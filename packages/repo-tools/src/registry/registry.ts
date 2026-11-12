@@ -6,6 +6,7 @@ import { type Document, isMap, isScalar, isSeq, parseDocument, type YAMLMap } fr
 
 /** One entry of the registry, with the YAML node from which it was read. */
 export interface RegistryEntry {
+  formerPaths: string[];
   name: string | undefined;
   node: YAMLMap;
   path: string | undefined;
@@ -113,6 +114,29 @@ export function readRegistry(file: string): Registry | string {
   return typeof registry === 'string' ? `cannot read the registry ${file}: ${registry}` : registry;
 }
 
+/**
+ * Sets an entry's `path` to `newPath` and appends the path that it replaces to `formerPaths`, a flow list placed after
+ * `path` when the entry lacks one. A former path equal to `newPath`, or already in the list, is not appended.
+ */
+export function recordMove(registry: Registry, entry: RegistryEntry, newPath: string): void {
+  const oldPath = entry.path;
+  writeScalar(entry.node, 'path', newPath, ['name']);
+  entry.path = newPath;
+  if (oldPath === undefined || oldPath === newPath || entry.formerPaths.includes(oldPath)) return;
+
+  const formerPaths = [...entry.formerPaths, oldPath];
+  const existing = entry.node.get('formerPaths', true);
+  if (isSeq(existing)) {
+    existing.add(registry.document.createNode(oldPath));
+  } else {
+    const node = registry.document.createNode(formerPaths);
+    node.flow = true;
+    entry.node.set('formerPaths', node);
+    moveKeyAfter(entry.node, 'formerPaths', 'path');
+  }
+  entry.formerPaths = formerPaths;
+}
+
 /** Writes the registry beside its file and renames it into place, in the form that `serializeRegistry` returns. */
 export function saveRegistry(registry: Registry, file: string): void {
   const resolved = fs.realpathSync(file);
@@ -170,10 +194,20 @@ function isSameList(left: readonly string[], right: readonly string[]): boolean 
   return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
+/** Moves a key of a map to the position after `anchor`, or leaves it last when the map lacks `anchor`. */
+function moveKeyAfter(node: YAMLMap, key: string, anchor: string): void {
+  const index = node.items.findIndex((pair) => readKey(pair.key) === key);
+  const [moved] = index === -1 ? [] : node.items.splice(index, 1);
+  if (moved === undefined) return;
+  const anchorIndex = node.items.findIndex((pair) => readKey(pair.key) === anchor);
+  node.items.splice(anchorIndex === -1 ? node.items.length : anchorIndex + 1, 0, moved);
+}
+
 /** Reads the typed fields of one entry, or returns a message naming the first field that is malformed. */
 function readEntry(node: YAMLMap): RegistryEntry | string {
   const problems: string[] = [];
   const entry: RegistryEntry = {
+    formerPaths: readStringList('formerPaths'),
     name: readString('name'),
     node,
     path: readString('path'),
@@ -207,6 +241,11 @@ function readEntry(node: YAMLMap): RegistryEntry | string {
   }
 }
 
+/** Returns the name of a map key: A parsed key is a `Scalar`, and a key added by `set` is the bare string. */
+function readKey(key: unknown): unknown {
+  return isScalar(key) ? key.value : key;
+}
+
 /**
  * Sets a scalar key of a map, or deletes it when `value` is `undefined`. A missing key is inserted after the first of
  * `anchors` that the map contains, else appended.
@@ -224,8 +263,7 @@ function writeScalar(node: YAMLMap, key: string, value: string | undefined, anch
   const added = node.items.pop();
   if (added === undefined) return;
   const anchor = anchors.find((name) => node.has(name));
-  // A parsed key is a `Scalar`; a key added by `set` is the bare string.
-  const anchorIndex = node.items.findIndex((pair) => (isScalar(pair.key) ? pair.key.value : pair.key) === anchor);
+  const anchorIndex = node.items.findIndex((pair) => readKey(pair.key) === anchor);
   node.items.splice(anchorIndex === -1 ? node.items.length : anchorIndex + 1, 0, added);
 }
 

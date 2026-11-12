@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 /** Returns `HOME` from an environment, without trailing slashes, or an empty string when it is unset. */
 export function readHome(env: Readonly<Record<string, string | undefined>>): string {
   return (env['HOME'] ?? '').replace(/\/+$/, '');
@@ -16,4 +18,12 @@ export function formatDisplayPath(value: string, home: string): string {
   if (value === home) return '~';
   if (value.startsWith(`${home}/`)) return `~/${value.slice(home.length + 1)}`;
   return value;
+}
+
+/**
+ * Returns an absolute path with a leading `~` expanded and trailing slashes removed, without resolving symlinks, so
+ * that two spellings of a registry path compare equal.
+ */
+export function normalizePath(value: string, home: string): string {
+  return path.resolve(expandTilde(value, home));
 }

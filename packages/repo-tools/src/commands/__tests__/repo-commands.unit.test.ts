@@ -6,10 +6,8 @@ import { describe, expect, it } from 'vitest';
 import type { GitHubFacts, GitHubReader } from '../../github/github-repo.ts';
 import { STACK_DETECTORS } from '../../stacks/stack-detectors.ts';
 import { REPO_COMMANDS } from '../repo-commands.ts';
+import { buildClone, buildFakeAdapters, FAKE_HOME, type FakeClone } from '../test-utils/fake-clones.ts';
 import { type CapturedRun, runCaptured } from '../test-utils/run-captured.ts';
-import type { CloneAdapters } from '../verb-run.ts';
-
-const HOME = '/home/spec';
 
 const REGISTRY = `# Header comment.
 repos:
@@ -34,9 +32,9 @@ repos:
 
 /** Clones whose files signal exactly the stack that `REGISTRY` declares. */
 const CURRENT_CLONES = {
-  alpha: clone({ 'package.json': { '@williamthorsen/nmr': '1' } }),
-  beta: clone({ 'README.md': '' }),
-  gamma: clone({ 'apps/web/package.json': { next: '15', react: '19' } }),
+  alpha: buildClone({ 'package.json': { '@williamthorsen/nmr': '1' } }),
+  beta: buildClone({ 'README.md': '' }),
+  gamma: buildClone({ 'apps/web/package.json': { next: '15', react: '19' } }),
 };
 
 /** GitHub facts that equal what `REGISTRY` records, keyed by repo. */
@@ -60,26 +58,26 @@ describe('REPO_COMMANDS', () => {
       const { stdout } = await runCaptured(['--help']);
       expect(stdout).toContain(`Stack names: ${Object.keys(STACK_DETECTORS).join(', ')}`);
       expect(stdout).toContain(
-        '--write refuses a registry whose resolved file is in a checkout on a branch named live',
+        '--write and move refuse a registry whose resolved file is in a checkout on a branch named live',
       );
     });
 
     it('names each verb', () => {
-      expect(Object.keys(REPO_COMMANDS.commands)).toStrictEqual(['add', 'list', 'scan']);
+      expect(Object.keys(REPO_COMMANDS.commands)).toStrictEqual(['add', 'apply-moves', 'list', 'move', 'scan']);
     });
   });
 
   describe('list', () => {
     it('prints every path with ~ expanded', async () => {
       const { result } = await run(['list']);
-      expect(result.stdout).toBe(`${HOME}/repos/alpha\n${HOME}/repos/beta\n${HOME}/repos/gamma`);
+      expect(result.stdout).toBe(`${FAKE_HOME}/repos/alpha\n${FAKE_HOME}/repos/beta\n${FAKE_HOME}/repos/gamma`);
       expect(result.status).toBe(0);
     });
 
     it('narrows by tag and by stack, combining the two', async () => {
-      expect((await run(['list', '--tag', 'vault'])).result.stdout).toBe(`${HOME}/repos/beta`);
-      expect((await run(['list', '--stack', 'react'])).result.stdout).toBe(`${HOME}/repos/gamma`);
-      expect((await run(['list', '--stack', 'nmr', '--tag', 'live'])).result.stdout).toBe(`${HOME}/repos/alpha`);
+      expect((await run(['list', '--tag', 'vault'])).result.stdout).toBe(`${FAKE_HOME}/repos/beta`);
+      expect((await run(['list', '--stack', 'react'])).result.stdout).toBe(`${FAKE_HOME}/repos/gamma`);
+      expect((await run(['list', '--stack', 'nmr', '--tag', 'live'])).result.stdout).toBe(`${FAKE_HOME}/repos/alpha`);
       expect((await run(['list', '--stack', 'react', '--tag', 'live'])).result.stdout).toBe('');
     });
 
@@ -102,8 +100,8 @@ describe('REPO_COMMANDS', () => {
     });
 
     it('narrows by visibility and by runner', async () => {
-      expect((await run(['list', '--visibility', 'public'])).result.stdout).toBe(`${HOME}/repos/gamma`);
-      expect((await run(['list', '--runner', 'imac2'])).result.stdout).toBe(`${HOME}/repos/alpha`);
+      expect((await run(['list', '--visibility', 'public'])).result.stdout).toBe(`${FAKE_HOME}/repos/gamma`);
+      expect((await run(['list', '--runner', 'imac2'])).result.stdout).toBe(`${FAKE_HOME}/repos/alpha`);
       expect((await run(['list', '--visibility', 'public', '--runner', 'imac2'])).result.stdout).toBe('');
     });
 
@@ -115,10 +113,12 @@ describe('REPO_COMMANDS', () => {
 
     it('lists only the entries whose clone is present by default, and the others under --clone', async () => {
       const clones = { alpha: CURRENT_CLONES.alpha, gamma: CURRENT_CLONES.gamma };
-      expect((await run(['list'], { clones })).result.stdout).toBe(`${HOME}/repos/alpha\n${HOME}/repos/gamma`);
-      expect((await run(['list', '--clone', 'absent'], { clones })).result.stdout).toBe(`${HOME}/repos/beta`);
+      expect((await run(['list'], { clones })).result.stdout).toBe(
+        `${FAKE_HOME}/repos/alpha\n${FAKE_HOME}/repos/gamma`,
+      );
+      expect((await run(['list', '--clone', 'absent'], { clones })).result.stdout).toBe(`${FAKE_HOME}/repos/beta`);
       expect((await run(['list', '--clone', 'all'], { clones })).result.stdout).toBe(
-        `${HOME}/repos/alpha\n${HOME}/repos/beta\n${HOME}/repos/gamma`,
+        `${FAKE_HOME}/repos/alpha\n${FAKE_HOME}/repos/beta\n${FAKE_HOME}/repos/gamma`,
       );
       const { result } = await run(['list', '--clone', 'absent', '--json'], { clones });
       expect(JSON.parse(result.stdout)).toMatchObject({ repos: [{ name: 'beta' }] });
@@ -136,14 +136,14 @@ describe('REPO_COMMANDS', () => {
       expect(result.status).toBe(1);
       expect(result.stderr).toContain('thor-repo: registry entry has no path');
       expect((await run(['list', '--tag', 'live', '--clone', 'all'], { registry })).result.stdout).toBe(
-        `${HOME}/repos/tagged`,
+        `${FAKE_HOME}/repos/tagged`,
       );
     });
 
-    it('names a registry that it cannot find, defaulting to the one under HOME', async () => {
-      const result = await runCaptured(['list'], { adapters: fakeAdapters({}), env: { HOME } });
+    it('names a registry that it cannot find, defaulting to the one under FAKE_HOME', async () => {
+      const result = await runCaptured(['list'], { adapters: buildFakeAdapters({}), env: { HOME: FAKE_HOME } });
       expect(result.status).toBe(1);
-      expect(result.stderr).toBe(`thor-repo: registry not found: ${HOME}/.config/repos.yaml`);
+      expect(result.stderr).toBe(`thor-repo: registry not found: ${FAKE_HOME}/.config/repos.yaml`);
     });
   });
 
@@ -156,21 +156,21 @@ describe('REPO_COMMANDS', () => {
     });
 
     it('reports additions before removals, each sorted, one line per changed entry', async () => {
-      const clones = { ...CURRENT_CLONES, gamma: clone({ 'package.json': { vue: '3', express: '5' } }) };
+      const clones = { ...CURRENT_CLONES, gamma: buildClone({ 'package.json': { vue: '3', express: '5' } }) };
       const { result } = await run(['scan'], { clones });
       expect(result.stdout).toBe('gamma: +express +vue -nextjs -react');
       expect(result.status).toBe(0);
     });
 
     it('writes nothing without --write', async () => {
-      const clones = { ...CURRENT_CLONES, beta: clone({ 'vercel.json': '' }) };
+      const clones = { ...CURRENT_CLONES, beta: buildClone({ 'vercel.json': '' }) };
       const { registryText, result } = await run(['scan'], { clones });
       expect(result.stdout).toBe('beta: +vercel');
       expect(registryText).toBe(REGISTRY);
     });
 
     it('rewrites each changed stack under --write, removing a stack that is now empty', async () => {
-      const clones = { alpha: clone({}), beta: clone({ 'vercel.json': '' }), gamma: CURRENT_CLONES.gamma };
+      const clones = { alpha: buildClone({}), beta: buildClone({ 'vercel.json': '' }), gamma: CURRENT_CLONES.gamma };
       const { registryText, result } = await run(['scan', '--write'], { clones });
       expect(result.status).toBe(0);
       expect(registryText).toBe(
@@ -182,7 +182,7 @@ describe('REPO_COMMANDS', () => {
     });
 
     it('names every entry whose clone is absent on one stderr line, keeping their stacks', async () => {
-      const clones = { gamma: clone({}) };
+      const clones = { gamma: buildClone({}) };
       const { registryText, result } = await run(['scan', '--write'], { clones });
       expect(result.stderr).toBe('thor-repo: no clone on this machine, so the stack is kept, for: alpha, beta');
       expect(result.stdout).toBe('gamma: -nextjs -react');
@@ -204,7 +204,7 @@ describe('REPO_COMMANDS', () => {
 
     it('reports and rewrites visibility and runner values that differ from GitHub', async () => {
       const github = { ...CURRENT_GITHUB, 'owner/alpha': facts('private'), 'owner/beta': facts('public', 'm1') };
-      const clones = { ...CURRENT_CLONES, beta: clone({ 'vercel.json': '' }) };
+      const clones = { ...CURRENT_CLONES, beta: buildClone({ 'vercel.json': '' }) };
       const { registryText, result } = await run(['scan', '--write'], { clones, github });
       expect(result.stdout).toBe('alpha: -runner\nbeta: +vercel visibility=public runner=m1');
       expect(registryText).toBe(
@@ -291,7 +291,7 @@ describe('REPO_COMMANDS', () => {
 
   describe('add', () => {
     it('prints the entry for a clone that the registry lacks, without writing it', async () => {
-      const clones = { delta: clone({ 'package.json': { vue: '3' } }) };
+      const clones = { delta: buildClone({ 'package.json': { vue: '3' } }) };
       const { registryText, result } = await run(['add', '~/repos/delta'], {
         clones,
         origins: { delta: 'git@github.com:owner/delta.git' },
@@ -306,10 +306,10 @@ describe('REPO_COMMANDS', () => {
     });
 
     it('appends the entry under --write with its GitHub fields, reading an HTTPS origin', async () => {
-      const clones = { delta: clone({}) };
+      const clones = { delta: buildClone({}) };
       const origins = { delta: 'https://github.com/owner/delta' };
       const github = { 'owner/delta': facts('private', 'imac2') };
-      const { registryText, result } = await run(['add', `${HOME}/repos/delta`, '--write'], {
+      const { registryText, result } = await run(['add', `${FAKE_HOME}/repos/delta`, '--write'], {
         clones,
         github,
         origins,
@@ -325,7 +325,7 @@ describe('REPO_COMMANDS', () => {
         'owner/delta': { runner: undefined, runnerProblem: 'is empty', visibility: 'public' as const },
       };
       const { result } = await run(['add', '~/repos/delta'], {
-        clones: { delta: clone({}) },
+        clones: { delta: buildClone({}) },
         github,
         origins: { delta: 'git@github.com:owner/delta.git' },
       });
@@ -339,13 +339,13 @@ describe('REPO_COMMANDS', () => {
       // The reader knows the path, so a GitHub read would add `visibility` to the entry.
       const github = { 'ws/wthorsen-demos': facts('private') };
       const { registryText, result } = await run(['add', '~/repos/demos', '--write'], {
-        clones: { demos: clone({}) },
+        clones: { demos: buildClone({}) },
         github,
         origins: { demos: 'https://u@bitbucket.org/ws/wthorsen-demos.git' },
       });
       expect(result.stdout).toBe('  - name: wthorsen-demos\n    path: ~/repos/demos');
       expect(result.stderr).toContain(
-        `thor-repo: ${HOME}/repos/demos: origin host bitbucket.org is not github.com; the entry omits repo, visibility, and runner`,
+        `thor-repo: ${FAKE_HOME}/repos/demos: origin host bitbucket.org is not github.com; the entry omits repo, visibility, and runner`,
       );
       expect(result.stderr).not.toContain('GitHub');
       expect(registryText).toBe(`${REGISTRY}  - name: wthorsen-demos\n    path: ~/repos/demos\n`);
@@ -355,7 +355,7 @@ describe('REPO_COMMANDS', () => {
     it('does not match a new clone hosted elsewhere to an entry that also lacks repo', async () => {
       const registry = `${REGISTRY}  - name: epsilon\n    path: ~/repos/epsilon\n`;
       const { result } = await run(['add', '~/repos/demos'], {
-        clones: { demos: clone({}) },
+        clones: { demos: buildClone({}) },
         origins: { demos: 'git@bitbucket.org:ws/demos.git' },
         registry,
       });
@@ -366,7 +366,7 @@ describe('REPO_COMMANDS', () => {
     it('refuses a clone hosted elsewhere that is registered without repo, matching its path', async () => {
       const registry = `${REGISTRY}  - name: demos\n    path: ~/repos/demos\n`;
       const { result } = await run(['add', '~/repos/demos'], {
-        clones: { demos: clone({}) },
+        clones: { demos: buildClone({}) },
         origins: { demos: 'git@bitbucket.org:ws/wthorsen-demos.git' },
         registry,
       });
@@ -380,7 +380,7 @@ describe('REPO_COMMANDS', () => {
         origins: { delta: 'git@github.com:owner/delta.git' },
       });
       expect(result.stderr).toBe(
-        `thor-repo: cannot list the tracked files of ${HOME}/repos/delta: git ls-files was killed by SIGKILL`,
+        `thor-repo: cannot list the tracked files of ${FAKE_HOME}/repos/delta: git ls-files was killed by SIGKILL`,
       );
       expect(registryText).toBe(REGISTRY);
       expect(result.status).toBe(1);
@@ -396,7 +396,7 @@ describe('REPO_COMMANDS', () => {
       ['a path outside any clone', ['add', '~/elsewhere'], {}, 'is not in a git clone'],
       ['a clone without an origin remote', ['add', '~/repos/delta'], {}, 'has no origin remote'],
     ])('refuses %s', async (_, args, origins, message) => {
-      const clones = { alpha: CURRENT_CLONES.alpha, delta: clone({}) };
+      const clones = { alpha: CURRENT_CLONES.alpha, delta: buildClone({}) };
       const { result } = await run(args, { clones, origins });
       expect(result.stderr).toContain(message);
       expect(result.status).toBe(1);
@@ -416,6 +416,9 @@ describe('REPO_COMMANDS', () => {
       [['list', '--write']],
       [['add']],
       [['add', 'one', 'two']],
+      [['move', 'alpha']],
+      [['move', 'alpha', '~/x', 'extra']],
+      [['apply-moves', 'alpha']],
     ])('rejects %j as a usage error', async (argv) => {
       const result = await runCaptured(argv);
       expect(result.stderr).toMatch(/^thor-repo: /);
@@ -427,23 +430,6 @@ describe('REPO_COMMANDS', () => {
 
 // region | Helpers
 
-/** A fake clone: the paths that git tracks in it, or the reason that git cannot list them, and its files' content. */
-interface FakeClone {
-  files: Record<string, string>;
-  tracked: string[] | string;
-}
-
-/** Builds a clone from its files, writing an object as a manifest that declares those dependencies. */
-function clone(files: Record<string, string | Record<string, string>>): FakeClone {
-  const contents = Object.fromEntries(
-    Object.entries(files).map(([file, content]) => [
-      file,
-      typeof content === 'string' ? content : JSON.stringify({ dependencies: content }),
-    ]),
-  );
-  return { files: contents, tracked: Object.keys(contents) };
-}
-
 /** Returns the facts of a repo without a `CI_RUNS_ON` problem. */
 function facts(visibility: GitHubFacts['visibility'], runner?: string): GitHubFacts {
   return { runner, runnerProblem: undefined, visibility };
@@ -452,31 +438,6 @@ function facts(visibility: GitHubFacts['visibility'], runner?: string): GitHubFa
 /** Returns a reader over the given facts, failing for a repo that they lack. */
 function fakeGitHub(byRepo: Record<string, GitHubFacts>): GitHubReader {
   return (repo) => byRepo[repo] ?? 'no such repo';
-}
-
-/** Returns adapters over clones at `~/repos/<name>`, with the given origins and the registry's branch. */
-function fakeAdapters(
-  clones: Record<string, FakeClone>,
-  origins: Record<string, string> = {},
-  branch = 'main',
-): CloneAdapters {
-  const cloneName = (dir: string): string | undefined => /^\/home\/spec\/repos\/([^/]+)/.exec(dir)?.[1];
-  return {
-    isDirectory: (dir) => clones[cloneName(dir) ?? ''] !== undefined,
-    listTrackedFiles: (dir) => clones[cloneName(dir) ?? '']?.tracked ?? 'fatal: not a git repository',
-    readCurrentBranch: () => branch,
-    readFile: (file) => {
-      const name = cloneName(file) ?? '';
-      const content = clones[name]?.files[file.slice(`${HOME}/repos/${name}/`.length)];
-      if (content === undefined) throw new Error(`absent: ${file}`);
-      return content;
-    },
-    readOriginUrl: (dir) => origins[cloneName(dir) ?? ''],
-    readCloneRoot: (dir) => {
-      const name = cloneName(dir);
-      return name !== undefined && clones[name] !== undefined ? `${HOME}/repos/${name}` : undefined;
-    },
-  };
 }
 
 /**
@@ -495,10 +456,10 @@ async function run(
 ): Promise<{ registryText: string; result: CapturedRun }> {
   using tree = createTempTree({ 'repos.yaml': setup.registry ?? REGISTRY }, { prefix: 'repo-tools-' });
   const file = tree.resolve('repos.yaml');
-  const adapters = fakeAdapters(setup.clones ?? CURRENT_CLONES, setup.origins, setup.branch);
+  const adapters = buildFakeAdapters(setup.clones ?? CURRENT_CLONES, setup.origins, setup.branch);
   const result = await runCaptured([...args.slice(0, 1), '--file', file, ...args.slice(1)], {
     adapters,
-    env: { HOME },
+    env: { HOME: FAKE_HOME },
     github: fakeGitHub(setup.github ?? CURRENT_GITHUB),
   });
   return { registryText: fs.readFileSync(file, 'utf8'), result };
