@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.6.0 — 2026-11-12
+
+### 🎉 Features
+
+- Adds `DeclarationError`, exported from `@williamthorsen/compositor` and thrown in place of a bare `Error` for a fault in a consumer's tiers, packages, source directories, region markers, contribution patterns, owned-items collection paths, or sentinels. (#822)
+
+### ♻️ Refactoring
+
+- Renames the private helpers `markersFor` and `position` in `planRegionFile.ts` to `renderMarkers` and `locateHost`. (#821)
+
+### 🧪 Tests
+
+- Renames the noun-led helper functions in `compositor`'s unit tests to verb-led names, such as `violationsOf` to `collectViolations` and `withDeployment` to `addDeployment`, and reorders the helper sections that the renames left out of alphabetical order. (#821)
+
 ## 0.5.7 — 2026-11-12
 
 ### 🏗️ Internal features

@@ -1,6 +1,6 @@
 {
   "name": "@williamthorsen/systemd-service",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "private": false,
   "description": "Install, restart, inspect, and remove systemd services on Linux",
   "keywords": [

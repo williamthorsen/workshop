@@ -1,5 +1,44 @@
 [
   {
+    "version": "0.6.0",
+    "date": "2026-11-12",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Adds `DeclarationError`, exported from `@williamthorsen/compositor` and thrown in place of a bare `Error` for a fault in a consumer's tiers, packages, source directories, region markers, contribution patterns, owned-items collection paths, or sentinels. (#822)",
+            "hash": "50b993d7a100d7e3302c0c33c48fac1fe3bd3878",
+            "entry": 1
+          }
+        ]
+      },
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Renames the private helpers `markersFor` and `position` in `planRegionFile.ts` to `renderMarkers` and `locateHost`. (#821)",
+            "hash": "42ca321a780479dd79eab207bf00617675f8105d",
+            "entry": 2
+          }
+        ]
+      },
+      {
+        "title": "🧪 Tests",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Renames the noun-led helper functions in `compositor`'s unit tests to verb-led names, such as `violationsOf` to `collectViolations` and `withDeployment` to `addDeployment`, and reorders the helper sections that the renames left out of alphabetical order. (#821)",
+            "hash": "42ca321a780479dd79eab207bf00617675f8105d",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.5.7",
     "date": "2026-11-12",
     "sections": [

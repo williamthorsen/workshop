@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.5.0",
+    "date": "2026-11-12",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Adds an optional, hand-asserted `prefix` field to registry entries, which `thor-repo list --json` emits and `thor-repo scan --write` keeps, and makes every `thor-repo` verb refuse a registry whose prefix is empty or contains whitespace or a period, or whose entries declare two prefixes that are equal regardless of case. (#824)",
+            "hash": "a27db2ef056fce265aaccbecb47b08e3a5903024",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.4.0",
     "date": "2026-11-12",
     "sections": [

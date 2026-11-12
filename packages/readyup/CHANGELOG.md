@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.46.1 — 2026-11-12
+
+### Notes
+
+- Forced version bump.
+
 ## 0.46.0 — 2026-11-12
 
 ### 🎉 Features

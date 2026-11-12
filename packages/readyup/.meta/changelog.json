@@ -1,5 +1,10 @@
 [
   {
+    "version": "0.46.1",
+    "date": "2026-11-12",
+    "sections": [{ "title": "Notes", "audience": "dev", "items": [{ "description": "Forced version bump." }] }]
+  },
+  {
     "version": "0.46.0",
     "date": "2026-11-12",
     "sections": [
