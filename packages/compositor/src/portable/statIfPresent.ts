@@ -1,7 +1,7 @@
 import type { Stats } from 'node:fs';
 import { stat } from 'node:fs/promises';
 
-import { reportsMissingPath } from './reportsMissingPath.ts';
+import { isMissingPathError } from '@williamthorsen/toolbelt.errors/candidate';
 
 /**
  * Reads the stats of `filePath`, or `undefined` when it is absent.
@@ -13,7 +13,7 @@ export async function statIfPresent(filePath: string): Promise<Stats | undefined
   try {
     return await stat(filePath);
   } catch (error: unknown) {
-    if (reportsMissingPath(error)) {
+    if (isMissingPathError(error)) {
       return undefined;
     }
     throw error;
