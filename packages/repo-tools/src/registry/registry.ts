@@ -10,6 +10,7 @@ export interface RegistryEntry {
   name: string | undefined;
   node: YAMLMap;
   path: string | undefined;
+  prefix: string | undefined;
   repo: string | undefined;
   runner: string | undefined;
   stack: string[];
@@ -83,7 +84,10 @@ export function assertWritable(file: string, readBranch: (dir: string) => string
   return `${file} resolves to ${resolved}, which is in a worktree on the live branch; pass --file <branch worktree copy> to write the registry in a branch worktree`;
 }
 
-/** Parses a registry file, or returns a message naming why its content is not a registry. */
+/**
+ * Parses a registry file, or returns a message naming why its content is not a registry, which includes two entries
+ * whose prefixes are equal regardless of case.
+ */
 export function parseRegistry(text: string): Registry | string {
   const document = parseDocument(text);
   if (document.errors.length > 0) return document.errors[0]?.message ?? 'invalid YAML';
@@ -99,7 +103,7 @@ export function parseRegistry(text: string): Registry | string {
     if (typeof entry === 'string') return `entry ${index + 1}: ${entry}`;
     entries.push(entry);
   }
-  return { document, entries };
+  return findDuplicatePrefix(entries) ?? { document, entries };
 }
 
 /** Reads and parses a registry file, or returns a message naming why it cannot. */
@@ -189,6 +193,26 @@ export function writeStack(registry: Registry, entry: RegistryEntry, stack: read
 
 // region | Helpers
 
+/** Names an entry by its 1-based position, followed by its name when it has one. */
+function describeEntry(index: number, entry: RegistryEntry): string {
+  return entry.name === undefined ? String(index + 1) : `${index + 1} (${entry.name})`;
+}
+
+/** Returns a message naming the first two entries whose prefixes are equal regardless of case, or `undefined`. */
+function findDuplicatePrefix(entries: readonly RegistryEntry[]): string | undefined {
+  const seen = new Map<string, { entry: RegistryEntry; index: number; prefix: string }>();
+  for (const [index, entry] of entries.entries()) {
+    if (entry.prefix === undefined) continue;
+    const key = entry.prefix.toLowerCase();
+    const earlier = seen.get(key);
+    if (earlier !== undefined) {
+      return `entries ${describeEntry(earlier.index, earlier.entry)} and ${describeEntry(index, entry)} declare the same prefix: '${earlier.prefix}' and '${entry.prefix}'`;
+    }
+    seen.set(key, { entry, index, prefix: entry.prefix });
+  }
+  return undefined;
+}
+
 /** Reports whether two lists hold the same strings in the same order. */
 function isSameList(left: readonly string[], right: readonly string[]): boolean {
   return left.length === right.length && left.every((value, index) => value === right[index]);
@@ -211,6 +235,7 @@ function readEntry(node: YAMLMap): RegistryEntry | string {
     name: readString('name'),
     node,
     path: readString('path'),
+    prefix: readPrefix(),
     repo: readString('repo'),
     runner: readString('runner'),
     stack: readStringList('stack'),
@@ -218,6 +243,16 @@ function readEntry(node: YAMLMap): RegistryEntry | string {
     visibility: readString('visibility'),
   };
   return problems[0] ?? entry;
+
+  /** Returns the optional `prefix`, recording a problem when it is empty or contains whitespace or a period. */
+  function readPrefix(): string | undefined {
+    const value = readString('prefix');
+    if (value !== undefined && (value === '' || /[\s.]/.test(value))) {
+      problems.push(`'prefix' must be a non-empty string without whitespace or a period`);
+      return undefined;
+    }
+    return value;
+  }
 
   /** Returns an optional string field, recording a problem when it is present and not a string. */
   function readString(key: string): string | undefined {
