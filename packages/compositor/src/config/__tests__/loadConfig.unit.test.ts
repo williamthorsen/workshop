@@ -4,6 +4,7 @@ import path from 'node:path';
 import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
+import { DeclarationError } from '../../declaration/DeclarationError.ts';
 import { loadConfig, type TierFile } from '../loadConfig.ts';
 import { buildConfigDir } from '../test-utils/buildConfigDir.ts';
 
@@ -105,7 +106,7 @@ describe(loadConfig, () => {
   it('appends the parser message to the malformed-YAML failure and keeps the original as cause', async () => {
     const dir = buildConfigDir({ 'project.yaml': 'select: [unclosed\n' });
 
-    const error = await captureError(() => loadConfig([buildTierFile(dir, 'project')]));
+    const error = await captureError(DeclarationError, () => loadConfig([buildTierFile(dir, 'project')]));
 
     const { cause } = error;
     assert.ok(cause instanceof Error);
@@ -116,6 +117,7 @@ describe(loadConfig, () => {
     const dir = buildConfigDir({ 'project.yaml': 'selects: {}\n' });
 
     await expect(loadConfig([buildTierFile(dir, 'project')])).rejects.toThrow(path.join(dir, 'project.yaml'));
+    await expect(loadConfig([buildTierFile(dir, 'project')])).rejects.toThrow(DeclarationError);
   });
 
   // Both files are absent, so a check running after the load would see no tiers at all and never notice the repeat.
@@ -125,12 +127,18 @@ describe(loadConfig, () => {
     await expect(loadConfig([buildTierFile(dir, 'project'), buildTierFile(dir, 'project')])).rejects.toThrow(
       /Tier "project" is declared more than once/,
     );
+    await expect(loadConfig([buildTierFile(dir, 'project'), buildTierFile(dir, 'project')])).rejects.toThrow(
+      DeclarationError,
+    );
   });
 
-  it('fails on a tier whose identity is incomplete', async () => {
+  it('fails on a tier whose identity is incomplete, naming its position', async () => {
     const dir = buildConfigDir({ 'project.yaml': projectTier });
+    const tiers = [buildTierFile(dir, 'user'), { ...buildTierFile(dir, 'project'), id: '' }];
 
-    await expect(loadConfig([{ ...buildTierFile(dir, 'project'), id: '' }])).rejects.toThrow(/id/);
+    const error = await captureError(DeclarationError, () => loadConfig(tiers));
+
+    expect(error.message).toMatch(/Tier file at position 1 is invalid: id: /);
   });
 });
 

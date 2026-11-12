@@ -1,9 +1,10 @@
 import path from 'node:path';
 
-import { chainError } from '@williamthorsen/toolbelt.errors/candidate';
+import { describeError } from '@williamthorsen/toolbelt.errors';
 import { parse as parseYaml } from 'yaml';
 import { z } from 'zod';
 
+import { DeclarationError } from '../declaration/DeclarationError.ts';
 import { readFileIfPresent } from '../portable/readFileIfPresent.ts';
 import { type CompositorConfig, type ConfigTier, type TierBody, TierBodySchema } from '../schemas/config-schemas.ts';
 import { IdSchema } from '../schemas/scalar-schemas.ts';
@@ -29,7 +30,7 @@ export type TierFile = z.infer<typeof TierFileSchema>;
  * A chain where every file is absent yields a config with no tiers.
  */
 export async function loadConfig(tiers: ReadonlyArray<TierFile>): Promise<CompositorConfig> {
-  const validated = tiers.map((tier) => TierFileSchema.parse(tier));
+  const validated = tiers.map((tier, index) => parseTierFile(tier, index));
   assertTierIdsAreUnique(validated);
   const loaded = await Promise.all(validated.map((tier) => readTier(tier)));
   return { tiers: loaded.filter((tier): tier is ConfigTier => tier !== undefined) };
@@ -42,10 +43,15 @@ function assertTierIdsAreUnique(tiers: ReadonlyArray<TierFile>): void {
   const seen = new Set<string>();
   for (const { id } of tiers) {
     if (seen.has(id)) {
-      throw new Error(`Tier "${id}" is declared more than once; a tier id names one tier.`);
+      throw new DeclarationError(`Tier "${id}" is declared more than once; a tier id names one tier.`);
     }
     seen.add(id);
   }
+}
+
+/** Renders a schema failure's issues as `path: message` pairs. */
+function formatIssues(error: z.ZodError): string {
+  return error.issues.map((issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`).join('; ');
 }
 
 /**
@@ -58,15 +64,23 @@ function parseTierBody(raw: string, filePath: string): TierBody {
   try {
     document = parseYaml(raw);
   } catch (error: unknown) {
-    throw chainError(`Config file "${filePath}" is not valid YAML`, error);
+    throw new DeclarationError(`Config file "${filePath}" is not valid YAML: ${describeError(error)}`, {
+      cause: error,
+    });
   }
 
   const result = TierBodySchema.safeParse(document ?? {});
   if (!result.success) {
-    const detail = result.error.issues
-      .map((issue) => `${issue.path.join('.') || '(root)'}: ${issue.message}`)
-      .join('; ');
-    throw new Error(`Config file "${filePath}" is invalid: ${detail}`);
+    throw new DeclarationError(`Config file "${filePath}" is invalid: ${formatIssues(result.error)}`);
+  }
+  return result.data;
+}
+
+/** Validates the tier file at `index` in the list a consumer supplied, naming its position on any failure. */
+function parseTierFile(tier: unknown, index: number): TierFile {
+  const result = TierFileSchema.safeParse(tier);
+  if (!result.success) {
+    throw new DeclarationError(`Tier file at position ${index} is invalid: ${formatIssues(result.error)}`);
   }
   return result.data;
 }

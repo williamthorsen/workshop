@@ -23,6 +23,7 @@ export { locateSourcePackages } from './config/locateSourcePackages.ts';
 export { resolveSources } from './config/resolveSources.ts';
 export { StaleSnapshotError } from './config/StaleSnapshotError.ts';
 export { ConsistencyError } from './consistency/ConsistencyError.ts';
+export { DeclarationError } from './declaration/DeclarationError.ts';
 export {
   ARTIFACT_ID_PLACEHOLDER,
   buildContributionPatterns,

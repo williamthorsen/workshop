@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { DeclarationError } from '../../../declaration/DeclarationError.ts';
 import { type DocumentAccess, openDocument } from '../document-access.ts';
 import { locateCollection } from '../locateCollection.ts';
 
@@ -39,6 +40,7 @@ describe(locateCollection, () => {
 
   it('if the path names no key, throws, the document root having no structure a removal could prune', () => {
     expect(() => locateCollection(open('- name: relay\n'), [])).toThrow(/at least one key/);
+    expect(() => locateCollection(open('- name: relay\n'), [])).toThrow(DeclarationError);
   });
 });
 

@@ -1,5 +1,6 @@
 import { stat } from 'node:fs/promises';
 
+import { DeclarationError } from '../declaration/DeclarationError.ts';
 import { reportsMissingPath } from '../portable/reportsMissingPath.ts';
 import type { SourceSpec } from '../schemas/catalog-schemas.ts';
 
@@ -15,11 +16,13 @@ export async function assertSourceIsReadable(source: SourceSpec): Promise<void> 
     entry = await stat(source.dir);
   } catch (error: unknown) {
     if (reportsMissingPath(error)) {
-      throw new Error(`Source "${source.name}" points at "${source.dir}", which does not exist.`, { cause: error });
+      throw new DeclarationError(`Source "${source.name}" points at "${source.dir}", which does not exist.`, {
+        cause: error,
+      });
     }
     throw error;
   }
   if (!entry.isDirectory()) {
-    throw new Error(`Source "${source.name}" points at "${source.dir}", which is not a directory.`);
+    throw new DeclarationError(`Source "${source.name}" points at "${source.dir}", which is not a directory.`);
   }
 }

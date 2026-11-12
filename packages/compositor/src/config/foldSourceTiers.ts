@@ -1,3 +1,4 @@
+import { DeclarationError } from '../declaration/DeclarationError.ts';
 import { compareStrings } from '../portable/compareStrings.ts';
 import { expandPath } from '../portable/expandPath.ts';
 import type { SourceSpec } from '../schemas/catalog-schemas.ts';
@@ -86,7 +87,7 @@ function buildSpec(name: string, folded: FoldedSource, located: ReadonlyMap<stri
     );
   }
   if (location.outcome === 'failed') {
-    throw new Error(`Source "${name}", declared by tier "${label}": ${location.reason}`);
+    throw new DeclarationError(`Source "${name}", declared by tier "${label}": ${location.reason}`);
   }
   return { id: name, name, origin, dir: location.dir };
 }

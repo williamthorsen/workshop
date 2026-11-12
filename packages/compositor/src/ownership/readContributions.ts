@@ -1,3 +1,7 @@
+import { describeError } from '@williamthorsen/toolbelt.errors';
+
+import { DeclarationError } from '../declaration/DeclarationError.ts';
+
 /**
  * The regular-expression sources locating a contribution's markers, each holding exactly one capture group: the key
  * naming which contributor the block belongs to.
@@ -79,10 +83,18 @@ function findClosingMarker(
  * declaration a consumer wrote, so it throws where a damaged host blocks.
  */
 function toGlobalPattern(source: string, role: string): RegExp {
-  const pattern = new RegExp(source, 'gm');
+  let pattern;
+  try {
+    pattern = new RegExp(source, 'gm');
+  } catch (error: unknown) {
+    throw new DeclarationError(
+      `A contribution's ${role} pattern "${source}" does not compile: ${describeError(error)}`,
+      { cause: error },
+    );
+  }
   const groupCount = (new RegExp(`${source}|`).exec('') ?? []).length - 1;
   if (groupCount !== 1) {
-    throw new Error(
+    throw new DeclarationError(
       `A contribution's ${role} pattern must have exactly one capture group naming the contributor, but "${source}" has ${groupCount}.`,
     );
   }
