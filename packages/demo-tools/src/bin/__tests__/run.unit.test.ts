@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import { resolveDefaultProfileDir } from '../../aidemo/build-aidemo-env.ts';
 import { DEFAULT_VOICE_MODEL } from '../../config/read-machine-config.ts';
 import { run, type RunEffects } from '../run.ts';
+import { selectLaunch, selectVoice } from '../test-utils/select-request.ts';
 
 const VERSION = '9.9.9';
 
@@ -51,11 +52,9 @@ describe(run, () => {
     it.each([['--version'], ['-V']])('prints the resolved version on %o', async (flag) => {
       await expect(run([flag], EFFECTS)).resolves.toStrictEqual({
         exitCode: 0,
-        launch: undefined,
-        revoice: undefined,
+        request: undefined,
         stderr: '',
         stdout: `${VERSION}\n`,
-        voice: undefined,
       });
     });
 
@@ -69,11 +68,9 @@ describe(run, () => {
 
       await expect(run(['--version'], failing)).resolves.toStrictEqual({
         exitCode: 2,
-        launch: undefined,
-        revoice: undefined,
+        request: undefined,
         stderr: "thor-demo: The manifest declares no version.\nTry 'thor-demo --help'.\n",
         stdout: '',
-        voice: undefined,
       });
     });
 
@@ -82,10 +79,10 @@ describe(run, () => {
       ['probe', ['-h']],
       ['render', ['quickstart', '--tts', 'local', '--help']],
     ])('prints the help of %s for %o without reading any configuration', async (command, args) => {
-      const { exitCode, launch, stdout } = await run([command, ...args], EFFECTS);
+      const { exitCode, request, stdout } = await run([command, ...args], EFFECTS);
 
       expect(exitCode).toBe(0);
-      expect(launch).toBeUndefined();
+      expect(request).toBeUndefined();
       expect(stdout).toContain(`Usage: thor-demo ${command}`);
       expect(stdout).toContain('Example:');
     });
@@ -106,10 +103,10 @@ describe(run, () => {
       { args: ['render'], expected: 'thor-demo: expects a demo name before any option' },
       { args: ['probe', '--golden'], expected: 'thor-demo: expects a demo name before any option' },
     ])('exits 2, pointing at the help: $args', async ({ args, expected }) => {
-      const { exitCode, launch, stderr, stdout } = await run(args, EFFECTS);
+      const { exitCode, request, stderr, stdout } = await run(args, EFFECTS);
 
       expect(exitCode).toBe(2);
-      expect(launch).toBeUndefined();
+      expect(request).toBeUndefined();
       expect(stdout).toBe('');
       expect(stderr).toContain(expected);
       expect(stderr).toMatch(/Try 'thor-demo( \w+)? --help'\./);
@@ -118,10 +115,10 @@ describe(run, () => {
     it('rejects an argument to mcp', async () => {
       using tree = createDemoRepo();
 
-      const { exitCode, launch } = await run(['mcp', 'extra'], { ...EFFECTS, cwd: tree.dir });
+      const { exitCode, request } = await run(['mcp', 'extra'], { ...EFFECTS, cwd: tree.dir });
 
       expect(exitCode).toBe(2);
-      expect(launch).toBeUndefined();
+      expect(request).toBeUndefined();
     });
   });
 
@@ -130,7 +127,7 @@ describe(run, () => {
       using tree = createDemoRepo();
       const noRootNotice: unknown = expect.stringContaining('no archive root');
 
-      const { exitCode, launch, stderr } = await run([command, 'demos/quickstart', '--tts', 'local'], {
+      const { exitCode, request, stderr } = await run([command, 'demos/quickstart', '--tts', 'local'], {
         ...EFFECTS,
         cwd: tree.resolve('demos'),
       });
@@ -138,7 +135,7 @@ describe(run, () => {
       expect(exitCode).toBe(0);
       expect(stderr).toBe('');
       const profileDir = resolveDefaultProfileDir(HOME, path.basename(tree.dir));
-      expect(launch).toStrictEqual({
+      expect(selectLaunch(request)).toStrictEqual({
         args: [command, tree.resolve('demos/quickstart'), '--tts', 'local'],
         bin: tree.resolve('node_modules/@tandryukha/aidemo/bin/aidemo.mjs'),
         cwd: tree.dir,
@@ -151,16 +148,21 @@ describe(run, () => {
     it('forwards the arguments after a literal --, help flags included', async () => {
       using tree = createDemoRepo();
 
-      const { launch } = await run([command, 'quickstart', '--golden', '--', '--help'], { ...EFFECTS, cwd: tree.dir });
+      const { request } = await run([command, 'quickstart', '--golden', '--', '--help'], { ...EFFECTS, cwd: tree.dir });
 
-      expect(launch?.args).toStrictEqual([command, tree.resolve('demos/quickstart'), '--golden', '--help']);
+      expect(selectLaunch(request)?.args).toStrictEqual([
+        command,
+        tree.resolve('demos/quickstart'),
+        '--golden',
+        '--help',
+      ]);
     });
 
     it('warns about each working path that git does not ignore, before the launch', async () => {
       using tree = createDemoRepo();
       const checked: string[][] = [];
 
-      const { launch, stderr } = await run([command, 'quickstart'], {
+      const { request, stderr } = await run([command, 'quickstart'], {
         ...EFFECTS,
         cwd: tree.dir,
         findUnignoredPaths: (dir, paths) => {
@@ -170,7 +172,7 @@ describe(run, () => {
         },
       });
 
-      expect(launch).toBeDefined();
+      expect(request?.kind).toBe('launch');
       expect(checked[0]).toContain('demos/quickstart/audio/voice.json');
       expect(stderr).toContain(
         `thor-demo ${command}: warning: demos/quickstart/generated/params.json is not ignored by git; aidemo writes it on every run\n` +
@@ -217,30 +219,30 @@ describe(run, () => {
     it('lists the demos for an unknown one, as a usage error', async () => {
       using tree = createDemoRepo();
 
-      const { exitCode, launch, stderr } = await run([command, 'quick'], { ...EFFECTS, cwd: tree.dir });
+      const { exitCode, request, stderr } = await run([command, 'quick'], { ...EFFECTS, cwd: tree.dir });
 
       expect(exitCode).toBe(2);
-      expect(launch).toBeUndefined();
+      expect(request).toBeUndefined();
       expect(stderr).toContain('unknown demo "quick"; the demos in demos are: quickstart');
     });
 
     it('reports a missing configuration with exit 1', async () => {
       using tree = createTempTree({ 'x/.keep': '' });
 
-      const { exitCode, launch, stderr } = await run([command, 'quickstart'], { ...EFFECTS, cwd: tree.dir });
+      const { exitCode, request, stderr } = await run([command, 'quickstart'], { ...EFFECTS, cwd: tree.dir });
 
       expect(exitCode).toBe(1);
-      expect(launch).toBeUndefined();
+      expect(request).toBeUndefined();
       expect(stderr).toMatch(new RegExp(String.raw`^thor-demo ${command}: \.config/thor-demo\.yaml not found`));
     });
 
     it('refuses an unsupported aidemo with exit 1', async () => {
       using tree = createDemoRepo({ aidemoVersion: '0.15.2' });
 
-      const { exitCode, launch, stderr } = await run([command, 'quickstart'], { ...EFFECTS, cwd: tree.dir });
+      const { exitCode, request, stderr } = await run([command, 'quickstart'], { ...EFFECTS, cwd: tree.dir });
 
       expect(exitCode).toBe(1);
-      expect(launch).toBeUndefined();
+      expect(request).toBeUndefined();
       expect(stderr).toContain('0.15.2 is installed');
       expect(stderr).toContain('pnpm add --save-dev @tandryukha/aidemo');
     });
@@ -251,7 +253,7 @@ describe(run, () => {
       using tree = createDemoRepo({ config: 'archive:\n  label: product\n' });
       const source = { commit: 'abc1234def', dirty: true };
 
-      const { exitCode, launch } = await run(['render', 'quickstart', '--tts', 'local'], {
+      const { exitCode, request } = await run(['render', 'quickstart', '--tts', 'local'], {
         ...EFFECTS,
         cwd: tree.dir,
         env: { THOR_DEMO_ARCHIVE_ROOT: '/archive' },
@@ -259,7 +261,7 @@ describe(run, () => {
       });
 
       expect(exitCode).toBe(0);
-      expect(launch?.take).toMatchObject({
+      expect(selectLaunch(request)?.take).toMatchObject({
         kind: 'archive',
         plan: {
           aidemoVersion: '0.20.3',
@@ -276,13 +278,13 @@ describe(run, () => {
     it('attaches a notice for a variant render', async () => {
       using tree = createDemoRepo();
 
-      const { launch } = await run(['render', 'quickstart', '--', '--langs', 'de,fr'], {
+      const { request } = await run(['render', 'quickstart', '--', '--langs', 'de,fr'], {
         ...EFFECTS,
         cwd: tree.dir,
         env: { THOR_DEMO_ARCHIVE_ROOT: '/archive' },
       });
 
-      expect(launch?.take).toStrictEqual({
+      expect(selectLaunch(request)?.take).toStrictEqual({
         kind: 'notice',
         message: 'take not archived: --langs renders are not archived',
       });
@@ -291,14 +293,14 @@ describe(run, () => {
     it('reports a malformed machine configuration with exit 1, before launching', async () => {
       using tree = createDemoRepo({ extra: { 'home/.config/thor-demo/config.yaml': 'archive: [\n' } });
 
-      const { exitCode, launch, stderr } = await run(['render', 'quickstart'], {
+      const { exitCode, request, stderr } = await run(['render', 'quickstart'], {
         ...EFFECTS,
         cwd: tree.dir,
         homeDir: tree.resolve('home'),
       });
 
       expect(exitCode).toBe(1);
-      expect(launch).toBeUndefined();
+      expect(request).toBeUndefined();
       expect(stderr).toMatch(/^thor-demo render: .*config\.yaml: cannot be read as YAML/);
     });
 
@@ -313,14 +315,14 @@ describe(run, () => {
     it('does not read the machine configuration for probe', async () => {
       using tree = createDemoRepo({ extra: { 'home/.config/thor-demo/config.yaml': 'archive: [\n' } });
 
-      const { exitCode, launch } = await run(['probe', 'quickstart'], {
+      const { exitCode, request } = await run(['probe', 'quickstart'], {
         ...EFFECTS,
         cwd: tree.dir,
         homeDir: tree.resolve('home'),
       });
 
       expect(exitCode).toBe(0);
-      expect(launch).not.toHaveProperty('take');
+      expect(selectLaunch(request)).not.toHaveProperty('take');
     });
   });
 
@@ -328,7 +330,7 @@ describe(run, () => {
     it('launches aidemo mcp from the repository root and writes nothing to stdout', async () => {
       using tree = createDemoRepo();
 
-      const { exitCode, launch, stderr, stdout } = await run(['mcp'], {
+      const { exitCode, request, stderr, stdout } = await run(['mcp'], {
         ...EFFECTS,
         cwd: tree.dir,
         findUnignoredPaths: (_dir, paths) => paths,
@@ -337,16 +339,16 @@ describe(run, () => {
       expect(exitCode).toBe(0);
       expect(stdout).toBe('');
       expect(stderr).toBe('');
-      expect(launch).toMatchObject({ args: ['mcp'], cwd: tree.dir });
+      expect(selectLaunch(request)).toMatchObject({ args: ['mcp'], cwd: tree.dir });
     });
 
     it('refuses a missing aidemo with exit 1', async () => {
       using tree = createDemoRepo({ aidemoVersion: false });
 
-      const { exitCode, launch, stderr, stdout } = await run(['mcp'], { ...EFFECTS, cwd: tree.dir });
+      const { exitCode, request, stderr, stdout } = await run(['mcp'], { ...EFFECTS, cwd: tree.dir });
 
       expect(exitCode).toBe(1);
-      expect(launch).toBeUndefined();
+      expect(request).toBeUndefined();
       expect(stdout).toBe('');
       expect(stderr).toMatch(/^thor-demo mcp: @tandryukha\/aidemo is not installed/);
     });
@@ -358,13 +360,13 @@ describe(run, () => {
         config: 'aidemo:\n  env:\n    AIDEMO_CHROME_PROFILE: ~/profile\n    OPENAI_BASE_URL: http://local\n',
       });
 
-      const { launch } = await run(['mcp'], {
+      const { request } = await run(['mcp'], {
         ...EFFECTS,
         cwd: tree.dir,
         env: { OPENAI_API_KEY: 'sk-x', OPENAI_BASE_URL: 'http://remote', PATH: '/bin' },
       });
 
-      expect(launch?.env).toStrictEqual({
+      expect(selectLaunch(request)?.env).toStrictEqual({
         AIDEMO_CHROME_PROFILE: `${HOME}/profile`,
         OPENAI_BASE_URL: 'http://local',
         PATH: '/bin',
@@ -374,19 +376,19 @@ describe(run, () => {
     it('defaults the recording profile to one keyed by the archive label, for the entry point to create', async () => {
       using tree = createDemoRepo({ config: 'archive:\n  label: product\n' });
 
-      const { launch } = await run(['mcp'], { ...EFFECTS, cwd: tree.dir, env: { AIDEMO_CHROME_PROFILE: '' } });
+      const { request } = await run(['mcp'], { ...EFFECTS, cwd: tree.dir, env: { AIDEMO_CHROME_PROFILE: '' } });
 
       const profileDir = `${HOME}/.local/share/thor-demo/chrome-profiles/product`;
-      expect(launch).toMatchObject({ env: { AIDEMO_CHROME_PROFILE: profileDir }, profileDir });
+      expect(selectLaunch(request)).toMatchObject({ env: { AIDEMO_CHROME_PROFILE: profileDir }, profileDir });
     });
 
     it('leaves an inherited profile to aidemo without asking the entry point to create one', async () => {
       using tree = createDemoRepo();
 
-      const { launch } = await run(['mcp'], { ...EFFECTS, cwd: tree.dir, env: { AIDEMO_CHROME_PROFILE: '/profile' } });
+      const { request } = await run(['mcp'], { ...EFFECTS, cwd: tree.dir, env: { AIDEMO_CHROME_PROFILE: '/profile' } });
 
-      expect(launch?.env).toStrictEqual({ AIDEMO_CHROME_PROFILE: '/profile' });
-      expect(launch?.profileDir).toBeUndefined();
+      expect(selectLaunch(request)?.env).toStrictEqual({ AIDEMO_CHROME_PROFILE: '/profile' });
+      expect(selectLaunch(request)?.profileDir).toBeUndefined();
     });
 
     it('reports an invalid configuration with exit 1', async () => {
@@ -407,19 +409,20 @@ describe(run, () => {
 
       expect(result).toStrictEqual({
         exitCode: 0,
-        launch: undefined,
-        revoice: undefined,
-        stderr: '',
-        stdout: '',
-        voice: {
-          kind: 'setup',
+        request: {
+          kind: 'voice',
           voice: {
-            home: tree.resolve('home/.local/share/thor-demo/voice'),
-            model: DEFAULT_VOICE_MODEL,
-            referenceAudio: tree.resolve('home/reference.m4a'),
-            referenceTranscript: tree.resolve('home/reference.txt'),
+            kind: 'setup',
+            voice: {
+              home: tree.resolve('home/.local/share/thor-demo/voice'),
+              model: DEFAULT_VOICE_MODEL,
+              referenceAudio: tree.resolve('home/reference.m4a'),
+              referenceTranscript: tree.resolve('home/reference.txt'),
+            },
           },
         },
+        stderr: '',
+        stdout: '',
       });
     });
 
@@ -432,7 +435,7 @@ describe(run, () => {
       const result = await run(['voice', 'setup'], { ...buildVoiceEffects(tree), arch, platform });
 
       expect(result.exitCode).toBe(1);
-      expect(result.voice).toBeUndefined();
+      expect(result.request).toBeUndefined();
       expect(result.stderr).toBe(
         `thor-demo voice setup: the voice clone runs on Apple Silicon (darwin on arm64) only, not ${platform} on ${arch}\n`,
       );
@@ -444,7 +447,7 @@ describe(run, () => {
       const result = await run(['voice', 'setup'], buildVoiceEffects(tree));
 
       expect(result.exitCode).toBe(1);
-      expect(result.voice).toBeUndefined();
+      expect(result.request).toBeUndefined();
       expect(result.stderr).toContain(`${tool} is not on PATH; install it with brew install ${tool}`);
     });
 
@@ -480,10 +483,10 @@ describe(run, () => {
     it('is not stopped by a malformed archive section', async () => {
       using tree = createVoiceMachine({ config: `archive: /takes\n${VOICE_SECTION}` });
 
-      const { exitCode, voice } = await run(['voice', 'setup'], buildVoiceEffects(tree));
+      const { exitCode, request } = await run(['voice', 'setup'], buildVoiceEffects(tree));
 
       expect(exitCode).toBe(0);
-      expect(voice).toBeDefined();
+      expect(request?.kind).toBe('voice');
     });
 
     it.each([
@@ -493,10 +496,10 @@ describe(run, () => {
       using tree = createVoiceMachine();
       rmSync(tree.resolve(file));
 
-      const { exitCode, stderr, voice } = await run(['voice', 'setup'], buildVoiceEffects(tree));
+      const { exitCode, request, stderr } = await run(['voice', 'setup'], buildVoiceEffects(tree));
 
       expect(exitCode).toBe(1);
-      expect(voice).toBeUndefined();
+      expect(request).toBeUndefined();
       expect(stderr).toContain(`${tree.resolve(file)}, which does not exist; ${hint}`);
     });
 
@@ -521,13 +524,13 @@ describe(run, () => {
       using tree = createVoiceMachine({ tools: ['ffmpeg', 'swiftc'] });
       rmSync(tree.resolve('home/reference.m4a'));
 
-      const { exitCode, voice } = await run(['voice', 'record', '--microphone', 'Desk Mic'], {
+      const { exitCode, request } = await run(['voice', 'record', '--microphone', 'Desk Mic'], {
         ...buildVoiceEffects(tree),
         arch: 'x64',
       });
 
       expect(exitCode).toBe(0);
-      expect(voice).toMatchObject({
+      expect(selectVoice(request)).toMatchObject({
         kind: 'record',
         microphone: 'Desk Mic',
         voice: { referenceAudio: tree.resolve('home/reference.m4a') },
@@ -537,9 +540,9 @@ describe(run, () => {
     it('leaves the microphone to the system when the flag is absent', async () => {
       using tree = createVoiceMachine({ tools: ['ffmpeg', 'swiftc'] });
 
-      const { voice } = await run(['voice', 'record'], buildVoiceEffects(tree));
+      const { request } = await run(['voice', 'record'], buildVoiceEffects(tree));
 
-      expect(voice).toMatchObject({ kind: 'record', microphone: undefined });
+      expect(selectVoice(request)).toMatchObject({ kind: 'record', microphone: undefined });
     });
 
     it.each([
@@ -568,10 +571,13 @@ describe(run, () => {
     it('installs the recorder under the default voice home when the voice section is absent', async () => {
       using tree = createVoiceMachine({ config: '', tools: ['swiftc'] });
 
-      const { exitCode, voice } = await run(['voice', 'microphones'], buildVoiceEffects(tree));
+      const { exitCode, request } = await run(['voice', 'microphones'], buildVoiceEffects(tree));
 
       expect(exitCode).toBe(0);
-      expect(voice).toStrictEqual({ kind: 'microphones', home: tree.resolve('home/.local/share/thor-demo/voice') });
+      expect(selectVoice(request)).toStrictEqual({
+        kind: 'microphones',
+        home: tree.resolve('home/.local/share/thor-demo/voice'),
+      });
     });
   });
 });

@@ -129,7 +129,7 @@ function runVoiceMicrophones(context: CommandContext, stderr: Writer): number | 
   if (!config.voice.ok) return fail(config.voice.message);
 
   const home = config.voice.voice?.home ?? path.join(context.effects.homeDir, DEFAULT_VOICE_HOME);
-  context.requestVoice({ kind: 'microphones', home });
+  context.request({ kind: 'voice', voice: { kind: 'microphones', home } });
   return;
 }
 
@@ -142,7 +142,7 @@ function runVoiceRecord(context: CommandContext, microphone: string | undefined,
   const voice = readRequiredVoice(context.effects);
   if (!voice.ok) return fail(voice.problem);
 
-  context.requestVoice({ kind: 'record', microphone, voice: voice.voice });
+  context.request({ kind: 'voice', voice: { kind: 'record', microphone, voice: voice.voice } });
   return;
 }
 
@@ -161,7 +161,7 @@ function runVoiceSetup(context: CommandContext, stderr: Writer): number | undefi
   const missingReference = findMissingReference(voice.voice);
   if (missingReference !== undefined) return fail(missingReference);
 
-  context.requestVoice({ kind: 'setup', voice: voice.voice });
+  context.request({ kind: 'voice', voice: { kind: 'setup', voice: voice.voice } });
   return;
 }
 

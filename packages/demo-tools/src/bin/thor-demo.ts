@@ -30,7 +30,7 @@ for (const stream of [process.stdout, process.stderr]) {
   });
 }
 
-const { exitCode, launch, revoice, stderr, stdout, voice } = await run(process.argv.slice(2), {
+const { exitCode, request, stderr, stdout } = await run(process.argv.slice(2), {
   arch: process.arch,
   cwd: process.cwd(),
   env: process.env,
@@ -53,10 +53,16 @@ process.exitCode = await completeRequest();
 
 /** Performs what the run requested, resolving to the exit code. */
 async function completeRequest(): Promise<number> {
-  if (launch !== undefined) return completeLaunch(launch);
-  if (revoice !== undefined) return completeRevoice(revoice);
-  if (voice !== undefined) return completeVoice(voice);
-  return exitCode;
+  switch (request?.kind) {
+    case 'launch':
+      return completeLaunch(request.launch);
+    case 'revoice':
+      return completeRevoice(request.revoice);
+    case 'voice':
+      return completeVoice(request.voice);
+    case undefined:
+      return exitCode;
+  }
 }
 
 /**

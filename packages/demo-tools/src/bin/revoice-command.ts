@@ -137,17 +137,20 @@ function runRevoice(context: CommandContext, demoArgument: string, stderr: Write
     root,
   });
 
-  context.requestRevoice({
-    bin: aidemo.aidemo.bin,
-    cwd: root,
-    env,
-    stages: [
-      ['voice', demo.demoDir, '--force'],
-      ['captions', demo.demoDir, '--offline'],
-      ['compose', demo.demoDir],
-    ],
-    take: describeClonedTake(take, model, install.referenceSha256),
-    voice: voice.voice,
+  context.request({
+    kind: 'revoice',
+    revoice: {
+      bin: aidemo.aidemo.bin,
+      cwd: root,
+      env,
+      stages: [
+        ['voice', demo.demoDir, '--force'],
+        ['captions', demo.demoDir, '--offline'],
+        ['compose', demo.demoDir],
+      ],
+      take: describeClonedTake(take, model, install.referenceSha256),
+      voice: voice.voice,
+    },
   });
   return;
 }
