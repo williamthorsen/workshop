@@ -195,7 +195,7 @@ export function writeStack(registry: Registry, entry: RegistryEntry, stack: read
 
 /** Names an entry by its 1-based position, followed by its name when it has one. */
 function describeEntry(index: number, entry: RegistryEntry): string {
-  return entry.name === undefined ? `${index + 1}` : `${index + 1} (${entry.name})`;
+  return entry.name === undefined ? String(index + 1) : `${index + 1} (${entry.name})`;
 }
 
 /** Returns a message naming the first two entries whose prefixes are equal regardless of case, or `undefined`. */
