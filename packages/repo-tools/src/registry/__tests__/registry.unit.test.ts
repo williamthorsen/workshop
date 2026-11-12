@@ -95,6 +95,30 @@ describe(parseRegistry, () => {
     expect(parse('repos:\n').entries).toStrictEqual([]);
   });
 
+  it('reads a prefix when present, leaving it undefined otherwise', () => {
+    const registry = parse(
+      'repos:\n  - name: alpha\n    prefix: Top\n  - name: beta\n    prefix: T-R_2\n  - name: gamma\n',
+    );
+    expect(registry.entries.map(({ prefix }) => prefix)).toStrictEqual(['Top', 'T-R_2', undefined]);
+  });
+
+  it.each([
+    ['empty', "''"],
+    ['containing a space', 'T R'],
+    ['containing a tab', '"T\\tR"'],
+    ['containing a period', 'T.R'],
+  ])('refuses a prefix %s', (_, value) => {
+    expect(parseRegistry(`repos:\n  - path: ~/a\n  - path: ~/b\n    prefix: ${value}\n`)).toBe(
+      "entry 2: 'prefix' must be a non-empty string without whitespace or a period",
+    );
+  });
+
+  it('refuses two prefixes that differ only in case, naming both entries', () => {
+    const text =
+      'repos:\n  - name: alpha\n    prefix: TR\n  - name: beta\n    prefix: T\n  - path: ~/c\n    prefix: tr\n';
+    expect(parseRegistry(text)).toBe("entries 1 (alpha) and 3 declare the same prefix: 'TR' and 'tr'");
+  });
+
   it.each([
     [
       'a tags value that is not a list',
@@ -108,6 +132,7 @@ describe(parseRegistry, () => {
     ],
     ['a path that is not a string', 'repos:\n  - path: [a]\n', "entry 1: 'path' is not a string"],
     ['a runner that is not a string', 'repos:\n  - path: ~/a\n    runner: [a]\n', "entry 1: 'runner' is not a string"],
+    ['a prefix that is not a string', 'repos:\n  - path: ~/a\n    prefix: 42\n', "entry 1: 'prefix' is not a string"],
     ['an entry that is not a mapping', 'repos:\n  - ~/a\n', 'entry 1 is not a mapping'],
     ['a repos key that is not a list', 'repos: {}\n', "'repos' is not a list"],
   ])('refuses %s', (_, text, message) => {
