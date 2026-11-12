@@ -57,7 +57,7 @@ describe(readTargetState, () => {
   it('claims a file whose name inverts through the kind’s template', async () => {
     const state = await readState({ 'rulebooks/consult-shell.md': 'Shell rules.\n' }, [rulebooks]);
 
-    expect(claimOf(state.claimed, 'rulebooks/consult-shell.md')?.claims).toStrictEqual([
+    expect(findClaim(state.claimed, 'rulebooks/consult-shell.md')?.claims).toStrictEqual([
       { id: 'rulebook:shell', kindId: 'rulebook', slug: 'shell' },
     ]);
   });
@@ -65,7 +65,7 @@ describe(readTargetState, () => {
   it('recovers the kind and slug behind a claimed id, which no catalog reports once it is deleted', async () => {
     const state = await readState({ 'skills/review/SKILL.md': '# Review\n' }, [skills]);
 
-    expect(claimOf(state.claimed, 'skills/review/SKILL.md')?.claims).toStrictEqual([
+    expect(findClaim(state.claimed, 'skills/review/SKILL.md')?.claims).toStrictEqual([
       { id: 'skill:review', kindId: 'skill', slug: 'review' },
     ]);
   });
@@ -88,7 +88,7 @@ describe(readTargetState, () => {
   it('records each claimed body, which is the current side a plan diffs against', async () => {
     const state = await readState({ 'rulebooks/consult-shell.md': 'Shell rules.\n' }, [rulebooks]);
 
-    expect(claimOf(state.claimed, 'rulebooks/consult-shell.md')?.body).toStrictEqual({
+    expect(findClaim(state.claimed, 'rulebooks/consult-shell.md')?.body).toStrictEqual({
       encoding: 'utf8',
       data: 'Shell rules.\n',
     });
@@ -156,7 +156,7 @@ describe(readTargetState, () => {
   it('reads the contributions a host’s region contains', async () => {
     const state = await readState({ 'CLAUDE.md': hostContent }, [ambient]);
 
-    expect(presentHost(state.hosts)).toMatchObject({
+    expect(findPresentHost(state.hosts)).toMatchObject({
       region: { state: 'complete' },
       contributions: [{ key: 'rulebook:shell', body: 'Use long-form options.' }],
     });
@@ -172,7 +172,7 @@ describe(readTargetState, () => {
     const damaged = `<!-- codeassembly -->\n<!-- rulebook:shell -->\nStray.\n<!-- /rulebook:shell -->\n`;
     const state = await readState({ 'CLAUDE.md': damaged }, [ambient]);
 
-    const host = presentHost(state.hosts);
+    const host = findPresentHost(state.hosts);
     expect(host?.region).toStrictEqual({
       state: 'malformed',
       reason: 'The host has 1 open marker and no close marker, but a region is exactly one of each.',
@@ -262,12 +262,12 @@ describe(readTargetState, () => {
 // region | Helpers
 
 /** Finds the claim at `filePath`, so an assertion names the file it is about. */
-function claimOf(claimed: ReadonlyArray<ClaimedFile>, filePath: string): ClaimedFile | undefined {
+function findClaim(claimed: ReadonlyArray<ClaimedFile>, filePath: string): ClaimedFile | undefined {
   return claimed.find((file) => file.path === filePath);
 }
 
 /** Narrows to the one present host a test built, the absent arm with none of the fields under assertion. */
-function presentHost(hosts: ReadonlyArray<HostState>): Extract<HostState, { state: 'present' }> | undefined {
+function findPresentHost(hosts: ReadonlyArray<HostState>): Extract<HostState, { state: 'present' }> | undefined {
   return hosts.find((host) => host.state === 'present');
 }
 

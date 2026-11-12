@@ -48,10 +48,10 @@ describe(buildEdgeGraph, () => {
 
   it('expands a wildcard over the source that won the aggregate, not over one that lost it', async () => {
     const catalog = await buildSourceCatalog([
-      { id: 'team', files: { 'collections/all.md': frontmatter(['members: "@library"']) } },
+      { id: 'team', files: { 'collections/all.md': wrapInFrontmatter(['members: "@library"']) } },
       {
         id: 'library',
-        files: { 'skills/lint/SKILL.md': '# Lint\n', 'collections/all.md': frontmatter(['members: "@library"']) },
+        files: { 'skills/lint/SKILL.md': '# Lint\n', 'collections/all.md': wrapInFrontmatter(['members: "@library"']) },
       },
     ]);
     const graph = await buildEdgeGraph({ catalog, rules, kindKeys });
@@ -65,7 +65,7 @@ describe(buildEdgeGraph, () => {
       {
         id: 'team',
         files: {
-          'collections/all.md': frontmatter(['members: "@library"']),
+          'collections/all.md': wrapInFrontmatter(['members: "@library"']),
           'skills/lint/SKILL.md': '# Lint\n',
           'subagents/auditor.md': '# Auditor\n',
         },
@@ -138,8 +138,8 @@ describe(buildEdgeGraph, () => {
       {
         id: 'team',
         files: {
-          'skills/broken/SKILL.md': frontmatter(['dependencies: [lint]']),
-          'subagents/stray.md': frontmatter(['members:', '  skills:', '    - lint']),
+          'skills/broken/SKILL.md': wrapInFrontmatter(['dependencies: [lint]']),
+          'subagents/stray.md': wrapInFrontmatter(['members:', '  skills:', '    - lint']),
         },
       },
     ]);
@@ -173,9 +173,15 @@ async function buildCatalog(): Promise<Catalog> {
     {
       id: 'team',
       files: {
-        'collections/core.md': frontmatter(['members:', '  skills:', '    - review', '  subagents:', '    - auditor']),
-        'skills/review/SKILL.md': frontmatter(['dependencies:', '  skills:', '    - lint']),
-        'subagents/auditor.md': frontmatter(['skills:', '  - lint']),
+        'collections/core.md': wrapInFrontmatter([
+          'members:',
+          '  skills:',
+          '    - review',
+          '  subagents:',
+          '    - auditor',
+        ]),
+        'skills/review/SKILL.md': wrapInFrontmatter(['dependencies:', '  skills:', '    - lint']),
+        'subagents/auditor.md': wrapInFrontmatter(['skills:', '  - lint']),
       },
     },
     { id: 'library', files: { 'skills/lint/SKILL.md': '# Lint\n' } },
@@ -189,7 +195,7 @@ function contributeFor(artifactId: string, contribution: EdgeContribution): (rea
 }
 
 /** Wraps `lines` in a frontmatter block above a body. */
-function frontmatter(lines: ReadonlyArray<string>): string {
+function wrapInFrontmatter(lines: ReadonlyArray<string>): string {
   return ['---', ...lines, '---', '', '# Artifact', ''].join('\n');
 }
 

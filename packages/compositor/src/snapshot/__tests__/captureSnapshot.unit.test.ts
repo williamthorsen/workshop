@@ -33,7 +33,7 @@ describe(captureSnapshot, () => {
   it('renders each artifact the target deploys', async () => {
     const { snapshot } = await captureComposition();
 
-    expect(renderOf(snapshot, 'skill:review')).toMatchObject({ status: 'rendered', content: '# Review\n' });
+    expect(findRender(snapshot, 'skill:review')).toMatchObject({ status: 'rendered', content: '# Review\n' });
   });
 
   it('records a render that could not resolve a directive as data', async () => {
@@ -41,7 +41,7 @@ describe(captureSnapshot, () => {
       sourceFiles: { ...buildCompositionSourceFiles(), 'skills/broken/SKILL.md': '<!-- include: ./missing.md /-->\n' },
     });
 
-    expect(renderOf(snapshot, 'skill:broken')).toMatchObject({
+    expect(findRender(snapshot, 'skill:broken')).toMatchObject({
       status: 'failed',
       failure: {
         stage: 'transclusion',
@@ -53,13 +53,13 @@ describe(captureSnapshot, () => {
   it('renders undefined for a kind the target declares no deployment for', async () => {
     const { snapshot } = await captureComposition();
 
-    expect(renderOf(snapshot, 'subagent:auditor')).toBeUndefined();
+    expect(findRender(snapshot, 'subagent:auditor')).toBeUndefined();
   });
 
   it('renders undefined for a kind that emits no files', async () => {
     const { snapshot } = await captureComposition();
 
-    expect(renderOf(snapshot, 'collection:core')).toBeUndefined();
+    expect(findRender(snapshot, 'collection:core')).toBeUndefined();
   });
 
   it('reads the files a directory-shaped artifact ships beside its entry file', async () => {
@@ -165,7 +165,7 @@ describe(captureSnapshot, () => {
 // region | Helpers
 
 /** Reads what one artifact rendered to for the sole target a fixture declares. */
-function renderOf(snapshot: CompositionSnapshot, artifactId: string): ArtifactRender | undefined {
+function findRender(snapshot: CompositionSnapshot, artifactId: string): ArtifactRender | undefined {
   return snapshot.renders.get('claude')?.get(artifactId);
 }
 

@@ -17,7 +17,7 @@ describe(assertClosureIsConsistent, () => {
     const closure = buildClosure();
     requireEntry(closure.artifacts, 1).dependsOn = [{ to: 'skill:absent', via: 'declared' }];
 
-    await expect(violationsOf(closure)).resolves.toStrictEqual([
+    await expect(collectViolations(closure)).resolves.toStrictEqual([
       {
         path: 'artifacts[1].dependsOn[0].to',
         message: expect.stringContaining('"skill:absent"'),
@@ -29,7 +29,7 @@ describe(assertClosureIsConsistent, () => {
     const closure = buildClosure();
     requireEntry(closure.diagnostics, 0).at = { artifactId: 'skill:absent' };
 
-    await expect(violationsOf(closure)).resolves.toStrictEqual([
+    await expect(collectViolations(closure)).resolves.toStrictEqual([
       {
         path: 'diagnostics[0].at.artifactId',
         message: expect.stringContaining('"skill:absent"'),
@@ -43,7 +43,7 @@ describe(assertClosureIsConsistent, () => {
       { to: 'skill:lint', via: 'member', partialId: 'team:_data/shared.md' },
     ];
 
-    await expect(violationsOf(closure)).resolves.toStrictEqual([
+    await expect(collectViolations(closure)).resolves.toStrictEqual([
       {
         path: 'artifacts[2].dependsOn[0].partialId',
         message: expect.stringContaining('"member"'),
@@ -55,7 +55,7 @@ describe(assertClosureIsConsistent, () => {
     const closure = buildClosure();
     requireEntry(closure.diagnostics, 0).cycle = ['skill:review'];
 
-    await expect(violationsOf(closure)).resolves.toStrictEqual([
+    await expect(collectViolations(closure)).resolves.toStrictEqual([
       {
         path: 'diagnostics[0].cycle',
         message: expect.stringContaining('"unknown-reference"'),
@@ -70,7 +70,7 @@ describe(assertClosureIsConsistent, () => {
       shadowed: [{ sourceId: 'team', path: 'skills/lint/SKILL.md', hash: 'hash:lint-team' }],
     };
 
-    await expect(violationsOf(closure)).resolves.toStrictEqual([
+    await expect(collectViolations(closure)).resolves.toStrictEqual([
       {
         path: 'artifacts[1].resolution.shadowed[0].sourceId',
         message: expect.stringMatching(/"team".*"library"/),
@@ -82,7 +82,7 @@ describe(assertClosureIsConsistent, () => {
     const closure = buildClosure();
     closure.artifacts = [...closure.artifacts, requireEntry(closure.artifacts, 1)];
 
-    await expect(violationsOf(closure)).resolves.toStrictEqual([
+    await expect(collectViolations(closure)).resolves.toStrictEqual([
       { path: 'artifacts', message: expect.stringContaining('"skill:lint"') },
     ]);
   });
@@ -99,7 +99,7 @@ describe(assertClosureIsConsistent, () => {
     closure.tiers = [];
     requireEntry(closure.diagnostics, 0).cycle = ['skill:review'];
 
-    expect((await violationsOf(closure)).map(({ path }) => path)).toStrictEqual([
+    expect((await collectViolations(closure)).map(({ path }) => path)).toStrictEqual([
       'artifacts[0].seededBy[0].tierId',
       'diagnostics[0].cycle',
     ]);
@@ -109,7 +109,7 @@ describe(assertClosureIsConsistent, () => {
 // region | Helpers
 
 /** Runs the assertion and returns the violations it raised, failing the test when it raised none. */
-async function violationsOf(closure: Closure): Promise<ReadonlyArray<Violation>> {
+async function collectViolations(closure: Closure): Promise<ReadonlyArray<Violation>> {
   return (await captureError(ClosureConsistencyError, () => assertClosureIsConsistent(closure))).violations;
 }
 

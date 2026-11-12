@@ -29,8 +29,8 @@ describe(fillInlays, () => {
   it('splices a filler behind both marker pairs, at the line the directive stood on', () => {
     const fill = run({
       renders: [
-        ['skill:review', rendered('# Review\n\nTail.\n', [{ name: 'preferences', insertAt: 2 }])],
-        ['rulebook:naming', rendered('Name functions with a leading verb.\n')],
+        ['skill:review', buildRender('# Review\n\nTail.\n', [{ name: 'preferences', insertAt: 2 }])],
+        ['rulebook:naming', buildRender('Name functions with a leading verb.\n')],
       ],
       bindings: [{ inlayName: 'preferences', artifactIds: ['rulebook:naming'] }],
     });
@@ -53,9 +53,9 @@ describe(fillInlays, () => {
   it('splices fillers in the order the binding names them, separated by a blank line', () => {
     const fill = run({
       renders: [
-        ['skill:review', rendered('Lead.\n', [{ name: 'preferences', insertAt: 1 }])],
-        ['rulebook:naming', rendered('Naming.\n')],
-        ['rulebook:style', rendered('Style.\n')],
+        ['skill:review', buildRender('Lead.\n', [{ name: 'preferences', insertAt: 1 }])],
+        ['rulebook:naming', buildRender('Naming.\n')],
+        ['rulebook:style', buildRender('Style.\n')],
       ],
       bindings: [{ inlayName: 'preferences', artifactIds: ['rulebook:style', 'rulebook:naming'] }],
     });
@@ -70,13 +70,13 @@ describe(fillInlays, () => {
       renders: [
         [
           'skill:review',
-          rendered('Lead.\nMiddle.\nTail.\n', [
+          buildRender('Lead.\nMiddle.\nTail.\n', [
             { name: 'first', insertAt: 1 },
             { name: 'second', insertAt: 2 },
           ]),
         ],
-        ['rulebook:naming', rendered('Naming.\n')],
-        ['rulebook:style', rendered('Style.\n')],
+        ['rulebook:naming', buildRender('Naming.\n')],
+        ['rulebook:style', buildRender('Style.\n')],
       ],
       bindings: [
         { inlayName: 'first', artifactIds: ['rulebook:naming'] },
@@ -110,13 +110,13 @@ describe(fillInlays, () => {
       renders: [
         [
           'skill:review',
-          rendered('Tail.\n', [
+          buildRender('Tail.\n', [
             { name: 'first', insertAt: 0 },
             { name: 'second', insertAt: 0 },
           ]),
         ],
-        ['rulebook:naming', rendered('Naming.\n')],
-        ['rulebook:style', rendered('Style.\n')],
+        ['rulebook:naming', buildRender('Naming.\n')],
+        ['rulebook:style', buildRender('Style.\n')],
       ],
       bindings: [
         { inlayName: 'first', artifactIds: ['rulebook:naming'] },
@@ -134,8 +134,8 @@ describe(fillInlays, () => {
   it('reports a filler the target deploys nowhere once, however many hosts declare the inlay', () => {
     const fill = run({
       renders: [
-        ['skill:review', rendered('Lead.\n', [{ name: 'preferences', insertAt: 1 }])],
-        ['skill:lint', rendered('Lead.\n', [{ name: 'preferences', insertAt: 1 }])],
+        ['skill:review', buildRender('Lead.\n', [{ name: 'preferences', insertAt: 1 }])],
+        ['skill:lint', buildRender('Lead.\n', [{ name: 'preferences', insertAt: 1 }])],
       ],
       bindings: [{ inlayName: 'preferences', artifactIds: ['subagent:auditor'] }],
     });
@@ -152,9 +152,9 @@ describe(fillInlays, () => {
   it('raises a blocking fault against each host declaring the inlay', () => {
     const fill = run({
       renders: [
-        ['skill:review', rendered('Lead.\n', [{ name: 'preferences', insertAt: 1 }])],
-        ['skill:lint', rendered('Lead.\n', [{ name: 'preferences', insertAt: 1 }])],
-        ['rulebook:naming', rendered('Naming.\n', [{ name: 'deeper', insertAt: 1 }])],
+        ['skill:review', buildRender('Lead.\n', [{ name: 'preferences', insertAt: 1 }])],
+        ['skill:lint', buildRender('Lead.\n', [{ name: 'preferences', insertAt: 1 }])],
+        ['rulebook:naming', buildRender('Naming.\n', [{ name: 'deeper', insertAt: 1 }])],
       ],
       bindings: [{ inlayName: 'preferences', artifactIds: ['rulebook:naming'] }],
     });
@@ -164,7 +164,7 @@ describe(fillInlays, () => {
 
   it('fills no host the closure did not reach, so nothing reports against one', () => {
     const fill = run({
-      renders: [['skill:review', rendered('Lead.\n', [{ name: 'preferences', insertAt: 1 }])]],
+      renders: [['skill:review', buildRender('Lead.\n', [{ name: 'preferences', insertAt: 1 }])]],
       bindings: [{ inlayName: 'preferences', artifactIds: ['subagent:auditor'] }],
       reached: [],
     });
@@ -176,7 +176,7 @@ describe(fillInlays, () => {
   it('leaves an inlay nothing is bound to empty of every marker', () => {
     const content = 'Lead.\nTail.\n';
     const fill = run({
-      renders: [['skill:review', rendered(content, [{ name: 'preferences', insertAt: 1 }])]],
+      renders: [['skill:review', buildRender(content, [{ name: 'preferences', insertAt: 1 }])]],
       bindings: [],
     });
 
@@ -192,8 +192,8 @@ describe(fillInlays, () => {
     const fill = fillInlays({
       target: reshaping,
       renders: new Map([
-        ['skill:review', rendered('Lead.\n', [{ name: 'preferences', insertAt: 1 }])],
-        ['rulebook:naming', rendered('# Naming\n\n## Verbs\n')],
+        ['skill:review', buildRender('Lead.\n', [{ name: 'preferences', insertAt: 1 }])],
+        ['rulebook:naming', buildRender('# Naming\n\n## Verbs\n')],
       ]),
       bindings: [{ inlayName: 'preferences', artifactIds: ['rulebook:naming'] }],
       reached: new Set(['skill:review', 'rulebook:naming']),
@@ -208,8 +208,8 @@ describe(fillInlays, () => {
   it('names each filler as a contributor, with the markers its block was written behind', () => {
     const fill = run({
       renders: [
-        ['skill:review', rendered('Lead.\n', [{ name: 'preferences', insertAt: 1 }])],
-        ['rulebook:naming', rendered('Naming.\n')],
+        ['skill:review', buildRender('Lead.\n', [{ name: 'preferences', insertAt: 1 }])],
+        ['rulebook:naming', buildRender('Naming.\n')],
       ],
       bindings: [{ inlayName: 'preferences', artifactIds: ['rulebook:naming'] }],
     });
@@ -224,11 +224,11 @@ describe(fillInlays, () => {
   });
 
   it('joins a filler’s partials to the host’s, in id order', () => {
-    const host = rendered('Lead.\n', [{ name: 'preferences', insertAt: 1 }]);
+    const host = buildRender('Lead.\n', [{ name: 'preferences', insertAt: 1 }]);
     const fill = run({
       renders: [
-        ['skill:review', withPartial(host, 'team:_data/shared.md')],
-        ['rulebook:naming', withPartial(rendered('Naming.\n'), 'team:_data/glossary.md')],
+        ['skill:review', addPartial(host, 'team:_data/shared.md')],
+        ['rulebook:naming', addPartial(buildRender('Naming.\n'), 'team:_data/glossary.md')],
       ],
       bindings: [{ inlayName: 'preferences', artifactIds: ['rulebook:naming'] }],
     });
@@ -242,8 +242,8 @@ describe(fillInlays, () => {
   it('ends the host’s render where a filler declares an inlay of its own', () => {
     const fill = run({
       renders: [
-        ['skill:review', rendered('Lead.\n', [{ name: 'preferences', insertAt: 1 }])],
-        ['rulebook:naming', rendered('Naming.\n', [{ name: 'deeper', insertAt: 1 }])],
+        ['skill:review', buildRender('Lead.\n', [{ name: 'preferences', insertAt: 1 }])],
+        ['rulebook:naming', buildRender('Naming.\n', [{ name: 'deeper', insertAt: 1 }])],
       ],
       bindings: [{ inlayName: 'preferences', artifactIds: ['rulebook:naming'] }],
     });
@@ -257,8 +257,8 @@ describe(fillInlays, () => {
   it('blocks on a filler declaring an inlay even where the config binds nothing to that inner name', () => {
     const fill = run({
       renders: [
-        ['skill:review', rendered('Lead.\n', [{ name: 'preferences', insertAt: 1 }])],
-        ['rulebook:naming', rendered('Naming.\n', [{ name: 'unbound', insertAt: 1 }])],
+        ['skill:review', buildRender('Lead.\n', [{ name: 'preferences', insertAt: 1 }])],
+        ['rulebook:naming', buildRender('Naming.\n', [{ name: 'unbound', insertAt: 1 }])],
       ],
       bindings: [{ inlayName: 'preferences', artifactIds: ['rulebook:naming'] }],
     });
@@ -269,7 +269,7 @@ describe(fillInlays, () => {
   it('ends the host’s render where a filler’s own render ended', () => {
     const fill = run({
       renders: [
-        ['skill:review', rendered('Lead.\n', [{ name: 'preferences', insertAt: 1 }])],
+        ['skill:review', buildRender('Lead.\n', [{ name: 'preferences', insertAt: 1 }])],
         [
           'rulebook:naming',
           {
@@ -290,12 +290,12 @@ describe(fillInlays, () => {
       renders: [
         [
           'skill:review',
-          rendered('Lead.\nTail.\n', [
+          buildRender('Lead.\nTail.\n', [
             { name: 'first', insertAt: 1 },
             { name: 'second', insertAt: 2 },
           ]),
         ],
-        ['rulebook:naming', rendered('Naming.\n', [{ name: 'deeper', insertAt: 1 }])],
+        ['rulebook:naming', buildRender('Naming.\n', [{ name: 'deeper', insertAt: 1 }])],
       ],
       bindings: [
         { inlayName: 'first', artifactIds: ['rulebook:naming'] },
@@ -313,12 +313,12 @@ describe(fillInlays, () => {
       renders: [
         [
           'skill:review',
-          rendered('Lead.\nTail.\n', [
+          buildRender('Lead.\nTail.\n', [
             { name: 'first', insertAt: 1 },
             { name: 'second', insertAt: 2 },
           ]),
         ],
-        ['rulebook:naming', rendered('Naming.\n', [{ name: 'deeper', insertAt: 1 }])],
+        ['rulebook:naming', buildRender('Naming.\n', [{ name: 'deeper', insertAt: 1 }])],
         [
           'rulebook:style',
           {
@@ -339,7 +339,7 @@ describe(fillInlays, () => {
 
   it('reports a filler of a kind the target deploys nowhere and splices nothing for it', () => {
     const fill = run({
-      renders: [['skill:review', rendered('Lead.\nTail.\n', [{ name: 'preferences', insertAt: 1 }])]],
+      renders: [['skill:review', buildRender('Lead.\nTail.\n', [{ name: 'preferences', insertAt: 1 }])]],
       bindings: [{ inlayName: 'preferences', artifactIds: ['subagent:auditor'] }],
     });
 
@@ -355,7 +355,7 @@ describe(fillInlays, () => {
 
   it('leaves every render alone for a target declaring no inlay stage', () => {
     const renders = new Map<ArtifactId, ArtifactRender>([
-      ['skill:review', rendered('Lead.\n', [{ name: 'preferences', insertAt: 1 }])],
+      ['skill:review', buildRender('Lead.\n', [{ name: 'preferences', insertAt: 1 }])],
     ]);
     const bare: RenderTarget = { ...claude, stages: [] };
 
@@ -368,11 +368,17 @@ describe(fillInlays, () => {
 
 // region | Helpers
 
-/** The sites a fixture's body declares. */
-type InlaySites = ReadonlyArray<{ name: string; insertAt: number }>;
+/** Adds one transcluded partial to a render, as both an entry and a contributor. */
+function addPartial(render: RenderedFixture, id: string): RenderedFixture {
+  return {
+    ...render,
+    contributors: { ...render.contributors, partials: [id] },
+    partials: [{ id, sourceId: 'team', path: id.split(':', 2).at(1) ?? id, hash: 'hash' }],
+  };
+}
 
 /** Builds one artifact's completed render, declaring the inlay sites given. */
-function rendered(content: string, inlays: InlaySites = []): RenderedFixture {
+function buildRender(content: string, inlays: InlaySites = []): RenderedFixture {
   return {
     status: 'rendered',
     content,
@@ -382,6 +388,9 @@ function rendered(content: string, inlays: InlaySites = []): RenderedFixture {
     inlays,
   };
 }
+
+/** The sites a fixture's body declares. */
+type InlaySites = ReadonlyArray<{ name: string; insertAt: number }>;
 
 /** One artifact's completed render, narrowed so a fixture can be read without re-narrowing it. */
 type RenderedFixture = Extract<ArtifactRender, { status: 'rendered' }>;
@@ -418,15 +427,6 @@ function run(input: {
     bindings: input.bindings,
     reached: new Set(reached),
   });
-}
-
-/** Adds one transcluded partial to a render, as both an entry and a contributor. */
-function withPartial(render: RenderedFixture, id: string): RenderedFixture {
-  return {
-    ...render,
-    contributors: { ...render.contributors, partials: [id] },
-    partials: [{ id, sourceId: 'team', path: id.split(':', 2).at(1) ?? id, hash: 'hash' }],
-  };
 }
 
 // endregion | Helpers

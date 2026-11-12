@@ -34,7 +34,7 @@ describe(resolveDeployedNames, () => {
   });
 
   it('renders the kind template around the slug', () => {
-    const target = withDeployment(claude, {
+    const target = addDeployment(claude, {
       form: 'tree',
       kindId: 'rulebook',
       layout: rulebookLayout,
@@ -47,7 +47,7 @@ describe(resolveDeployedNames, () => {
   });
 
   it("prefers an artifact's own name over the one its kind template would produce", () => {
-    const target = withDeployment(claude, {
+    const target = addDeployment(claude, {
       form: 'tree',
       kindId: 'rulebook',
       layout: rulebookLayout,
@@ -61,7 +61,7 @@ describe(resolveDeployedNames, () => {
   });
 
   it('inserts a slug containing replacement-pattern syntax verbatim', () => {
-    const target = withDeployment(claude, {
+    const target = addDeployment(claude, {
       form: 'tree',
       kindId: 'rulebook',
       layout: rulebookLayout,
@@ -87,7 +87,7 @@ describe(resolveDeployedNames, () => {
   });
 
   it('resolves a region-routed artifact to the host it contributes to', () => {
-    const target = withDeployment(claude, ambient);
+    const target = addDeployment(claude, ambient);
 
     const resolve = resolveDeployedNames([shell], [target]);
 
@@ -96,7 +96,7 @@ describe(resolveDeployedNames, () => {
 
   // The field overrides the name a kind's template would produce, and a contributor to a host has no such name.
   it('ignores an artifact’s own deployed name where its kind routes into a host', () => {
-    const target = withDeployment(claude, ambient);
+    const target = addDeployment(claude, ambient);
     const named: DeployableArtifact = { ...shell, deployedName: 'elsewhere.md' };
 
     const resolve = resolveDeployedNames([named], [target]);
@@ -123,7 +123,7 @@ describe(resolveDeployedNames, () => {
 // region | Helpers
 
 /** Builds a target with one more deployment than `target`, leaving the original untouched. */
-function withDeployment(target: RenderTarget, deployment: RenderTarget['deployments'][number]): RenderTarget {
+function addDeployment(target: RenderTarget, deployment: RenderTarget['deployments'][number]): RenderTarget {
   return { ...target, deployments: [...target.deployments, deployment] };
 }
 

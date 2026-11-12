@@ -44,7 +44,7 @@ export function planRegionFile(context: TargetPlanContext, deployment: RegionKin
   const read = readContributions(context, routed);
   if (read.status === 'unrenderable') {
     const blocked = blockAtCurrent({
-      ...position(context, deployment),
+      ...locateHost(context, deployment),
       ownership,
       contributors: nameContributors(deployment, routed, []),
       reason: read.reason,
@@ -66,7 +66,7 @@ export function planRegionFile(context: TargetPlanContext, deployment: RegionKin
   }
 
   const body = read.contributions
-    .map(({ artifact, content }) => renderContribution(markersFor(deployment, artifact), content))
+    .map(({ artifact, content }) => renderContribution(renderMarkers(deployment, artifact), content))
     .join('\n\n');
   const outcome = injectRegion(hostContent ?? '', deployment.markers, body);
   const contributors = nameContributors(deployment, routed, read.contributions);
@@ -97,7 +97,7 @@ function buildEntry(
 
   if ('blocked' in outcome) {
     return blockAtCurrent({
-      ...position(context, deployment),
+      ...locateHost(context, deployment),
       ownership,
       contributors,
       reason: outcome.blocked.reason,
@@ -107,7 +107,7 @@ function buildEntry(
 
   const planned = context.blobs.addUtf8(outcome.content);
   return {
-    ...position(context, deployment),
+    ...locateHost(context, deployment),
     status: classifyStatus(current, planned),
     ownership,
     ...(current !== undefined && { current }),
@@ -140,14 +140,14 @@ function judgeContributions(
       return { artifactId: artifact.id, verdict: 'added' };
     }
     // Both sides pass through the renderer the host was written by, so its trimming is not restated wrongly here.
-    const markers = markersFor(deployment, artifact);
+    const markers = renderMarkers(deployment, artifact);
     const same = renderContribution(markers, before) === renderContribution(markers, content);
     return { artifactId: artifact.id, verdict: same ? 'unchanged' : 'changed' };
   });
 }
 
 /** Renders the markers one contributor's block is delimited by. */
-function markersFor(deployment: RegionKindDeployment, artifact: ClosureArtifact): RegionMarkers {
+function renderMarkers(deployment: RegionKindDeployment, artifact: ClosureArtifact): RegionMarkers {
   return renderContributionMarkers(deployment.contributionMarkers, artifact.id);
 }
 
@@ -166,7 +166,7 @@ function nameContributors(
   contributions: ReadonlyArray<RenderedContribution>,
 ): FileContributors {
   const artifacts = new Map<ArtifactId, ArtifactContribution>(
-    routed.map((artifact) => [artifact.id, { artifactId: artifact.id, marker: markersFor(deployment, artifact) }]),
+    routed.map((artifact) => [artifact.id, { artifactId: artifact.id, marker: renderMarkers(deployment, artifact) }]),
   );
   const named = new Set<PartialId>();
 
@@ -184,8 +184,11 @@ function nameContributors(
   return { artifacts: artifacts.values().toArray(), partials: [...named].toSorted(compareStrings) };
 }
 
-/** Names the destination a region deployment writes, which is the host itself. */
-function position(context: TargetPlanContext, deployment: RegionKindDeployment): { targetId: TargetId; path: string } {
+/** Locates the destination a region deployment writes, which is the host itself. */
+function locateHost(
+  context: TargetPlanContext,
+  deployment: RegionKindDeployment,
+): { targetId: TargetId; path: string } {
   return { targetId: context.targetId, path: deployment.host };
 }
 

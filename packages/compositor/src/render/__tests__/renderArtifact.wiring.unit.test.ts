@@ -41,15 +41,15 @@ describe('per-target stage composition', () => {
     const both = await render(tree.dir, [{ kind: 'tokens' }, { kind: 'links', pattern: MARKDOWN_LINK }]);
     const tokensOnly = await render(tree.dir, [{ kind: 'tokens' }]);
 
-    expect(contentOf(both)).toBe('Use view on [x](~/.claude/skills/review/y.md).\n');
-    expect(contentOf(tokensOnly)).toBe('Use view on [x](./y.md).\n');
+    expect(requireContent(both)).toBe('Use view on [x](~/.claude/skills/review/y.md).\n');
+    expect(requireContent(tokensOnly)).toBe('Use view on [x](./y.md).\n');
   });
 
   it('leaves a body untouched for a target declaring no stages at all', async () => {
     const body = 'Use {tool:Read} on [x](./y.md).\n';
     using tree = createTempTree({ 'skills/review/SKILL.md': body });
 
-    expect(contentOf(await render(tree.dir, []))).toBe(body);
+    expect(requireContent(await render(tree.dir, []))).toBe(body);
   });
 
   it('runs transclusion first, so a token inside a partial is rewritten like one in the host', async () => {
@@ -60,7 +60,7 @@ describe('per-target stage composition', () => {
 
     const result = await render(tree.dir, [{ kind: 'transclusion', syntax: COMMENT }, { kind: 'tokens' }]);
 
-    expect(contentOf(result)).toBe('Shared view.\n');
+    expect(requireContent(result)).toBe('Shared view.\n');
   });
 
   it('runs transclusion first, so a link inside a partial resolves against the host it renders into', async () => {
@@ -74,7 +74,7 @@ describe('per-target stage composition', () => {
       { kind: 'links', pattern: MARKDOWN_LINK },
     ]);
 
-    expect(contentOf(result)).toBe('See [x](~/.claude/skills/review/y.md).\n');
+    expect(requireContent(result)).toBe('See [x](~/.claude/skills/review/y.md).\n');
   });
 
   it('runs link rewriting first, so a mapping value heading a target is inserted where it stands', async () => {
@@ -82,7 +82,7 @@ describe('per-target stage composition', () => {
 
     const result = await render(tree.dir, [{ kind: 'links', pattern: MARKDOWN_LINK }, { kind: 'tokens' }]);
 
-    expect(contentOf(result)).toBe('See [guidance](CLAUDE.md).\n');
+    expect(requireContent(result)).toBe('See [guidance](CLAUDE.md).\n');
   });
 
   it('resolves a target whose token sits behind a relative prefix, which is how a consumer asks for that', async () => {
@@ -90,7 +90,7 @@ describe('per-target stage composition', () => {
 
     const result = await render(tree.dir, [{ kind: 'links', pattern: MARKDOWN_LINK }, { kind: 'tokens' }]);
 
-    expect(contentOf(result)).toBe('See [guidance](~/.claude/skills/review/CLAUDE.md).\n');
+    expect(requireContent(result)).toBe('See [guidance](~/.claude/skills/review/CLAUDE.md).\n');
   });
 
   it('runs the overlay last, so a value the target supplies is not rewritten as though an author wrote it', async () => {
@@ -101,7 +101,7 @@ describe('per-target stage composition', () => {
       { kind: 'frontmatter', overlay: { defaults: { hint: '{tool:Read}' } } },
     ]);
 
-    expect(contentOf(result)).toBe('---\nname: review\nhint: "{tool:Read}"\n---\nBody.\n');
+    expect(requireContent(result)).toBe('---\nname: review\nhint: "{tool:Read}"\n---\nBody.\n');
   });
 
   it('declares stage participation, not sequence, so a reordered declaration renders the same', async () => {
@@ -110,19 +110,11 @@ describe('per-target stage composition', () => {
     const declared = await render(tree.dir, [{ kind: 'tokens' }, { kind: 'links', pattern: MARKDOWN_LINK }]);
     const reversed = await render(tree.dir, [{ kind: 'links', pattern: MARKDOWN_LINK }, { kind: 'tokens' }]);
 
-    expect(contentOf(reversed)).toBe(contentOf(declared));
+    expect(requireContent(reversed)).toBe(requireContent(declared));
   });
 });
 
 // region | Helpers
-
-/** Reads back the rendered content, failing the test when the render produced none. */
-function contentOf(result: ArtifactRender): string {
-  if (result.status !== 'rendered') {
-    throw new Error(`Expected a rendered artifact, got "${result.status}".`);
-  }
-  return result.content;
-}
 
 /** Renders the review skill for a Claude target running exactly `stages`. */
 async function render(dir: string, stages: ReadonlyArray<RenderStage>): Promise<ArtifactRender> {
@@ -135,6 +127,14 @@ async function render(dir: string, stages: ReadonlyArray<RenderStage>): Promise<
     target,
     tokenKinds,
   });
+}
+
+/** Reads back the rendered content, failing the test when the render produced none. */
+function requireContent(result: ArtifactRender): string {
+  if (result.status !== 'rendered') {
+    throw new Error(`Expected a rendered artifact, got "${result.status}".`);
+  }
+  return result.content;
 }
 
 // endregion | Helpers

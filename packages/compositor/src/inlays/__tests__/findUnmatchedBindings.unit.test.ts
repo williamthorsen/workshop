@@ -10,7 +10,7 @@ describe(findUnmatchedBindings, () => {
   it('reports a binding whose inlay no artifact declares', () => {
     const found = find({
       bindings: [{ inlayName: 'prefrences', artifactIds: ['rulebook:naming'] }],
-      columns: [['claude', [['skill:review', declaring('preferences')]]]],
+      columns: [['claude', [['skill:review', buildDeclaringRender('preferences')]]]],
     });
 
     expect(found).toStrictEqual([
@@ -25,7 +25,7 @@ describe(findUnmatchedBindings, () => {
   it('reports no binding where an artifact declares the inlay', () => {
     const found = find({
       bindings: [{ inlayName: 'preferences', artifactIds: ['rulebook:naming'] }],
-      columns: [['claude', [['skill:review', declaring('preferences')]]]],
+      columns: [['claude', [['skill:review', buildDeclaringRender('preferences')]]]],
     });
 
     expect(found).toStrictEqual([]);
@@ -36,8 +36,8 @@ describe(findUnmatchedBindings, () => {
     const found = find({
       bindings: [{ inlayName: 'prefrences', artifactIds: ['rulebook:naming'] }],
       columns: [
-        ['claude', [['skill:review', declaring('preferences')]]],
-        ['rovodev', [['skill:review', declaring('preferences')]]],
+        ['claude', [['skill:review', buildDeclaringRender('preferences')]]],
+        ['rovodev', [['skill:review', buildDeclaringRender('preferences')]]],
       ],
     });
 
@@ -48,8 +48,8 @@ describe(findUnmatchedBindings, () => {
     const found = find({
       bindings: [{ inlayName: 'preferences', artifactIds: ['rulebook:naming'] }],
       columns: [
-        ['claude', [['skill:review', declaring()]]],
-        ['rovodev', [['skill:review', declaring('preferences')]]],
+        ['claude', [['skill:review', buildDeclaringRender()]]],
+        ['rovodev', [['skill:review', buildDeclaringRender('preferences')]]],
       ],
     });
 
@@ -59,7 +59,7 @@ describe(findUnmatchedBindings, () => {
   it('takes no declaration from an artifact the closure did not reach', () => {
     const found = find({
       bindings: [{ inlayName: 'preferences', artifactIds: ['rulebook:naming'] }],
-      columns: [['claude', [['skill:absent', declaring('preferences')]]]],
+      columns: [['claude', [['skill:absent', buildDeclaringRender('preferences')]]]],
       reached: [],
     });
 
@@ -72,7 +72,7 @@ describe(findUnmatchedBindings, () => {
         { inlayName: 'appendix', artifactIds: ['rulebook:naming'] },
         { inlayName: 'preferences', artifactIds: ['rulebook:naming'] },
       ],
-      columns: [['claude', [['skill:review', declaring()]]]],
+      columns: [['claude', [['skill:review', buildDeclaringRender()]]]],
     });
 
     expect(found.map(({ at }) => at.inlayName)).toStrictEqual(['appendix', 'preferences']);
@@ -82,7 +82,7 @@ describe(findUnmatchedBindings, () => {
 // region | Helpers
 
 /** Builds a completed render declaring an inlay site per name given. */
-function declaring(...names: ReadonlyArray<string>): ArtifactRender {
+function buildDeclaringRender(...names: ReadonlyArray<string>): ArtifactRender {
   return {
     status: 'rendered',
     content: '',
