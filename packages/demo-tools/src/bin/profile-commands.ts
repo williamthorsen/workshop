@@ -59,7 +59,7 @@ function runPassthroughCommand(
   const prepared = prepareLaunch(config, [command, ...ownArgs, ...forwardedArgs], context.effects, stderr, prefix);
   if (prepared === undefined) return EXIT_FAILURE;
 
-  context.launch(prepared.launch);
+  context.request({ kind: 'launch', launch: prepared.launch });
   return;
 }
 

@@ -10,6 +10,7 @@ import { readProfileSources } from '../../voice/build-voice-profile.ts';
 import { formatModelDir } from '../../voice/mlx-audio/format-model-dir.ts';
 import { run, type RunEffects, type RunResult } from '../run.ts';
 import { createDemoRepo, type DemoRepo } from '../test-utils/create-demo-repo.ts';
+import { selectRevoice } from '../test-utils/select-request.ts';
 
 const VOICE_SECTION = 'voice:\n  reference:\n    audio: ~/reference.m4a\n    transcript: ~/reference.txt\n';
 
@@ -33,9 +34,8 @@ describe('run revoice', () => {
 
     expect(result.stderr).toBe('');
     expect(result.exitCode).toBe(0);
-    expect(result.launch).toBeUndefined();
     const demoDir = repo.tree.resolve('demos/quickstart');
-    expect(result.revoice).toMatchObject({
+    expect(selectRevoice(result.request)).toMatchObject({
       bin: repo.tree.resolve('node_modules/@tandryukha/aidemo/bin/aidemo.mjs'),
       cwd: repo.tree.dir,
       stages: [
@@ -57,7 +57,7 @@ describe('run revoice', () => {
         },
       },
     });
-    expect(result.revoice?.env).toStrictEqual({
+    expect(selectRevoice(result.request)?.env).toStrictEqual({
       AIDEMO_CHROME_PROFILE: resolveDefaultProfileDir(home.resolve('home'), path.basename(repo.tree.dir)),
       AIDEMO_TTS_MODEL: DEFAULT_VOICE_MODEL,
       AIDEMO_TTS_PROVIDER: 'openai',
@@ -75,7 +75,7 @@ describe('run revoice', () => {
     const result = await run(['revoice', 'quickstart'], buildEffects(home, repo));
 
     expect(result.exitCode).toBe(0);
-    expect(result.revoice).toBeDefined();
+    expect(result.request?.kind).toBe('revoice');
   });
 
   it('lists the demos for an unknown one, as a usage error', async () => {
@@ -85,7 +85,7 @@ describe('run revoice', () => {
     const result = await run(['revoice', 'quick'], buildEffects(home, repo));
 
     expect(result.exitCode).toBe(2);
-    expect(result.revoice).toBeUndefined();
+    expect(result.request).toBeUndefined();
     expect(result.stderr).toContain('unknown demo "quick"; the demos in demos are: quickstart');
   });
 
@@ -226,7 +226,7 @@ function refusal(problem: string) {
 function summarizeRefusal(result: RunResult) {
   return {
     exitCode: result.exitCode,
-    requested: result.revoice !== undefined,
+    requested: result.request !== undefined,
     stderr: result.stderr,
     prefixed: result.stderr.startsWith('thor-demo revoice: '),
   };

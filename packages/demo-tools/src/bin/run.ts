@@ -77,7 +77,7 @@ Exit codes:
         const prepared = prepareLaunch(config, ['mcp'], context.effects, stderr, prefix);
         if (prepared === undefined) return EXIT_FAILURE;
 
-        context.launch(prepared.launch);
+        context.request({ kind: 'launch', launch: prepared.launch });
         return;
       },
     }),
@@ -97,21 +97,13 @@ Exit codes:
 export async function run(args: readonly string[], effects: RunEffects): Promise<RunResult> {
   const stdout = createTextBuffer();
   const stderr = createTextBuffer();
-  let launch: Launch | undefined;
-  let revoice: RevoiceRequest | undefined;
-  let voice: VoiceRequest | undefined;
+  let request: RunRequest | undefined;
   const exitCode = await runCli(args.length === 0 ? ['--help'] : args, ROOT, {
     name: 'thor-demo',
     context: {
       effects,
-      launch: (requested) => {
-        launch = requested;
-      },
-      requestRevoice: (requested) => {
-        revoice = requested;
-      },
-      requestVoice: (requested) => {
-        voice = requested;
+      request: (requested) => {
+        request = requested;
       },
     },
     version: () => resolveVersion(effects),
@@ -119,7 +111,7 @@ export async function run(args: readonly string[], effects: RunEffects): Promise
     stderr,
   });
 
-  return { exitCode, launch, revoice, stderr: stderr.text, stdout: stdout.text, voice };
+  return { exitCode, request, stderr: stderr.text, stdout: stdout.text };
 }
 
 /** An aidemo process for the entry point to start once it has written the result's output. */
@@ -151,21 +143,21 @@ export interface RunEffects {
 /** What the caller should write to each stream, what to perform, and what to exit with when it performs nothing. */
 export interface RunResult {
   readonly exitCode: number;
-  readonly launch: Launch | undefined;
-  /** A revoice to perform. */
-  readonly revoice: RevoiceRequest | undefined;
-  /** A voice command to perform. A command requests at most one of `launch`, `revoice`, and `voice`. */
-  readonly voice: VoiceRequest | undefined;
+  readonly request: RunRequest | undefined;
   readonly stderr: string;
   readonly stdout: string;
 }
 
-/** What each command receives: the effects, and a way to request a launch, a revoice, or a voice command. */
+/** The one action that a command asks the entry point to perform. */
+export type RunRequest =
+  | { readonly kind: 'launch'; readonly launch: Launch }
+  | { readonly kind: 'revoice'; readonly revoice: RevoiceRequest }
+  | { readonly kind: 'voice'; readonly voice: VoiceRequest };
+
+/** What each command receives: the effects, and a way to request the action for the entry point to perform. */
 export interface CommandContext {
   readonly effects: RunEffects;
-  readonly launch: (launch: Launch) => void;
-  readonly requestRevoice: (revoice: RevoiceRequest) => void;
-  readonly requestVoice: (voice: VoiceRequest) => void;
+  readonly request: (request: RunRequest) => void;
 }
 
 // region | Helpers
@@ -254,7 +246,7 @@ function runDemoCommand(
 
   const { aidemoVersion, launch } = prepared;
   if (archiveRoot === undefined) {
-    context.launch(launch);
+    context.request({ kind: 'launch', launch });
     return;
   }
 
@@ -269,7 +261,7 @@ function runDemoCommand(
     renderedAt: new Date(),
     root,
   });
-  context.launch({ ...launch, take });
+  context.request({ kind: 'launch', launch: { ...launch, take } });
   return;
 }
 
