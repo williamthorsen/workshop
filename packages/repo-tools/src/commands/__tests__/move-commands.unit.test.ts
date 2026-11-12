@@ -80,6 +80,31 @@ describe('move after a partial failure', () => {
   });
 });
 
+describe('move with a failing follow-up', () => {
+  it('reports the failure on stderr, records the move, and exits 0', async () => {
+    const fakes = buildFakeAdapters(CLONES);
+    const adapters: CloneAdapters = {
+      ...fakes,
+      allowDirenv: () => 'permission denied',
+      makeDirectory: () => undefined,
+      pathExists: (target) => target.endsWith('/.envrc') || fakes.pathExists(target),
+      renamePath: () => undefined,
+    };
+    using tree = createTempTree({ 'repos.yaml': REGISTRY }, { prefix: 'repo-tools-' });
+    const file = tree.resolve('repos.yaml');
+
+    const result = await runCaptured(['move', '--file', file, 'alpha', '~/repos/kit'], {
+      adapters,
+      env: { HOME: FAKE_HOME },
+    });
+
+    expect(result.stdout).toBe('~/repos/alpha -> ~/repos/kit');
+    expect(result.stderr).toContain('thor-repo: cannot run direnv allow ~/repos/kit: permission denied\n');
+    expect(fs.readFileSync(file, 'utf8')).toContain('formerPaths: [~/repos/alpha]');
+    expect(result.status).toBe(0);
+  });
+});
+
 describe('apply-moves', () => {
   const MOVED = `repos:
   - name: alpha
