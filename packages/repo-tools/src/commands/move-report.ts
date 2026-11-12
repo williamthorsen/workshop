@@ -1,8 +1,22 @@
-import type { Move } from '../move/move-plan.ts';
+import { type Move, type MovePlan, planMove } from '../move/move-plan.ts';
 import { expandTilde, formatDisplayPath } from '../portable/paths.ts';
 import { findReferences } from '../references/find-references.ts';
 import type { RegistryEntry } from '../registry/registry.ts';
 import { formatEntryName, PROG, type VerbRun } from './verb-run.ts';
+
+/**
+ * Lists a clone's worktrees and plans its move, or returns the last refusal as a message after reporting the others on
+ * stderr.
+ */
+export function planCloneMove(run: VerbRun, from: string, to: string): MovePlan | string {
+  const worktrees = run.adapters.listWorktrees(from);
+  if (typeof worktrees === 'string') return `cannot list the worktrees of ${from}: ${worktrees}`;
+  const plan = planMove({ from, to }, worktrees, run.adapters);
+  if (!Array.isArray(plan)) return plan;
+  const earlier = plan.slice(0, -1);
+  for (const refusal of earlier) run.stderr(`${PROG}: ${refusal}`);
+  return plan.at(-1) ?? 'the move is refused';
+}
 
 /** Prints a planned or completed rename as `<from> -> <to>`, each path in its `~` form. */
 export function printMove(run: VerbRun, move: Move, isDryRun: boolean): void {

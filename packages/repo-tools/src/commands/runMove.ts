@@ -4,10 +4,10 @@ import path from 'node:path';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { executeMove } from '../move/move-clone.ts';
-import { type MovePlan, planMove } from '../move/move-plan.ts';
+import type { MovePlan } from '../move/move-plan.ts';
 import { expandTilde, formatDisplayPath, normalizePath } from '../portable/paths.ts';
 import { assertWritable, readRegistry, recordMove, type RegistryEntry, saveRegistry } from '../registry/registry.ts';
-import { printMove, printReferences, reportSkippedWorktrees } from './move-report.ts';
+import { planCloneMove, printMove, printReferences, reportSkippedWorktrees } from './move-report.ts';
 import { PROG, reportFailure, type VerbRun } from './verb-run.ts';
 
 /** How a `move` or `apply-moves` run behaves. */
@@ -39,8 +39,8 @@ export function runMove(run: VerbRun, name: string, target: string, options: Mov
   if (claimant !== undefined) {
     return reportFailure(run, `${formatDisplayPath(to, run.home)} is the path of ${claimant.name ?? 'another entry'}`);
   }
-  const plan = buildPlan(run, from, to);
-  if (typeof plan === 'string') return reportFailure(run, plan);
+  const plan = planCloneMove(run, from, to);
+  if (typeof plan === 'string') return reportFailure(run, `${plan}; nothing moved`);
 
   const refusal = assertWritable(run.file, run.adapters.readCurrentBranch);
   if (refusal !== undefined) return reportFailure(run, refusal);
@@ -80,17 +80,6 @@ export function runMove(run: VerbRun, name: string, target: string, options: Mov
 }
 
 // region | Helpers
-
-/** Lists the clone's worktrees and plans its move, or returns the refusals as one message. */
-function buildPlan(run: VerbRun, from: string, to: string): MovePlan | string {
-  const worktrees = run.adapters.listWorktrees(from);
-  if (typeof worktrees === 'string') return `cannot list the worktrees of ${from}: ${worktrees}`;
-  const plan = planMove({ from, to }, worktrees, run.adapters);
-  if (!Array.isArray(plan)) return plan;
-  const earlier = plan.slice(0, -1);
-  for (const refusal of earlier) run.stderr(`${PROG}: ${refusal}`);
-  return `${plan.at(-1) ?? 'the move is refused'}; nothing moved`;
-}
 
 /** Returns the one entry named `name`, when it has a path, or a message naming why there is not exactly one. */
 function findEntry(run: VerbRun, entries: readonly RegistryEntry[], name: string): RegistryEntry | string {

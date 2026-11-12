@@ -206,6 +206,32 @@ describe('REPO_COMMANDS with git', () => {
   });
 });
 
+describe('apply-moves with git', () => {
+  it('moves a clone found at a former path with its worktree, and does nothing when run again', async () => {
+    using home = createTempTree({ 'repos/oss/app/README.md': '' }, { prefix: 'repo-tools-' });
+    const homeDir = fs.realpathSync(home.dir);
+    initWithCommit(`${homeDir}/repos/oss/app`);
+    git(`${homeDir}/repos/oss/app`, 'remote', 'add', 'origin', 'git@github.com:owner/app.git');
+    git(`${homeDir}/repos/oss/app`, 'worktree', 'add', '--quiet', '-b', 'live', `${homeDir}/repos/oss/app.live`);
+    const registryText = MOVE_REGISTRY.replace(
+      'path: ~/repos/oss/app\n',
+      'path: ~/repos/tools/kit\n    formerPaths: [~/repos/oss/app]\n',
+    );
+    const registryFile = writeRegistry(homeDir, registryText);
+
+    const first = await runCaptured(['apply-moves', '--file', registryFile], { env: { HOME: homeDir } });
+    expect(first.stdout).toBe('~/repos/oss/app -> ~/repos/tools/kit\n~/repos/oss/app.live -> ~/repos/tools/kit.live');
+    expect(first.status).toBe(0);
+    for (const dir of ['repos/tools/kit', 'repos/tools/kit.live']) {
+      expect(git(`${homeDir}/${dir}`, 'status', '--short')).toBe('');
+    }
+    expect(fs.readFileSync(registryFile, 'utf8')).toBe(registryText);
+
+    const second = await runCaptured(['apply-moves', '--file', registryFile], { env: { HOME: homeDir } });
+    expect(second).toStrictEqual({ status: 0, stderr: 'thor-repo: nothing to move', stdout: '' });
+  });
+});
+
 // region | Helpers
 
 /** Writes a registry outside every clone and returns its path. */

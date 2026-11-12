@@ -15,6 +15,7 @@ import { expandTilde } from '../portable/paths.ts';
 import { readRegistry, selectEntries } from '../registry/registry.ts';
 import { STACK_DETECTORS } from '../stacks/stack-detectors.ts';
 import { runAdd } from './runAdd.ts';
+import { runApplyMoves } from './runApplyMoves.ts';
 import { runMove } from './runMove.ts';
 import { runScan } from './runScan.ts';
 import { buildVerbRun, type CloneAdapters, PROG, type RepoContext, reportFailure, type VerbRun } from './verb-run.ts';
@@ -75,6 +76,18 @@ const SEARCH_FLAG = {
   description: 'Also report the references under this directory, in its text files and its symlink targets',
   valueHint: 'path',
 } as const;
+
+const applyMoves = defineCommand({
+  summary: 'Move each clone that the registry records as moved to its new path',
+  description:
+    "Moves, with its worktrees, each clone that is at one of its entry's formerPaths while the entry's path is absent from this machine, as move does, and does not write the registry. A former path counts only when it is a clone's root and, for an entry with a repo, its origin is that repo. Skips and reports an entry whose path and a former path both exist, or whose former paths hold more than one clone. Then prints each remaining reference to the old paths, as move does. Run it on each machine after a move elsewhere; it does nothing when no clone needs moving.",
+  flags: { dryRun: DRY_RUN_FLAG, file: FILE_FLAG, search: SEARCH_FLAG },
+  run: ({ context, flags, stderr, stdout }) =>
+    runApplyMoves(buildVerbRun(context, flags.file, stdout, stderr), {
+      isDryRun: flags.dryRun,
+      searchPaths: flags.search,
+    }),
+});
 
 const list = defineCommand({
   summary: 'Print one absolute path per selected repo',
@@ -153,7 +166,7 @@ const scan = defineCommand({
 /** The `thor-repo` command tree. */
 export const REPO_COMMANDS = defineGroup({
   summary: 'List, scan, or register the repos on this machine, as recorded in ~/.config/repos.yaml',
-  commands: { add, list, move, scan },
+  commands: { add, 'apply-moves': applyMoves, list, move, scan },
   epilog: `Stack names: ${STACK_NAMES.join(', ')}
 
 scan and add read visibility and runner through gh. runner is the label that a repo's CI_RUNS_ON Actions variable selects: a bare label, or a JSON string.
