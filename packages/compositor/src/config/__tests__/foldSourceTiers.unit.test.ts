@@ -2,6 +2,7 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
+import { DeclarationError } from '../../declaration/DeclarationError.ts';
 import { buildConfig } from '../../test-utils/buildConfig.ts';
 import { foldSourceTiers } from '../foldSourceTiers.ts';
 import type { PackageLocation } from '../locateSourcePackages.ts';
@@ -158,6 +159,7 @@ describe(foldSourceTiers, () => {
     expect(() => foldSourceTiers(config, locations)).toThrow(
       /Source "acme", declared by tier "project": is not installed/,
     );
+    expect(() => foldSourceTiers(config, locations)).toThrow(DeclarationError);
   });
 
   // Locating runs ahead of the fold and cannot know what survives it, so a package nothing adopts must not fail the

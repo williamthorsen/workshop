@@ -1,8 +1,9 @@
 import { createRequire } from 'node:module';
 import path from 'node:path';
 
-import { chainError } from '@williamthorsen/toolbelt.errors/candidate';
+import { describeError } from '@williamthorsen/toolbelt.errors';
 
+import { DeclarationError } from '../declaration/DeclarationError.ts';
 import { readFileIfPresent } from '../portable/readFileIfPresent.ts';
 
 /** Where to look for a package, and where that package declares the content directory it ships. */
@@ -32,7 +33,7 @@ export async function locatePackage(name: string, options: LocatePackageOptions)
   const installed = await findInstalledPackage(name, options.baseDir);
   if (installed === undefined) {
     const searched = listCandidateDirs(name, options.baseDir).join(', ');
-    throw new Error(`Declared package "${name}" is not installed. Searched: ${searched}.`);
+    throw new DeclarationError(`Declared package "${name}" is not installed. Searched: ${searched}.`);
   }
   return path.join(installed.dir, readContentPath(name, installed.manifest, options.contentKeyPath));
 }
@@ -48,7 +49,7 @@ export async function locatePackage(name: string, options: LocatePackageOptions)
  */
 function assertPackageName(name: string): void {
   if (name.startsWith('.') || path.isAbsolute(name)) {
-    throw new Error(
+    throw new DeclarationError(
       `Declared package "${name}" is a filesystem path, not a package name. Declare it as a path instead.`,
     );
   }
@@ -82,7 +83,9 @@ function parseManifest(name: string, raw: string): unknown {
   try {
     return JSON.parse(raw);
   } catch (error: unknown) {
-    throw chainError(`Package "${name}" has an unreadable package.json`, error);
+    throw new DeclarationError(`Package "${name}" has an unreadable package.json: ${describeError(error)}`, {
+      cause: error,
+    });
   }
 }
 
@@ -103,7 +106,7 @@ function readContentPath(name: string, manifest: unknown, keyPath: ReadonlyArray
   }
 
   if (typeof current !== 'string' || current === '') {
-    throw new Error(
+    throw new DeclarationError(
       `Package "${name}" declares no content directory at "${keyPath.join('.')}" in its package.json. ` +
         `A package that ships content sets that key to a directory and includes it in its published "files".`,
     );

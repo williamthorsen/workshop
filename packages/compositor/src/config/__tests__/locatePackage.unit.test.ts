@@ -4,6 +4,7 @@ import path from 'node:path';
 import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
+import { DeclarationError } from '../../declaration/DeclarationError.ts';
 import { locatePackage } from '../locatePackage.ts';
 import { buildConfigDir } from '../test-utils/buildConfigDir.ts';
 
@@ -43,6 +44,7 @@ describe(locatePackage, () => {
     const baseDir = buildConfigDir({});
 
     await expect(locatePackage('guidance', { baseDir, contentKeyPath })).rejects.toThrow(/is not installed. Searched:/);
+    await expect(locatePackage('guidance', { baseDir, contentKeyPath })).rejects.toThrow(DeclarationError);
   });
 
   it('fails when the package declares no content directory, naming the key path', async () => {
@@ -51,6 +53,7 @@ describe(locatePackage, () => {
     });
 
     await expect(locatePackage('guidance', { baseDir, contentKeyPath })).rejects.toThrow(/compositor\.content/);
+    await expect(locatePackage('guidance', { baseDir, contentKeyPath })).rejects.toThrow(DeclarationError);
   });
 
   it('fails when the content key holds something other than a directory name', async () => {
@@ -72,7 +75,7 @@ describe(locatePackage, () => {
   it('appends the parser message to the unreadable-manifest failure and keeps the original as cause', async () => {
     const baseDir = buildConfigDir({ 'node_modules/guidance/package.json': '{ not json' });
 
-    const error = await captureError(() => locatePackage('guidance', { baseDir, contentKeyPath }));
+    const error = await captureError(DeclarationError, () => locatePackage('guidance', { baseDir, contentKeyPath }));
 
     const { cause } = error;
     assert.ok(cause instanceof Error);
@@ -81,6 +84,12 @@ describe(locatePackage, () => {
 
   it.each(['./content', '../sibling', '/srv/content'])(
     'rejects "%s" as a filesystem path, not a package name',
-    (name) => expect(locatePackage(name, { baseDir: '/srv/app', contentKeyPath })).rejects.toThrow(/filesystem path/),
+    async (name) => {
+      const error = await captureError(DeclarationError, () =>
+        locatePackage(name, { baseDir: '/srv/app', contentKeyPath }),
+      );
+
+      expect(error.message).toMatch(/filesystem path/);
+    },
   );
 });

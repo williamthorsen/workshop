@@ -1,8 +1,10 @@
 import { chmod } from 'node:fs/promises';
 import path from 'node:path';
 
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
+import { DeclarationError } from '../../declaration/DeclarationError.ts';
 import { assertSourceIsReadable } from '../assertSourceIsReadable.ts';
 import { buildSource } from '../test-utils/buildSource.ts';
 
@@ -16,9 +18,12 @@ describe(assertSourceIsReadable, () => {
   it('rejects a source pointing at nothing', async () => {
     const source = buildSource({});
 
-    await expect(assertSourceIsReadable({ ...source, dir: path.join(source.dir, 'absent') })).rejects.toThrow(
-      /does not exist/,
+    const error = await captureError(DeclarationError, () =>
+      assertSourceIsReadable({ ...source, dir: path.join(source.dir, 'absent') }),
     );
+
+    expect(error.message).toMatch(/does not exist/);
+    expect(error.cause).toHaveProperty('code', 'ENOENT');
   });
 
   it('rejects a source pointing at a file', async () => {
@@ -26,6 +31,9 @@ describe(assertSourceIsReadable, () => {
 
     await expect(assertSourceIsReadable({ ...source, dir: path.join(source.dir, 'guidance.md') })).rejects.toThrow(
       /not a directory/,
+    );
+    await expect(assertSourceIsReadable({ ...source, dir: path.join(source.dir, 'guidance.md') })).rejects.toThrow(
+      DeclarationError,
     );
   });
 
