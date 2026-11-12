@@ -13,6 +13,7 @@ catalog:
   '@tandryukha/aidemo': 0.20.6
   '@vitest/coverage-v8': 5.1.0
   '@williamthorsen/nmr': 2.0.2
+  '@williamthorsen/toolbelt.arrays': 6.4.2
   '@williamthorsen/toolbelt.atlassian': 0.8.1
   '@williamthorsen/toolbelt.cli': 0.8.1
   '@williamthorsen/toolbelt.errors': 0.9.1
