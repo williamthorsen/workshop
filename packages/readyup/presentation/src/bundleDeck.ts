@@ -27,7 +27,7 @@ export async function bundleDeck(): Promise<string> {
     format: 'iife',
     globalName: 'ReadyupDeck',
     platform: 'browser',
-    plugins: [pinVersion()],
+    plugins: [pinVersion(), shimNodeUtil()],
     write: false,
   });
 
@@ -54,6 +54,25 @@ function pinVersion(): Plugin {
       );
       pluginBuild.onLoad({ filter: /.*/, namespace }, () => ({
         contents: "export { CAPTURED_READYUP_VERSION as VERSION } from './presentation/src/capturedPreflight.ts';",
+        loader: 'ts',
+        resolveDir: PACKAGE_ROOT,
+      }));
+    },
+  };
+}
+
+/**
+ * Returns a plugin that replaces `node:util`, from which `cli-truncate` imports `stripVTControlCharacters`, with a
+ * module exporting `strip-ansi` under that name. Any other `node:util` export fails the build.
+ */
+function shimNodeUtil(): Plugin {
+  const namespace = 'deck-node-util';
+  return {
+    name: 'shim-node-util',
+    setup(pluginBuild) {
+      pluginBuild.onResolve({ filter: /^node:util$/ }, () => ({ namespace, path: 'node-util.ts' }));
+      pluginBuild.onLoad({ filter: /.*/, namespace }, () => ({
+        contents: "export { default as stripVTControlCharacters } from 'strip-ansi';",
         loader: 'ts',
         resolveDir: PACKAGE_ROOT,
       }));

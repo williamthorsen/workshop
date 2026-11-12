@@ -207,8 +207,8 @@ catalogs:
       specifier: 8.2.2
       version: 8.2.2
     '@williamthorsen/toolbelt.terminal':
-      specifier: 0.3.0
-      version: 0.3.0
+      specifier: 0.3.1
+      version: 0.3.1
     '@williamthorsen/toolbelt.testing':
       specifier: 0.8.1
       version: 0.8.1
@@ -355,7 +355,7 @@ importers:
         version: 8.2.2
       '@williamthorsen/toolbelt.terminal':
         specifier: 'catalog:'
-        version: 0.3.0
+        version: 0.3.1
     devDependencies:
       '@williamthorsen/toolbelt.testing':
         specifier: 'catalog:'
@@ -514,7 +514,7 @@ importers:
         version: 0.7.1
       '@williamthorsen/toolbelt.terminal':
         specifier: 'catalog:'
-        version: 0.3.0
+        version: 0.3.1
       validate-npm-package-name:
         specifier: ^8.0.0
         version: 8.0.0
@@ -567,7 +567,7 @@ importers:
         version: 8.2.2
       '@williamthorsen/toolbelt.terminal':
         specifier: 'catalog:'
-        version: 0.3.0
+        version: 0.3.1
       ansi-styles:
         specifier: 7.0.0
         version: 7.0.0
@@ -608,6 +608,9 @@ importers:
       esbuild:
         specifier: 'catalog:'
         version: 0.28.2
+      strip-ansi:
+        specifier: 7.2.0
+        version: 7.2.0
       typescript:
         specifier: 'catalog:'
         version: 6.0.3
@@ -1871,6 +1874,10 @@ packages:
     resolution: {integrity: sha512-ks9fVSnUW9B6JR+sa126jRK/tWD+aMPhXEYc4Uyqe77Xz1ZDRa53qlqjUZDIW985eE4Kz+vfthQveNa9zV3l3Q==}
     engines: {node: '>=24.0.0'}
 
+  '@williamthorsen/toolbelt.terminal@0.3.1':
+    resolution: {integrity: sha512-yIGy3Uk0Q4p7KVWnZJtyCLifK/DZ2/GTsvUKwaVilWdU6ti8XGanizyZWJKasR+h0gI87W4jKp5keRAhySSolw==}
+    engines: {node: '>=24.0.0'}
+
   '@williamthorsen/toolbelt.testing@0.8.1':
     resolution: {integrity: sha512-gDDy6x1SJj4csPlT2GBxJchaZ0uqyzLhG+RaXVR+RX0cEt7Xyd/eXvlBi6/jbjp+sXjRYFeu3gDELPmSgfMwCA==}
     engines: {node: '>=24.0.0'}
@@ -2028,6 +2035,10 @@ packages:
 
   cli-truncate@6.1.1:
     resolution: {integrity: sha512-06p9vyLahLa4zkGcgsGxU6iEkSOiuI4fhCH6Emhe2lPAcoUv73n72DnODsnHA+5wwXGnV0n9M9/qOQJSjYhFhw==}
+    engines: {node: '>=22'}
+
+  cli-truncate@6.2.0:
+    resolution: {integrity: sha512-5uyZew3nYoDgyltqSI8OER6DuyecorYOSVDAXl9wQ9Y8Re/HaQ/5qP0HmTUOUQqmvtpB+mlsf1gG/FUS3U1gLQ==}
     engines: {node: '>=22'}
 
   cliui@7.0.4:
@@ -3142,6 +3153,10 @@ packages:
   skin-tone@2.0.0:
     resolution: {integrity: sha512-kUMbT1oBJCpgrnKoSr0o6wPtvRWT9W9UKvGLwfJYO2WuahZRHOpEyL1ckyMGgMWh0UdpmaoFqKKD29WTomNEGA==}
     engines: {node: '>=8'}
+
+  slice-ansi@10.0.1:
+    resolution: {integrity: sha512-CJKEH3zwVX4bOnE+bFbmh+JK/YMT9VAazqBsVBTesnYKXlNtz6oVmrhNp1jHrxHzscuUkWiKZpzNzFraZcrorg==}
+    engines: {node: '>=22'}
 
   slice-ansi@9.0.1:
     resolution: {integrity: sha512-aBY19bn/XA+hKOKX0qL7Z0UfdBsbQvc9hn993U8ALUjzxCvDcuZqLoRXjGJrUARWAlwMnsRVD9sw2AFNOYvalA==}
@@ -4485,6 +4500,13 @@ snapshots:
       string-width: 8.3.0
       wrap-ansi: 10.0.2
 
+  '@williamthorsen/toolbelt.terminal@0.3.1':
+    dependencies:
+      cli-truncate: 6.2.0
+      slice-ansi: 10.0.1
+      string-width: 8.3.0
+      wrap-ansi: 10.0.2
+
   '@williamthorsen/toolbelt.testing@0.8.1':
     dependencies:
       '@williamthorsen/toolbelt.errors': 0.9.1
@@ -4629,6 +4651,11 @@ snapshots:
   cli-truncate@6.1.1:
     dependencies:
       slice-ansi: 9.0.1
+      string-width: 8.3.0
+
+  cli-truncate@6.2.0:
+    dependencies:
+      slice-ansi: 10.0.1
       string-width: 8.3.0
 
   cliui@7.0.4:
@@ -5782,6 +5809,11 @@ snapshots:
   skin-tone@2.0.0:
     dependencies:
       unicode-emoji-modifier-base: 1.0.0
+
+  slice-ansi@10.0.1:
+    dependencies:
+      ansi-styles: 7.0.0
+      string-width: 8.3.0
 
   slice-ansi@9.0.1:
     dependencies:
