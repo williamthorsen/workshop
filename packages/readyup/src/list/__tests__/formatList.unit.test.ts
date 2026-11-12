@@ -9,11 +9,9 @@ import {
   formatEmpty,
   formatManifestView,
   formatOwnerView,
-  formatRecursiveSourcesView,
-  formatRecursiveView,
   formatSourcesView,
-  resolveCompiledStyle,
 } from '../formatList.ts';
+import { formatRecursiveSourcesView, formatRecursiveView, resolveCompiledStyle } from '../recursive-views.ts';
 import { buildGroup, buildKit, buildProjectSources } from '../test-utils/source-group-fixtures.ts';
 
 const COMPILED = richFormatter.tokens.kit.text;

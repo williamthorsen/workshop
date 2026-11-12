@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { setStyle } from '../../layout/engine.ts';
 import { richFormatter } from '../../layout/formatter.ts';
-import { formatRecursiveSourcesView, formatRecursiveView, type RecursiveProjectView } from '../formatList.ts';
+import { formatRecursiveSourcesView, formatRecursiveView, type RecursiveProjectView } from '../recursive-views.ts';
 import { buildGroup, buildKit, buildProjectSources } from '../test-utils/source-group-fixtures.ts';
 
 const COMPILED = richFormatter.tokens.kit.text;
