@@ -28,9 +28,13 @@ export function runMove(run: VerbRun, name: string, target: string, options: Mov
   if (typeof entry === 'string') return reportFailure(run, entry);
   const oldPath = entry.path ?? '';
 
-  const from = run.adapters.readCloneRoot(expandTilde(oldPath, run.home));
-  if (from === undefined) {
+  const from = normalizePath(oldPath, run.home);
+  const cloneRoot = run.adapters.readCloneRoot(from);
+  if (cloneRoot === undefined) {
     return reportFailure(run, `the clone of ${name} is not on this machine at ${oldPath}`);
+  }
+  if (cloneRoot !== from) {
+    return reportFailure(run, `${oldPath} is not the root of a clone; the main worktree is at ${cloneRoot}`);
   }
   const to = path.resolve(run.cwd, expandTilde(target, run.home));
   const claimant = registry.entries.find(

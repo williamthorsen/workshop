@@ -34,6 +34,11 @@ describe('move', () => {
       { registry: `${REGISTRY}  - name: alpha\n    path: ~/repos/alpha2\n` },
       '2 entries in ',
     ],
+    [
+      ['move', 'alpha', '~/repos/kit'],
+      { registry: REGISTRY.replace('path: ~/repos/alpha\n', 'path: ~/repos/alpha/sub\n') },
+      `~/repos/alpha/sub is not the root of a clone; the main worktree is at ${FAKE_HOME}/repos/alpha`,
+    ],
   ] as const)('refuses %j before moving anything', async (args, setup, message) => {
     const { registryText, result } = await run([...args], setup);
     expect(result.stderr).toContain(message);
