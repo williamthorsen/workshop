@@ -30,6 +30,7 @@
     "prepare": "nmr-compile"
   },
   "dependencies": {
+    "@williamthorsen/toolbelt.arrays": "catalog:",
     "@williamthorsen/toolbelt.errors": "catalog:",
     "@williamthorsen/toolbelt.packaging": "catalog:",
     "yaml": "catalog:",

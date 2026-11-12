@@ -173,6 +173,9 @@ catalogs:
     '@williamthorsen/nmr':
       specifier: 2.0.2
       version: 2.0.2
+    '@williamthorsen/toolbelt.arrays':
+      specifier: 6.4.2
+      version: 6.4.2
     '@williamthorsen/toolbelt.atlassian':
       specifier: 0.8.1
       version: 0.8.1
@@ -366,6 +369,9 @@ importers:
 
   packages/compositor:
     dependencies:
+      '@williamthorsen/toolbelt.arrays':
+        specifier: 'catalog:'
+        version: 6.4.2
       '@williamthorsen/toolbelt.errors':
         specifier: 'catalog:'
         version: 0.9.1
