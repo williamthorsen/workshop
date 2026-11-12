@@ -43,7 +43,7 @@
     "prepare": "nmr-compile"
   },
   "dependencies": {
-    "@williamthorsen/nmr-core": "0.16.1",
+    "@williamthorsen/nmr-core": "0.16.2",
     "@williamthorsen/toolbelt.cli": "catalog:",
     "@williamthorsen/toolbelt.errors": "catalog:",
     "@williamthorsen/toolbelt.packaging": "catalog:",

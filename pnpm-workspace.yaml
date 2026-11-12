@@ -12,21 +12,21 @@ allowBuilds:
 catalog:
   '@tandryukha/aidemo': 0.20.6
   '@vitest/coverage-v8': 5.1.0
-  '@williamthorsen/nmr': 2.0.2
-  '@williamthorsen/toolbelt.arrays': 6.4.2
-  '@williamthorsen/toolbelt.atlassian': 0.8.1
-  '@williamthorsen/toolbelt.cli': 0.8.1
+  '@williamthorsen/nmr': 2.1.0
+  '@williamthorsen/toolbelt.arrays': 6.5.0
+  '@williamthorsen/toolbelt.atlassian': 0.8.2
+  '@williamthorsen/toolbelt.cli': 0.8.2
   '@williamthorsen/toolbelt.errors': 0.9.1
-  '@williamthorsen/toolbelt.filesystem': 0.10.1
-  '@williamthorsen/toolbelt.git': 0.7.3
-  '@williamthorsen/toolbelt.nodejs': 4.1.1
+  '@williamthorsen/toolbelt.filesystem': 0.10.2
+  '@williamthorsen/toolbelt.git': 0.7.4
+  '@williamthorsen/toolbelt.nodejs': 4.1.2
   '@williamthorsen/toolbelt.numbers': 7.3.2
-  '@williamthorsen/toolbelt.packaging': 0.7.1
-  '@williamthorsen/toolbelt.secrets': 0.6.1
-  '@williamthorsen/toolbelt.strings': 8.2.2
+  '@williamthorsen/toolbelt.packaging': 0.7.2
+  '@williamthorsen/toolbelt.secrets': 0.6.2
+  '@williamthorsen/toolbelt.strings': 8.2.3
   '@williamthorsen/toolbelt.terminal': 0.3.1
-  '@williamthorsen/toolbelt.testing': 0.8.1
-  '@williamthorsen/toolbelt.vitest': 0.13.3
+  '@williamthorsen/toolbelt.testing': 0.8.2
+  '@williamthorsen/toolbelt.vitest': 0.13.4
   esbuild: 0.28.2
   kokoro-js: 1.2.1
   typescript: 6.0.3
