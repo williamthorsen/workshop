@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.5.7 — 2026-11-12
+
+### 🏗️ Internal features
+
+- Adds `findMarkerFault` and `findStampFault`, which return the reason that region markers or a sentinel are unusable, so that the render-target checks stop catching every exception thrown by `assertMarkersAreUsable` and `stampSentinel`, and an engine defect inside either validator propagates instead of being reported as a fault in the consumer's declarations. (#815)
+
+### ♻️ Refactoring
+
+- Moves each concern that `assertRenderTargetsAreConsistent` checked inline into its own module under `render/checks`, as its peers under `plan/checks`, `closure/checks`, and `resolution/checks` already are, and leaves the entry to combine their violations and throw. (#815)
+- Removes `export` from the `compositor` values that are read only inside their own module, including `WILDCARD_SEGMENT` in `sentinel.ts` and the marker constants of the test fixtures. (#818)
+
+### 🧪 Tests
+
+- Matches the messages in `compositor`'s consistency-check, diagnostic, and error tests by the identifiers and values that each one names, and uses `expect.any(String)` for a diagnostic whose code and location already identify it, so that rewording a message no longer fails a test. (#816)
+- Moves `captureSnapshot.unit.test.ts` onto `captureComposition` and a newly exported `buildCompositionInput`, which builds the shared fixture's input over directories that a test creates itself, and removes the suite's own copies of the artifact kinds, diagram bytes, render target, and input builder. (#817)
+
 ## 0.5.6 — 2026-11-05
 
 ### 📦 Dependencies

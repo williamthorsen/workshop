@@ -1,5 +1,211 @@
 [
   {
+    "version": "0.46.0",
+    "date": "2026-11-12",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Moves the hint that `rdy list` prints for a config that it cannot load to the end of the `Warning:` line, the position at which every other warning prints its remedy, instead of a separate line below the warning. (#797)",
+            "hash": "fa5fc2046d81a64e19f5213fa17bfa905290a613",
+            "entry": 1
+          },
+          {
+            "description": "Changes how `rdy` and `rdy help` choose a \"Did you mean\" suggestion: An abbreviation of a command or help topic now wins over a candidate fewer edits away, and a typo match now requires fewer edits than the word has characters, so `rdy ls` no longer suggests `rdy list`. (#803)",
+            "hash": "ffa694f71c39936cd77e4e9d383185e33dca2b10",
+            "entry": 1
+          }
+        ]
+      },
+      {
+        "title": "🐛 Bug fixes",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Fixes the issue that `readFile` and the check utilities built on it, such as `fileContains`, `fileDoesNotContain`, `fileMatchesHash`, `readJsonFile`, and `readPackageJson`, threw `EISDIR` for a path that names a directory, a symlink to a directory, or a submodule gitlink, rather than treating the path as missing. (#750)",
+            "hash": "a97a799a04e7ee11544c587a9df207b36980aea6",
+            "entry": 1
+          },
+          {
+            "description": "Fixes the issue that `rdy compile --recursive` did not write a failed project's hint, such as the install command for an unresolved package, beneath its error line as a single-project compile does. (#769)",
+            "hash": "2c4efbb1ffd398de9339cd2115f71fae0a071eb3",
+            "entry": 1
+          },
+          {
+            "description": "Fixes the issue that `rdy compile` showed a path outside the working directory as a `..` chain, and an output directory equal to it as `.`, in a single-file compile's result line, its inlined-JSON and unrecorded-bundle warnings, and its `cannot remove` error, which now show that path in absolute form. (#773)",
+            "hash": "2b309f240740e772637cf808f67fdecab66c5e82",
+            "entry": 1
+          },
+          {
+            "description": "Fixes the issue that `rdy run --sources` reported an unreadable or invalid manifest in an installed npm source as `rdy: internal error:` with stack frames, and as code `internal` under `--json`, rather than as a config error. (#792)",
+            "hash": "34023cde54238a02463c8142ae8cb58a00bfd320",
+            "entry": 1
+          },
+          {
+            "description": "Fixes the issue that `rdy init --style=` and `rdy help --style=` ran as though the flag were valid, rather than exiting with code 2 and the message `--style requires a value`, as the other `rdy` commands did. (#793)",
+            "hash": "410c90fa921641314ceadf962ce6b785d06915e0",
+            "entry": 1
+          },
+          {
+            "description": "Fixes the issue that `rdy` reported missing build output and advised running `nmr build` when the build was present and one of its imports failed to resolve, and changes the advice for a build that is actually missing to reinstalling the package. (#804)",
+            "hash": "989913d041b00d5e9c77e01ddd08ec9daf1a5641",
+            "entry": 1
+          }
+        ]
+      },
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Replaces the private `isFile` copy in `tsconfig.ts` with the `isRegularFile` helper from `filesystem.ts`, which `readFile` now uses for its check. (#750)",
+            "hash": "a97a799a04e7ee11544c587a9df207b36980aea6",
+            "entry": 2
+          },
+          {
+            "description": "Moves the duplicated `git rev-list --count --left-right` call and its output parsing from `compareLocalRefs` and `compareRefToRemote` into a shared internal `countAheadBehind` function. (#751)",
+            "hash": "025bc71647f532e7e882d056de91a82915bb0096",
+            "entry": 1
+          },
+          {
+            "description": "Injects a `Git` adapter, declared in `run-git.ts` with a `realGit` implementation, into the ref comparisons, the repo predicates, and the tracked-files and foreign-paths listers, and injects the comparisons and the listers into the sync-check factories and `readTrackedSources`, so that the tests use the shared `createFakeGit` fake instead of mocking modules by path. (#752)",
+            "hash": "237ac36eaf63d16c1d94e7635198d962a03d9666",
+            "entry": 1
+          },
+          {
+            "description": "Splits `pnpmWorkspaceYaml.ts` into `findPnpmCatalogVersion.ts` and `readPnpmWorkspacePackages.ts`, with their shared line scanners in `yaml-line-scanners.ts`, and corrects the descriptions that overstated what the workspace-packages reader rejects. (#753)",
+            "hash": "4effe5749591995a0dea411de7d8fbe03a4df54b",
+            "entry": 1
+          },
+          {
+            "description": "Changes `readPnpmWorkspacePackages` and the workspace pattern resolvers in `readyup`'s `workspaces.ts` to return `undefined` rather than `null` for an absent value. (#754)",
+            "hash": "e80d0fac1117ce291a4576c9253db158412d4b6d",
+            "entry": 1
+          },
+          {
+            "description": "Brings the source modules and unit tests of `check-utils` into line with the declaration-order rule by alphabetizing their helpers and wrapping the helpers of `git/compare-local-refs.ts`, `git/compare-ref-to-remote.ts`, and `git/factories.ts` in a `// region | Helpers` block. (#755)",
+            "hash": "34bca21f79aa59cfe4d0377e4604a33ff90e81aa",
+            "entry": 1
+          },
+          {
+            "description": "Moves the stderr write of readyup's compile warnings from the three producers into their callers, which separates computing a warning from presenting it, and renames the producers to `listDirectoryDependenceWarnings`, `listInlinedJsonWarnings`, and `listUnrecordedBundleWarnings`. (#768)",
+            "hash": "479f01d921cd05d1bddf44cca772d662280780b8",
+            "entry": 1
+          },
+          {
+            "description": "Extracts the per-kit compile step that `compileSingle` and `compileSource` each ran (the drift gate, the compile, the result line, the warnings, and the manifest entry) into `compileKit`, so that a change to that step is made in one place. (#770)",
+            "hash": "c342726a2fb68423e111c75ea7414b678861b826",
+            "entry": 1
+          },
+          {
+            "description": "Extracts the per-kit compile step of `rdy compile` into `compileKit`, which the single-file and the project compile now share, and limits each error catch to the call whose failure it reports, so that an internal error raised while recording a kit's source closure reaches the command as an internal error rather than as a `Cannot write manifest` config error or a kit that failed to compile. (#770)",
+            "hash": "c342726a2fb68423e111c75ea7414b678861b826",
+            "entry": 2
+          },
+          {
+            "description": "Moves the JSON-projection modules and their unit tests from `src/compile/` to `src/json-projection/` and repoints every importer, so that the compile directory contains only compilation code. (#774)",
+            "hash": "bd69a51896aaf0739243009c58ca56fe41b383aa",
+            "entry": 1
+          },
+          {
+            "description": "Renames the `json`, `force`, `skipManifest`, and `writesManifest` booleans in `packages/readyup/src/compile/` to `isJson`, `shouldForce`, `shouldSkipManifest`, and `doesWriteManifest`, the prefixed forms that the \"Boolean naming\" convention requires. (#778)",
+            "hash": "9a84579defac99660a6bb27401f5ff7bb2d0c2a7",
+            "entry": 1
+          },
+          {
+            "description": "Reorders the declarations in `readyup`'s `src/compile` modules, including `test-utils`, so that each module's exported tier comes first in the order that the declaration-order rule sets, and alphabetizes each module's Helpers region without changing any declaration body. (#779)",
+            "hash": "759e726e1bbabac4a7dfd4bd410cd788b2f95a37",
+            "entry": 1
+          },
+          {
+            "description": "Adds a `VerifyDependencies` parameter to `verifyCommand` and its helpers and a `RebuildDependencies` parameter to `checkRebuild`, each defaulting to the real modules, so that the unit tests pass fakes from `createVerifyFakes` instead of mocking readyup's own modules by path. (#795)",
+            "hash": "5823bcd2a0af2d6b3f1abc67e014aa0631431eb7",
+            "entry": 1
+          },
+          {
+            "description": "Changes `rdy list`'s listing modes and the helpers that they call, including project discovery, to pass their warnings to their callers instead of writing them to stderr, which leaves `listCommand` and the `rdy compile --recursive` and `rdy verify --recursive` sweeps to write them. (#797)",
+            "hash": "fa5fc2046d81a64e19f5213fa17bfa905290a613",
+            "entry": 2
+          },
+          {
+            "description": "Moves the authenticated manifest fetch and its `config`-error diagnosis, which `collectRemoteKits` and `expandRepository` each repeated, into the new `loadRemoteSourceManifest` in `src/remote/`. (#798)",
+            "hash": "21d0ca2d3afe7bdc1ed267ff03d5f2d2cb80e3ed",
+            "entry": 1
+          },
+          {
+            "description": "Makes `parseFromValue` throw an `InvalidFromValueError` for a rejected value and makes its callers reclassify only that error as a usage or config error, so that a defect in the parser propagates unchanged instead of `rdy` reporting it as a malformed `--from` value or `sources` entry. (#799)",
+            "hash": "e3c4b578bef0756afde038ad44e0861e66cafba1",
+            "entry": 1
+          },
+          {
+            "description": "Renames readyup's `errors/error-handling.ts`, `errors/parse-args-error.ts`, `init/scaffold.ts`, and `verify/remedies.ts` to `extractHint.ts`, `translateParseArgsError.ts`, `scaffoldConfig.ts`, and `resolveRemedies.ts`, the names of the functions that they export. (#800)",
+            "hash": "b1427d800fab4bfedb0df675fdf42a67b7b7c266",
+            "entry": 1
+          },
+          {
+            "description": "Renames the internal booleans in `readyup` outside `src/compile`, among them `json`, `force`, `rebuild`, and `showChecks`, with an `is` or `should` prefix to follow the boolean-naming convention. (#801)",
+            "hash": "31b59d1e2a27fca81e5752c27372717a3e1475b7",
+            "entry": 1
+          }
+        ]
+      },
+      {
+        "title": "🧪 Tests",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Replaces the copies of `compile`, `compileForPayload`, the compile-result builder, and the manifest reader in the prune and recursive `compileCommand` tests with shared helpers, adding `compileForPayload` to `compile-runners.ts` and `readTreeManifest` to `compile/test-utils/`. (#766)",
+            "hash": "e586c7cb91073e5b53f67ef0c5eb34ffde29305b",
+            "entry": 1
+          },
+          {
+            "description": "Adds `buildCompileResult` to `compile-result-fixtures.ts`, a `compileConfig` stand-in that writes a bundle to the output path and returns that bundle's real hash and the source's real path. (#766)",
+            "hash": "e586c7cb91073e5b53f67ef0c5eb34ffde29305b",
+            "entry": 2
+          },
+          {
+            "description": "Rewrites the `compileCommand` and `compileKit` unit tests to build a temporary tree and mock only `compileConfig`, replacing the shared header of mocks of `node:fs`, picomatch, `loadConfig`, `readManifest`, `writeManifest`, `checkDrift`, and `listUnrecordedBundleWarnings`, and to assert on the files that the command writes in the tree. (#771)",
+            "hash": "d49d60f4481efc07ff0a04ad1ba02b0e75c982a5",
+            "entry": 1
+          },
+          {
+            "description": "Removes the `node:perf_hooks` import of `performance` from `runRdy.ts`, so that the module reads the global `performance` that Vitest fake timers replace, which stops `route.styleSelection.unit.test.ts` from failing when its two runs report different durations. (#777)",
+            "hash": "e1c6a0da7b38374a1d891764bd0868b153e8724f",
+            "entry": 1
+          },
+          {
+            "description": "Adds a `runRdy` test that fakes only `performance`, advances the clock by 25 ms inside a check, and expects 25 as the `durationMs` of both the check and the report, which fails if `runRdy` measures time on the real clock again. (#777)",
+            "hash": "e1c6a0da7b38374a1d891764bd0868b153e8724f",
+            "entry": 2
+          },
+          {
+            "description": "Moves the module-level helpers in `readyup`'s compile test files below their `describe` blocks and into an alphabetized `// region | Helpers` block. (#779)",
+            "hash": "759e726e1bbabac4a7dfd4bd410cd788b2f95a37",
+            "entry": 2
+          },
+          {
+            "description": "Moves the readyup test suites that still built temporary directories with `mkdtempSync` onto `createTempTree` fixtures, and replaces their suite-wide `process.chdir` hooks with a `pointCwdAt` call scoped to each test that needs a different working directory. (#802)",
+            "hash": "f5b54a6e7772d2896110dbd52a4309ae2118844e",
+            "entry": 1
+          }
+        ]
+      },
+      {
+        "title": "⚙️ Tooling",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Makes `packages/readyup/bin/rdy.js` load `src/bin/rdy.ts` when that file exists, so that `rdy` in a checkout runs without a prior build, and points the root `build:post` and `ci:pre` hooks and readyup's `prepare` and `verify:kits` scripts at the wrapper instead of at the hard-coded source path. (#804)",
+            "hash": "989913d041b00d5e9c77e01ddd08ec9daf1a5641",
+            "entry": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.45.1",
     "date": "2026-11-09",
     "sections": [

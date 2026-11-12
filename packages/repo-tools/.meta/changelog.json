@@ -1,5 +1,27 @@
 [
   {
+    "version": "0.4.0",
+    "date": "2026-11-12",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Adds the `thor-repo move <name> <path>` command, which moves a registered clone and the worktrees beside it, repairs each worktree's link, sets the entry's `path`, appends the old path to the entry's new `formerPaths` field, and reports the remaining references to the old path in the registered clones and under each `--search` directory. (#820)",
+            "hash": "f87e7b5b9dde0125a3b4e437f7f8d14c61b694dc",
+            "entry": 1
+          },
+          {
+            "description": "Adds the `thor-repo apply-moves` command, which moves each clone found at one of its entry's `formerPaths` to the entry's `path` on a machine that does not have that path yet, and skips and reports an entry for which the move is ambiguous. (#820)",
+            "hash": "f87e7b5b9dde0125a3b4e437f7f8d14c61b694dc",
+            "entry": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.3.0",
     "date": "2026-11-09",
     "sections": [

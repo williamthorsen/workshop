@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.4.0 — 2026-11-12
+
+### 🎉 Features
+
+- Adds the `thor-repo move <name> <path>` command, which moves a registered clone and the worktrees beside it, repairs each worktree's link, sets the entry's `path`, appends the old path to the entry's new `formerPaths` field, and reports the remaining references to the old path in the registered clones and under each `--search` directory. (#820)
+- Adds the `thor-repo apply-moves` command, which moves each clone found at one of its entry's `formerPaths` to the entry's `path` on a machine that does not have that path yet, and skips and reports an entry for which the move is ambiguous. (#820)
+
 ## 0.3.0 — 2026-11-09
 
 ### 🎉 Features

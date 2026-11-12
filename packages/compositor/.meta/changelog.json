@@ -1,5 +1,54 @@
 [
   {
+    "version": "0.5.7",
+    "date": "2026-11-12",
+    "sections": [
+      {
+        "title": "🏗️ Internal features",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Adds `findMarkerFault` and `findStampFault`, which return the reason that region markers or a sentinel are unusable, so that the render-target checks stop catching every exception thrown by `assertMarkersAreUsable` and `stampSentinel`, and an engine defect inside either validator propagates instead of being reported as a fault in the consumer's declarations. (#815)",
+            "hash": "c5b9bc9e2253c6f828554d8fff4c0f3b35c4d34c",
+            "entry": 2
+          }
+        ]
+      },
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Moves each concern that `assertRenderTargetsAreConsistent` checked inline into its own module under `render/checks`, as its peers under `plan/checks`, `closure/checks`, and `resolution/checks` already are, and leaves the entry to combine their violations and throw. (#815)",
+            "hash": "c5b9bc9e2253c6f828554d8fff4c0f3b35c4d34c",
+            "entry": 1
+          },
+          {
+            "description": "Removes `export` from the `compositor` values that are read only inside their own module, including `WILDCARD_SEGMENT` in `sentinel.ts` and the marker constants of the test fixtures. (#818)",
+            "hash": "4eecd579c6be2f08237eba89a01aa33ce5aaa908",
+            "entry": 1
+          }
+        ]
+      },
+      {
+        "title": "🧪 Tests",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Matches the messages in `compositor`'s consistency-check, diagnostic, and error tests by the identifiers and values that each one names, and uses `expect.any(String)` for a diagnostic whose code and location already identify it, so that rewording a message no longer fails a test. (#816)",
+            "hash": "f9e7a862466e207a3a9d3b5869d536f10591b4e6",
+            "entry": 1
+          },
+          {
+            "description": "Moves `captureSnapshot.unit.test.ts` onto `captureComposition` and a newly exported `buildCompositionInput`, which builds the shared fixture's input over directories that a test creates itself, and removes the suite's own copies of the artifact kinds, diagram bytes, render target, and input builder. (#817)",
+            "hash": "391499c4a00517374c85c5c4963455ceceffcf57",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.5.6",
     "date": "2026-11-05",
     "sections": [

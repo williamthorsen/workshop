@@ -2,6 +2,57 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.46.0 — 2026-11-12
+
+### 🎉 Features
+
+- Moves the hint that `rdy list` prints for a config that it cannot load to the end of the `Warning:` line, the position at which every other warning prints its remedy, instead of a separate line below the warning. (#797)
+- Changes how `rdy` and `rdy help` choose a "Did you mean" suggestion: An abbreviation of a command or help topic now wins over a candidate fewer edits away, and a typo match now requires fewer edits than the word has characters, so `rdy ls` no longer suggests `rdy list`. (#803)
+
+### 🐛 Bug fixes
+
+- Fixes the issue that `readFile` and the check utilities built on it, such as `fileContains`, `fileDoesNotContain`, `fileMatchesHash`, `readJsonFile`, and `readPackageJson`, threw `EISDIR` for a path that names a directory, a symlink to a directory, or a submodule gitlink, rather than treating the path as missing. (#750)
+- Fixes the issue that `rdy compile --recursive` did not write a failed project's hint, such as the install command for an unresolved package, beneath its error line as a single-project compile does. (#769)
+- Fixes the issue that `rdy compile` showed a path outside the working directory as a `..` chain, and an output directory equal to it as `.`, in a single-file compile's result line, its inlined-JSON and unrecorded-bundle warnings, and its `cannot remove` error, which now show that path in absolute form. (#773)
+- Fixes the issue that `rdy run --sources` reported an unreadable or invalid manifest in an installed npm source as `rdy: internal error:` with stack frames, and as code `internal` under `--json`, rather than as a config error. (#792)
+- Fixes the issue that `rdy init --style=` and `rdy help --style=` ran as though the flag were valid, rather than exiting with code 2 and the message `--style requires a value`, as the other `rdy` commands did. (#793)
+- Fixes the issue that `rdy` reported missing build output and advised running `nmr build` when the build was present and one of its imports failed to resolve, and changes the advice for a build that is actually missing to reinstalling the package. (#804)
+
+### ♻️ Refactoring
+
+- Replaces the private `isFile` copy in `tsconfig.ts` with the `isRegularFile` helper from `filesystem.ts`, which `readFile` now uses for its check. (#750)
+- Moves the duplicated `git rev-list --count --left-right` call and its output parsing from `compareLocalRefs` and `compareRefToRemote` into a shared internal `countAheadBehind` function. (#751)
+- Injects a `Git` adapter, declared in `run-git.ts` with a `realGit` implementation, into the ref comparisons, the repo predicates, and the tracked-files and foreign-paths listers, and injects the comparisons and the listers into the sync-check factories and `readTrackedSources`, so that the tests use the shared `createFakeGit` fake instead of mocking modules by path. (#752)
+- Splits `pnpmWorkspaceYaml.ts` into `findPnpmCatalogVersion.ts` and `readPnpmWorkspacePackages.ts`, with their shared line scanners in `yaml-line-scanners.ts`, and corrects the descriptions that overstated what the workspace-packages reader rejects. (#753)
+- Changes `readPnpmWorkspacePackages` and the workspace pattern resolvers in `readyup`'s `workspaces.ts` to return `undefined` rather than `null` for an absent value. (#754)
+- Brings the source modules and unit tests of `check-utils` into line with the declaration-order rule by alphabetizing their helpers and wrapping the helpers of `git/compare-local-refs.ts`, `git/compare-ref-to-remote.ts`, and `git/factories.ts` in a `// region | Helpers` block. (#755)
+- Moves the stderr write of readyup's compile warnings from the three producers into their callers, which separates computing a warning from presenting it, and renames the producers to `listDirectoryDependenceWarnings`, `listInlinedJsonWarnings`, and `listUnrecordedBundleWarnings`. (#768)
+- Extracts the per-kit compile step that `compileSingle` and `compileSource` each ran (the drift gate, the compile, the result line, the warnings, and the manifest entry) into `compileKit`, so that a change to that step is made in one place. (#770)
+- Extracts the per-kit compile step of `rdy compile` into `compileKit`, which the single-file and the project compile now share, and limits each error catch to the call whose failure it reports, so that an internal error raised while recording a kit's source closure reaches the command as an internal error rather than as a `Cannot write manifest` config error or a kit that failed to compile. (#770)
+- Moves the JSON-projection modules and their unit tests from `src/compile/` to `src/json-projection/` and repoints every importer, so that the compile directory contains only compilation code. (#774)
+- Renames the `json`, `force`, `skipManifest`, and `writesManifest` booleans in `packages/readyup/src/compile/` to `isJson`, `shouldForce`, `shouldSkipManifest`, and `doesWriteManifest`, the prefixed forms that the "Boolean naming" convention requires. (#778)
+- Reorders the declarations in `readyup`'s `src/compile` modules, including `test-utils`, so that each module's exported tier comes first in the order that the declaration-order rule sets, and alphabetizes each module's Helpers region without changing any declaration body. (#779)
+- Adds a `VerifyDependencies` parameter to `verifyCommand` and its helpers and a `RebuildDependencies` parameter to `checkRebuild`, each defaulting to the real modules, so that the unit tests pass fakes from `createVerifyFakes` instead of mocking readyup's own modules by path. (#795)
+- Changes `rdy list`'s listing modes and the helpers that they call, including project discovery, to pass their warnings to their callers instead of writing them to stderr, which leaves `listCommand` and the `rdy compile --recursive` and `rdy verify --recursive` sweeps to write them. (#797)
+- Moves the authenticated manifest fetch and its `config`-error diagnosis, which `collectRemoteKits` and `expandRepository` each repeated, into the new `loadRemoteSourceManifest` in `src/remote/`. (#798)
+- Makes `parseFromValue` throw an `InvalidFromValueError` for a rejected value and makes its callers reclassify only that error as a usage or config error, so that a defect in the parser propagates unchanged instead of `rdy` reporting it as a malformed `--from` value or `sources` entry. (#799)
+- Renames readyup's `errors/error-handling.ts`, `errors/parse-args-error.ts`, `init/scaffold.ts`, and `verify/remedies.ts` to `extractHint.ts`, `translateParseArgsError.ts`, `scaffoldConfig.ts`, and `resolveRemedies.ts`, the names of the functions that they export. (#800)
+- Renames the internal booleans in `readyup` outside `src/compile`, among them `json`, `force`, `rebuild`, and `showChecks`, with an `is` or `should` prefix to follow the boolean-naming convention. (#801)
+
+### 🧪 Tests
+
+- Replaces the copies of `compile`, `compileForPayload`, the compile-result builder, and the manifest reader in the prune and recursive `compileCommand` tests with shared helpers, adding `compileForPayload` to `compile-runners.ts` and `readTreeManifest` to `compile/test-utils/`. (#766)
+- Adds `buildCompileResult` to `compile-result-fixtures.ts`, a `compileConfig` stand-in that writes a bundle to the output path and returns that bundle's real hash and the source's real path. (#766)
+- Rewrites the `compileCommand` and `compileKit` unit tests to build a temporary tree and mock only `compileConfig`, replacing the shared header of mocks of `node:fs`, picomatch, `loadConfig`, `readManifest`, `writeManifest`, `checkDrift`, and `listUnrecordedBundleWarnings`, and to assert on the files that the command writes in the tree. (#771)
+- Removes the `node:perf_hooks` import of `performance` from `runRdy.ts`, so that the module reads the global `performance` that Vitest fake timers replace, which stops `route.styleSelection.unit.test.ts` from failing when its two runs report different durations. (#777)
+- Adds a `runRdy` test that fakes only `performance`, advances the clock by 25 ms inside a check, and expects 25 as the `durationMs` of both the check and the report, which fails if `runRdy` measures time on the real clock again. (#777)
+- Moves the module-level helpers in `readyup`'s compile test files below their `describe` blocks and into an alphabetized `// region | Helpers` block. (#779)
+- Moves the readyup test suites that still built temporary directories with `mkdtempSync` onto `createTempTree` fixtures, and replaces their suite-wide `process.chdir` hooks with a `pointCwdAt` call scoped to each test that needs a different working directory. (#802)
+
+### ⚙️ Tooling
+
+- Makes `packages/readyup/bin/rdy.js` load `src/bin/rdy.ts` when that file exists, so that `rdy` in a checkout runs without a prior build, and points the root `build:post` and `ci:pre` hooks and readyup's `prepare` and `verify:kits` scripts at the wrapper instead of at the hard-coded source path. (#804)
+
 ## 0.45.1 — 2026-11-09
 
 ### 🐛 Bug fixes
