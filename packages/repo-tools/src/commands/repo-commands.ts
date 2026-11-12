@@ -80,7 +80,7 @@ const add = defineCommand({
 const DRY_RUN_FLAG = {
   type: 'boolean',
   short: 'n',
-  description: 'Report the moves and the remaining references, and change nothing',
+  description: 'Report the moves, their follow-ups, and the remaining references, and change nothing',
 } as const;
 
 const SEARCH_FLAG = {
@@ -93,7 +93,7 @@ const SEARCH_FLAG = {
 const applyMoves = defineCommand({
   summary: 'Move each clone that the registry records as moved to its new path',
   description:
-    "Moves, with its worktrees, each clone that is at one of its entry's formerPaths while the entry's path is absent from this machine, as move does, and does not write the registry. A former path counts only when it is a clone's root and, for an entry with a repo, its origin is that repo. Skips and reports an entry whose path and a former path both exist, whose former paths hold more than one clone, or whose path another entry also names. Then prints each remaining reference to the old paths, as move does. Run it on each machine after a move elsewhere; it does nothing when no clone needs moving.",
+    "Moves, with its worktrees, each clone that is at one of its entry's formerPaths while the entry's path is absent from this machine, as move does, follow-ups included, and does not write the registry. A former path counts only when it is a clone's root and, for an entry with a repo, its origin is that repo. Skips and reports an entry whose path and a former path both exist, whose former paths hold more than one clone, or whose path another entry also names. Then prints each remaining reference to the old paths, as move does. Run it on each machine after a move elsewhere; it does nothing when no clone needs moving.",
   flags: { dryRun: DRY_RUN_FLAG, file: FILE_FLAG, search: SEARCH_FLAG },
   run: ({ context, flags, stderr, stdout }) =>
     runApplyMoves(buildVerbRun(context, flags.file, stdout, stderr), {
@@ -154,7 +154,7 @@ const list = defineCommand({
 const move = defineCommand({
   summary: 'Move a registered clone with its worktrees, and record the move in the registry',
   description:
-    "Moves the clone of the entry named <name> to <path>, with each linked worktree beside it, whose name keeps its suffix under the new name (app.live becomes kit.live), repairs every worktree's link, sets the entry's path, and appends the former path to its formerPaths. A worktree elsewhere stays where it is and is repaired. Refuses, before moving anything, a destination that exists or is on another filesystem, a path that another entry names, and a registry that resolves into a live worktree. Then prints each remaining reference to the old paths in the tracked files of the registered clones on this machine, and under each --search path.",
+    "Moves the clone of the entry named <name> to <path>, with each linked worktree beside it, whose name keeps its suffix under the new name (app.live becomes kit.live), repairs every worktree's link, sets the entry's path, and appends the former path to its formerPaths. A worktree elsewhere stays where it is and is repaired. Then, for each moved worktree, including one inside the clone, runs direnv allow when the worktree has an .envrc and direnv is installed, and renames its Claude Code session directory, under $CLAUDE_CONFIG_DIR/projects or else ~/.claude/projects, to the name of its new path; and removes each former parent directory that the move leaves empty apart from a .DS_Store. Reports a failure of these follow-ups, or a session directory whose new name exists, on stderr without changing the exit status. Refuses, before moving anything, a destination that exists or is on another filesystem, a path that another entry names, and a registry that resolves into a live worktree. Then prints each remaining reference to the old paths in the tracked files of the registered clones on this machine, and under each --search path.",
   operands: [
     { name: 'name', description: 'The name of the registry entry to move' },
     { name: 'path', description: 'The new location of the clone' },
