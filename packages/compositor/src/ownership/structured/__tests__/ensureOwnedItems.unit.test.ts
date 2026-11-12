@@ -41,7 +41,7 @@ describe(ensureOwnedItems, () => {
       '',
     ].join('\n');
 
-    const merged = contentOf(ensureOwnedItems(content, YAML_SPEC, [{ name: 'relay-v2' }]));
+    const merged = requireContent(ensureOwnedItems(content, YAML_SPEC, [{ name: 'relay-v2' }]));
 
     expect(merged).toContain('# written by hand, do not remove');
     expect(merged).toContain('name: vendor-sync');
@@ -60,7 +60,7 @@ describe(ensureOwnedItems, () => {
       '',
     ].join('\n');
 
-    const merged = contentOf(ensureOwnedItems(content, YAML_SPEC, [{ name: 'relay-v2' }]));
+    const merged = requireContent(ensureOwnedItems(content, YAML_SPEC, [{ name: 'relay-v2' }]));
 
     expect(merged.indexOf('relay-v2')).toBeLessThan(merged.indexOf('vendor-sync'));
   });
@@ -76,19 +76,19 @@ describe(ensureOwnedItems, () => {
       '',
     ].join('\n');
 
-    const merged = contentOf(ensureOwnedItems(content, YAML_SPEC, [{ name: 'relay' }]));
+    const merged = requireContent(ensureOwnedItems(content, YAML_SPEC, [{ name: 'relay' }]));
 
     expect(merged.match(/name: relay/g)).toHaveLength(1);
   });
 
   it('stamps the sentinel onto an item written without one, so it reads back as owned', () => {
-    const merged = contentOf(ensureOwnedItems('eventHooks:\n  events: []\n', YAML_SPEC, [{ name: 'relay' }]));
+    const merged = requireContent(ensureOwnedItems('eventHooks:\n  events: []\n', YAML_SPEC, [{ name: 'relay' }]));
 
     expect(merged).toContain('source: compositor');
   });
 
   it('creates the collection and the structure above it when the host has neither', () => {
-    const merged = contentOf(ensureOwnedItems('other: 1\n', YAML_SPEC, [{ name: 'relay' }]));
+    const merged = requireContent(ensureOwnedItems('other: 1\n', YAML_SPEC, [{ name: 'relay' }]));
 
     expect(merged).toContain('other: 1');
     expect(merged).toContain('eventHooks:');
@@ -120,7 +120,7 @@ describe(ensureOwnedItems, () => {
   describe('over a JSON host', () => {
     it('installs through the same signature, keeping foreign items', () => {
       const content = '{\n  "hooks": [\n    { "command": "vendor-tool sync" }\n  ]\n}\n';
-      const merged = contentOf(ensureOwnedItems(content, JSON_SPEC, [{ command: 'relay --on=stop' }]));
+      const merged = requireContent(ensureOwnedItems(content, JSON_SPEC, [{ command: 'relay --on=stop' }]));
 
       expect(JSON.parse(merged)).toStrictEqual({
         hooks: [{ command: 'vendor-tool sync' }, { command: 'relay --on=stop', source: 'compositor' }],
@@ -129,7 +129,7 @@ describe(ensureOwnedItems, () => {
 
     it("writes the host back in the host's own indentation", () => {
       const content = '{\n    "hooks": [\n        { "command": "vendor-tool sync" }\n    ]\n}\n';
-      const merged = contentOf(ensureOwnedItems(content, JSON_SPEC, [{ command: 'relay' }]));
+      const merged = requireContent(ensureOwnedItems(content, JSON_SPEC, [{ command: 'relay' }]));
 
       expect(merged).toContain('\n    "hooks"');
       expect(merged.endsWith('\n')).toBe(true);
@@ -162,7 +162,7 @@ describe(ensureOwnedItems, () => {
     it('expands an item the host held inline, the indent unit and trailing newline being what survive', () => {
       const content = '{\n  "hooks": [\n    { "command": "vendor-tool sync" }\n  ]\n}\n';
 
-      expect(contentOf(ensureOwnedItems(content, JSON_SPEC, [{ command: 'relay' }]))).toBe(
+      expect(requireContent(ensureOwnedItems(content, JSON_SPEC, [{ command: 'relay' }]))).toBe(
         '{\n  "hooks": [\n    {\n      "command": "vendor-tool sync"\n    },\n' +
           '    {\n      "command": "relay",\n      "source": "compositor"\n    }\n  ]\n}\n',
       );
@@ -174,7 +174,7 @@ describe(ensureOwnedItems, () => {
       const content = '{\n  "hooks": []\n}\n';
       const item = { name: 'relay', commands: ['node relay.mjs --sentinel compositor'] };
 
-      expect(contentOf(ensureOwnedItems(content, UNWRITABLE_SPEC, [item]))).toContain('--sentinel compositor');
+      expect(requireContent(ensureOwnedItems(content, UNWRITABLE_SPEC, [item]))).toContain('--sentinel compositor');
     });
 
     it('refuses an item that does not, rather than writing one it could not find again', () => {
@@ -190,7 +190,7 @@ describe(ensureOwnedItems, () => {
 // region | Helpers
 
 /** Reads the content an outcome contains, failing the test when it blocked instead. */
-function contentOf(outcome: { content: string } | { blocked: { reason: string } }): string {
+function requireContent(outcome: { content: string } | { blocked: { reason: string } }): string {
   if ('blocked' in outcome) {
     throw new Error(`Expected content, but the host blocked: ${outcome.blocked.reason}`);
   }

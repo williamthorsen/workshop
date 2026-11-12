@@ -21,7 +21,7 @@ describe(assertRenderTargetsAreConsistent, () => {
   });
 
   it('reports two targets sharing an id', async () => {
-    await expect(violationsOf([CLAUDE_TARGET, CLAUDE_TARGET])).resolves.toStrictEqual([
+    await expect(collectViolations([CLAUDE_TARGET, CLAUDE_TARGET])).resolves.toStrictEqual([
       { path: 'targets', message: expect.stringContaining('"claude"') },
     ]);
   });
@@ -33,7 +33,7 @@ describe(assertRenderTargetsAreConsistent, () => {
       stages: [{ kind: 'tokens' }, { kind: 'tokens' }, { kind: 'links', pattern: '(a)(b)' }],
     };
 
-    expect((await violationsOf([broken])).map(({ path }) => path)).toStrictEqual([
+    expect((await collectViolations([broken])).map(({ path }) => path)).toStrictEqual([
       'targets[0].stages',
       'targets[0].deployments[0].kindId',
       'targets[0].stages[2].pattern',
@@ -49,7 +49,7 @@ describe(assertRenderTargetsAreConsistent, () => {
       stages: [{ kind: 'tokens' }, { kind: 'tokens' }, { kind: 'links', pattern: '(' }],
     });
 
-    expect((await violationsOf([faulty('claude'), faulty('codex')])).map(({ path }) => path)).toStrictEqual([
+    expect((await collectViolations([faulty('claude'), faulty('codex')])).map(({ path }) => path)).toStrictEqual([
       'targets[0].stages',
       'targets[0].deployments[1].host',
       'targets[0].ownedItems[0].host',
@@ -67,7 +67,7 @@ describe(assertRenderTargetsAreConsistent, () => {
 // region | Helpers
 
 /** Runs the assertion and reads back the violations it raised, failing the test if it raised none. */
-async function violationsOf(targets: ReadonlyArray<RenderTarget>): Promise<ReadonlyArray<RenderTargetViolation>> {
+async function collectViolations(targets: ReadonlyArray<RenderTarget>): Promise<ReadonlyArray<RenderTargetViolation>> {
   return (
     await captureError(RenderTargetConsistencyError, () => assertRenderTargetsAreConsistent(targets, SAMPLE_KINDS))
   ).violations;

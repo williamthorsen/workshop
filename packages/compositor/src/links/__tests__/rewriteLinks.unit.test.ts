@@ -14,31 +14,33 @@ describe(rewriteLinks, () => {
   it('rewrites a relative target to the absolute path it deploys at', () => {
     const result = rewrite(['See [the rubric](./rubric.md).']);
 
-    expect(lines(result)).toStrictEqual(['See [the rubric](~/.claude/skills/review/rubric.md).']);
+    expect(collectLines(result)).toStrictEqual(['See [the rubric](~/.claude/skills/review/rubric.md).']);
   });
 
   it("resolves a target that climbs into another kind's tree to where that kind deploys", () => {
     const result = rewrite(['See [the rulebook](../../rulebooks/consult-shell.md).']);
 
-    expect(lines(result)).toStrictEqual(['See [the rulebook](~/.claude/rulebooks/consult-shell.md).']);
+    expect(collectLines(result)).toStrictEqual(['See [the rulebook](~/.claude/rulebooks/consult-shell.md).']);
   });
 
   it('rewrites every link on a line to its own target', () => {
     const result = rewrite(['[a](./a.md) and [b](../lint/b.md)']);
 
-    expect(lines(result)).toStrictEqual(['[a](~/.claude/skills/review/a.md) and [b](~/.claude/skills/lint/b.md)']);
+    expect(collectLines(result)).toStrictEqual([
+      '[a](~/.claude/skills/review/a.md) and [b](~/.claude/skills/lint/b.md)',
+    ]);
   });
 
   it('replaces the target alone, leaving every other character on the line byte-identical', () => {
     const result = rewrite(['Cost [$& per **unit**](./price.md) — see $1.']);
 
-    expect(lines(result)).toStrictEqual(['Cost [$& per **unit**](~/.claude/skills/review/price.md) — see $1.']);
+    expect(collectLines(result)).toStrictEqual(['Cost [$& per **unit**](~/.claude/skills/review/price.md) — see $1.']);
   });
 
   it('keeps the fragment on a target it resolves', () => {
     const result = rewrite(['[x](./rubric.md#scoring)']);
 
-    expect(lines(result)).toStrictEqual(['[x](~/.claude/skills/review/rubric.md#scoring)']);
+    expect(collectLines(result)).toStrictEqual(['[x](~/.claude/skills/review/rubric.md#scoring)']);
   });
 
   it.each([
@@ -51,45 +53,45 @@ describe(rewriteLinks, () => {
   ])('leaves %s untouched', (_label, target) => {
     const result = rewrite([`[x](${target})`]);
 
-    expect(lines(result)).toStrictEqual([`[x](${target})`]);
+    expect(collectLines(result)).toStrictEqual([`[x](${target})`]);
     expect(result.diagnostics).toStrictEqual([]);
   });
 
   it('matches no link across a line boundary, whatever the declared grammar admits', () => {
     const result = rewrite(['Text with a stray [', '](./rubric.md)']);
 
-    expect(lines(result)).toStrictEqual(['Text with a stray [', '](./rubric.md)']);
+    expect(collectLines(result)).toStrictEqual(['Text with a stray [', '](./rubric.md)']);
   });
 
   it('reads the grammar from the declaration, so a non-Markdown convention needs no engine change', () => {
     const result = rewrite(['see: (./rubric.md)'], { pattern: String.raw`see: \(([^)]+)\)` });
 
-    expect(lines(result)).toStrictEqual(['see: (~/.claude/skills/review/rubric.md)']);
+    expect(collectLines(result)).toStrictEqual(['see: (~/.claude/skills/review/rubric.md)']);
   });
 
   it('resolves against a destination root that is a plain path rather than a home-relative one', () => {
     const result = rewrite(['[x](./rubric.md)'], { targetRoot: '/srv/out' });
 
-    expect(lines(result)).toStrictEqual(['[x](/srv/out/skills/review/rubric.md)']);
+    expect(collectLines(result)).toStrictEqual(['[x](/srv/out/skills/review/rubric.md)']);
   });
 
   it('passes a home-relative target through whatever the root is, since it names the home either way', () => {
     const result = rewrite(['[x](~/notes/y.md)'], { targetRoot: '/srv/out' });
 
-    expect(lines(result)).toStrictEqual(['[x](~/notes/y.md)']);
+    expect(collectLines(result)).toStrictEqual(['[x](~/notes/y.md)']);
   });
 
   it('resolves against the destination root for a file sitting directly at that root', () => {
     const result = rewrite(['[x](./skills/review/SKILL.md)'], { filePath: 'CLAUDE.md' });
 
-    expect(lines(result)).toStrictEqual(['[x](~/.claude/skills/review/SKILL.md)']);
+    expect(collectLines(result)).toStrictEqual(['[x](~/.claude/skills/review/SKILL.md)']);
   });
 
   describe('a target climbing above the destination root', () => {
     it('stays in the body as written', () => {
       const result = rewrite(['[x](../../../elsewhere/x.md)']);
 
-      expect(lines(result)).toStrictEqual(['[x](../../../elsewhere/x.md)']);
+      expect(collectLines(result)).toStrictEqual(['[x](../../../elsewhere/x.md)']);
     });
 
     it('comes back as a diagnostic naming the host and the target', () => {
@@ -142,7 +144,7 @@ const baseInput: RewriteLinksInput = {
 };
 
 /** Reads back the rendered lines, which every resolution assertion is stated in terms of. */
-function lines(result: LinkRewrite): ReadonlyArray<string> {
+function collectLines(result: LinkRewrite): ReadonlyArray<string> {
   return result.segments.flatMap((segment) => segment.lines);
 }
 

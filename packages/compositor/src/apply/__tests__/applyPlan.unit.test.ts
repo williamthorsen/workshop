@@ -383,8 +383,8 @@ describe(applyPlan, () => {
 
       const outcome = await applyPlan(plan, { baseDir: targetRoot });
 
-      expect(kindAt(plan, 'CLAUDE.md')).toBe('region');
-      expect(kindAt(plan, 'settings.json')).toBe('entries');
+      expect(requireKind(plan, 'CLAUDE.md')).toBe('region');
+      expect(requireKind(plan, 'settings.json')).toBe('entries');
       expect(outcome.files.map(({ action }) => action)).toStrictEqual(outcome.files.map(() => 'written'));
 
       const second = await applyPlan(plan, { baseDir: targetRoot });
@@ -470,7 +470,7 @@ function findAction(files: ReadonlyArray<{ path: string; action: string }>, file
 }
 
 /** Reads the ownership kind a plan records at `filePath`, failing the test when it plans nothing there. */
-function kindAt(plan: Plan, filePath: string): string {
+function requireKind(plan: Plan, filePath: string): string {
   const file = plan.files.find((entry) => entry.path === filePath);
   if (file === undefined) {
     throw new Error(`The plan has no file at "${filePath}".`);

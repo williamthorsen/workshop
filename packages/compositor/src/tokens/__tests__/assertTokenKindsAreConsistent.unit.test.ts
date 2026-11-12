@@ -28,7 +28,7 @@ describe(assertTokenKindsAreConsistent, () => {
   it('if a pattern does not compile, faults it', async () => {
     const broken: TokenKind = { ...mapping, pattern: '([a-z' };
 
-    await expect(violationsOf([broken])).resolves.toStrictEqual([
+    await expect(collectViolations([broken])).resolves.toStrictEqual([
       { path: 'tokenKinds[0].pattern', message: expect.stringContaining('regular expression') },
     ]);
   });
@@ -36,7 +36,7 @@ describe(assertTokenKindsAreConsistent, () => {
   it('if a pattern captures nothing, faults it, since a match would name no token', async () => {
     const uncaptured: TokenKind = { ...mapping, pattern: String.raw`\{tool:\w+\}` };
 
-    await expect(violationsOf([uncaptured])).resolves.toStrictEqual([
+    await expect(collectViolations([uncaptured])).resolves.toStrictEqual([
       { path: 'tokenKinds[0].pattern', message: expect.stringContaining('0 groups') },
     ]);
   });
@@ -44,7 +44,7 @@ describe(assertTokenKindsAreConsistent, () => {
   it('if a pattern captures several groups, faults it, since none of them is the name', async () => {
     const overcaptured: TokenKind = { ...mapping, pattern: String.raw`\{(tool):(\w+)\}` };
 
-    await expect(violationsOf([overcaptured])).resolves.toStrictEqual([
+    await expect(collectViolations([overcaptured])).resolves.toStrictEqual([
       { path: 'tokenKinds[0].pattern', message: expect.stringContaining('2 groups') },
     ]);
   });
@@ -52,22 +52,22 @@ describe(assertTokenKindsAreConsistent, () => {
   it('if a referent names an artifact kind no descriptor declares, faults it', async () => {
     const dangling: TokenKind = { ...referent, artifactKindId: 'rulebook' };
 
-    await expect(violationsOf([dangling])).resolves.toStrictEqual([
+    await expect(collectViolations([dangling])).resolves.toStrictEqual([
       { path: 'tokenKinds[0].artifactKindId', message: expect.stringContaining('"rulebook"') },
     ]);
   });
 
   it('if one id is declared twice, faults the repeat, which would make every mapping against it ambiguous', async () => {
-    await expect(violationsOf([mapping, { ...mapping, pattern: String.raw`\[tool:(\w+)\]` }])).resolves.toStrictEqual([
-      { path: 'tokenKinds', message: expect.stringContaining('"tool"') },
-    ]);
+    await expect(
+      collectViolations([mapping, { ...mapping, pattern: String.raw`\[tool:(\w+)\]` }]),
+    ).resolves.toStrictEqual([{ path: 'tokenKinds', message: expect.stringContaining('"tool"') }]);
   });
 
   it('reports every fault in one run', async () => {
     const broken: TokenKind = { ...mapping, pattern: '([a-z' };
     const dangling: TokenKind = { ...referent, artifactKindId: 'rulebook' };
 
-    expect((await violationsOf([broken, dangling])).map(({ path }) => path)).toStrictEqual([
+    expect((await collectViolations([broken, dangling])).map(({ path }) => path)).toStrictEqual([
       'tokenKinds[0].pattern',
       'tokenKinds[1].artifactKindId',
     ]);
@@ -77,7 +77,7 @@ describe(assertTokenKindsAreConsistent, () => {
 // region | Helpers
 
 /** Runs the assertion and returns the violations it raised, failing the test when it raised none. */
-async function violationsOf(
+async function collectViolations(
   tokenKinds: ReadonlyArray<TokenKind>,
 ): Promise<ReadonlyArray<{ path: string; message: string }>> {
   return (await captureError(TokenKindConsistencyError, () => assertTokenKindsAreConsistent(tokenKinds, kinds)))

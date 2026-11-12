@@ -16,25 +16,25 @@ describe(classifyArtifacts, () => {
   it('reads an artifact added at every destination it owns as added', () => {
     const table = classify({ verdicts: new Map([['skill:review', ['added', 'added']]]) });
 
-    expect(statusOf(table, 'skill:review')).toBe('added');
+    expect(findStatus(table, 'skill:review')).toBe('added');
   });
 
   it('reads an artifact unchanged at every destination it owns as unchanged', () => {
     const table = classify({ verdicts: new Map([['skill:review', ['unchanged', 'unchanged']]]) });
 
-    expect(statusOf(table, 'skill:review')).toBe('unchanged');
+    expect(findStatus(table, 'skill:review')).toBe('unchanged');
   });
 
   it('reads an artifact added at one destination and unchanged at another as changed', () => {
     const table = classify({ verdicts: new Map([['skill:review', ['added', 'unchanged']]]) });
 
-    expect(statusOf(table, 'skill:review')).toBe('changed');
+    expect(findStatus(table, 'skill:review')).toBe('changed');
   });
 
   it('reads an artifact that deploys nowhere as unchanged, nothing recording where it previously stood', () => {
     const table = classify({ verdicts: new Map() });
 
-    expect(statusOf(table, 'collection:core')).toBe('unchanged');
+    expect(findStatus(table, 'collection:core')).toBe('unchanged');
   });
 
   it('describes a departing artifact by the kind and slug its claim recovered', () => {
@@ -146,7 +146,7 @@ function classify(overrides: Partial<ClassifyArtifactsInput> = {}): Array<Artifa
 }
 
 /** Reads one artifact's status out of a classified table. */
-function statusOf(table: ReadonlyArray<ArtifactEntry>, id: ArtifactId): string | undefined {
+function findStatus(table: ReadonlyArray<ArtifactEntry>, id: ArtifactId): string | undefined {
   return table.find((artifact) => artifact.id === id)?.status;
 }
 

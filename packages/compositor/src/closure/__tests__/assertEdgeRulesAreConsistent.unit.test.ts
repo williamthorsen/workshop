@@ -27,26 +27,26 @@ describe(assertEdgeRulesAreConsistent, () => {
   });
 
   it('if a rule is keyed to a kind no descriptor declares, faults it, no artifact being read for it', async () => {
-    await expect(violationsOf([{ ...declared, kindId: 'rulebook' }])).resolves.toStrictEqual([
+    await expect(collectViolations([{ ...declared, kindId: 'rulebook' }])).resolves.toStrictEqual([
       { path: 'rules[0].kindId', message: expect.stringContaining('"rulebook"') },
     ]);
   });
 
   it('if a flat rule targets a kind no descriptor declares, faults it', async () => {
-    await expect(violationsOf([{ ...injected, targetKindId: 'rulebook' }])).resolves.toStrictEqual([
+    await expect(collectViolations([{ ...injected, targetKindId: 'rulebook' }])).resolves.toStrictEqual([
       { path: 'rules[0].targetKindId', message: expect.stringContaining('"rulebook"') },
     ]);
   });
 
   it('if two rules claim one key of one kind, faults the repeat, whichever loses never being read', async () => {
-    await expect(violationsOf([declared, { ...declared, via: 'member' }])).resolves.toStrictEqual([
+    await expect(collectViolations([declared, { ...declared, via: 'member' }])).resolves.toStrictEqual([
       { path: 'rules', message: expect.stringMatching(/"dependencies".*"skill"/) },
     ]);
   });
 
   it('reports a key claimed three times once, the fault being the claim rather than each repeat', async () => {
     await expect(
-      violationsOf([declared, { ...declared, via: 'member' }, { ...declared, via: 'injected' }]),
+      collectViolations([declared, { ...declared, via: 'member' }, { ...declared, via: 'injected' }]),
     ).resolves.toHaveLength(1);
   });
 
@@ -57,7 +57,7 @@ describe(assertEdgeRulesAreConsistent, () => {
   });
 
   it('if a declaration key names a kind no descriptor declares, faults it', async () => {
-    await expect(violationsOf([declared], { rulebooks: 'rulebook' })).resolves.toStrictEqual([
+    await expect(collectViolations([declared], { rulebooks: 'rulebook' })).resolves.toStrictEqual([
       { path: 'kindKeys.rulebooks', message: expect.stringContaining('"rulebook"') },
     ]);
   });
@@ -65,7 +65,7 @@ describe(assertEdgeRulesAreConsistent, () => {
   it('reports every fault in one run', async () => {
     const dangling: EdgeRule = { ...injected, targetKindId: 'rulebook' };
 
-    expect((await violationsOf([declared, declared, dangling])).map(({ path }) => path)).toStrictEqual([
+    expect((await collectViolations([declared, declared, dangling])).map(({ path }) => path)).toStrictEqual([
       'rules',
       'rules[2].targetKindId',
     ]);
@@ -75,7 +75,7 @@ describe(assertEdgeRulesAreConsistent, () => {
 // region | Helpers
 
 /** Runs the assertion and returns the violations it raised, failing the test when it raised none. */
-async function violationsOf(
+async function collectViolations(
   rules: ReadonlyArray<EdgeRule>,
   keys: KindKeys = kindKeys,
 ): Promise<ReadonlyArray<Violation>> {

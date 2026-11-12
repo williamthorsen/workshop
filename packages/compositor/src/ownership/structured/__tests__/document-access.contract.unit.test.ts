@@ -86,7 +86,7 @@ describe.each(['json', 'yaml'] as const)('DocumentAccess over a %s host', (forma
   // write, where one format built the structure a read had called absent and the other threw reaching for it.
   it.each(WRITABLE)('ensures the owned item into $name', (shape: HostShape) => {
     const spec: OwnedItemsSpec = { format, collection: COLLECTION, sentinel: SENTINEL };
-    const ensured = contentOf(ensureOwnedItems(shape[format], spec, [OWNED]));
+    const ensured = requireContent(ensureOwnedItems(shape[format], spec, [OWNED]));
 
     expect(readOwnedItems(ensured, spec)).toStrictEqual({ items: [{ ...OWNED, source: SENTINEL.value }] });
   });
@@ -100,14 +100,6 @@ describe.each(['json', 'yaml'] as const)('DocumentAccess over a %s host', (forma
 
 // region | Helpers
 
-/** Reads the content an outcome contains, failing the test when it blocked instead. */
-function contentOf(outcome: { content: string } | { blocked: { reason: string } }): string {
-  if ('blocked' in outcome) {
-    throw new Error(`Expected content, but the host blocked: ${outcome.blocked.reason}`);
-  }
-  return outcome.content;
-}
-
 /** Opens a fixture for the table above, which supplies only hosts that parse. */
 function open(content: string, format: OwnedItemsSpec['format']): DocumentAccess {
   const opened = openDocument(content, format);
@@ -115,6 +107,14 @@ function open(content: string, format: OwnedItemsSpec['format']): DocumentAccess
     throw new Error(`Expected the fixture to parse, but: ${opened.reason}`);
   }
   return opened.document;
+}
+
+/** Reads the content an outcome contains, failing the test when it blocked instead. */
+function requireContent(outcome: { content: string } | { blocked: { reason: string } }): string {
+  if ('blocked' in outcome) {
+    throw new Error(`Expected content, but the host blocked: ${outcome.blocked.reason}`);
+  }
+  return outcome.content;
 }
 
 /** Reduces a lookup to the fact the contract pins: which of the three states it reached, and how many items it found. */

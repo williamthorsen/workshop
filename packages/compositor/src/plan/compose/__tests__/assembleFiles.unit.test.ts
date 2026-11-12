@@ -52,7 +52,7 @@ describe(assembleFiles, () => {
       buildTargets: buildOwningTarget,
     });
 
-    expect(fileAt(assembly, 'settings.json')).toMatchObject({
+    expect(requireFile(assembly, 'settings.json')).toMatchObject({
       status: 'changed',
       ownership: { kind: 'entries', format: 'json' },
       contributors: { artifacts: [], partials: [] },
@@ -62,7 +62,7 @@ describe(assembleFiles, () => {
   it('copies an asset byte for byte, no target transforming what an artifact ships alongside', async () => {
     const { assembly, blobs } = await assemble();
 
-    expect(bodyOf(blobs, assembly, 'skills/review/diagram.png')).toStrictEqual({
+    expect(requireBody(blobs, assembly, 'skills/review/diagram.png')).toStrictEqual({
       encoding: 'base64',
       data: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).toString('base64'),
     });
@@ -70,7 +70,7 @@ describe(assembleFiles, () => {
 
   it('aggregates every routed artifact into the host region, in artifact-id order', async () => {
     const { assembly, blobs } = await assemble();
-    const host = bodyOf(blobs, assembly, HOST_PATH);
+    const host = requireBody(blobs, assembly, HOST_PATH);
 
     expect(host.data).toBe(
       [
@@ -105,12 +105,12 @@ describe(assembleFiles, () => {
     const stale = { ...writeBack(first), 'skills/lint/SKILL.md': '# Stale lint\n' };
     const { assembly } = await assemble({ targetFiles: stale });
 
-    expect(statusOf(assembly, 'skills/lint/SKILL.md')).toBe('changed');
+    expect(findStatus(assembly, 'skills/lint/SKILL.md')).toBe('changed');
   });
 
   it('plans the removal of a destination nothing routes to any more', async () => {
     const { assembly } = await assemble({ targetFiles: { 'skills/retired/SKILL.md': '# Retired\n' } });
-    const removed = fileAt(assembly, 'skills/retired/SKILL.md');
+    const removed = requireFile(assembly, 'skills/retired/SKILL.md');
 
     expect(removed.status).toBe('removed');
     expect(removed.planned).toBeUndefined();
@@ -128,7 +128,7 @@ describe(assembleFiles, () => {
       sourceFiles: brokenSkill,
       targetFiles: { 'skills/review/SKILL.md': '# Old review\n' },
     });
-    const blocked = fileAt(assembly, 'skills/review/SKILL.md');
+    const blocked = requireFile(assembly, 'skills/review/SKILL.md');
 
     expect(blocked.status).toBe('unchanged');
     expect(blocked.current).toStrictEqual(blocked.planned);
@@ -147,7 +147,7 @@ describe(assembleFiles, () => {
       targetFiles: { 'skills/review/SKILL.md': '# Old review\n', 'skills/review/diagram.png': 'stale' },
     });
 
-    expect(fileAt(assembly, 'skills/review/diagram.png').blocked?.reason).toMatch(/could not be rendered/);
+    expect(requireFile(assembly, 'skills/review/diagram.png').blocked?.reason).toMatch(/could not be rendered/);
   });
 
   it('leaves a destination it could not render unswept, a broken directive proposing no deletion', async () => {
@@ -156,13 +156,13 @@ describe(assembleFiles, () => {
       targetFiles: { 'skills/review/SKILL.md': '# Old review\n' },
     });
 
-    expect(statusOf(assembly, 'skills/review/SKILL.md')).not.toBe('removed');
+    expect(findStatus(assembly, 'skills/review/SKILL.md')).not.toBe('removed');
   });
 
   it('blocks a host whose markers are damaged, which is a fact about the destination', async () => {
     const damaged = `${REGION_MARKERS.open}\nstray\n${REGION_MARKERS.open}\nheld\n${REGION_MARKERS.close}\n`;
     const { assembly } = await assemble({ targetFiles: { [HOST_PATH]: damaged } });
-    const host = fileAt(assembly, HOST_PATH);
+    const host = requireFile(assembly, HOST_PATH);
 
     expect(host.status).toBe('unchanged');
     expect(host.blocked?.reason).toMatch(/open marker/);
@@ -173,15 +173,15 @@ describe(assembleFiles, () => {
     const first = await assemble();
     const { assembly } = await assemble({ sourceFiles: broken, targetFiles: writeBack(first) });
 
-    expect(fileAt(assembly, HOST_PATH).blocked?.reason).toMatch(/"rulebook:naming" could not be rendered/);
+    expect(requireFile(assembly, HOST_PATH).blocked?.reason).toMatch(/"rulebook:naming" could not be rendered/);
   });
 
   it('plans a host holding a region that nothing routes to any more without one', async () => {
     const first = await assemble();
     const { assembly, blobs } = await assemble({ select: {}, targetFiles: writeBack(first) });
 
-    expect(statusOf(assembly, HOST_PATH)).toBe('changed');
-    expect(bodyOf(blobs, assembly, HOST_PATH).data).not.toContain(REGION_MARKERS.open);
+    expect(findStatus(assembly, HOST_PATH)).toBe('changed');
+    expect(requireBody(blobs, assembly, HOST_PATH).data).not.toContain(REGION_MARKERS.open);
   });
 
   it('plans no host at all where the engine has neither content there nor a region to take away', async () => {
@@ -214,7 +214,7 @@ describe(assembleFiles, () => {
       buildTargets: buildOverlappingTargets,
       targetFiles: { 'skills/consult-naming/SKILL.md': '# Naming\n' },
     });
-    const ambiguous = fileAt(assembly, 'skills/consult-naming/SKILL.md');
+    const ambiguous = requireFile(assembly, 'skills/consult-naming/SKILL.md');
 
     expect(ambiguous.blocked?.reason).toMatch(/undecidable from shape/);
     expect(ambiguous.contributors.artifacts).toStrictEqual([{ artifactId: 'rulebook:naming' }]);
@@ -243,7 +243,7 @@ describe(assembleFiles, () => {
       buildTargets: buildOverlappingTargets,
       targetFiles: { 'skills/consult-naming/SKILL.md': '# Held\n' },
     });
-    const contested = fileAt(assembly, 'skills/consult-naming/SKILL.md');
+    const contested = requireFile(assembly, 'skills/consult-naming/SKILL.md');
 
     expect(assembly.files.filter(({ path }) => path === 'skills/consult-naming/SKILL.md')).toHaveLength(1);
     expect(contested.status).toBe('unchanged');
@@ -295,7 +295,7 @@ describe(assembleFiles, () => {
       buildTargets: (targetRoot) => [buildInlayingTarget(targetRoot)],
     });
 
-    expect(bodyOf(blobs, assembly, 'skills/review/SKILL.md').data).toBe(
+    expect(requireBody(blobs, assembly, 'skills/review/SKILL.md').data).toBe(
       [
         '# Review',
         '',
@@ -319,7 +319,7 @@ describe(assembleFiles, () => {
       buildTargets: (targetRoot) => [buildInlayingTarget(targetRoot)],
     });
 
-    expect(fileAt(assembly, 'skills/review/SKILL.md').contributors.artifacts).toStrictEqual([
+    expect(requireFile(assembly, 'skills/review/SKILL.md').contributors.artifacts).toStrictEqual([
       { artifactId: 'skill:review' },
       {
         artifactId: 'rulebook:naming',
@@ -338,7 +338,7 @@ describe(assembleFiles, () => {
       buildTargets: (targetRoot) => [buildInlayingTarget(targetRoot)],
     });
 
-    const host = bodyOf(blobs, assembly, HOST_PATH);
+    const host = requireBody(blobs, assembly, HOST_PATH);
 
     expect(host.data).toBe(
       [
@@ -355,7 +355,7 @@ describe(assembleFiles, () => {
         '',
       ].join('\n'),
     );
-    expect(fileAt(assembly, HOST_PATH).contributors.artifacts.map(({ artifactId }) => artifactId)).toStrictEqual([
+    expect(requireFile(assembly, HOST_PATH).contributors.artifacts.map(({ artifactId }) => artifactId)).toStrictEqual([
       'rulebook:naming',
       'skill:lint',
     ]);
@@ -372,7 +372,7 @@ describe(assembleFiles, () => {
       buildTargets: (targetRoot) => [buildInlayingTarget(targetRoot)],
     });
 
-    expect(fileAt(assembly, HOST_PATH).contributors.artifacts).toStrictEqual([
+    expect(requireFile(assembly, HOST_PATH).contributors.artifacts).toStrictEqual([
       {
         artifactId: 'rulebook:naming',
         marker: { open: '<!-- rulebook:naming -->', close: '<!-- /rulebook:naming -->' },
@@ -393,10 +393,10 @@ describe(assembleFiles, () => {
       buildTargets: (targetRoot) => [buildInlayingTarget(targetRoot)],
     });
 
-    expect(fileAt(assembly, 'skills/review/SKILL.md').blocked?.reason).toContain(
+    expect(requireFile(assembly, 'skills/review/SKILL.md').blocked?.reason).toContain(
       '"rulebook:naming" declares an inlay of its own',
     );
-    expect(fileAt(assembly, 'skills/lint/SKILL.md')).toHaveProperty('status', 'added');
+    expect(requireFile(assembly, 'skills/lint/SKILL.md')).toHaveProperty('status', 'added');
   });
 
   it('gives an artifact deploying nowhere no verdict, nothing recording where it previously stood', async () => {
@@ -426,9 +426,14 @@ async function assemble(options?: CaptureCompositionOptions): Promise<{ assembly
   return { assembly, blobs };
 }
 
+/** Reads one destination's status. */
+function findStatus(assembly: FileAssembly, path: string): string | undefined {
+  return assembly.files.find((entry) => entry.path === path)?.status;
+}
+
 /** Reads the body planned for one destination out of the store. */
-function bodyOf(blobs: BlobStore, assembly: FileAssembly, path: string): Blob {
-  const hash = fileAt(assembly, path).planned?.hash;
+function requireBody(blobs: BlobStore, assembly: FileAssembly, path: string): Blob {
+  const hash = requireFile(assembly, path).planned?.hash;
   const blob = hash === undefined ? undefined : blobs.toTable()[hash];
   if (blob === undefined) {
     throw new Error(`The assembly plans no body for "${path}".`);
@@ -437,17 +442,12 @@ function bodyOf(blobs: BlobStore, assembly: FileAssembly, path: string): Blob {
 }
 
 /** Reads one destination's entry, failing where the assembly plans none. */
-function fileAt(assembly: FileAssembly, path: string): FileEntry {
+function requireFile(assembly: FileAssembly, path: string): FileEntry {
   const file = assembly.files.find((entry) => entry.path === path);
   if (file === undefined) {
     throw new Error(`The assembly plans no file at "${path}".`);
   }
   return file;
-}
-
-/** Reads one destination's status. */
-function statusOf(assembly: FileAssembly, path: string): string | undefined {
-  return assembly.files.find((entry) => entry.path === path)?.status;
 }
 
 /** Renders an assembly's planned bodies as the target tree a later capture reads, which is what applying it would. */

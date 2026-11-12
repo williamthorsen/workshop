@@ -26,7 +26,7 @@ describe(removeOwnedItems, () => {
       '',
     ].join('\n');
 
-    const stripped = contentOf(removeOwnedItems(content, YAML_SPEC));
+    const stripped = requireContent(removeOwnedItems(content, YAML_SPEC));
 
     expect(stripped).toContain('name: vendor-sync');
     expect(stripped).not.toContain('source: compositor');
@@ -35,12 +35,12 @@ describe(removeOwnedItems, () => {
   it('prunes the structure the deletion emptied, all the way up', () => {
     const content = 'eventHooks:\n  events:\n    - name: relay\n      source: compositor\n';
 
-    expect(contentOf(removeOwnedItems(content, YAML_SPEC))).not.toContain('eventHooks');
+    expect(requireContent(removeOwnedItems(content, YAML_SPEC))).not.toContain('eventHooks');
   });
 
   it('keeps an ancestor that still has other keys', () => {
     const content = 'eventHooks:\n  logFile: hooks.log\n  events:\n    - name: relay\n      source: compositor\n';
-    const stripped = contentOf(removeOwnedItems(content, YAML_SPEC));
+    const stripped = requireContent(removeOwnedItems(content, YAML_SPEC));
 
     expect(stripped).toContain('logFile: hooks.log');
     expect(stripped).not.toContain('events:');
@@ -63,14 +63,14 @@ describe(removeOwnedItems, () => {
   it('strips a JSON host through the same signature, pruning the emptied key', () => {
     const content = '{\n  "hooks": [\n    { "command": "relay", "source": "compositor" }\n  ]\n}\n';
 
-    expect(JSON.parse(contentOf(removeOwnedItems(content, JSON_SPEC)))).toStrictEqual({});
+    expect(JSON.parse(requireContent(removeOwnedItems(content, JSON_SPEC)))).toStrictEqual({});
   });
 });
 
 // region | Helpers
 
 /** Reads the content an outcome contains, failing the test when it blocked instead. */
-function contentOf(outcome: { content: string } | { blocked: { reason: string } }): string {
+function requireContent(outcome: { content: string } | { blocked: { reason: string } }): string {
   if ('blocked' in outcome) {
     throw new Error(`Expected content, but the host blocked: ${outcome.blocked.reason}`);
   }

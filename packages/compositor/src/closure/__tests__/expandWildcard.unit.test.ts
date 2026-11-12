@@ -22,22 +22,26 @@ const emittingKindIds = catalog.kinds.filter((kind) => kind.emitsFiles).map(({ i
 
 describe(expandWildcard, () => {
   it('names every emitting artifact the declaring source contains, in kind then catalog order', () => {
-    expect(expandWildcard(entryFor('collection:core'), index, emittingKindIds)).toStrictEqual([
+    expect(expandWildcard(requireCatalogEntry('collection:core'), index, emittingKindIds)).toStrictEqual([
       'skill:review',
       'subagent:auditor',
     ]);
   });
 
   it('names no aggregate, so an aggregate of everything does not take in its siblings', () => {
-    expect(expandWildcard(entryFor('collection:core'), index, emittingKindIds)).not.toContain('collection:extra');
+    expect(expandWildcard(requireCatalogEntry('collection:core'), index, emittingKindIds)).not.toContain(
+      'collection:extra',
+    );
   });
 
   it('names an artifact a higher-precedence source shadows, shadowing settling the copy rather than the set', () => {
-    expect(expandWildcard(entryFor('skill:lint'), index, emittingKindIds)).toStrictEqual(['skill:review']);
+    expect(expandWildcard(requireCatalogEntry('skill:lint'), index, emittingKindIds)).toStrictEqual(['skill:review']);
   });
 
   it('excludes the declaring artifact, which would otherwise close a cycle on itself', () => {
-    expect(expandWildcard(entryFor('skill:review'), index, emittingKindIds)).toStrictEqual(['subagent:auditor']);
+    expect(expandWildcard(requireCatalogEntry('skill:review'), index, emittingKindIds)).toStrictEqual([
+      'subagent:auditor',
+    ]);
   });
 
   it('names no artifact when the declaring source contains nothing else that emits', () => {
@@ -54,7 +58,7 @@ describe(expandWildcard, () => {
 // region | Helpers
 
 /** Reads the catalog entry with `id`, failing the test when the fixture contains none. */
-function entryFor(id: string): CatalogEntry {
+function requireCatalogEntry(id: string): CatalogEntry {
   const entry = catalog.entries.find((candidate) => candidate.id === id);
   if (entry === undefined) {
     throw new Error(`Fixture has no entry "${id}".`);
