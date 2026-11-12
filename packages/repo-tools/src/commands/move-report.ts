@@ -26,16 +26,21 @@ export function printMove(run: VerbRun, move: Move, isDryRun: boolean): void {
 
 /**
  * Prints each reference to the old paths in the tracked files of the registered clones present on this machine and
- * under the search paths, one per line, and reports on stderr each clone or path that could not be searched.
+ * under the search paths, one per line, and reports on stderr each clone or path that could not be searched. An entry
+ * in `locations` is searched at the directory that it maps to, in place of its `path`.
  */
 export function printReferences(
   run: VerbRun,
   oldPaths: readonly string[],
   entries: readonly RegistryEntry[],
   searchPaths: readonly string[],
+  locations: ReadonlyMap<RegistryEntry, string> = new Map(),
 ): void {
   const clones = entries
-    .map((entry) => ({ dir: expandTilde(entry.path ?? '', run.home), label: formatEntryName(entry) }))
+    .map((entry) => ({
+      dir: locations.get(entry) ?? expandTilde(entry.path ?? '', run.home),
+      label: formatEntryName(entry),
+    }))
     .filter((clone) => clone.dir !== '' && run.adapters.isDirectory(clone.dir));
   const report = findReferences(oldPaths, clones, searchPaths, run.home);
   for (const problem of report.problems) run.stderr(`${PROG}: ${problem}`);

@@ -62,6 +62,8 @@ export interface CloneAdapters {
   readFile: (file: string) => string;
   readOriginUrl: (cloneDir: string) => string | undefined;
   readCloneRoot: (dir: string) => string | undefined;
+  /** Returns a path with every symlink in it resolved, or the path unchanged when nothing exists at it. */
+  resolvePath: (target: string) => string;
   /** Renames a path, returning the reason for a failure. */
   renamePath: (from: string, to: string) => string | undefined;
   repairWorktrees: (primary: string, worktreePaths: readonly string[]) => string | undefined;

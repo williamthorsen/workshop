@@ -168,6 +168,26 @@ describe('REPO_COMMANDS with git', () => {
       );
     });
 
+    it('moves a clone whose registry path passes through a symlink, with its sibling worktree', async () => {
+      using home = createTempTree({ 'disk/oss/app/README.md': '' }, { prefix: 'repo-tools-' });
+      const homeDir = fs.realpathSync(home.dir);
+      fs.mkdirSync(`${homeDir}/repos`);
+      fs.symlinkSync(`${homeDir}/disk/oss`, `${homeDir}/repos/oss`);
+      initWithCommit(`${homeDir}/repos/oss/app`);
+      git(`${homeDir}/repos/oss/app`, 'worktree', 'add', '--quiet', '-b', 'live', `${homeDir}/repos/oss/app.live`);
+      const registryFile = writeRegistry(homeDir, MOVE_REGISTRY);
+
+      const result = await runCaptured(['move', 'app', '~/repos/tools/kit', '--file', registryFile], {
+        env: { HOME: homeDir },
+      });
+      expect(result.stdout).toBe('~/disk/oss/app -> ~/repos/tools/kit\n~/disk/oss/app.live -> ~/repos/tools/kit.live');
+      expect(result.status).toBe(0);
+      expect(git(`${homeDir}/repos/tools/kit.live`, 'status', '--short')).toBe('');
+      expect(fs.readFileSync(registryFile, 'utf8')).toContain(
+        'path: ~/repos/tools/kit\n    formerPaths: [~/repos/oss/app]\n',
+      );
+    });
+
     it('changes nothing under --dry-run', async () => {
       using home = createTempTree(
         { 'repos/oss/app/README.md': '', 'repos/notes/README.md': '' },
@@ -229,6 +249,27 @@ describe('apply-moves with git', () => {
 
     const second = await runCaptured(['apply-moves', '--file', registryFile], { env: { HOME: homeDir } });
     expect(second).toStrictEqual({ status: 0, stderr: 'thor-repo: nothing to move', stdout: '' });
+  });
+
+  it('reports under --dry-run the references in the clone that it would move', async () => {
+    using home = createTempTree(
+      { 'repos/oss/app/README.md': 'Clone at ~/repos/oss/app.\n' },
+      { prefix: 'repo-tools-' },
+    );
+    const homeDir = fs.realpathSync(home.dir);
+    initWithCommit(`${homeDir}/repos/oss/app`);
+    git(`${homeDir}/repos/oss/app`, 'remote', 'add', 'origin', 'git@github.com:owner/app.git');
+    const registryFile = writeRegistry(
+      homeDir,
+      MOVE_REGISTRY.replace('path: ~/repos/oss/app\n', 'path: ~/repos/tools/kit\n    formerPaths: [~/repos/oss/app]\n'),
+    );
+
+    const result = await runCaptured(['apply-moves', '--dry-run', '--file', registryFile], { env: { HOME: homeDir } });
+    expect(result.stdout).toBe(
+      'would move ~/repos/oss/app -> ~/repos/tools/kit\napp: README.md:1: Clone at ~/repos/oss/app.',
+    );
+    expect(result.status).toBe(0);
+    expect(fs.existsSync(`${homeDir}/repos/oss/app`)).toBe(true);
   });
 });
 

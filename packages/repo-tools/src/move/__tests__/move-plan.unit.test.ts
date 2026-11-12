@@ -44,7 +44,7 @@ describe(planMove, () => {
 });
 
 describe(executeMove, () => {
-  it('stops at the first failed rename, returning the completed and the remaining moves', () => {
+  it("stops at the first failed rename and repairs the links at the worktrees' actual locations", () => {
     const moves = [PRIMARY, { from: '/r/oss/app.live', to: '/r/tools/kit.live' }];
     const repairs: string[][] = [];
     const adapters: ExecuteAdapters = {
@@ -61,7 +61,7 @@ describe(executeMove, () => {
       failure: 'cannot move /r/oss/app.live to /r/tools/kit.live: EACCES',
       remaining: [moves[1]],
     });
-    expect(repairs).toStrictEqual([]);
+    expect(repairs).toStrictEqual([['/r/oss/app.live']]);
   });
 
   it('reports a repair failure after every rename completed', () => {

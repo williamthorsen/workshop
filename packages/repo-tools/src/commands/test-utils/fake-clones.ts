@@ -49,6 +49,7 @@ export function buildFakeAdapters(
       return name !== undefined && clones[name] !== undefined ? `${FAKE_HOME}/repos/${name}` : undefined;
     },
     renamePath: () => 'not exercised',
+    resolvePath: (target) => target,
     repairWorktrees: () => 'not exercised',
   };
 }

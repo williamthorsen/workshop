@@ -1,6 +1,6 @@
 import { executeMove } from '../move/move-clone.ts';
 import type { MovePlan } from '../move/move-plan.ts';
-import { expandTilde, formatDisplayPath } from '../portable/paths.ts';
+import { formatDisplayPath, normalizePath } from '../portable/paths.ts';
 import { readRegistry, type RegistryEntry } from '../registry/registry.ts';
 import { planCloneMove, printMove, printReferences, reportSkippedWorktrees } from './move-report.ts';
 import type { MoveOptions } from './runMove.ts';
@@ -15,24 +15,24 @@ export function runApplyMoves(run: VerbRun, options: MoveOptions): number {
   const registry = readRegistry(run.file);
   if (typeof registry === 'string') return reportFailure(run, registry);
 
-  const plans: MovePlan[] = [];
+  const plans = new Map<RegistryEntry, MovePlan>();
   let isClean = true;
   for (const entry of registry.entries) {
-    const plan = planEntry(run, entry);
+    const plan = planEntry(run, entry, registry.entries);
     if (typeof plan === 'string') {
       run.stderr(`${PROG}: ${formatEntryName(entry)}: ${plan}; skipped`);
       isClean = false;
     } else if (plan !== undefined) {
-      plans.push(plan);
+      plans.set(entry, plan);
     }
   }
-  if (plans.length === 0) {
+  if (plans.size === 0) {
     run.stderr(`${PROG}: nothing to move`);
     return isClean ? 0 : 1;
   }
 
   const oldPaths: string[] = [];
-  for (const plan of plans) {
+  for (const plan of plans.values()) {
     reportSkippedWorktrees(run, plan.skipped);
     if (options.isDryRun) {
       for (const move of plan.moves) printMove(run, move, true);
@@ -52,7 +52,11 @@ export function runApplyMoves(run: VerbRun, options: MoveOptions): number {
     run.stderr(`${PROG}: ${outcome.failure}`);
     isClean = false;
   }
-  printReferences(run, oldPaths, registry.entries, options.searchPaths);
+  // Until the moves run, each moved entry's clone is still at the source of its plan.
+  const locations = options.isDryRun
+    ? new Map([...plans].map(([entry, plan]) => [entry, plan.primary.from]))
+    : new Map<RegistryEntry, string>();
+  printReferences(run, oldPaths, registry.entries, options.searchPaths, locations);
   if (options.isDryRun) run.stderr(`${PROG}: nothing moved; run without --dry-run to apply the moves`);
   return isClean ? 0 : 1;
 }
@@ -62,14 +66,20 @@ export function runApplyMoves(run: VerbRun, options: MoveOptions): number {
 /**
  * Plans the move of an entry's clone from a former path to its path, or returns `undefined` when there is nothing to
  * move, or a message naming why the entry is skipped. A former path counts only when it is the root of a clone whose
- * origin, when the entry has a `repo`, is that repo; another one is reported and ignored.
+ * origin, when the entry has a `repo`, is that repo; another one is reported and ignored. An entry whose path another
+ * entry also names is skipped.
  */
-function planEntry(run: VerbRun, entry: RegistryEntry): MovePlan | string | undefined {
+function planEntry(
+  run: VerbRun,
+  entry: RegistryEntry,
+  entries: readonly RegistryEntry[],
+): MovePlan | string | undefined {
   if (entry.path === undefined || entry.formerPaths.length === 0) return undefined;
-  const to = expandTilde(entry.path, run.home);
+  const to = normalizePath(entry.path, run.home);
   const present = entry.formerPaths
-    .map((formerPath) => expandTilde(formerPath, run.home))
-    .filter((formerPath) => run.adapters.isDirectory(formerPath));
+    .map((formerPath) => normalizePath(formerPath, run.home))
+    .filter((formerPath) => run.adapters.isDirectory(formerPath))
+    .map((formerPath) => run.adapters.resolvePath(formerPath));
   if (run.adapters.pathExists(to)) {
     return present.length === 0 ? undefined : `both ${entry.path} and a former path, ${display(run, present)}, exist`;
   }
@@ -81,6 +91,12 @@ function planEntry(run: VerbRun, entry: RegistryEntry): MovePlan | string | unde
     }
     return isClone;
   });
+  const claimant = entries.find(
+    (other) => other !== entry && other.path !== undefined && normalizePath(other.path, run.home) === to,
+  );
+  if (claimant !== undefined && candidates.length > 0) {
+    return `its path, ${entry.path}, is also the path of ${formatEntryName(claimant)}`;
+  }
   if (candidates.length > 1) return `more than one former path holds its clone: ${display(run, candidates)}`;
   const [from] = candidates;
   if (from === undefined) return undefined;

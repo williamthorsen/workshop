@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import { buildClone, buildFakeAdapters, FAKE_HOME, type FakeClone } from '../test-utils/fake-clones.ts';
 import { type CapturedRun, runCaptured } from '../test-utils/run-captured.ts';
+import type { CloneAdapters } from '../verb-run.ts';
 
 const REGISTRY = `repos:
   - name: alpha
@@ -48,12 +49,43 @@ describe('move', () => {
   });
 });
 
+describe('move after a partial failure', () => {
+  it('reports the moves that did not complete when the registry cannot be written either', async () => {
+    using tree = createTempTree({ 'registry/repos.yaml': REGISTRY }, { prefix: 'repo-tools-' });
+    const adapters: CloneAdapters = {
+      ...buildFakeAdapters({ ...CLONES, 'alpha.live': buildClone({}) }),
+      listWorktrees: () => [{ isPrunable: false, path: `${FAKE_HOME}/repos/alpha.live` }],
+      makeDirectory: () => undefined,
+      renamePath: (from) => (from.endsWith('alpha.live') ? 'EACCES' : undefined),
+      repairWorktrees: () => undefined,
+    };
+    fs.chmodSync(tree.resolve('registry'), 0o500);
+    try {
+      const result = await runCaptured(
+        ['move', 'alpha', '~/repos/kit', '--file', tree.resolve('registry/repos.yaml')],
+        { adapters, env: { HOME: FAKE_HOME } },
+      );
+      expect(result.stdout).toBe('~/repos/alpha -> ~/repos/kit');
+      expect(result.stderr).toContain('thor-repo: not moved: ~/repos/alpha.live\n');
+      expect(result.stderr).toContain(
+        `cannot move ${FAKE_HOME}/repos/alpha.live to ${FAKE_HOME}/repos/kit.live: EACCES`,
+      );
+      expect(result.stderr).toContain(
+        'set the path of alpha to ~/repos/kit and add ~/repos/alpha to its formerPaths by hand',
+      );
+      expect(result.status).toBe(1);
+    } finally {
+      fs.chmodSync(tree.resolve('registry'), 0o700);
+    }
+  });
+});
+
 describe('apply-moves', () => {
   const MOVED = `repos:
-- name: alpha
-  path: ~/repos/kit
-  formerPaths: [~/repos/alpha, ~/repos/old]
-  repo: owner/alpha
+  - name: alpha
+    path: ~/repos/kit
+    formerPaths: [~/repos/alpha, ~/repos/old]
+    repo: owner/alpha
 `;
 
   it('skips an entry whose path and a former path both exist', async () => {
@@ -76,6 +108,18 @@ describe('apply-moves', () => {
     });
     expect(result.stderr).toContain(
       'thor-repo: alpha: more than one former path holds its clone: ~/repos/alpha, ~/repos/old; skipped',
+    );
+    expect(result.status).toBe(1);
+  });
+
+  it('skips an entry whose path another entry also names', async () => {
+    const { result } = await run(['apply-moves'], {
+      clones: { alpha: buildClone({}) },
+      origins: { alpha: 'git@github.com:owner/alpha.git' },
+      registry: `${MOVED}  - name: kit\n    path: ~/repos/kit\n`,
+    });
+    expect(result.stderr).toBe(
+      'thor-repo: alpha: its path, ~/repos/kit, is also the path of kit; skipped\nthor-repo: nothing to move',
     );
     expect(result.status).toBe(1);
   });

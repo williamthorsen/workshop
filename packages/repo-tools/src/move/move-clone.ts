@@ -15,27 +15,29 @@ export type ExecuteAdapters = Pick<CloneAdapters, 'makeDirectory' | 'renamePath'
 
 /**
  * Runs a plan's renames in order, creating each destination's missing parents, then repairs the worktree links. Stops
- * at the first failure and leaves the completed renames in place.
+ * at the first failed rename and leaves the completed renames in place; once the primary has moved, it still repairs
+ * the links, naming each worktree where it actually is.
  */
 export function executeMove(plan: MovePlan, adapters: ExecuteAdapters): MoveOutcome {
   const completed: Move[] = [];
+  let renameFailure: string | undefined;
+  let remaining: Move[] = [];
   for (const [index, move] of plan.moves.entries()) {
     const failure = adapters.makeDirectory(path.dirname(move.to)) ?? adapters.renamePath(move.from, move.to);
     if (failure !== undefined) {
-      return {
-        completed,
-        failure: `cannot move ${move.from} to ${move.to}: ${failure}`,
-        remaining: plan.moves.slice(index),
-      };
+      renameFailure = `cannot move ${move.from} to ${move.to}: ${failure}`;
+      remaining = plan.moves.slice(index);
+      break;
     }
     completed.push(move);
   }
-  if (plan.repaired.length === 0) return { completed, failure: undefined, remaining: [] };
-  const repairFailure = adapters.repairWorktrees(plan.primary.to, plan.repaired);
-  return {
-    completed,
-    failure:
-      repairFailure === undefined ? undefined : `cannot repair the worktrees of ${plan.primary.to}: ${repairFailure}`,
-    remaining: [],
-  };
+  if (completed.length === 0 || plan.repaired.length === 0) return { completed, failure: renameFailure, remaining };
+
+  const located = plan.repaired.map((planned) => remaining.find((move) => move.to === planned)?.from ?? planned);
+  const repairFailure = adapters.repairWorktrees(plan.primary.to, located);
+  const failures = [
+    renameFailure,
+    repairFailure === undefined ? undefined : `cannot repair the worktrees of ${plan.primary.to}: ${repairFailure}`,
+  ].filter((failure) => failure !== undefined);
+  return { completed, failure: failures.length === 0 ? undefined : failures.join('; '), remaining };
 }

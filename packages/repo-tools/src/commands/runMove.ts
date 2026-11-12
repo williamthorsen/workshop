@@ -28,7 +28,7 @@ export function runMove(run: VerbRun, name: string, target: string, options: Mov
   if (typeof entry === 'string') return reportFailure(run, entry);
   const oldPath = entry.path ?? '';
 
-  const from = normalizePath(oldPath, run.home);
+  const from = run.adapters.resolvePath(normalizePath(oldPath, run.home));
   const cloneRoot = run.adapters.readCloneRoot(from);
   if (cloneRoot === undefined) {
     return reportFailure(run, `the clone of ${name} is not on this machine at ${oldPath}`);
@@ -61,6 +61,12 @@ export function runMove(run: VerbRun, name: string, target: string, options: Mov
 
   const outcome = executeMove(plan, run.adapters);
   for (const move of outcome.completed) printMove(run, move, false);
+  if (outcome.failure !== undefined) {
+    for (const move of outcome.remaining) {
+      run.stderr(`${PROG}: not moved: ${formatDisplayPath(move.from, run.home)}`);
+    }
+    run.stderr(`${PROG}: ${outcome.failure}`);
+  }
   const newPath = formatDisplayPath(to, run.home);
   if (outcome.completed.length > 0) {
     recordMove(registry, entry, newPath);
@@ -71,12 +77,7 @@ export function runMove(run: VerbRun, name: string, target: string, options: Mov
       return reportFailure(run, `set the path of ${name} to ${newPath} and add ${oldPath} to its formerPaths by hand`);
     }
   }
-  if (outcome.failure !== undefined) {
-    for (const move of outcome.remaining) {
-      run.stderr(`${PROG}: not moved: ${formatDisplayPath(move.from, run.home)}`);
-    }
-    return reportFailure(run, outcome.failure);
-  }
+  if (outcome.failure !== undefined) return 1;
 
   printReferences(run, oldPaths, registry.entries, options.searchPaths);
   run.stderr(`${PROG}: moved ${name} to ${newPath} and updated ${run.file}`);
