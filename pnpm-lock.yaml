@@ -195,8 +195,8 @@ catalogs:
       specifier: 4.1.2
       version: 4.1.2
     '@williamthorsen/toolbelt.numbers':
-      specifier: 7.3.2
-      version: 7.3.2
+      specifier: 8.0.0
+      version: 8.0.0
     '@williamthorsen/toolbelt.packaging':
       specifier: 0.7.2
       version: 0.7.2
@@ -483,7 +483,7 @@ importers:
         version: 4.1.2
       '@williamthorsen/toolbelt.numbers':
         specifier: 'catalog:'
-        version: 7.3.2
+        version: 8.0.0
       '@williamthorsen/toolbelt.packaging':
         specifier: 'catalog:'
         version: 0.7.2
