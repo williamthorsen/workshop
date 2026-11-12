@@ -68,6 +68,7 @@ repos:
     path: ~/repos/example
     formerPaths: [~/repos/old/example]
     repo: owner/example
+    prefix: Ex
     visibility: private
     runner: imac2
     tags: [live]
@@ -78,6 +79,7 @@ repos:
 - `path`: the clone's location, written with a leading `~`; `list` expands it, and `list --json` leaves it as written.
 - `formerPaths`: optional, the paths from which `move` moved the clone, oldest first. `apply-moves` reads them to find a clone that another machine has not moved yet.
 - `repo`: the GitHub path, in the `owner/name` form that `gh --repo` takes; absent for a repo hosted elsewhere.
+- `prefix`: optional, asserted by hand, a short identifier by which a tool shows the repo. It is non-empty and contains neither whitespace nor a period, and no two entries declare prefixes that are equal regardless of case; every verb refuses a registry that breaks either rule.
 - `visibility`: `public` or `private`, the repo's visibility on GitHub, absent when the entry has no `repo`. `scan` writes it.
 - `runner`: optional, the label that the repo's `CI_RUNS_ON` Actions variable selects: a bare label as written, or a JSON string decoded. `scan` writes it, removes it when the variable is unset, and keeps it, with a report, when the variable holds a list or an object.
 - `tags`: optional, asserted by hand. `live` marks a repo that deploys from a `live` worktree.
