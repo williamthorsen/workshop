@@ -12,7 +12,7 @@ allowBuilds:
 catalog:
   '@tandryukha/aidemo': 0.20.6
   '@vitest/coverage-v8': 5.1.0
-  '@williamthorsen/nmr': 2.0.0
+  '@williamthorsen/nmr': 2.0.1
   '@williamthorsen/toolbelt.atlassian': 0.8.1
   '@williamthorsen/toolbelt.cli': 0.8.1
   '@williamthorsen/toolbelt.errors': 0.9.1
@@ -29,7 +29,7 @@ catalog:
   esbuild: 0.28.2
   kokoro-js: 1.2.1
   typescript: 6.0.3
-  vite: 8.3.6
+  vite: 8.3.8
   vitest: 5.1.0
   yaml: 2.9.1
   zod: 4.6.7
