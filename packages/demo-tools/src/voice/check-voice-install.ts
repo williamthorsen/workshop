@@ -1,7 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 
+import { isRecord } from '@williamthorsen/toolbelt.objects';
+
 import type { VoiceConfig } from '../config/read-machine-config.ts';
-import { isRecord } from '../portable/is-record.ts';
 import { readProfileSources, resolveVoiceProfilePaths } from './build-voice-profile.ts';
 import { findMissingReference } from './find-missing-reference.ts';
 import { formatModelDir } from './mlx-audio/format-model-dir.ts';

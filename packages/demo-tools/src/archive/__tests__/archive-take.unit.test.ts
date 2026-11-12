@@ -2,10 +2,10 @@ import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
+import { isRecord } from '@williamthorsen/toolbelt.objects';
 import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
-import { isRecord } from '../../portable/is-record.ts';
 import { archiveTake, digestFile, type TakeArchivePlan } from '../archive-take.ts';
 
 const RENDERED_AT = new Date('2026-11-01T03:04:05.000Z');

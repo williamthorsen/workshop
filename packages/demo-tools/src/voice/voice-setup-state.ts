@@ -1,7 +1,8 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { isRecord } from '../portable/is-record.ts';
+import { isRecord } from '@williamthorsen/toolbelt.objects';
+
 import type { ProfileSources } from './build-voice-profile.ts';
 
 /** What `voice setup` has completed, each field written once its step succeeds. */

@@ -2,9 +2,9 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { describeError } from '@williamthorsen/toolbelt.errors';
+import { isRecord } from '@williamthorsen/toolbelt.objects';
 import { parse } from 'yaml';
 
-import { isRecord } from '../portable/is-record.ts';
 import { expandValue } from './expand-value.ts';
 import { findRepoRoot, REPO_CONFIG_PATH } from './find-repo-root.ts';
 import { findUnknownKey } from './find-unknown-key.ts';

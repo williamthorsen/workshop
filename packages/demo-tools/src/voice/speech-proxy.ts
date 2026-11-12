@@ -2,8 +2,8 @@ import { readFileSync } from 'node:fs';
 import http from 'node:http';
 
 import { describeError } from '@williamthorsen/toolbelt.errors';
+import { isRecord } from '@williamthorsen/toolbelt.objects';
 
-import { isRecord } from '../portable/is-record.ts';
 import { type HttpResponse, postJson } from '../portable/post-json.ts';
 import { type ClipVerdict, judgeClip, measureClip } from './inspect-clip.ts';
 import { SERVER_HOST } from './mlx-audio/build-server-launch.ts';

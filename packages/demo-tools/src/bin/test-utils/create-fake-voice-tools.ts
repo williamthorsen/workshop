@@ -1,9 +1,8 @@
 import { chmodSync, existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
+import { isRecord } from '@williamthorsen/toolbelt.objects';
 import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
-
-import { isRecord } from '../../portable/is-record.ts';
 
 /** What a fake tool observed on one invocation. */
 export interface FakeToolCall {

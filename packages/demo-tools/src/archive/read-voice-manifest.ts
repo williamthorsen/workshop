@@ -2,8 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { describeError } from '@williamthorsen/toolbelt.errors';
-
-import { isRecord } from '../portable/is-record.ts';
+import { isRecord } from '@williamthorsen/toolbelt.objects';
 
 /** The TTS provider and voice that aidemo reports for one scene, or `null` for a field that it does not record. */
 export interface SceneVoice {
