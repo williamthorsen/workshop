@@ -65,7 +65,7 @@ describe('REPO_COMMANDS', () => {
     });
 
     it('names each verb', () => {
-      expect(Object.keys(REPO_COMMANDS.commands)).toStrictEqual(['add', 'list', 'scan']);
+      expect(Object.keys(REPO_COMMANDS.commands)).toStrictEqual(['add', 'list', 'move', 'scan']);
     });
   });
 
@@ -403,6 +403,36 @@ describe('REPO_COMMANDS', () => {
     });
   });
 
+  describe('move', () => {
+    it.each([
+      [['move', 'zeta', '~/repos/zeta'], {}, 'no entry in '],
+      [['move', 'alpha', '~/repos/beta'], {}, '~/repos/beta is the path of beta'],
+      [['move', 'alpha', '~/repos/beta/'], {}, '~/repos/beta is the path of beta'],
+      [
+        ['move', 'alpha', '~/repos/delta'],
+        { clones: { ...CURRENT_CLONES, delta: clone({}) } },
+        `${HOME}/repos/delta already exists; nothing moved`,
+      ],
+      [
+        ['move', 'alpha', '~/repos/kit'],
+        { clones: { beta: CURRENT_CLONES.beta } },
+        'the clone of alpha is not on this machine',
+      ],
+      [['move', 'alpha', '~/repos/kit'], { branch: 'live' }, 'which is in a worktree on the live branch'],
+      [
+        ['move', 'alpha', '~/repos/kit'],
+        { registry: `${REGISTRY}  - name: alpha\n    path: ~/repos/alpha2\n` },
+        '2 entries in ',
+      ],
+    ] as const)('refuses %j before moving anything', async (args, setup, message) => {
+      const { registryText, result } = await run([...args], setup);
+      expect(result.stderr).toContain(message);
+      expect(result.stdout).toBe('');
+      expect(result.status).toBe(1);
+      expect(registryText).toBe('registry' in setup ? setup.registry : REGISTRY);
+    });
+  });
+
   describe('arguments', () => {
     it.each([
       [['frob']],
@@ -416,6 +446,8 @@ describe('REPO_COMMANDS', () => {
       [['list', '--write']],
       [['add']],
       [['add', 'one', 'two']],
+      [['move', 'alpha']],
+      [['move', 'alpha', '~/x', 'extra']],
     ])('rejects %j as a usage error', async (argv) => {
       const result = await runCaptured(argv);
       expect(result.stderr).toMatch(/^thor-repo: /);

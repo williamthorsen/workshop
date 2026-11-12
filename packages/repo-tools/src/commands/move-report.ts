@@ -1,0 +1,45 @@
+import type { Move } from '../move/move-plan.ts';
+import { expandTilde, formatDisplayPath } from '../portable/paths.ts';
+import { findReferences } from '../references/find-references.ts';
+import type { RegistryEntry } from '../registry/registry.ts';
+import { formatEntryName, PROG, type VerbRun } from './verb-run.ts';
+
+/** Prints a planned or completed rename as `<from> -> <to>`, each path in its `~` form. */
+export function printMove(run: VerbRun, move: Move, isDryRun: boolean): void {
+  const line = `${formatDisplayPath(move.from, run.home)} -> ${formatDisplayPath(move.to, run.home)}`;
+  run.stdout(isDryRun ? `would move ${line}` : line);
+}
+
+/**
+ * Prints each reference to the old paths in the tracked files of the registered clones present on this machine and
+ * under the search paths, one per line, and reports on stderr each clone or path that could not be searched.
+ */
+export function printReferences(
+  run: VerbRun,
+  oldPaths: readonly string[],
+  entries: readonly RegistryEntry[],
+  searchPaths: readonly string[],
+): void {
+  const clones = entries
+    .map((entry) => ({ dir: expandTilde(entry.path ?? '', run.home), label: formatEntryName(entry) }))
+    .filter((clone) => clone.dir !== '' && run.adapters.isDirectory(clone.dir));
+  const report = findReferences(oldPaths, clones, searchPaths, run.home);
+  for (const problem of report.problems) run.stderr(`${PROG}: ${problem}`);
+  for (const reference of report.references) {
+    run.stdout(
+      reference.line === undefined
+        ? `${reference.location}: ${reference.file} ${reference.text}`
+        : `${reference.location}: ${reference.file}:${reference.line}: ${reference.text}`,
+    );
+  }
+  if (report.references.length > 0) {
+    run.stderr(`${PROG}: ${report.references.length} remaining references to the old paths`);
+  }
+}
+
+/** Reports on stderr each worktree that git lists but that is missing from disk, and that the move skips. */
+export function reportSkippedWorktrees(run: VerbRun, skipped: readonly string[]): void {
+  for (const worktree of skipped) {
+    run.stderr(`${PROG}: ${formatDisplayPath(worktree, run.home)} is missing; run git worktree prune to drop it`);
+  }
+}

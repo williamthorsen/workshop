@@ -15,6 +15,7 @@ import { expandTilde } from '../portable/paths.ts';
 import { readRegistry, selectEntries } from '../registry/registry.ts';
 import { STACK_DETECTORS } from '../stacks/stack-detectors.ts';
 import { runAdd } from './runAdd.ts';
+import { runMove } from './runMove.ts';
 import { runScan } from './runScan.ts';
 import { buildVerbRun, type CloneAdapters, PROG, type RepoContext, reportFailure, type VerbRun } from './verb-run.ts';
 
@@ -61,6 +62,19 @@ const add = defineCommand({
   run: ({ context, flags, operands, stderr, stdout }) =>
     runAdd(buildVerbRun(context, flags.file, stdout, stderr), operands.path, flags.write),
 });
+
+const DRY_RUN_FLAG = {
+  type: 'boolean',
+  short: 'n',
+  description: 'Report the moves and the remaining references, and change nothing',
+} as const;
+
+const SEARCH_FLAG = {
+  type: 'string',
+  multiple: true,
+  description: 'Also report the references under this directory, in its text files and its symlink targets',
+  valueHint: 'path',
+} as const;
 
 const list = defineCommand({
   summary: 'Print one absolute path per selected repo',
@@ -111,6 +125,22 @@ const list = defineCommand({
     }),
 });
 
+const move = defineCommand({
+  summary: 'Move a registered clone with its worktrees, and record the move in the registry',
+  description:
+    "Moves the clone of the entry named <name> to <path>, with each linked worktree beside it, whose name keeps its suffix under the new name (app.live becomes kit.live), repairs every worktree's link, sets the entry's path, and appends the former path to its formerPaths. A worktree elsewhere stays where it is and is repaired. Refuses, before moving anything, a destination that exists or is on another filesystem, a path that another entry names, and a registry that resolves into a live worktree. Then prints each remaining reference to the old paths in the tracked files of the registered clones on this machine, and under each --search path.",
+  operands: [
+    { name: 'name', description: 'The name of the registry entry to move' },
+    { name: 'path', description: 'The new location of the clone' },
+  ],
+  flags: { dryRun: DRY_RUN_FLAG, file: FILE_FLAG, search: SEARCH_FLAG },
+  run: ({ context, flags, operands, stderr, stdout }) =>
+    runMove(buildVerbRun(context, flags.file, stdout, stderr), operands.name, operands.path, {
+      isDryRun: flags.dryRun,
+      searchPaths: flags.search,
+    }),
+});
+
 const scan = defineCommand({
   summary:
     'Report each repo whose stack, visibility, or runner differs from its tracked files and GitHub, and rewrite it under --write',
@@ -123,7 +153,7 @@ const scan = defineCommand({
 /** The `thor-repo` command tree. */
 export const REPO_COMMANDS = defineGroup({
   summary: 'List, scan, or register the repos on this machine, as recorded in ~/.config/repos.yaml',
-  commands: { add, list, scan },
+  commands: { add, list, move, scan },
   epilog: `Stack names: ${STACK_NAMES.join(', ')}
 
 scan and add read visibility and runner through gh. runner is the label that a repo's CI_RUNS_ON Actions variable selects: a bare label, or a JSON string.

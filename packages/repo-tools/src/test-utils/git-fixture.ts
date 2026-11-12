@@ -9,5 +9,16 @@ export function git(dir: string, ...args: string[]): string {
 export function initWithCommit(dir: string): void {
   git(dir, 'init', '--quiet', '--initial-branch', 'main');
   git(dir, 'add', '.');
-  git(dir, '-c', 'user.name=spec', '-c', 'user.email=spec@example.com', 'commit', '--quiet', '-m', 'init');
+  git(
+    dir,
+    '-c',
+    'user.name=spec',
+    '-c',
+    'user.email=spec@example.com',
+    'commit',
+    '--quiet',
+    '--no-gpg-sign',
+    '-m',
+    'init',
+  );
 }
