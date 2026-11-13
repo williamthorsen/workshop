@@ -23,10 +23,9 @@ if (!compiledFixturePath || !hookPath) {
   process.exit(2);
 }
 
-module.register(pathToFileURL(hookPath).href, {
-  parentURL: import.meta.url,
-  data: { readyupParentURL: import.meta.url },
-});
+const hook = await import(pathToFileURL(hookPath).href);
+hook.initialize({ readyupParentURL: import.meta.url });
+module.registerHooks({ load: hook.load, resolve: hook.resolve });
 
 const fixtureUrl = pathToFileURL(compiledFixturePath).href;
 const fixtureModule = await import(fixtureUrl);

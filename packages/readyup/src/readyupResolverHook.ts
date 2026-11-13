@@ -4,7 +4,8 @@
  * readyup installation, and that loads every kit imported with the kit marker as
  * an ES module.
  *
- * Registered by `src/bin/rdy.ts` via `module.register()` before any kit is loaded.
+ * `src/bin/rdy.ts` calls `initialize()` and registers `resolve` and `load` with
+ * `module.registerHooks()` before any kit is loaded.
  * Compiled kits leave `readyup` imports as live specifiers (see `compileConfig.ts`
  * external list); this hook ensures those specifiers resolve to the runner's
  * installation regardless of where the kit file lives on disk -- making
@@ -21,48 +22,28 @@
  * generalizing this hook.
  */
 
-/** Data passed from `module.register()` to `initialize()`. */
+import type {
+  LoadFnOutput,
+  LoadHookContext,
+  LoadHookSync,
+  ResolveFnOutput,
+  ResolveHookContext,
+  ResolveHookSync,
+} from 'node:module';
+
+/** Data passed to `initialize()`. */
 export interface ReadyupResolverHookData {
   /** URL of a file inside the runner's readyup installation. Node walks `node_modules` up from here. */
   readyupParentURL: string;
 }
 
-/** Context object passed to the `resolve` hook by Node's module customization API. */
-interface ResolveContext {
-  conditions: string[];
-  importAttributes: Record<string, string>;
-  parentURL: string | undefined;
-}
+type NextLoad = Parameters<LoadHookSync>[2];
 
-/** Output object returned by the `resolve` hook (and `nextResolve`). */
-interface ResolveOutput {
-  format?: string | null | undefined;
-  importAttributes?: Record<string, string> | undefined;
-  shortCircuit?: boolean | undefined;
-  url: string;
-}
-
-/** Context object passed to the `load` hook by Node's module customization API. */
-interface LoadContext {
-  conditions: string[];
-  format?: string | null | undefined;
-  importAttributes: Record<string, string>;
-}
-
-/** Output object returned by the `load` hook (and `nextLoad`). */
-interface LoadOutput {
-  format: string | null | undefined;
-  shortCircuit?: boolean | undefined;
-  source?: unknown;
-}
-
-type NextLoad = (url: string, context?: Partial<LoadContext>) => LoadOutput | Promise<LoadOutput>;
-
-type NextResolve = (specifier: string, context?: Partial<ResolveContext>) => ResolveOutput | Promise<ResolveOutput>;
+type NextResolve = Parameters<ResolveHookSync>[2];
 
 /**
  * Query parameter that marks an import as a kit. It repeats `KIT_IMPORT_PARAM` from `kits/importKitModule.ts`,
- * because this module is registered on its own and imports nothing.
+ * because this module loads on its own as a hook file and has no runtime imports.
  */
 const KIT_IMPORT_PARAM = 'rdy-kit';
 
@@ -78,16 +59,14 @@ function isReadyupSpecifier(specifier: string): boolean {
   return specifier === 'readyup' || specifier.startsWith('readyup/');
 }
 
-/**
- * Initializes the hook with the data supplied by `module.register()`, which happens exactly once.
- */
+/** Initializes the hook with the runner's readyup location, which happens exactly once. */
 export function initialize(data: ReadyupResolverHookData): void {
-  // eslint-disable-next-line unicorn/no-top-level-assignment-in-function -- `module.register()` supplies this once.
+  // eslint-disable-next-line unicorn/no-top-level-assignment-in-function -- the runner supplies this once.
   readyupParentURL = data.readyupParentURL;
 }
 
 /** Loads a URL marked as a kit import as an ES module, and delegates every other URL to the default loader unchanged. */
-export function load(url: string, context: LoadContext, nextLoad: NextLoad): LoadOutput | Promise<LoadOutput> {
+export function load(url: string, context: LoadHookContext, nextLoad: NextLoad): LoadFnOutput {
   if (isKitImport(url)) return nextLoad(url, { ...context, format: 'module' });
   return nextLoad(url, context);
 }
@@ -99,11 +78,7 @@ export function load(url: string, context: LoadContext, nextLoad: NextLoad): Loa
  * A readyup specifier resolved before `initialize()` throws: Falling back to the original
  * `parentURL` would defeat the rewrite and appear later as an opaque `ERR_MODULE_NOT_FOUND`.
  */
-export function resolve(
-  specifier: string,
-  context: ResolveContext,
-  nextResolve: NextResolve,
-): ResolveOutput | Promise<ResolveOutput> {
+export function resolve(specifier: string, context: ResolveHookContext, nextResolve: NextResolve): ResolveFnOutput {
   if (isReadyupSpecifier(specifier)) {
     if (readyupParentURL === undefined) {
       throw new Error(

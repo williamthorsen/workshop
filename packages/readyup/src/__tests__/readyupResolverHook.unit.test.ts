@@ -26,7 +26,7 @@ describe('readyupResolverHook', () => {
   });
 
   describe(load, () => {
-    const loadContext = { conditions: ['node', 'import'], importAttributes: {} };
+    const loadContext = { conditions: ['node', 'import'], format: undefined, importAttributes: {} };
 
     it('loads a URL built for a kit import as an ES module', () => {
       const nextLoad = vi.fn().mockReturnValue({ format: 'module' });
