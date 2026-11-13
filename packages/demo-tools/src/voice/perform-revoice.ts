@@ -3,7 +3,7 @@ import { resolveVoiceProfilePaths } from './build-voice-profile.ts';
 import { buildServerLaunch, SERVER_HOST } from './mlx-audio/build-server-launch.ts';
 import { formatModelDir } from './mlx-audio/format-model-dir.ts';
 import type { RevoiceRequest } from './revoice-request.ts';
-import { startSpeechProxy } from './speech-proxy.ts';
+import { type SpeechFailure, startSpeechProxy } from './speech-proxy.ts';
 import type { ServerProcess, StartVoiceServerResult } from './voice-server.ts';
 
 /** An aidemo stage to run: its arguments, the bin, and where and with what environment to run it. */
@@ -54,14 +54,21 @@ export async function performRevoice(
     report(`running aidemo ${args.join(' ')}`);
     const exitCode = await runStage({ args, bin: request.bin, cwd: request.cwd, env });
     if (exitCode !== 0) {
-      const failure = proxy.readFailure();
-      const cause =
-        failure === undefined
-          ? `aidemo ${args[0] ?? ''} exited with code ${exitCode}`
-          : `the voice clone could not speak "${failure.input}" (${failure.reason})`;
+      const cause = describeStageFailure(proxy.readFailure(), args[0] ?? '', exitCode);
       return { ok: false, exitCode, message: `${cause}; the voice-clone server's log is ${launch.logPath}` };
     }
   }
 
   return { ok: true };
 }
+
+// region | Helpers
+
+/** Describes why an aidemo stage failed, blaming the speech proxy's failure when it recorded one. */
+function describeStageFailure(failure: SpeechFailure | undefined, stage: string, exitCode: number): string {
+  if (failure === undefined) return `aidemo ${stage} exited with code ${exitCode}`;
+  if (failure.input === undefined) return failure.reason;
+  return `the voice clone could not speak "${failure.input}" (${failure.reason})`;
+}
+
+// endregion | Helpers
