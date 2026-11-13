@@ -84,7 +84,7 @@ A full `chezmoi apply`: overwrite differing files, perform removals, run scripts
 
 ## How script results are surfaced
 
-Under `--create` / `--force`, `run_` script stdout and stderr stream **live to overlay's stderr**, keeping overlay's stdout clean for the text report or `--json`. `OverlayResult.scripts` records `{ ranCount, ok }`. A script that exits non-zero aborts chezmoi's apply; overlay maps that to exit `2` and surfaces chezmoi's diagnostic. chezmoi provides no per-script structured output, so overlay does not invent any.
+Under `--create` / `--force`, `run_` script stdout and stderr stream **live to overlay's stderr**, keeping overlay's stdout clean for the text report or `--json`. A programmatic caller can send them elsewhere (see [Capturing streamed output](#capturing-streamed-output)). `OverlayResult.scripts` records `{ ranCount, ok }`. A script that exits non-zero aborts chezmoi's apply; overlay maps that to exit `2` and surfaces chezmoi's diagnostic. chezmoi provides no per-script structured output, so overlay does not invent any.
 
 ## Idempotency contract
 
@@ -106,6 +106,23 @@ const result = await overlay({ source: './scaffold', target: './repo', mode: 'cr
 ```
 
 `overlay(options)` returns a structured `OverlayResult` (never printed text), so other TypeScript code can compose with it.
+
+### Capturing streamed output
+
+`output` receives chezmoi's apply output and the stdout and stderr of `run_` scripts. It defaults to `process.stderr`, and overlay never ends it:
+
+```ts
+import { PassThrough } from 'node:stream';
+
+import { overlay } from '@williamthorsen/overlay';
+
+const output = new PassThrough();
+const chunks: string[] = [];
+output.on('data', (chunk: Buffer) => chunks.push(chunk.toString()));
+
+const result = await overlay({ source: './scaffold', target: './repo', mode: 'create', output });
+const log = chunks.join('');
+```
 
 ### Rendering an entry outcome
 
