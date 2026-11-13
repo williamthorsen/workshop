@@ -15,7 +15,7 @@ catalog:
   '@williamthorsen/nmr': 2.2.0
   '@williamthorsen/toolbelt.arrays': 6.5.0
   '@williamthorsen/toolbelt.atlassian': 0.8.2
-  '@williamthorsen/toolbelt.cli': 0.8.2
+  '@williamthorsen/toolbelt.cli': 0.9.0
   '@williamthorsen/toolbelt.errors': 0.10.0
   '@williamthorsen/toolbelt.filesystem': 0.10.2
   '@williamthorsen/toolbelt.git': 0.7.4
