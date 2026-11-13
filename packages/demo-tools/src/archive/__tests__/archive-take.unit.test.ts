@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -6,6 +5,7 @@ import { isRecord } from '@williamthorsen/toolbelt.objects';
 import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
+import { hashContent } from '../../test-utils/hash-content.ts';
 import { archiveTake, digestFile, type TakeArchivePlan } from '../archive-take.ts';
 
 const RENDERED_AT = new Date('2026-11-01T03:04:05.000Z');
@@ -55,7 +55,7 @@ describe(archiveTake, () => {
           { id: 'outro', provider: 'openai', voiceId: 'marin' },
         ],
       },
-      files: { 'final-demo.mp4': { bytes: 11, sha256: sha256('video bytes') } },
+      files: { 'final-demo.mp4': { bytes: 11, sha256: hashContent('video bytes') } },
     });
   });
 
@@ -163,11 +163,6 @@ function readProvenance(tree: TempTree): { files: Record<string, unknown> } & Re
   if (!isRecord(parsed) || !isRecord(parsed['files'])) throw new Error('unexpected provenance record');
 
   return { ...parsed, files: parsed['files'] };
-}
-
-/** Returns the sha256 of a string, as hex. */
-function sha256(text: string): string {
-  return createHash('sha256').update(text).digest('hex');
 }
 
 // endregion | Helpers

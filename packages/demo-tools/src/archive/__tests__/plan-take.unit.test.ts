@@ -1,8 +1,7 @@
-import { createHash } from 'node:crypto';
-
 import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
+import { hashContent } from '../../test-utils/hash-content.ts';
 import { planTake, type PlanTakeInput } from '../plan-take.ts';
 
 const STORYBOARD = '{"voice":{"voiceId":"marin"}}';
@@ -26,7 +25,7 @@ describe(planTake, () => {
         params: ['--tts', 'local'],
         renderedAt: RENDERED_AT,
         source: SOURCE,
-        storyboardSha256: createHash('sha256').update(STORYBOARD).digest('hex'),
+        storyboardSha256: hashContent(STORYBOARD),
       },
     });
   });

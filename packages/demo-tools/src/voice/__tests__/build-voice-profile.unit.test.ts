@@ -1,10 +1,10 @@
-import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 
 import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import type { VoiceConfig } from '../../config/read-machine-config.ts';
+import { hashContent } from '../../test-utils/hash-content.ts';
 import { buildVoiceProfile, resolveVoiceProfilePaths } from '../build-voice-profile.ts';
 import type { Invocation, RunInvocation } from '../invocation.ts';
 
@@ -13,14 +13,14 @@ describe(buildVoiceProfile, () => {
     using tree = createTempTree({ 'reference.m4a': 'audio', 'reference.txt': '  Hello there.\n\n' });
     const calls: Invocation[] = [];
 
-    const result = await buildVoiceProfile(buildVoice(tree), fakeFfmpeg(calls));
+    const result = await buildVoiceProfile(buildVoice(tree), createFakeFfmpeg(calls));
 
     const paths = resolveVoiceProfilePaths(tree.resolve('home'));
     const record = {
       schemaVersion: 1,
       model: 'org/model',
-      referenceSha256: sha256('audio'),
-      transcriptSha256: sha256('  Hello there.\n\n'),
+      referenceSha256: hashContent('audio'),
+      transcriptSha256: hashContent('  Hello there.\n\n'),
     };
     expect(result).toStrictEqual({ ok: true, record });
     expect(calls[0]?.args).toStrictEqual(expect.arrayContaining(['-i', tree.resolve('reference.m4a'), '-ac', '1']));
@@ -37,7 +37,7 @@ describe(buildVoiceProfile, () => {
       'reference.txt': 'Hello.',
     });
 
-    await buildVoiceProfile(buildVoice(tree), fakeFfmpeg([]));
+    await buildVoiceProfile(buildVoice(tree), createFakeFfmpeg([]));
 
     expect(readdirSync(tree.resolve('home/profile')).toSorted()).toStrictEqual([
       'profile.json',
@@ -50,7 +50,7 @@ describe(buildVoiceProfile, () => {
     using tree = createTempTree({ 'reference.m4a': 'audio', 'reference.txt': ' \n' });
     const calls: Invocation[] = [];
 
-    const result = await buildVoiceProfile(buildVoice(tree), fakeFfmpeg(calls));
+    const result = await buildVoiceProfile(buildVoice(tree), createFakeFfmpeg(calls));
 
     expect(result).toMatchObject({ ok: false, message: expect.stringContaining('is empty') });
     expect(calls).toStrictEqual([]);
@@ -89,17 +89,12 @@ function buildVoice(tree: TempTree): VoiceConfig {
 }
 
 /** Returns a runner that records each call and writes `wav` to the target, the last argument. */
-function fakeFfmpeg(calls: Invocation[]): RunInvocation {
+function createFakeFfmpeg(calls: Invocation[]): RunInvocation {
   return (invocation) => {
     calls.push(invocation);
     writeFileSync(invocation.args.at(-1) ?? '', 'wav');
     return Promise.resolve({ ok: true });
   };
-}
-
-/** Returns the sha256 of a string. */
-function sha256(text: string): string {
-  return createHash('sha256').update(text).digest('hex');
 }
 
 // endregion | Helpers
