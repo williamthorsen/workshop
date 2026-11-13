@@ -12,7 +12,7 @@ describe(runForce, () => {
     expect(result.exitCode).toBe(0);
     expect(result.counts).toStrictEqual({ created: 1, deleted: 1, forced: 1, conflicts: 0, pending: 0 });
     expect(result.entries).toContainEqual({ path: '.diff', outcome: 'forced' });
-    expect(context.runner.runStreamed).toHaveBeenCalledWith(context, ['apply']);
+    expect(context.runner.runStreamed).toHaveBeenCalledWith(context, ['apply'], context.output);
   });
 
   it('maps a non-zero apply (script failure) to exit 2', async () => {

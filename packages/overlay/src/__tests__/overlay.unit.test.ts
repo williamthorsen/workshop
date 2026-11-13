@@ -45,7 +45,12 @@ describe(overlay, () => {
 
     await overlay({ source: 'src' });
 
-    expect(verify).toHaveBeenCalledWith({ source: path.resolve('src'), target: process.cwd(), runner: chezmoiRunner });
+    expect(verify).toHaveBeenCalledWith({
+      source: path.resolve('src'),
+      target: process.cwd(),
+      output: process.stderr,
+      runner: chezmoiRunner,
+    });
   });
 
   it('resolves the target to an absolute path', async () => {
@@ -57,6 +62,7 @@ describe(overlay, () => {
     expect(verify).toHaveBeenCalledWith({
       source: '/src',
       target: path.resolve('relative/target'),
+      output: process.stderr,
       runner: chezmoiRunner,
     });
   });

@@ -26,6 +26,7 @@ export async function overlay(options: OverlayOptions): Promise<OverlayResult> {
   const context: ChezmoiContext = {
     source: path.resolve(options.source),
     target: path.resolve(options.target ?? process.cwd()),
+    output: process.stderr,
     runner: chezmoiRunner,
   };
 

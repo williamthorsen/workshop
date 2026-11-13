@@ -9,13 +9,11 @@ describe(runCreate, () => {
 
     const result = await runCreate(context);
 
-    expect(context.runner.runStreamed).toHaveBeenCalledWith(context, [
-      'apply',
-      '--include=files,dirs,remove',
-      '--',
-      '/target/.new',
-      '/target/.gone',
-    ]);
+    expect(context.runner.runStreamed).toHaveBeenCalledWith(
+      context,
+      ['apply', '--include=files,dirs,remove', '--', '/target/.new', '/target/.gone'],
+      context.output,
+    );
     expect(result.counts).toMatchObject({ created: 1, deleted: 1, conflicts: 0 });
     expect(result.exitCode).toBe(0);
   });
@@ -28,7 +26,11 @@ describe(runCreate, () => {
     expect(result.entries).toContainEqual({ path: '.diff', outcome: 'conflict' });
     expect(result.counts.conflicts).toBe(1);
     expect(result.exitCode).toBe(1);
-    expect(context.runner.runStreamed).toHaveBeenCalledWith(context, expect.not.arrayContaining(['/target/.diff']));
+    expect(context.runner.runStreamed).toHaveBeenCalledWith(
+      context,
+      expect.not.arrayContaining(['/target/.diff']),
+      context.output,
+    );
   });
 
   it('skips the targeted apply entirely when there are no A/D entries', async () => {
@@ -46,13 +48,12 @@ describe(runCreate, () => {
 
     await runCreate(context);
 
-    expect(context.runner.runStreamed).toHaveBeenCalledWith(context, [
-      'apply',
-      '--include=files,dirs,remove',
-      '--',
-      '/target/.new',
-    ]);
-    expect(context.runner.runStreamed).toHaveBeenCalledWith(context, ['apply', '--include=scripts']);
+    expect(context.runner.runStreamed).toHaveBeenCalledWith(
+      context,
+      ['apply', '--include=files,dirs,remove', '--', '/target/.new'],
+      context.output,
+    );
+    expect(context.runner.runStreamed).toHaveBeenCalledWith(context, ['apply', '--include=scripts'], context.output);
   });
 
   it('does not run a scripts pass when no R rows are present', async () => {
@@ -61,12 +62,11 @@ describe(runCreate, () => {
     await runCreate(context);
 
     expect(context.runner.runStreamed).toHaveBeenCalledTimes(1);
-    expect(context.runner.runStreamed).toHaveBeenCalledWith(context, [
-      'apply',
-      '--include=files,dirs,remove',
-      '--',
-      '/target/.new',
-    ]);
+    expect(context.runner.runStreamed).toHaveBeenCalledWith(
+      context,
+      ['apply', '--include=files,dirs,remove', '--', '/target/.new'],
+      context.output,
+    );
   });
 
   it('maps a failing scripts pass to exit 2', async () => {
@@ -98,12 +98,15 @@ describe(runCreate, () => {
     expect(result.exitCode).toBe(2);
     // Only the file-apply ran; normalization scripts are never attempted against a half-written target.
     expect(context.runner.runStreamed).toHaveBeenCalledTimes(1);
-    expect(context.runner.runStreamed).toHaveBeenCalledWith(context, [
-      'apply',
-      '--include=files,dirs,remove',
-      '--',
-      '/target/.new',
-    ]);
-    expect(context.runner.runStreamed).not.toHaveBeenCalledWith(context, ['apply', '--include=scripts']);
+    expect(context.runner.runStreamed).toHaveBeenCalledWith(
+      context,
+      ['apply', '--include=files,dirs,remove', '--', '/target/.new'],
+      context.output,
+    );
+    expect(context.runner.runStreamed).not.toHaveBeenCalledWith(
+      context,
+      ['apply', '--include=scripts'],
+      context.output,
+    );
   });
 });

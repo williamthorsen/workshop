@@ -35,7 +35,11 @@ export async function runCreate(context: ChezmoiContext): Promise<OverlayResult>
 
   const applyCode =
     applyPaths.length > 0
-      ? await context.runner.runStreamed(context, ['apply', '--include=files,dirs,remove', '--', ...applyPaths])
+      ? await context.runner.runStreamed(
+          context,
+          ['apply', '--include=files,dirs,remove', '--', ...applyPaths],
+          context.output,
+        )
       : 0;
 
   // A failed file-apply aborts before the scripts pass, mirroring `--force`'s single apply: don't run normalization
@@ -45,7 +49,9 @@ export async function runCreate(context: ChezmoiContext): Promise<OverlayResult>
   }
 
   const scriptsCode =
-    pendingScriptCount > 0 ? await context.runner.runStreamed(context, ['apply', '--include=scripts']) : 0;
+    pendingScriptCount > 0
+      ? await context.runner.runStreamed(context, ['apply', '--include=scripts'], context.output)
+      : 0;
   const ok = scriptsCode === 0;
 
   return {
