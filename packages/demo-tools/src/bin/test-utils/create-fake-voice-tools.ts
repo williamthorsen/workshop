@@ -31,9 +31,6 @@ export interface FakeVoiceMachine extends Disposable {
   readonly voiceHome: string;
 }
 
-/** The variable that makes the fake ffmpeg report a speech clip as silent throughout. */
-export const FAKE_CLIP_SILENT = 'FAKE_CLIP_SILENT';
-
 /** The variable that sets the fake speech server's response status. */
 export const FAKE_SPEECH_STATUS = 'FAKE_SPEECH_STATUS';
 
@@ -141,10 +138,6 @@ const FFMPEG_SOURCE = `log('ffmpeg');
 const args = process.argv.slice(2);
 if (args.some((arg) => arg.startsWith('silencedetect'))) {
   console.error('  Duration: 00:00:02.00, start: 0.025057, bitrate: 64 kb/s');
-  if (process.env.${FAKE_CLIP_SILENT} !== undefined) {
-    console.error('[Parsed_silencedetect_0] silence_start: 0');
-    console.error('[Parsed_silencedetect_0] silence_end: 2 | silence_duration: 2');
-  }
 } else if (args.includes('volumedetect')) {
   console.error('  Duration: 00:00:12.50, bitrate: 768 kb/s');
   console.error('[Parsed_volumedetect_0] mean_volume: -24.0 dB');

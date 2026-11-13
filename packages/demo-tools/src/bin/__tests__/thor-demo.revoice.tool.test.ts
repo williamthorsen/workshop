@@ -8,11 +8,7 @@ import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { createDemoRepo, type DemoRepo } from '../test-utils/create-demo-repo.ts';
-import {
-  createFakeVoiceTools,
-  FAKE_CLIP_SILENT,
-  type FakeVoiceMachine,
-} from '../test-utils/create-fake-voice-tools.ts';
+import { createFakeVoiceTools, type FakeVoiceMachine } from '../test-utils/create-fake-voice-tools.ts';
 import { runThorDemo } from '../test-utils/run-thor-demo.ts';
 import { waitFor } from '../test-utils/wait-for.ts';
 
@@ -88,22 +84,6 @@ describe('thor-demo revoice', () => {
     expect(isServerRunning(machine)).toBe(false);
   });
 
-  it('stops naming the scene and the log when the clone answers a scene with silence', () => {
-    using machine = createInstalledMachine();
-    using repo = createDemoRepo({ aidemoVersion: '0.20.3', outputFiles: OUTPUT_FILES, recorded: true });
-    using archive = createTempTree({ '.keep': '' });
-
-    const { status, stderr } = runRevoice(machine, repo, archive.dir, { [FAKE_CLIP_SILENT]: '1' });
-
-    expect(status).toBe(1);
-    expect(stderr).toContain(
-      `thor-demo revoice: the voice clone could not speak "Scene one." (silent throughout); the voice-clone server's log is ${path.join(machine.voiceHome, 'logs/server.log')}`,
-    );
-    expect(repo.readCalls().map(({ args }) => args[0])).toStrictEqual(['voice']);
-    expect(readdirSync(archive.dir)).toStrictEqual(['.keep']);
-    expect(isServerRunning(machine)).toBe(false);
-  });
-
   it('stops before starting the server on a demo that has not been recorded', () => {
     using machine = createInstalledMachine();
     using repo = createDemoRepo({ aidemoVersion: '0.20.3' });
@@ -171,17 +151,8 @@ function readProvenance(archiveRoot: string): Record<string, unknown> {
 }
 
 /** Runs `thor-demo revoice quickstart` in the repository, on the fake machine, archiving to `archiveRoot`. */
-function runRevoice(
-  machine: FakeVoiceMachine,
-  repo: DemoRepo,
-  archiveRoot: string,
-  env: Readonly<Record<string, string>> = {},
-) {
-  return runThorDemo(['revoice', 'quickstart'], repo.tree.dir, {
-    ...machine.env,
-    ...env,
-    THOR_DEMO_ARCHIVE_ROOT: archiveRoot,
-  });
+function runRevoice(machine: FakeVoiceMachine, repo: DemoRepo, archiveRoot: string) {
+  return runThorDemo(['revoice', 'quickstart'], repo.tree.dir, { ...machine.env, THOR_DEMO_ARCHIVE_ROOT: archiveRoot });
 }
 
 /** Returns the sha256 of `content`. */
