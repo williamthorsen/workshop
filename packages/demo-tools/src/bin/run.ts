@@ -61,7 +61,8 @@ const ROOT = defineGroup({
 Exit codes:
   0  Help or version printed, aidemo succeeded, or a voice command succeeded
   1  The configuration, the aidemo install, or the voice clone is unusable, a
-     take cannot be archived, or a voice command failed
+     take cannot be archived, a voice command failed, or thor-demo hit an
+     internal error
   2  Usage or validation error
   Otherwise, the exit code of aidemo`,
   commands: {
@@ -92,7 +93,8 @@ Exit codes:
 /**
  * Runs the `thor-demo` command line, returning what to write, what to launch, and what to exit with rather than
  * doing any of it, so that the whole surface is exercisable without a process. An empty argv prints the help. Every
- * failure is reported through the result: Nothing throws.
+ * anticipated failure is reported through the result; an error that a command throws, other than a `UsageError`,
+ * propagates to the caller.
  */
 export async function run(args: readonly string[], effects: RunEffects): Promise<RunResult> {
   const stdout = createTextBuffer();

@@ -6,6 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
 
+import { installCrashHandler } from '@williamthorsen/toolbelt.cli/candidate';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 import { resolveSelfVersion } from '@williamthorsen/toolbelt.packaging/candidate';
 
@@ -21,6 +22,8 @@ import { performVoiceSetup } from '../voice/perform-voice-setup.ts';
 import type { RevoiceRequest } from '../voice/revoice-request.ts';
 import type { VoiceRequest } from '../voice/voice-request.ts';
 import { type Launch, run } from './run.ts';
+
+installCrashHandler('thor-demo');
 
 // A reader that exits first closes the pipe, which node reports as an error event rather than the quiet termination
 // that SIGPIPE would give.
