@@ -1,8 +1,8 @@
+import { createTextBuffer } from '@williamthorsen/toolbelt.cli/candidate';
 import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { run, type RunEffects } from '../run.ts';
-import { createTextBuffer } from '../test-utils/createTextBuffer.ts';
 
 const LONG_DESCRIPTION = `A package whose description runs on ${'and on '.repeat(20)}`;
 

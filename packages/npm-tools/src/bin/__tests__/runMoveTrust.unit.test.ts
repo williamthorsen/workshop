@@ -1,4 +1,4 @@
-import { UsageError } from '@williamthorsen/toolbelt.cli/candidate';
+import { createTextBuffer, UsageError } from '@williamthorsen/toolbelt.cli/candidate';
 import { describe, expect, it } from 'vitest';
 
 import type {
@@ -10,7 +10,6 @@ import type {
 } from '../../npm/createNpmClient.ts';
 import type { TrustEntry } from '../../npm/parseTrustListing.ts';
 import { type MoveTrustOptions, runMoveTrust } from '../runMoveTrust.ts';
-import { createTextBuffer } from '../test-utils/createTextBuffer.ts';
 
 const NAME = '@scope/pkg';
 
