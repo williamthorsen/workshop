@@ -13,7 +13,7 @@ describe(buildVoiceProfile, () => {
     using tree = createTempTree({ 'reference.m4a': 'audio', 'reference.txt': '  Hello there.\n\n' });
     const calls: Invocation[] = [];
 
-    const result = await buildVoiceProfile(buildVoice(tree), fakeFfmpeg(calls));
+    const result = await buildVoiceProfile(buildVoice(tree), createFakeFfmpeg(calls));
 
     const paths = resolveVoiceProfilePaths(tree.resolve('home'));
     const record = {
@@ -37,7 +37,7 @@ describe(buildVoiceProfile, () => {
       'reference.txt': 'Hello.',
     });
 
-    await buildVoiceProfile(buildVoice(tree), fakeFfmpeg([]));
+    await buildVoiceProfile(buildVoice(tree), createFakeFfmpeg([]));
 
     expect(readdirSync(tree.resolve('home/profile')).toSorted()).toStrictEqual([
       'profile.json',
@@ -50,7 +50,7 @@ describe(buildVoiceProfile, () => {
     using tree = createTempTree({ 'reference.m4a': 'audio', 'reference.txt': ' \n' });
     const calls: Invocation[] = [];
 
-    const result = await buildVoiceProfile(buildVoice(tree), fakeFfmpeg(calls));
+    const result = await buildVoiceProfile(buildVoice(tree), createFakeFfmpeg(calls));
 
     expect(result).toMatchObject({ ok: false, message: expect.stringContaining('is empty') });
     expect(calls).toStrictEqual([]);
@@ -89,7 +89,7 @@ function buildVoice(tree: TempTree): VoiceConfig {
 }
 
 /** Returns a runner that records each call and writes `wav` to the target, the last argument. */
-function fakeFfmpeg(calls: Invocation[]): RunInvocation {
+function createFakeFfmpeg(calls: Invocation[]): RunInvocation {
   return (invocation) => {
     calls.push(invocation);
     writeFileSync(invocation.args.at(-1) ?? '', 'wav');

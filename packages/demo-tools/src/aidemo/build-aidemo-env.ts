@@ -22,7 +22,7 @@ export function buildAidemoEnv(
 ): NodeJS.ProcessEnv {
   const inherited = Object.entries(baseEnv).filter(([name]) => !OPENAI_VARIABLES.includes(name));
   const profile =
-    nonEmpty(declaredEnv[CHROME_PROFILE_VARIABLE]) ?? nonEmpty(baseEnv[CHROME_PROFILE_VARIABLE]) ?? defaultProfileDir;
+    omitEmpty(declaredEnv[CHROME_PROFILE_VARIABLE]) ?? omitEmpty(baseEnv[CHROME_PROFILE_VARIABLE]) ?? defaultProfileDir;
 
   return { ...Object.fromEntries(inherited), ...declaredEnv, [CHROME_PROFILE_VARIABLE]: profile };
 }
@@ -35,7 +35,7 @@ export function resolveDefaultProfileDir(homeDir: string, archiveLabel: string):
 // region | Helpers
 
 /** Returns `value` unless it is empty. */
-function nonEmpty(value: string | undefined): string | undefined {
+function omitEmpty(value: string | undefined): string | undefined {
   return value === '' ? undefined : value;
 }
 

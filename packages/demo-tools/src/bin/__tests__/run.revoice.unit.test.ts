@@ -95,7 +95,7 @@ describe('run revoice', () => {
 
     const result = await run(['revoice', 'quickstart'], { ...buildEffects(home, repo), arch: 'x64' });
 
-    expect(summarizeRefusal(result)).toStrictEqual(refusal('the voice clone runs on Apple Silicon'));
+    expect(summarizeRefusal(result)).toStrictEqual(buildRefusalSummary('the voice clone runs on Apple Silicon'));
   });
 
   it('stops when voice setup has not run, naming it', async () => {
@@ -104,7 +104,7 @@ describe('run revoice', () => {
 
     const result = await run(['revoice', 'quickstart'], buildEffects(home, repo));
 
-    expect(summarizeRefusal(result)).toStrictEqual(refusal('; run thor-demo voice setup'));
+    expect(summarizeRefusal(result)).toStrictEqual(buildRefusalSummary('; run thor-demo voice setup'));
   });
 
   it('stops when the profile was built from another reference recording', async () => {
@@ -115,7 +115,7 @@ describe('run revoice', () => {
     const result = await run(['revoice', 'quickstart'], buildEffects(home, repo));
 
     expect(summarizeRefusal(result)).toStrictEqual(
-      refusal('the voice profile was built from another recording than voice.reference.audio'),
+      buildRefusalSummary('the voice profile was built from another recording than voice.reference.audio'),
     );
   });
 
@@ -125,7 +125,7 @@ describe('run revoice', () => {
 
     const result = await run(['revoice', 'quickstart'], buildEffects(home, repo));
 
-    expect(summarizeRefusal(result)).toStrictEqual(refusal('0.20.2 is installed'));
+    expect(summarizeRefusal(result)).toStrictEqual(buildRefusalSummary('0.20.2 is installed'));
   });
 
   it('stops when the .env sets a variable that would send the narration elsewhere', async () => {
@@ -139,7 +139,7 @@ describe('run revoice', () => {
     const result = await run(['revoice', 'quickstart'], buildEffects(home, repo));
 
     expect(summarizeRefusal(result)).toStrictEqual(
-      refusal(`${repo.tree.resolve('.env')} sets AIDEMO_TTS_PROVIDER, which aidemo loads over`),
+      buildRefusalSummary(`${repo.tree.resolve('.env')} sets AIDEMO_TTS_PROVIDER, which aidemo loads over`),
     );
   });
 
@@ -150,7 +150,7 @@ describe('run revoice', () => {
     const result = await run(['revoice', 'quickstart'], buildEffects(home, repo));
 
     expect(summarizeRefusal(result)).toStrictEqual(
-      refusal('quickstart has not been recorded; render it first with thor-demo render quickstart'),
+      buildRefusalSummary('quickstart has not been recorded; render it first with thor-demo render quickstart'),
     );
   });
 
@@ -185,6 +185,11 @@ function buildEffects(home: TempTree, repo: DemoRepo): RunEffects {
   };
 }
 
+/** Returns the summary of a refusal, with exit 1 and nothing requested, whose message under the prefix contains `problem`. */
+function buildRefusalSummary(problem: string) {
+  return { exitCode: 1, requested: false, stderr: expect.stringContaining(problem), prefixed: true };
+}
+
 /**
  * Builds a home with a voice section and a reference recording and transcript and, unless `installed` is false, a
  * voice clone installed from them.
@@ -215,11 +220,6 @@ function readVoiceConfig(tree: TempTree): VoiceConfig {
     referenceAudio: tree.resolve('home/reference.m4a'),
     referenceTranscript: tree.resolve('home/reference.txt'),
   };
-}
-
-/** Returns the summary of a refusal, with exit 1 and nothing requested, whose message under the prefix contains `problem`. */
-function refusal(problem: string) {
-  return { exitCode: 1, requested: false, stderr: expect.stringContaining(problem), prefixed: true };
 }
 
 /** Summarizes what a refused revoice must show: its exit code, whether it requested anything, and its message. */
