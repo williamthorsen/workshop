@@ -1,4 +1,4 @@
-import { createCli, runCli, UsageError, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
+import { createCli, createTextBuffer, runCli, UsageError, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 import {
   type SecretQuery,
@@ -163,20 +163,6 @@ function callKeystore<T>(operation: () => T): T {
 
     throw new KeystoreError(describeError(error));
   }
-}
-
-/** Returns a writer that accumulates what is written to it. */
-function createTextBuffer(): Writer & { readonly text: string } {
-  let text = '';
-
-  return {
-    get text() {
-      return text;
-    },
-    write(chunk: string) {
-      text += chunk;
-    },
-  };
 }
 
 /**

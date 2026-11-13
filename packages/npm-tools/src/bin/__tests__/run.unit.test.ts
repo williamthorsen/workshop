@@ -1,7 +1,7 @@
+import { createTextBuffer } from '@williamthorsen/toolbelt.cli/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { run, type RunEffects } from '../run.ts';
-import { createTextBuffer } from '../test-utils/createTextBuffer.ts';
 
 const VERSION = '9.9.9';
 

@@ -1,4 +1,4 @@
-import { createCli, runCli, UsageError, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
+import { createCli, createTextBuffer, runCli, UsageError } from '@williamthorsen/toolbelt.cli/candidate';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 import { deriveBranchNumber, findBranchTicketRef } from '@williamthorsen/toolbelt.git/candidate';
 
@@ -111,20 +111,6 @@ export interface RunResult {
 }
 
 // region | Helpers
-
-/** Returns a writer that accumulates what is written to it. */
-function createTextBuffer(): Writer & { readonly text: string } {
-  let text = '';
-
-  return {
-    get text() {
-      return text;
-    },
-    write(chunk: string) {
-      text += chunk;
-    },
-  };
-}
 
 /**
  * Converts a flag's text to a number, leaving validation of a present value to the library that receives it. A blank
