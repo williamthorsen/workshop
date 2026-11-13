@@ -54,20 +54,6 @@ process.exitCode = await completeRequest();
 
 // region | Helpers
 
-/** Performs what the run requested, resolving to the exit code. */
-async function completeRequest(): Promise<number> {
-  switch (request?.kind) {
-    case 'launch':
-      return completeLaunch(request.launch);
-    case 'revoice':
-      return completeRevoice(request.revoice);
-    case 'voice':
-      return completeVoice(request.voice);
-    case undefined:
-      return exitCode;
-  }
-}
-
 /**
  * Creates the default recording profile, runs aidemo, then, when it succeeds, does what the launch says to do with the
  * take, resolving to the exit code.
@@ -86,6 +72,20 @@ async function completeLaunch(launch: Launch): Promise<number> {
   if (aidemoExitCode !== 0 || launch.take === undefined) return aidemoExitCode;
 
   return completeTake(launch.take, 'thor-demo render');
+}
+
+/** Performs what the run requested, resolving to the exit code. */
+async function completeRequest(): Promise<number> {
+  switch (request?.kind) {
+    case 'launch':
+      return completeLaunch(request.launch);
+    case 'revoice':
+      return completeRevoice(request.revoice);
+    case 'voice':
+      return completeVoice(request.voice);
+    case undefined:
+      return exitCode;
+  }
 }
 
 /** Performs a revoice, reporting its steps on stderr, then archives the take, resolving to the exit code. */

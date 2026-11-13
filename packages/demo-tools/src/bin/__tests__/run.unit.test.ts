@@ -590,26 +590,6 @@ function buildVoiceEffects(tree: TempTree): RunEffects {
 }
 
 /**
- * Builds a machine whose home has a machine configuration and a reference recording and transcript, and whose `bin`
- * holds executable `tools`, leaving out `without`.
- */
-function createVoiceMachine({
-  config = VOICE_SECTION,
-  tools = ['ffmpeg', 'uv'],
-  without,
-}: { config?: string; tools?: readonly string[]; without?: string } = {}): TempTree {
-  const present = tools.filter((tool) => tool !== without);
-  const tree = createTempTree({
-    'home/.config/thor-demo/config.yaml': config,
-    'home/reference.m4a': 'audio',
-    'home/reference.txt': 'Hello.',
-    ...Object.fromEntries(present.map((tool) => [`bin/${tool}`, ''])),
-  });
-  for (const tool of present) chmodSync(tree.resolve(`bin/${tool}`), 0o755);
-  return tree;
-}
-
-/**
  * Builds a demo repository with one demo, `quickstart`, a fake aidemo of the given version, or none for `false`, and
  * `extra` files.
  */
@@ -627,6 +607,26 @@ function createDemoRepo({
       [AIDEMO_MANIFEST]: JSON.stringify({ version: aidemoVersion, bin: { aidemo: 'bin/aidemo.mjs' } }),
     }),
   });
+}
+
+/**
+ * Builds a machine whose home has a machine configuration and a reference recording and transcript, and whose `bin`
+ * holds executable `tools`, leaving out `without`.
+ */
+function createVoiceMachine({
+  config = VOICE_SECTION,
+  tools = ['ffmpeg', 'uv'],
+  without,
+}: { config?: string; tools?: readonly string[]; without?: string } = {}): TempTree {
+  const present = tools.filter((tool) => tool !== without);
+  const tree = createTempTree({
+    'home/.config/thor-demo/config.yaml': config,
+    'home/reference.m4a': 'audio',
+    'home/reference.txt': 'Hello.',
+    ...Object.fromEntries(present.map((tool) => [`bin/${tool}`, ''])),
+  });
+  for (const tool of present) chmodSync(tree.resolve(`bin/${tool}`), 0o755);
+  return tree;
 }
 
 // endregion | Helpers
