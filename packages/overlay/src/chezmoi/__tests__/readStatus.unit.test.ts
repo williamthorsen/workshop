@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { readStatus } from '../readStatus.ts';
 import { createFakeContext } from '../../test-utils/fake-runner.ts';
+import { readStatus } from '../readStatus.ts';
 
 describe(readStatus, () => {
   it('returns stdout when chezmoi status exits 0', async () => {
