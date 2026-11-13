@@ -2,7 +2,7 @@ import path from 'node:path';
 
 import { parseStatus } from '../chezmoi/parseStatus.ts';
 import { readStatus } from '../chezmoi/readStatus.ts';
-import { type ChezmoiContext, runChezmoiStreamed } from '../chezmoi/run-chezmoi.ts';
+import type { ChezmoiContext } from '../chezmoi/run-chezmoi.ts';
 import { countOutcome, partitionStatus } from './entry-outcomes.ts';
 import type { OverlayResult } from './types.ts';
 
@@ -37,7 +37,7 @@ export async function runCreate(context: ChezmoiContext): Promise<OverlayResult>
 
   const applyCode =
     applyPaths.length > 0
-      ? await runChezmoiStreamed(context, ['apply', '--include=files,dirs,remove', '--', ...applyPaths])
+      ? await context.runner.runStreamed(context, ['apply', '--include=files,dirs,remove', '--', ...applyPaths])
       : 0;
 
   // A failed file-apply aborts before the scripts pass, mirroring `--force`'s single apply: don't run normalization
@@ -46,7 +46,8 @@ export async function runCreate(context: ChezmoiContext): Promise<OverlayResult>
     return { mode: 'create', entries, scripts: { ranCount: pendingScriptCount, ok: false }, counts, exitCode: 2 };
   }
 
-  const scriptsCode = pendingScriptCount > 0 ? await runChezmoiStreamed(context, ['apply', '--include=scripts']) : 0;
+  const scriptsCode =
+    pendingScriptCount > 0 ? await context.runner.runStreamed(context, ['apply', '--include=scripts']) : 0;
   const ok = scriptsCode === 0;
 
   return {

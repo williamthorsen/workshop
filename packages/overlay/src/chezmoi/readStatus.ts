@@ -1,4 +1,4 @@
-import { type ChezmoiContext, runChezmoiCaptured } from './run-chezmoi.ts';
+import type { ChezmoiContext } from './run-chezmoi.ts';
 
 /**
  * Reads `chezmoi status`, treating a non-zero exit as a hard error.
@@ -8,7 +8,7 @@ import { type ChezmoiContext, runChezmoiCaptured } from './run-chezmoi.ts';
  * top-level handler, which maps it to exit `2`.
  */
 export async function readStatus(context: ChezmoiContext): Promise<string> {
-  const { stdout, stderr, code } = await runChezmoiCaptured(context, ['status']);
+  const { stdout, stderr, code } = await context.runner.runCaptured(context, ['status']);
   if (code !== 0) {
     const detail = stderr.trim() === '' ? `exit code ${code}` : stderr.trim();
     throw new Error(`chezmoi status failed: ${detail}`);

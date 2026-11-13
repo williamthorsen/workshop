@@ -15,9 +15,20 @@ export interface CapturedResult {
 }
 
 /** Identifies the source and target directories a chezmoi invocation operates on. */
-export interface ChezmoiContext {
+export interface ChezmoiDirs {
   source: string;
   target: string;
+}
+
+/** Adapter through which overlay invokes chezmoi, so that tests can substitute a fake. */
+export interface ChezmoiRunner {
+  runCaptured(dirs: ChezmoiDirs, args: string[]): Promise<CapturedResult>;
+  runStreamed(dirs: ChezmoiDirs, args: string[]): Promise<number>;
+}
+
+/** Directories of an overlay run, and the runner that invokes chezmoi against them. */
+export interface ChezmoiContext extends ChezmoiDirs {
+  runner: ChezmoiRunner;
 }
 
 /**
@@ -26,8 +37,8 @@ export interface ChezmoiContext {
  *
  * A non-zero exit does not reject: the captured `code` is returned so callers decide how to interpret it.
  */
-export async function runChezmoiCaptured(context: ChezmoiContext, args: string[]): Promise<CapturedResult> {
-  return withSandbox(context, args, async (fullArgs) => {
+export async function runChezmoiCaptured(dirs: ChezmoiDirs, args: string[]): Promise<CapturedResult> {
+  return withSandbox(dirs, args, async (fullArgs) => {
     try {
       const { stdout, stderr } = await execFileAsync('chezmoi', fullArgs);
       return { stdout, stderr, code: 0 };
@@ -42,8 +53,8 @@ export async function runChezmoiCaptured(context: ChezmoiContext, args: string[]
  * every `apply` that may run `run_` scripts, so script output streams live while overlay's stdout stays clean for the
  * reporter or `--json`. Resolves with the child's exit code.
  */
-export async function runChezmoiStreamed(context: ChezmoiContext, args: string[]): Promise<number> {
-  return withSandbox(context, args, async (fullArgs) => {
+export async function runChezmoiStreamed(dirs: ChezmoiDirs, args: string[]): Promise<number> {
+  return withSandbox(dirs, args, async (fullArgs) => {
     return new Promise<number>((resolve, reject) => {
       const child = spawn('chezmoi', fullArgs, { stdio: ['ignore', process.stderr, process.stderr] });
       child.on('error', reject);
@@ -51,6 +62,9 @@ export async function runChezmoiStreamed(context: ChezmoiContext, args: string[]
     });
   });
 }
+
+/** Runner that invokes the chezmoi binary on `PATH`. */
+export const chezmoiRunner: ChezmoiRunner = { runCaptured: runChezmoiCaptured, runStreamed: runChezmoiStreamed };
 
 // region | Helpers
 
@@ -60,10 +74,10 @@ export async function runChezmoiStreamed(context: ChezmoiContext, args: string[]
  * Injects `--source`/`--destination`, the throwaway `--persistent-state` and empty `--config` paths, and `--no-tty`,
  * then the caller's own arguments.
  */
-function buildArgs(context: ChezmoiContext, persistentStatePath: string, configPath: string, args: string[]): string[] {
+function buildArgs(dirs: ChezmoiDirs, persistentStatePath: string, configPath: string, args: string[]): string[] {
   return [
-    `--source=${context.source}`,
-    `--destination=${context.target}`,
+    `--source=${dirs.source}`,
+    `--destination=${dirs.target}`,
     `--persistent-state=${persistentStatePath}`,
     `--config=${configPath}`,
     '--no-tty',
@@ -101,17 +115,13 @@ function isExecFileError(error: unknown): error is ExecFileError {
  * Runs a chezmoi command inside a throwaway state/config sandbox, invoking `body` with the fully-assembled argument
  * list. The sandbox is removed in a `finally`.
  */
-async function withSandbox<T>(
-  context: ChezmoiContext,
-  args: string[],
-  body: (fullArgs: string[]) => Promise<T>,
-): Promise<T> {
+async function withSandbox<T>(dirs: ChezmoiDirs, args: string[], body: (fullArgs: string[]) => Promise<T>): Promise<T> {
   const sandboxDir = await mkdtemp(path.join(tmpdir(), 'overlay-chezmoi-'));
   const persistentStatePath = path.join(sandboxDir, 'state.boltdb');
   const configPath = path.join(sandboxDir, 'chezmoi.toml');
   try {
     await writeFile(configPath, '');
-    const fullArgs = buildArgs(context, persistentStatePath, configPath, args);
+    const fullArgs = buildArgs(dirs, persistentStatePath, configPath, args);
     return await body(fullArgs);
   } finally {
     await rm(sandboxDir, { recursive: true, force: true });

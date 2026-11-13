@@ -1,30 +1,22 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
+import { createFakeContext } from '../../test-utils/fake-runner.ts';
 import { runForce } from '../force.ts';
-import { mockCapturedStatus, mockStreamedRun } from '../test-utils/chezmoi-mocks.ts';
-
-const context = { source: '/src', target: '/target' };
 
 describe(runForce, () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it('runs a full apply and reports M rows as forced, exiting 0 on success', async () => {
-    mockCapturedStatus(' A .new\n M .diff\n D .gone\n R normalize.sh\n');
-    const apply = mockStreamedRun(0);
+    const context = createFakeContext({ captured: { stdout: ' A .new\n M .diff\n D .gone\n R normalize.sh\n' } });
 
     const result = await runForce(context);
 
     expect(result.exitCode).toBe(0);
     expect(result.counts).toStrictEqual({ created: 1, deleted: 1, forced: 1, conflicts: 0, pending: 0 });
     expect(result.entries).toContainEqual({ path: '.diff', outcome: 'forced' });
-    expect(apply).toHaveBeenCalledWith(context, ['apply']);
+    expect(context.runner.runStreamed).toHaveBeenCalledWith(context, ['apply']);
   });
 
   it('maps a non-zero apply (script failure) to exit 2', async () => {
-    mockCapturedStatus(' R failing.sh\n');
-    mockStreamedRun(1);
+    const context = createFakeContext({ captured: { stdout: ' R failing.sh\n' }, streamedCode: 1 });
 
     const result = await runForce(context);
 
@@ -33,8 +25,7 @@ describe(runForce, () => {
   });
 
   it('never reports conflicts under force', async () => {
-    mockCapturedStatus(' M .diff\n');
-    mockStreamedRun(0);
+    const context = createFakeContext({ captured: { stdout: ' M .diff\n' } });
 
     const result = await runForce(context);
 
