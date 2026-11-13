@@ -25,7 +25,7 @@ export interface RepoConfig {
 export type RepoConfigResult = { ok: true; config: RepoConfig } | { ok: false; message: string };
 
 /** The demos directory when the configuration does not set one. */
-export const DEFAULT_DEMOS_DIR = 'demos';
+const DEFAULT_DEMOS_DIR = 'demos';
 
 /** What reading the configuration takes from its caller's environment. */
 export interface RepoConfigInput {

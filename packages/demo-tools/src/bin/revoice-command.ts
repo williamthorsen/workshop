@@ -16,10 +16,10 @@ import type { CommandContext } from './run.ts';
 import { findMissingVoicePrerequisite, readRequiredVoice } from './voice-commands.ts';
 
 /** The provider that provenance records for narration in the cloned voice. */
-export const CLONED_VOICE_PROVIDER = 'mlx-audio';
+const CLONED_VOICE_PROVIDER = 'mlx-audio';
 
 /** The variables that, set by the demo repository's `.env`, would send the narration somewhere other than the proxy. */
-export const REDIRECTING_VARIABLES: readonly string[] = [
+const REDIRECTING_VARIABLES: readonly string[] = [
   'AIDEMO_OPENAI_BASE_URL',
   'AIDEMO_TTS_MODEL',
   'AIDEMO_TTS_PROVIDER',

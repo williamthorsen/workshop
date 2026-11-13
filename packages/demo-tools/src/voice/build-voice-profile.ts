@@ -62,11 +62,6 @@ export async function buildVoiceProfile(voice: VoiceConfig, run: RunInvocation):
   }
 }
 
-/** Returns the ffmpeg command that converts `source` to mono WAV at `target`, keeping its sample rate. */
-export function planReferenceConversion(source: string, target: string): Invocation {
-  return { command: 'ffmpeg', args: ['-nostdin', '-loglevel', 'error', '-i', source, '-ac', '1', target], env: {} };
-}
-
 /** Returns the checksums of the configured reference recording and transcript. */
 export function readProfileSources(voice: VoiceConfig): ProfileSources {
   return {
@@ -91,6 +86,11 @@ export function resolveVoiceProfilePaths(home: string): VoiceProfilePaths {
 /** Returns the sha256 of a file's content. */
 function hashFile(filePath: string): string {
   return createHash('sha256').update(readFileSync(filePath)).digest('hex');
+}
+
+/** Returns the ffmpeg command that converts `source` to mono WAV at `target`, keeping its sample rate. */
+function planReferenceConversion(source: string, target: string): Invocation {
+  return { command: 'ffmpeg', args: ['-nostdin', '-loglevel', 'error', '-i', source, '-ac', '1', target], env: {} };
 }
 
 // endregion | Helpers
