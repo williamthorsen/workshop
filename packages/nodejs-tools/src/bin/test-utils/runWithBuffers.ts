@@ -1,4 +1,4 @@
-import type { Writer } from '@williamthorsen/toolbelt.cli/candidate';
+import { createTextBuffer } from '@williamthorsen/toolbelt.cli/candidate';
 
 import { run } from '../run.ts';
 import type { ThorNodeEffects } from '../thor-node-result.ts';
@@ -18,21 +18,3 @@ export interface BufferedRun {
   readonly stderr: string;
   readonly stdout: string;
 }
-
-// region | Helpers
-
-/** Returns a writer that accumulates what is written to it. */
-function createTextBuffer(): Writer & { readonly text: string } {
-  let text = '';
-
-  return {
-    get text() {
-      return text;
-    },
-    write(chunk: string) {
-      text += chunk;
-    },
-  };
-}
-
-// endregion | Helpers

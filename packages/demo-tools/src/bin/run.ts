@@ -3,6 +3,7 @@ import path from 'node:path';
 import {
   type Command,
   createCli,
+  createTextBuffer,
   type PassthroughInput,
   renderHelp,
   runCli,
@@ -163,20 +164,6 @@ export interface CommandContext {
 }
 
 // region | Helpers
-
-/** Returns a writer that accumulates what is written to it. */
-function createTextBuffer(): Writer & { readonly text: string } {
-  let text = '';
-
-  return {
-    get text() {
-      return text;
-    },
-    write(chunk: string) {
-      text += chunk;
-    },
-  };
-}
 
 /** Describes the arguments of `render` and `probe`, which the help page of a passthrough command omits. */
 function formatDemoCommandEpilog(command: string, example: string): string {
