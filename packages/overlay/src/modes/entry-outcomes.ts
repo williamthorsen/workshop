@@ -1,4 +1,6 @@
-import type { StatusCode, StatusEntry } from '../chezmoi/parseStatus.ts';
+import { parseStatus, type StatusCode, type StatusEntry } from '../chezmoi/parseStatus.ts';
+import { readStatus } from '../chezmoi/readStatus.ts';
+import type { ChezmoiContext } from '../chezmoi/run-chezmoi.ts';
 import type { EntryOutcome, OverlayEntry } from './types.ts';
 
 /** Maps each drift status code to the entry outcome a mode assigns it. `R` rows are handled separately. */
@@ -35,4 +37,9 @@ export function partitionStatus(status: StatusEntry[], outcomes: OutcomeMap): Pa
 /** Counts entries with the given outcome. */
 export function countOutcome(entries: OverlayEntry[], outcome: EntryOutcome): number {
   return entries.filter((entry) => entry.outcome === outcome).length;
+}
+
+/** Reads `chezmoi status` and partitions its rows using a mode's outcome map. */
+export async function readPartitionedStatus(context: ChezmoiContext, outcomes: OutcomeMap): Promise<PartitionedStatus> {
+  return partitionStatus(parseStatus(await readStatus(context)), outcomes);
 }
