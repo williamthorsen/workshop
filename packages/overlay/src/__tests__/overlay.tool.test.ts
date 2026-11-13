@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { PassThrough } from 'node:stream';
 
 import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
@@ -73,6 +74,20 @@ describe.skipIf(!hasChezmoi)('overlay against real chezmoi', () => {
 
     expect(result.exitCode).toBe(0);
     expect(result.scripts.ranCount).toBeGreaterThan(0);
+  });
+
+  it('writes run_ script output to a caller-supplied stream and leaves it open', async ({ source, target }) => {
+    buildConvergenceFixture(source, target);
+    const output = new PassThrough();
+    const chunks: string[] = [];
+    output.on('data', (chunk: Buffer) => {
+      chunks.push(chunk.toString());
+    });
+
+    await overlay({ source: source.dir, target: target.dir, mode: 'create', output });
+
+    expect(chunks.join('')).toContain('ran-normalize');
+    expect(output.writableEnded).toBe(false);
   });
 
   it('maps a failing run_ script to exit 2 under create', async ({ source, target }) => {
