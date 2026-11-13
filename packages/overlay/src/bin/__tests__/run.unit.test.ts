@@ -1,3 +1,5 @@
+import process from 'node:process';
+
 import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -27,6 +29,15 @@ describe(run, () => {
 
     expect(io.stdout).toBe(`${JSON.stringify(stubResult)}\n`);
     expect(code).toBe(0);
+  });
+
+  it("sends chezmoi's streamed output to the process's stderr", async () => {
+    const overlay = vi.spyOn(overlayModule, 'overlay').mockResolvedValue(stubResult);
+    using _io = captureStdio();
+
+    await run(['/src', '--create']);
+
+    expect(overlay).toHaveBeenCalledWith(expect.objectContaining({ output: process.stderr }));
   });
 
   it('writes the text report to stdout when --json is absent', async () => {

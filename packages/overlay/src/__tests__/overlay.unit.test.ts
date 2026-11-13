@@ -1,5 +1,6 @@
 import path from 'node:path';
 import process from 'node:process';
+import { PassThrough } from 'node:stream';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -65,6 +66,16 @@ describe(overlay, () => {
       output: process.stderr,
       runner: chezmoiRunner,
     });
+  });
+
+  it('passes the caller-supplied output stream to the mode', async () => {
+    vi.spyOn(versionModule, 'assertChezmoiVersion').mockResolvedValue();
+    const verify = vi.spyOn(verifyModule, 'runVerify').mockResolvedValue(stubResult);
+    const output = new PassThrough();
+
+    await overlay({ source: '/src', output });
+
+    expect(verify).toHaveBeenCalledWith(expect.objectContaining({ output }));
   });
 
   it('dispatches to create mode', async () => {
