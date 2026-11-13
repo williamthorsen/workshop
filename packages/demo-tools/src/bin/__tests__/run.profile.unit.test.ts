@@ -3,23 +3,10 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { resolveDefaultProfileDir } from '../../aidemo/build-aidemo-env.ts';
-import { run, type RunEffects } from '../run.ts';
+import { run } from '../run.ts';
+import { buildRunEffects, STUB_HOME_DIR } from '../test-utils/build-run-effects.ts';
 import { createDemoRepo } from '../test-utils/create-demo-repo.ts';
 import { selectLaunch } from '../test-utils/select-request.ts';
-
-const HOME = '/home/demo';
-
-const EFFECTS: RunEffects = {
-  arch: 'arm64',
-  cwd: '/',
-  env: {},
-  findTrackedPaths: () => undefined,
-  findUnignoredPaths: () => undefined,
-  homeDir: HOME,
-  platform: 'darwin',
-  readSourceState: () => undefined,
-  resolveVersion: () => '9.9.9',
-};
 
 describe('run login and profile', () => {
   describe.each([
@@ -29,9 +16,9 @@ describe('run login and profile', () => {
     it('launches the aidemo command from the repository root on the default profile', async () => {
       using repo = createDemoRepo();
 
-      const { exitCode, request, stderr } = await run(args, { ...EFFECTS, cwd: repo.tree.resolve('demos') });
+      const { exitCode, request, stderr } = await run(args, buildRunEffects({ cwd: repo.tree.resolve('demos') }));
 
-      const profileDir = resolveDefaultProfileDir(HOME, path.basename(repo.tree.dir));
+      const profileDir = resolveDefaultProfileDir(STUB_HOME_DIR, path.basename(repo.tree.dir));
       expect(exitCode).toBe(0);
       expect(stderr).toBe('');
       expect(selectLaunch(request)).toStrictEqual({
@@ -46,7 +33,7 @@ describe('run login and profile', () => {
     it('forwards the arguments after a literal --, help flags included', async () => {
       using repo = createDemoRepo();
 
-      const { request } = await run([command, '--', '--help'], { ...EFFECTS, cwd: repo.tree.dir });
+      const { request } = await run([command, '--', '--help'], buildRunEffects({ cwd: repo.tree.dir }));
 
       expect(selectLaunch(request)?.args).toStrictEqual([command, '--help']);
     });
@@ -54,17 +41,17 @@ describe('run login and profile', () => {
     it('does not check the ignore rules', async () => {
       using repo = createDemoRepo();
 
-      const { stderr } = await run(args, {
-        ...EFFECTS,
+      const effects = buildRunEffects({
         cwd: repo.tree.dir,
         findUnignoredPaths: (_dir, paths) => paths,
       });
+      const { stderr } = await run(args, effects);
 
       expect(stderr).toBe('');
     });
 
     it('prints its own help on --help', async () => {
-      const { exitCode, request, stdout } = await run([command, '--help'], EFFECTS);
+      const { exitCode, request, stdout } = await run([command, '--help'], buildRunEffects());
 
       expect(exitCode).toBe(0);
       expect(request).toBeUndefined();
@@ -72,7 +59,7 @@ describe('run login and profile', () => {
     });
 
     it('reports a missing configuration with exit 1', async () => {
-      const { exitCode, request, stderr } = await run(args, EFFECTS);
+      const { exitCode, request, stderr } = await run(args, buildRunEffects());
 
       expect(exitCode).toBe(1);
       expect(request).toBeUndefined();

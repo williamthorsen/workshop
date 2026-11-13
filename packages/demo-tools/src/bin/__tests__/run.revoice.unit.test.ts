@@ -9,6 +9,7 @@ import { DEFAULT_VOICE_HOME, DEFAULT_VOICE_MODEL, type VoiceConfig } from '../..
 import { readProfileSources } from '../../voice/build-voice-profile.ts';
 import { formatModelDir } from '../../voice/mlx-audio/format-model-dir.ts';
 import { run, type RunEffects, type RunResult } from '../run.ts';
+import { buildRunEffects } from '../test-utils/build-run-effects.ts';
 import { createDemoRepo, type DemoRepo } from '../test-utils/create-demo-repo.ts';
 import { selectRevoice } from '../test-utils/select-request.ts';
 
@@ -172,17 +173,11 @@ describe('run revoice', () => {
 
 /** Returns effects for a run from the repository's root, on Apple Silicon, with the home in `home`. */
 function buildEffects(home: TempTree, repo: DemoRepo): RunEffects {
-  return {
-    arch: 'arm64',
+  return buildRunEffects({
     cwd: repo.tree.dir,
     env: { THOR_DEMO_ARCHIVE_ROOT: home.resolve('archive') },
-    findTrackedPaths: () => undefined,
-    findUnignoredPaths: () => undefined,
     homeDir: home.resolve('home'),
-    platform: 'darwin',
-    readSourceState: () => undefined,
-    resolveVersion: () => '9.9.9',
-  };
+  });
 }
 
 /** Returns the summary of a refusal, with exit 1 and nothing requested, whose message under the prefix contains `problem`. */
