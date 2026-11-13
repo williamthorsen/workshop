@@ -1,10 +1,7 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import type { ChezmoiContext } from '../run-chezmoi.ts';
-import * as runChezmoiModule from '../run-chezmoi.ts';
+import { createFakeContext } from '../../test-utils/fake-runner.ts';
 import { assertChezmoiVersion, MIN_CHEZMOI_VERSION, parseVersion } from '../version.ts';
-
-const context: ChezmoiContext = { source: '/src', target: '/dst' };
 
 describe(parseVersion, () => {
   it('extracts the major.minor.patch triple from chezmoi version output', () => {
@@ -21,36 +18,32 @@ describe(parseVersion, () => {
 });
 
 describe(assertChezmoiVersion, () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it('resolves when the installed version equals the minimum', async () => {
-    mockVersionOutput(`chezmoi version v${MIN_CHEZMOI_VERSION}`);
+    const context = createVersionContext(`chezmoi version v${MIN_CHEZMOI_VERSION}`);
 
     await expect(assertChezmoiVersion(context)).resolves.toBeUndefined();
   });
 
   it('resolves when the installed version exceeds the minimum', async () => {
-    mockVersionOutput('chezmoi version v2.70.4');
+    const context = createVersionContext('chezmoi version v2.70.4');
 
     await expect(assertChezmoiVersion(context)).resolves.toBeUndefined();
   });
 
   it('throws when the installed version is below the minimum', async () => {
-    mockVersionOutput('chezmoi version v2.10.0');
+    const context = createVersionContext('chezmoi version v2.10.0');
 
     await expect(assertChezmoiVersion(context)).rejects.toThrow(/2\.46\.0 or later is required/);
   });
 
   it('throws when chezmoi exits non-zero', async () => {
-    mockVersionOutput('', 1);
+    const context = createVersionContext('', 1);
 
     await expect(assertChezmoiVersion(context)).rejects.toThrow(/not available/);
   });
 
   it('throws when the version cannot be parsed', async () => {
-    mockVersionOutput('chezmoi version unknown');
+    const context = createVersionContext('chezmoi version unknown');
 
     await expect(assertChezmoiVersion(context)).rejects.toThrow(/could not determine chezmoi version/);
   });
@@ -58,9 +51,9 @@ describe(assertChezmoiVersion, () => {
 
 // region | Helpers
 
-/** Stubs `chezmoi --version` to return the given stdout and exit code. */
-function mockVersionOutput(stdout: string, code = 0): void {
-  vi.spyOn(runChezmoiModule, 'runChezmoiCaptured').mockResolvedValue({ stdout, stderr: '', code });
+/** Builds a context whose `chezmoi --version` returns the given stdout and exit code. */
+function createVersionContext(stdout: string, code = 0): ReturnType<typeof createFakeContext> {
+  return createFakeContext({ captured: { stdout, code } });
 }
 
 // endregion | Helpers

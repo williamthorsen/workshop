@@ -1,7 +1,7 @@
 import path from 'node:path';
 import process from 'node:process';
 
-import type { ChezmoiContext } from './chezmoi/run-chezmoi.ts';
+import { type ChezmoiContext, chezmoiRunner } from './chezmoi/run-chezmoi.ts';
 import { assertChezmoiVersion } from './chezmoi/version.ts';
 import { runCreate } from './modes/create.ts';
 import { runForce } from './modes/force.ts';
@@ -26,6 +26,7 @@ export async function overlay(options: OverlayOptions): Promise<OverlayResult> {
   const context: ChezmoiContext = {
     source: path.resolve(options.source),
     target: path.resolve(options.target ?? process.cwd()),
+    runner: chezmoiRunner,
   };
 
   await assertChezmoiVersion(context);

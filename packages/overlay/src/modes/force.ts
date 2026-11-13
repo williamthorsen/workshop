@@ -1,6 +1,6 @@
 import { parseStatus } from '../chezmoi/parseStatus.ts';
 import { readStatus } from '../chezmoi/readStatus.ts';
-import { type ChezmoiContext, runChezmoiStreamed } from '../chezmoi/run-chezmoi.ts';
+import type { ChezmoiContext } from '../chezmoi/run-chezmoi.ts';
 import { countOutcome, partitionStatus } from './entry-outcomes.ts';
 import type { OverlayResult } from './types.ts';
 
@@ -17,7 +17,7 @@ export async function runForce(context: ChezmoiContext): Promise<OverlayResult> 
     M: 'forced',
   });
 
-  const applyCode = await runChezmoiStreamed(context, ['apply']);
+  const applyCode = await context.runner.runStreamed(context, ['apply']);
   const ok = applyCode === 0;
 
   return {

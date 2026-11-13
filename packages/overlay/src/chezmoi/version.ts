@@ -1,4 +1,4 @@
-import { type ChezmoiContext, runChezmoiCaptured } from './run-chezmoi.ts';
+import type { ChezmoiContext } from './run-chezmoi.ts';
 
 interface SemverParts {
   major: number;
@@ -16,7 +16,7 @@ const MINIMUM_VERSION: SemverParts = { major: 2, minor: 46, patch: 0 };
  * or it is below the minimum.
  */
 export async function assertChezmoiVersion(context: ChezmoiContext): Promise<void> {
-  const { stdout, code } = await runChezmoiCaptured(context, ['--version']);
+  const { stdout, code } = await context.runner.runCaptured(context, ['--version']);
   if (code !== 0) {
     throw new Error('chezmoi is not available; install it (e.g. `brew install chezmoi`)');
   }

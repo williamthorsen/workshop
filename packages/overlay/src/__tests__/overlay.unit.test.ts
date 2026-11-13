@@ -3,6 +3,7 @@ import process from 'node:process';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { chezmoiRunner } from '../chezmoi/run-chezmoi.ts';
 import * as versionModule from '../chezmoi/version.ts';
 import * as createModule from '../modes/create.ts';
 import * as forceModule from '../modes/force.ts';
@@ -44,7 +45,7 @@ describe(overlay, () => {
 
     await overlay({ source: 'src' });
 
-    expect(verify).toHaveBeenCalledWith({ source: path.resolve('src'), target: process.cwd() });
+    expect(verify).toHaveBeenCalledWith({ source: path.resolve('src'), target: process.cwd(), runner: chezmoiRunner });
   });
 
   it('resolves the target to an absolute path', async () => {
@@ -53,7 +54,11 @@ describe(overlay, () => {
 
     await overlay({ source: '/src', target: 'relative/target' });
 
-    expect(verify).toHaveBeenCalledWith({ source: '/src', target: path.resolve('relative/target') });
+    expect(verify).toHaveBeenCalledWith({
+      source: '/src',
+      target: path.resolve('relative/target'),
+      runner: chezmoiRunner,
+    });
   });
 
   it('dispatches to create mode', async () => {

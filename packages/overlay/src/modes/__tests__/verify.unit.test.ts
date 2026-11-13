@@ -1,17 +1,11 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { mockCapturedStatus } from '../test-utils/chezmoi-mocks.ts';
+import { createFakeContext } from '../../test-utils/fake-runner.ts';
 import { runVerify } from '../verify.ts';
 
-const context = { source: '/src', target: '/target' };
-
 describe(runVerify, () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
   it('exits 0 with no entries when status is clean', async () => {
-    mockCapturedStatus('');
+    const context = createFakeContext({ captured: { stdout: '' } });
 
     const result = await runVerify(context);
 
@@ -21,7 +15,7 @@ describe(runVerify, () => {
   });
 
   it('reports A/M/D rows as drift and exits 1', async () => {
-    mockCapturedStatus(' A .new\n M .diff\n D .gone\n');
+    const context = createFakeContext({ captured: { stdout: ' A .new\n M .diff\n D .gone\n' } });
 
     const result = await runVerify(context);
 
@@ -35,7 +29,7 @@ describe(runVerify, () => {
   });
 
   it('ignores R rows for the verdict and exits 0 when only scripts are pending', async () => {
-    mockCapturedStatus(' R normalize.sh\n R seed.sh\n');
+    const context = createFakeContext({ captured: { stdout: ' R normalize.sh\n R seed.sh\n' } });
 
     const result = await runVerify(context);
 
@@ -45,7 +39,7 @@ describe(runVerify, () => {
   });
 
   it('surfaces pending scripts while still failing on file drift', async () => {
-    mockCapturedStatus(' A .new\n R normalize.sh\n');
+    const context = createFakeContext({ captured: { stdout: ' A .new\n R normalize.sh\n' } });
 
     const result = await runVerify(context);
 
