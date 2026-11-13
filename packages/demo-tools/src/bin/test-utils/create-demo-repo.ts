@@ -164,14 +164,13 @@ if (call.speechStatus !== undefined && call.speechStatus !== 200) process.exitCo
 `;
 }
 
-/** Reads the fake's recorded calls, in order. */
-function readCalls(tree: TempTree): FakeAidemoCall[] {
-  if (!tree.exists(CALLS_FILE)) return [];
+/** Reports whether a parsed record has the shape of a call. */
+function isCall(value: unknown): value is FakeAidemoCall {
+  if (typeof value !== 'object' || value === null) return false;
 
-  return readFileSync(tree.resolve(CALLS_FILE), 'utf8')
-    .split('\n')
-    .filter((line) => line !== '')
-    .map((line) => parseCall(line));
+  return (
+    'args' in value && Array.isArray(value.args) && 'cwd' in value && typeof value.cwd === 'string' && 'env' in value
+  );
 }
 
 /** Parses one recorded call, which the fake wrote with the shape of `FakeAidemoCall`. */
@@ -182,13 +181,14 @@ function parseCall(line: string): FakeAidemoCall {
   return parsed;
 }
 
-/** Reports whether a parsed record has the shape of a call. */
-function isCall(value: unknown): value is FakeAidemoCall {
-  if (typeof value !== 'object' || value === null) return false;
+/** Reads the fake's recorded calls, in order. */
+function readCalls(tree: TempTree): FakeAidemoCall[] {
+  if (!tree.exists(CALLS_FILE)) return [];
 
-  return (
-    'args' in value && Array.isArray(value.args) && 'cwd' in value && typeof value.cwd === 'string' && 'env' in value
-  );
+  return readFileSync(tree.resolve(CALLS_FILE), 'utf8')
+    .split('\n')
+    .filter((line) => line !== '')
+    .map((line) => parseCall(line));
 }
 
 // endregion | Helpers

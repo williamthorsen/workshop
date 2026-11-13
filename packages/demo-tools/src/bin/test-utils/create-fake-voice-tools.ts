@@ -48,6 +48,12 @@ export const FAKE_SPEECH_DELAY_MS = 'FAKE_SPEECH_DELAY_MS';
 
 const PRETEND_APPLE_SILICON = path.join(import.meta.dirname, 'pretend-apple-silicon.ts');
 
+/** Returns a machine configuration whose voice section installs under `~/voice`, with `model` when given. */
+export function buildVoiceConfig(model?: string): string {
+  const modelLine = model === undefined ? '' : `  model: ${model}\n`;
+  return `voice:\n  home: ~/voice\n${modelLine}  reference:\n    audio: ~/reference.m4a\n    transcript: ~/reference.txt\n`;
+}
+
 /**
  * Creates a machine whose home has a machine configuration with a `voice` section and a reference recording, and
  * whose `PATH` holds fake `afplay`, `ffmpeg`, `swiftc`, and `uv`. The fake `uv venv` writes a fake `python` and `hf`
@@ -89,12 +95,6 @@ export function createFakeVoiceTools({
       tree[Symbol.dispose]();
     },
   };
-}
-
-/** Returns a machine configuration whose voice section installs under `~/voice`, with `model` when given. */
-export function buildVoiceConfig(model?: string): string {
-  const modelLine = model === undefined ? '' : `  model: ${model}\n`;
-  return `voice:\n  home: ~/voice\n${modelLine}  reference:\n    audio: ~/reference.m4a\n    transcript: ~/reference.txt\n`;
 }
 
 // region | Helpers

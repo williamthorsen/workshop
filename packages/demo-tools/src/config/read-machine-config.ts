@@ -89,21 +89,6 @@ export function readMachineConfig({ env, homeDir }: MachineConfigInput): Machine
 
 type SectionResult<T> = ({ ok: true } & T) | { ok: false; problem: string };
 
-/** Reads the `archive` section. */
-function readArchiveSection(section: unknown, paths: MachineConfigInput): SectionResult<{ root: string | undefined }> {
-  if (section === undefined || section === null) return { ok: true, root: undefined };
-  if (!isRecord(section)) return { ok: false, problem: 'archive must be a mapping' };
-
-  const unknownKey = findUnknownKey(section, ['root']);
-  if (unknownKey !== undefined) return { ok: false, problem: `unknown key "archive.${unknownKey}"; the key is root` };
-
-  const raw = section['root'];
-  if (raw === undefined || raw === null) return { ok: true, root: undefined };
-
-  const root = readAbsolutePath('archive.root', raw, paths);
-  return root.ok ? { ok: true, root: root.value } : root;
-}
-
 /** Reads a configured path, expanding it and requiring the result to be absolute. */
 function readAbsolutePath(
   key: string,
@@ -119,6 +104,21 @@ function readAbsolutePath(
   }
 
   return { ok: true, value: expansion.value };
+}
+
+/** Reads the `archive` section. */
+function readArchiveSection(section: unknown, paths: MachineConfigInput): SectionResult<{ root: string | undefined }> {
+  if (section === undefined || section === null) return { ok: true, root: undefined };
+  if (!isRecord(section)) return { ok: false, problem: 'archive must be a mapping' };
+
+  const unknownKey = findUnknownKey(section, ['root']);
+  if (unknownKey !== undefined) return { ok: false, problem: `unknown key "archive.${unknownKey}"; the key is root` };
+
+  const raw = section['root'];
+  if (raw === undefined || raw === null) return { ok: true, root: undefined };
+
+  const root = readAbsolutePath('archive.root', raw, paths);
+  return root.ok ? { ok: true, root: root.value } : root;
 }
 
 /** Reads a configured path that must be set. Whether the file exists is for the command that reads it to check. */
