@@ -7,23 +7,8 @@ import { describe, expect, it } from 'vitest';
 import { resolveDefaultProfileDir } from '../../aidemo/build-aidemo-env.ts';
 import { DEFAULT_VOICE_MODEL } from '../../config/read-machine-config.ts';
 import { run, type RunEffects } from '../run.ts';
+import { buildRunEffects, STUB_HOME_DIR, STUB_VERSION } from '../test-utils/build-run-effects.ts';
 import { selectLaunch, selectVoice } from '../test-utils/select-request.ts';
-
-const VERSION = '9.9.9';
-
-const HOME = '/home/demo';
-
-const EFFECTS: RunEffects = {
-  arch: 'arm64',
-  cwd: '/',
-  env: {},
-  findTrackedPaths: () => undefined,
-  findUnignoredPaths: () => undefined,
-  homeDir: HOME,
-  platform: 'darwin',
-  readSourceState: () => undefined,
-  resolveVersion: () => VERSION,
-};
 
 const AIDEMO_MANIFEST = 'node_modules/@tandryukha/aidemo/package.json';
 
@@ -32,7 +17,7 @@ const VOICE_SECTION = 'voice:\n  reference:\n    audio: ~/reference.m4a\n    tra
 describe(run, () => {
   describe('help and version', () => {
     it.each([['--help'], ['-h']])('prints the root help on %o', async (flag) => {
-      const { exitCode, stderr, stdout } = await run([flag], EFFECTS);
+      const { exitCode, stderr, stdout } = await run([flag], buildRunEffects());
 
       expect(exitCode).toBe(0);
       expect(stderr).toBe('');
@@ -43,28 +28,27 @@ describe(run, () => {
     });
 
     it('prints the root help when given no arguments', async () => {
-      const bare = await run([], EFFECTS);
+      const bare = await run([], buildRunEffects());
 
-      expect(bare).toStrictEqual(await run(['--help'], EFFECTS));
+      expect(bare).toStrictEqual(await run(['--help'], buildRunEffects()));
       expect(bare.exitCode).toBe(0);
     });
 
     it.each([['--version'], ['-V']])('prints the resolved version on %o', async (flag) => {
-      await expect(run([flag], EFFECTS)).resolves.toStrictEqual({
+      await expect(run([flag], buildRunEffects())).resolves.toStrictEqual({
         exitCode: 0,
         request: undefined,
         stderr: '',
-        stdout: `${VERSION}\n`,
+        stdout: `${STUB_VERSION}\n`,
       });
     });
 
     it('reports a failure to resolve the version as a usage error', async () => {
-      const failing: RunEffects = {
-        ...EFFECTS,
+      const failing = buildRunEffects({
         resolveVersion: () => {
           throw new Error('The manifest declares no version.');
         },
-      };
+      });
 
       await expect(run(['--version'], failing)).resolves.toStrictEqual({
         exitCode: 2,
@@ -79,7 +63,7 @@ describe(run, () => {
       ['probe', ['-h']],
       ['render', ['quickstart', '--tts', 'local', '--help']],
     ])('prints the help of %s for %o without reading any configuration', async (command, args) => {
-      const { exitCode, request, stdout } = await run([command, ...args], EFFECTS);
+      const { exitCode, request, stdout } = await run([command, ...args], buildRunEffects());
 
       expect(exitCode).toBe(0);
       expect(request).toBeUndefined();
@@ -88,7 +72,7 @@ describe(run, () => {
     });
 
     it.each([['--help'], ['-h']])('prints the help of mcp on %o', async (flag) => {
-      const { exitCode, stdout } = await run(['mcp', flag], EFFECTS);
+      const { exitCode, stdout } = await run(['mcp', flag], buildRunEffects());
 
       expect(exitCode).toBe(0);
       expect(stdout).toContain('Usage: thor-demo mcp');
@@ -103,7 +87,7 @@ describe(run, () => {
       { args: ['render'], expected: 'thor-demo: expects a demo name before any option' },
       { args: ['probe', '--golden'], expected: 'thor-demo: expects a demo name before any option' },
     ])('exits 2, pointing at the help: $args', async ({ args, expected }) => {
-      const { exitCode, request, stderr, stdout } = await run(args, EFFECTS);
+      const { exitCode, request, stderr, stdout } = await run(args, buildRunEffects());
 
       expect(exitCode).toBe(2);
       expect(request).toBeUndefined();
@@ -115,7 +99,7 @@ describe(run, () => {
     it('rejects an argument to mcp', async () => {
       using tree = createDemoRepo();
 
-      const { exitCode, request } = await run(['mcp', 'extra'], { ...EFFECTS, cwd: tree.dir });
+      const { exitCode, request } = await run(['mcp', 'extra'], buildRunEffects({ cwd: tree.dir }));
 
       expect(exitCode).toBe(2);
       expect(request).toBeUndefined();
@@ -127,14 +111,14 @@ describe(run, () => {
       using tree = createDemoRepo();
       const noRootNotice: unknown = expect.stringContaining('no archive root');
 
-      const { exitCode, request, stderr } = await run([command, 'demos/quickstart', '--tts', 'local'], {
-        ...EFFECTS,
+      const effects = buildRunEffects({
         cwd: tree.resolve('demos'),
       });
+      const { exitCode, request, stderr } = await run([command, 'demos/quickstart', '--tts', 'local'], effects);
 
       expect(exitCode).toBe(0);
       expect(stderr).toBe('');
-      const profileDir = resolveDefaultProfileDir(HOME, path.basename(tree.dir));
+      const profileDir = resolveDefaultProfileDir(STUB_HOME_DIR, path.basename(tree.dir));
       expect(selectLaunch(request)).toStrictEqual({
         args: [command, tree.resolve('demos/quickstart'), '--tts', 'local'],
         bin: tree.resolve('node_modules/@tandryukha/aidemo/bin/aidemo.mjs'),
@@ -148,7 +132,8 @@ describe(run, () => {
     it('forwards the arguments after a literal --, help flags included', async () => {
       using tree = createDemoRepo();
 
-      const { request } = await run([command, 'quickstart', '--golden', '--', '--help'], { ...EFFECTS, cwd: tree.dir });
+      const effects = buildRunEffects({ cwd: tree.dir });
+      const { request } = await run([command, 'quickstart', '--golden', '--', '--help'], effects);
 
       expect(selectLaunch(request)?.args).toStrictEqual([
         command,
@@ -162,8 +147,7 @@ describe(run, () => {
       using tree = createDemoRepo();
       const checked: string[][] = [];
 
-      const { request, stderr } = await run([command, 'quickstart'], {
-        ...EFFECTS,
+      const effects = buildRunEffects({
         cwd: tree.dir,
         findUnignoredPaths: (dir, paths) => {
           expect(dir).toBe(tree.dir);
@@ -171,6 +155,7 @@ describe(run, () => {
           return paths.filter((candidate) => candidate.includes('/output/') || candidate.endsWith('params.json'));
         },
       });
+      const { request, stderr } = await run([command, 'quickstart'], effects);
 
       expect(request?.kind).toBe('launch');
       expect(checked[0]).toContain('demos/quickstart/audio/voice.json');
@@ -184,12 +169,12 @@ describe(run, () => {
     it('warns about a working path that contains a tracked file, unless its rule is already missing', async () => {
       using tree = createDemoRepo();
 
-      const { stderr } = await run([command, 'quickstart'], {
-        ...EFFECTS,
+      const effects = buildRunEffects({
         cwd: tree.dir,
         findTrackedPaths: () => ['demos/quickstart/audio/', 'demos/quickstart/generated/captions.*'],
         findUnignoredPaths: () => ['demos/quickstart/audio/voice.json'],
       });
+      const { stderr } = await run([command, 'quickstart'], effects);
 
       expect(stderr).toBe(
         `thor-demo ${command}: warning: demos/quickstart/audio/ is not ignored by git; aidemo writes it on every run\n` +
@@ -198,7 +183,7 @@ describe(run, () => {
     });
 
     it('describes the warning in its help', async () => {
-      const { stdout } = await run([command, '--help'], EFFECTS);
+      const { stdout } = await run([command, '--help'], buildRunEffects());
 
       expect(stdout).toContain("warning about each of aidemo's working paths");
     });
@@ -206,12 +191,12 @@ describe(run, () => {
     it('does not warn when git covers every working path', async () => {
       using tree = createDemoRepo();
 
-      const { stderr } = await run([command, 'quickstart'], {
-        ...EFFECTS,
+      const effects = buildRunEffects({
         cwd: tree.dir,
         findTrackedPaths: () => [],
         findUnignoredPaths: () => [],
       });
+      const { stderr } = await run([command, 'quickstart'], effects);
 
       expect(stderr).not.toContain('warning:');
     });
@@ -219,7 +204,7 @@ describe(run, () => {
     it('lists the demos for an unknown one, as a usage error', async () => {
       using tree = createDemoRepo();
 
-      const { exitCode, request, stderr } = await run([command, 'quick'], { ...EFFECTS, cwd: tree.dir });
+      const { exitCode, request, stderr } = await run([command, 'quick'], buildRunEffects({ cwd: tree.dir }));
 
       expect(exitCode).toBe(2);
       expect(request).toBeUndefined();
@@ -229,7 +214,7 @@ describe(run, () => {
     it('reports a missing configuration with exit 1', async () => {
       using tree = createTempTree({ 'x/.keep': '' });
 
-      const { exitCode, request, stderr } = await run([command, 'quickstart'], { ...EFFECTS, cwd: tree.dir });
+      const { exitCode, request, stderr } = await run([command, 'quickstart'], buildRunEffects({ cwd: tree.dir }));
 
       expect(exitCode).toBe(1);
       expect(request).toBeUndefined();
@@ -239,7 +224,7 @@ describe(run, () => {
     it('refuses an unsupported aidemo with exit 1', async () => {
       using tree = createDemoRepo({ aidemoVersion: '0.15.2' });
 
-      const { exitCode, request, stderr } = await run([command, 'quickstart'], { ...EFFECTS, cwd: tree.dir });
+      const { exitCode, request, stderr } = await run([command, 'quickstart'], buildRunEffects({ cwd: tree.dir }));
 
       expect(exitCode).toBe(1);
       expect(request).toBeUndefined();
@@ -253,12 +238,12 @@ describe(run, () => {
       using tree = createDemoRepo({ config: 'archive:\n  label: product\n' });
       const source = { commit: 'abc1234def', dirty: true };
 
-      const { exitCode, request } = await run(['render', 'quickstart', '--tts', 'local'], {
-        ...EFFECTS,
+      const effects = buildRunEffects({
         cwd: tree.dir,
         env: { THOR_DEMO_ARCHIVE_ROOT: '/archive' },
         readSourceState: () => source,
       });
+      const { exitCode, request } = await run(['render', 'quickstart', '--tts', 'local'], effects);
 
       expect(exitCode).toBe(0);
       expect(selectLaunch(request)?.take).toMatchObject({
@@ -278,11 +263,11 @@ describe(run, () => {
     it('attaches a notice for a variant render', async () => {
       using tree = createDemoRepo();
 
-      const { request } = await run(['render', 'quickstart', '--', '--langs', 'de,fr'], {
-        ...EFFECTS,
+      const effects = buildRunEffects({
         cwd: tree.dir,
         env: { THOR_DEMO_ARCHIVE_ROOT: '/archive' },
       });
+      const { request } = await run(['render', 'quickstart', '--', '--langs', 'de,fr'], effects);
 
       expect(selectLaunch(request)?.take).toStrictEqual({
         kind: 'notice',
@@ -293,11 +278,11 @@ describe(run, () => {
     it('reports a malformed machine configuration with exit 1, before launching', async () => {
       using tree = createDemoRepo({ extra: { 'home/.config/thor-demo/config.yaml': 'archive: [\n' } });
 
-      const { exitCode, request, stderr } = await run(['render', 'quickstart'], {
-        ...EFFECTS,
+      const effects = buildRunEffects({
         cwd: tree.dir,
         homeDir: tree.resolve('home'),
       });
+      const { exitCode, request, stderr } = await run(['render', 'quickstart'], effects);
 
       expect(exitCode).toBe(1);
       expect(request).toBeUndefined();
@@ -307,7 +292,8 @@ describe(run, () => {
     it('reports an unknown demo before reading the machine configuration', async () => {
       using tree = createDemoRepo({ extra: { 'home/.config/thor-demo/config.yaml': 'archive: [\n' } });
 
-      const { exitCode } = await run(['render', 'quick'], { ...EFFECTS, cwd: tree.dir, homeDir: tree.resolve('home') });
+      const effects = buildRunEffects({ cwd: tree.dir, homeDir: tree.resolve('home') });
+      const { exitCode } = await run(['render', 'quick'], effects);
 
       expect(exitCode).toBe(2);
     });
@@ -315,11 +301,11 @@ describe(run, () => {
     it('does not read the machine configuration for probe', async () => {
       using tree = createDemoRepo({ extra: { 'home/.config/thor-demo/config.yaml': 'archive: [\n' } });
 
-      const { exitCode, request } = await run(['probe', 'quickstart'], {
-        ...EFFECTS,
+      const effects = buildRunEffects({
         cwd: tree.dir,
         homeDir: tree.resolve('home'),
       });
+      const { exitCode, request } = await run(['probe', 'quickstart'], effects);
 
       expect(exitCode).toBe(0);
       expect(selectLaunch(request)).not.toHaveProperty('take');
@@ -330,11 +316,11 @@ describe(run, () => {
     it('launches aidemo mcp from the repository root and writes nothing to stdout', async () => {
       using tree = createDemoRepo();
 
-      const { exitCode, request, stderr, stdout } = await run(['mcp'], {
-        ...EFFECTS,
+      const effects = buildRunEffects({
         cwd: tree.dir,
         findUnignoredPaths: (_dir, paths) => paths,
       });
+      const { exitCode, request, stderr, stdout } = await run(['mcp'], effects);
 
       expect(exitCode).toBe(0);
       expect(stdout).toBe('');
@@ -345,7 +331,7 @@ describe(run, () => {
     it('refuses a missing aidemo with exit 1', async () => {
       using tree = createDemoRepo({ aidemoVersion: false });
 
-      const { exitCode, request, stderr, stdout } = await run(['mcp'], { ...EFFECTS, cwd: tree.dir });
+      const { exitCode, request, stderr, stdout } = await run(['mcp'], buildRunEffects({ cwd: tree.dir }));
 
       expect(exitCode).toBe(1);
       expect(request).toBeUndefined();
@@ -360,14 +346,14 @@ describe(run, () => {
         config: 'aidemo:\n  env:\n    AIDEMO_CHROME_PROFILE: ~/profile\n    OPENAI_BASE_URL: http://local\n',
       });
 
-      const { request } = await run(['mcp'], {
-        ...EFFECTS,
+      const effects = buildRunEffects({
         cwd: tree.dir,
         env: { OPENAI_API_KEY: 'sk-x', OPENAI_BASE_URL: 'http://remote', PATH: '/bin' },
       });
+      const { request } = await run(['mcp'], effects);
 
       expect(selectLaunch(request)?.env).toStrictEqual({
-        AIDEMO_CHROME_PROFILE: `${HOME}/profile`,
+        AIDEMO_CHROME_PROFILE: `${STUB_HOME_DIR}/profile`,
         OPENAI_BASE_URL: 'http://local',
         PATH: '/bin',
       });
@@ -376,16 +362,17 @@ describe(run, () => {
     it('defaults the recording profile to one keyed by the archive label, for the entry point to create', async () => {
       using tree = createDemoRepo({ config: 'archive:\n  label: product\n' });
 
-      const { request } = await run(['mcp'], { ...EFFECTS, cwd: tree.dir, env: { AIDEMO_CHROME_PROFILE: '' } });
+      const { request } = await run(['mcp'], buildRunEffects({ cwd: tree.dir, env: { AIDEMO_CHROME_PROFILE: '' } }));
 
-      const profileDir = `${HOME}/.local/share/thor-demo/chrome-profiles/product`;
+      const profileDir = `${STUB_HOME_DIR}/.local/share/thor-demo/chrome-profiles/product`;
       expect(selectLaunch(request)).toMatchObject({ env: { AIDEMO_CHROME_PROFILE: profileDir }, profileDir });
     });
 
     it('leaves an inherited profile to aidemo without asking the entry point to create one', async () => {
       using tree = createDemoRepo();
 
-      const { request } = await run(['mcp'], { ...EFFECTS, cwd: tree.dir, env: { AIDEMO_CHROME_PROFILE: '/profile' } });
+      const effects = buildRunEffects({ cwd: tree.dir, env: { AIDEMO_CHROME_PROFILE: '/profile' } });
+      const { request } = await run(['mcp'], effects);
 
       expect(selectLaunch(request)?.env).toStrictEqual({ AIDEMO_CHROME_PROFILE: '/profile' });
       expect(selectLaunch(request)?.profileDir).toBeUndefined();
@@ -394,7 +381,7 @@ describe(run, () => {
     it('reports an invalid configuration with exit 1', async () => {
       using tree = createDemoRepo({ config: 'aidemo:\n  env:\n    K: ${UNSET}\n' });
 
-      const { exitCode, stderr } = await run(['mcp'], { ...EFFECTS, cwd: tree.dir });
+      const { exitCode, stderr } = await run(['mcp'], buildRunEffects({ cwd: tree.dir }));
 
       expect(exitCode).toBe(1);
       expect(stderr).toContain('aidemo.env.K: UNSET is not set');
@@ -504,7 +491,7 @@ describe(run, () => {
     });
 
     it('documents every voice key in its help', async () => {
-      const { exitCode, stdout } = await run(['voice', 'setup', '--help'], EFFECTS);
+      const { exitCode, stdout } = await run(['voice', 'setup', '--help'], buildRunEffects());
 
       expect(exitCode).toBe(0);
       for (const key of ['voice.reference.audio', 'voice.reference.transcript', 'voice.home', 'voice.model']) {
@@ -513,7 +500,7 @@ describe(run, () => {
     });
 
     it('lists the voice group in the root help', async () => {
-      const { stdout } = await run(['--help'], EFFECTS);
+      const { stdout } = await run(['--help'], buildRunEffects());
 
       expect(stdout).toMatch(/\n\s+voice\s/);
     });
@@ -586,7 +573,7 @@ describe(run, () => {
 
 /** Returns effects whose home and `PATH` are in `tree`. */
 function buildVoiceEffects(tree: TempTree): RunEffects {
-  return { ...EFFECTS, env: { PATH: tree.resolve('bin') }, homeDir: tree.resolve('home') };
+  return buildRunEffects({ env: { PATH: tree.resolve('bin') }, homeDir: tree.resolve('home') });
 }
 
 /**
