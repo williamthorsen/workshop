@@ -1,4 +1,6 @@
+import { once } from 'node:events';
 import http from 'node:http';
+import net from 'node:net';
 
 import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
@@ -156,6 +158,19 @@ describe(startSpeechProxy, () => {
     expect(proxy.readFailure()).toBeUndefined();
   });
 
+  it('drops a request that the client abandons mid-body, and keeps serving', async () => {
+    await using upstream = await startUpstream(CLIP);
+    using tree = createTempTree({ 'transcript.txt': 'text' });
+    await using proxy = await startSpeechProxy(buildOptions(tree.resolve('transcript.txt'), upstream.baseUrl));
+
+    await abandonMidBody(proxy.baseUrl);
+    const response = await postSpeech(proxy.baseUrl, OPENAI_REQUEST);
+
+    expect(response.status).toBe(200);
+    expect(upstream.requests).toHaveLength(1);
+    expect(proxy.readFailure()).toBeUndefined();
+  });
+
   it('answers 400 to a body without a string input, and 404 to any other request', async () => {
     await using upstream = await startUpstream(CLIP);
     using tree = createTempTree({ 'transcript.txt': 'text' });
@@ -184,6 +199,18 @@ describe(startSpeechProxy, () => {
 });
 
 // region | Helpers
+
+/** Sends a speech request that promises more body than it writes, then closes the connection. */
+async function abandonMidBody(baseUrl: string): Promise<void> {
+  const { hostname, port } = new URL(baseUrl);
+  const socket = net.connect(Number(port), hostname);
+  await once(socket, 'connect');
+  const head = `POST /v1/audio/speech HTTP/1.1\r\nHost: ${hostname}\r\nContent-Length: 100\r\n\r\n`;
+  await new Promise<void>((resolve, reject) => {
+    socket.write(`${head}{"input":`, (error) => (error ? reject(error) : resolve()));
+  });
+  socket.destroy();
+}
 
 /** One answer of the stub voice-clone server, sent after an optional delay. */
 interface StubAnswer {

@@ -28,9 +28,9 @@ export interface SpeechProxyOptions {
   readonly upstreamUrl: string;
 }
 
-/** A speech request that the proxy refused: its text and why. */
+/** A speech request that the proxy refused: its text, when it was read, and why. */
 export interface SpeechFailure {
-  readonly input: string;
+  readonly input?: string;
   readonly reason: string;
 }
 
@@ -45,8 +45,9 @@ export interface SpeechProxy extends AsyncDisposable {
 /**
  * Starts a loopback-only HTTP server that accepts OpenAI-shaped speech requests and forwards each as a request that
  * clones the profile's voice, keeping only the text to speak. It passes on a clip that the inspector accepts and a 4xx
- * answer, and answers 502 to a rejected clip, a 5xx answer, a failed connection, or a request over budget. A request
- * from a web page is answered 403, and every other request 404.
+ * answer, and answers 502 to a rejected clip, a 5xx answer, a failed connection, a request over budget, or a fault of
+ * its own. A request that the client abandons is dropped, a request from a web page is answered 403, and every other
+ * request 404.
  */
 export async function startSpeechProxy(options: SpeechProxyOptions): Promise<SpeechProxy> {
   const { inspectClip = inspectClipWithFfmpeg, requestBudgetMs = REQUEST_BUDGET_MS } = options;
@@ -55,8 +56,24 @@ export async function startSpeechProxy(options: SpeechProxyOptions): Promise<Spe
   let failure: SpeechFailure | undefined;
 
   const server = http.createServer((request, response) => {
-    void handleRequest(request, response);
+    void serveRequest(request, response);
   });
+
+  /** Handles a request, dropping it when the client is gone and recording any other fault as the proxy's failure. */
+  async function serveRequest(request: http.IncomingMessage, response: http.ServerResponse): Promise<void> {
+    try {
+      await handleRequest(request, response);
+    } catch (error) {
+      // A request stream that errored means that the client is gone.
+      if (request.errored !== null) {
+        response.destroy();
+        return;
+      }
+      failure = { reason: `the speech proxy failed: ${describeError(error)}` };
+      if (response.headersSent) response.destroy();
+      else sendFailure(response, failure.reason);
+    }
+  }
 
   async function handleRequest(request: http.IncomingMessage, response: http.ServerResponse): Promise<void> {
     // A browser sends `Origin` on every POST, and aidemo's Node client never does.
