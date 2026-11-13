@@ -1,10 +1,10 @@
-import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 
 import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import type { VoiceConfig } from '../../config/read-machine-config.ts';
+import { hashContent } from '../../test-utils/hash-content.ts';
 import { buildVoiceProfile, resolveVoiceProfilePaths } from '../build-voice-profile.ts';
 import type { Invocation, RunInvocation } from '../invocation.ts';
 
@@ -19,8 +19,8 @@ describe(buildVoiceProfile, () => {
     const record = {
       schemaVersion: 1,
       model: 'org/model',
-      referenceSha256: sha256('audio'),
-      transcriptSha256: sha256('  Hello there.\n\n'),
+      referenceSha256: hashContent('audio'),
+      transcriptSha256: hashContent('  Hello there.\n\n'),
     };
     expect(result).toStrictEqual({ ok: true, record });
     expect(calls[0]?.args).toStrictEqual(expect.arrayContaining(['-i', tree.resolve('reference.m4a'), '-ac', '1']));
@@ -95,11 +95,6 @@ function fakeFfmpeg(calls: Invocation[]): RunInvocation {
     writeFileSync(invocation.args.at(-1) ?? '', 'wav');
     return Promise.resolve({ ok: true });
   };
-}
-
-/** Returns the sha256 of a string. */
-function sha256(text: string): string {
-  return createHash('sha256').update(text).digest('hex');
 }
 
 // endregion | Helpers

@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -6,6 +5,7 @@ import { isRecord } from '@williamthorsen/toolbelt.objects';
 import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
+import { hashContent } from '../../test-utils/hash-content.ts';
 import { commitAll } from '../../test-utils/scratch-git-repo.ts';
 import { createDemoRepo } from '../test-utils/create-demo-repo.ts';
 import { runThorDemo } from '../test-utils/run-thor-demo.ts';
@@ -45,7 +45,7 @@ describe('thor-demo render archiving', () => {
       params: ['--tts', 'local'],
     });
     for (const [name, content] of Object.entries(OUTPUT_FILES)) {
-      expect(provenance['files']).toHaveProperty([name], { bytes: content.length, sha256: sha256(content) });
+      expect(provenance['files']).toHaveProperty([name], { bytes: content.length, sha256: hashContent(content) });
       expect(readFileSync(path.join(takeDir, name), 'utf8')).toBe(content);
     }
   });
@@ -109,11 +109,6 @@ function readJson(filePath: string): Record<string, unknown> {
   if (!isRecord(parsed)) throw new Error(`${filePath} does not contain a JSON object`);
 
   return parsed;
-}
-
-/** Returns the sha256 of a string, as hex. */
-function sha256(text: string): string {
-  return createHash('sha256').update(text).digest('hex');
 }
 
 // endregion | Helpers

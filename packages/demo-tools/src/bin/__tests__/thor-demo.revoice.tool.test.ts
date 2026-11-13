@@ -1,5 +1,4 @@
 import { spawn } from 'node:child_process';
-import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -7,6 +6,7 @@ import { isRecord } from '@williamthorsen/toolbelt.objects';
 import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
+import { hashContent } from '../../test-utils/hash-content.ts';
 import { createDemoRepo, type DemoRepo } from '../test-utils/create-demo-repo.ts';
 import { createFakeVoiceTools, type FakeVoiceMachine } from '../test-utils/create-fake-voice-tools.ts';
 import { runThorDemo } from '../test-utils/run-thor-demo.ts';
@@ -65,7 +65,7 @@ describe('thor-demo revoice', () => {
       demo: 'quickstart',
       engine: { version: '0.20.3' },
       params: [],
-      reference: { sha256: sha256(readFileSync(machine.tree.resolve('home/reference.m4a'))) },
+      reference: { sha256: hashContent(readFileSync(machine.tree.resolve('home/reference.m4a'))) },
       voice: { scenes: [{ id: 'scene-1', provider: 'mlx-audio', voiceId: MODEL }] },
     });
   });
@@ -153,11 +153,6 @@ function readProvenance(archiveRoot: string): Record<string, unknown> {
 /** Runs `thor-demo revoice quickstart` in the repository, on the fake machine, archiving to `archiveRoot`. */
 function runRevoice(machine: FakeVoiceMachine, repo: DemoRepo, archiveRoot: string) {
   return runThorDemo(['revoice', 'quickstart'], repo.tree.dir, { ...machine.env, THOR_DEMO_ARCHIVE_ROOT: archiveRoot });
-}
-
-/** Returns the sha256 of `content`. */
-function sha256(content: Buffer | string): string {
-  return createHash('sha256').update(content).digest('hex');
 }
 
 // endregion | Helpers
