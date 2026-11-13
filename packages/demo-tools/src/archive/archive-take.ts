@@ -33,13 +33,13 @@ export interface TakeArchivePlan {
 export type ArchiveOutcome = { ok: true; takeDir: string } | { ok: false; message: string };
 
 /** The rendered video, which every take contains. */
-export const VIDEO_FILE = 'final-demo.mp4';
+const VIDEO_FILE = 'final-demo.mp4';
 
 /** The files that a take contains when aidemo wrote them. */
-export const OPTIONAL_FILES: readonly string[] = ['final-demo.srt', 'final-demo.vtt', 'report.json'];
+const OPTIONAL_FILES: readonly string[] = ['final-demo.srt', 'final-demo.vtt', 'report.json'];
 
 /** The provenance record's file name in a take. */
-export const PROVENANCE_FILE = 'provenance.json';
+const PROVENANCE_FILE = 'provenance.json';
 
 /**
  * Copies the take in the demo's `output/` to `<archiveRoot>/<label>/<demo>/<take>/` with its provenance record, taking

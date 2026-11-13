@@ -13,7 +13,7 @@ import { buildSpeechRequest, SPEECH_PATH } from './mlx-audio/build-speech-reques
  * How long a speech request may take upstream. The slowest good clip measured on Higgs Audio v2 q8 took 170 s, and the
  * budget stays under the 10-minute timeout of aidemo's OpenAI client.
  */
-export const REQUEST_BUDGET_MS = 540_000;
+const REQUEST_BUDGET_MS = 540_000;
 
 /** Where the proxy forwards speech, the voice profile that it clones, and how it judges each answer. */
 export interface SpeechProxyOptions {
