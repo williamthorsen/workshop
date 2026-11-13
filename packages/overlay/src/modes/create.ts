@@ -1,9 +1,7 @@
 import path from 'node:path';
 
-import { parseStatus } from '../chezmoi/parseStatus.ts';
-import { readStatus } from '../chezmoi/readStatus.ts';
 import type { ChezmoiContext } from '../chezmoi/run-chezmoi.ts';
-import { countOutcome, partitionStatus } from './entry-outcomes.ts';
+import { countOutcome, readPartitionedStatus } from './entry-outcomes.ts';
 import type { OverlayResult } from './types.ts';
 
 /**
@@ -16,7 +14,7 @@ import type { OverlayResult } from './types.ts';
  * or scripts pass failed, else `1` if any conflicts exist, else `0`.
  */
 export async function runCreate(context: ChezmoiContext): Promise<OverlayResult> {
-  const { entries, pendingScriptCount } = partitionStatus(parseStatus(await readStatus(context)), {
+  const { entries, pendingScriptCount } = await readPartitionedStatus(context, {
     A: 'created',
     D: 'deleted',
     M: 'conflict',

@@ -1,7 +1,5 @@
-import { parseStatus } from '../chezmoi/parseStatus.ts';
-import { readStatus } from '../chezmoi/readStatus.ts';
 import type { ChezmoiContext } from '../chezmoi/run-chezmoi.ts';
-import { partitionStatus } from './entry-outcomes.ts';
+import { readPartitionedStatus } from './entry-outcomes.ts';
 import type { OverlayResult } from './types.ts';
 
 /**
@@ -15,7 +13,7 @@ import type { OverlayResult } from './types.ts';
  * `deleted`, and `M` as `conflict`.
  */
 export async function runVerify(context: ChezmoiContext): Promise<OverlayResult> {
-  const { entries, pendingScriptCount } = partitionStatus(parseStatus(await readStatus(context)), {
+  const { entries, pendingScriptCount } = await readPartitionedStatus(context, {
     A: 'created',
     D: 'deleted',
     M: 'conflict',
