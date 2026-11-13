@@ -21,6 +21,7 @@ import { listMicrophones, performVoiceRecord, type VoiceCommandOutcome } from '.
 import { performVoiceSetup } from '../voice/perform-voice-setup.ts';
 import type { RevoiceRequest } from '../voice/revoice-request.ts';
 import type { VoiceRequest } from '../voice/voice-request.ts';
+import { startVoiceServer } from '../voice/voice-server.ts';
 import { type Launch, run } from './run.ts';
 
 installCrashHandler('thor-demo');
@@ -94,6 +95,7 @@ async function completeRevoice(request: RevoiceRequest): Promise<number> {
   const outcome = await performRevoice(request, {
     report: (line) => process.stderr.write(`${prefix}: ${line}\n`),
     runStage: runLaunch,
+    startServer: startVoiceServer,
   });
   if (!outcome.ok) {
     await writeFully(process.stderr, `${prefix}: ${outcome.message}\n`);

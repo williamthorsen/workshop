@@ -4,7 +4,7 @@ import { buildServerLaunch, SERVER_HOST } from './mlx-audio/build-server-launch.
 import { formatModelDir } from './mlx-audio/format-model-dir.ts';
 import type { RevoiceRequest } from './revoice-request.ts';
 import { startSpeechProxy } from './speech-proxy.ts';
-import { startVoiceServer } from './voice-server.ts';
+import type { ServerProcess, StartVoiceServerResult } from './voice-server.ts';
 
 /** An aidemo stage to run: its arguments, the bin, and where and with what environment to run it. */
 export interface AidemoStage {
@@ -14,11 +14,13 @@ export interface AidemoStage {
   readonly env: NodeJS.ProcessEnv;
 }
 
-/** What a revoice reports through and runs aidemo with. */
+/** What a revoice reports through, runs aidemo with, and starts the voice-clone server with. */
 export interface RevoiceEffects {
   readonly report: (line: string) => void;
   /** Runs an aidemo stage to completion, resolving to its exit code. */
   readonly runStage: (stage: AidemoStage) => Promise<number>;
+  /** Starts the voice-clone server, resolving once it answers or with why it never did. */
+  readonly startServer: (launch: ServerProcess) => Promise<StartVoiceServerResult>;
 }
 
 /** The outcome of a revoice: success, or the exit code and what stopped it. */
@@ -30,12 +32,12 @@ export type RevoiceOutcome = { ok: true } | { ok: false; exitCode: number; messa
  */
 export async function performRevoice(
   request: RevoiceRequest,
-  { report, runStage }: RevoiceEffects,
+  { report, runStage, startServer }: RevoiceEffects,
 ): Promise<RevoiceOutcome> {
   const { home, model } = request.voice;
   const launch = buildServerLaunch(home, await findFreePort(SERVER_HOST));
   report(`starting the voice-clone server on ${launch.baseUrl}`);
-  const started = await startVoiceServer(launch);
+  const started = await startServer(launch);
   if (!started.ok) return { ok: false, exitCode: 1, message: started.message };
   await using server = started.server;
 
