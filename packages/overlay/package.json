@@ -45,6 +45,7 @@
   "dependencies": {
     "@williamthorsen/toolbelt.cli": "catalog:",
     "@williamthorsen/toolbelt.errors": "catalog:",
+    "@williamthorsen/toolbelt.packaging": "catalog:",
     "@williamthorsen/toolbelt.strings": "catalog:"
   },
   "devDependencies": {
