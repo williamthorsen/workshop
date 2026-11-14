@@ -124,6 +124,7 @@ interface ExecFileError {
   stderr?: unknown;
 }
 
+/** Reports whether a thrown value has the `code` property of an `execFile` rejection. */
 function isExecFileError(error: unknown): error is ExecFileError {
   return typeof error === 'object' && error !== null && 'code' in error;
 }

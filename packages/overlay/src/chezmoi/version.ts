@@ -43,12 +43,14 @@ export function parseVersion(text: string): SemverParts | undefined {
 
 // region | Helpers
 
+/** Compares two versions: negative when `a` is older than `b`, zero when they are equal, and positive when newer. */
 function compareVersions(a: SemverParts, b: SemverParts): number {
   if (a.major !== b.major) return a.major - b.major;
   if (a.minor !== b.minor) return a.minor - b.minor;
   return a.patch - b.patch;
 }
 
+/** Formats a version as `major.minor.patch`. */
 function formatVersion(parts: SemverParts): string {
   return `${parts.major}.${parts.minor}.${parts.patch}`;
 }

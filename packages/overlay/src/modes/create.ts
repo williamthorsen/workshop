@@ -65,6 +65,7 @@ export async function runCreate(context: ChezmoiContext): Promise<OverlayResult>
 
 // region | Helpers
 
+/** Returns 2 when a script failed, which outranks conflicts, 1 when an entry conflicts, and 0 otherwise. */
 function computeExitCode(ok: boolean, conflicts: number): 0 | 1 | 2 {
   if (!ok) return 2;
   if (conflicts > 0) return 1;
