@@ -8,17 +8,9 @@ import { chezmoiRunner } from '../chezmoi/run-chezmoi.ts';
 import * as versionModule from '../chezmoi/version.ts';
 import * as createModule from '../modes/create.ts';
 import * as forceModule from '../modes/force.ts';
-import type { OverlayResult } from '../modes/types.ts';
 import * as verifyModule from '../modes/verify.ts';
 import { overlay } from '../overlay.ts';
-
-const stubResult: OverlayResult = {
-  mode: 'verify',
-  entries: [],
-  scripts: { ranCount: 0, ok: true },
-  counts: { created: 0, deleted: 0, forced: 0, conflicts: 0, pending: 0 },
-  exitCode: 0,
-};
+import { buildOverlayResult } from '../test-utils/overlay-result.ts';
 
 describe(overlay, () => {
   afterEach(() => {
@@ -27,7 +19,7 @@ describe(overlay, () => {
 
   it('runs the version preflight before dispatching', async () => {
     const preflight = vi.spyOn(versionModule, 'assertChezmoiVersion').mockResolvedValue();
-    vi.spyOn(verifyModule, 'runVerify').mockResolvedValue(stubResult);
+    vi.spyOn(verifyModule, 'runVerify').mockResolvedValue(buildOverlayResult());
 
     await overlay({ source: '/src' });
 
@@ -42,7 +34,7 @@ describe(overlay, () => {
 
   it('defaults to verify mode and the current working directory as target', async () => {
     vi.spyOn(versionModule, 'assertChezmoiVersion').mockResolvedValue();
-    const verify = vi.spyOn(verifyModule, 'runVerify').mockResolvedValue(stubResult);
+    const verify = vi.spyOn(verifyModule, 'runVerify').mockResolvedValue(buildOverlayResult());
 
     await overlay({ source: 'src' });
 
@@ -56,7 +48,7 @@ describe(overlay, () => {
 
   it('resolves the target to an absolute path', async () => {
     vi.spyOn(versionModule, 'assertChezmoiVersion').mockResolvedValue();
-    const verify = vi.spyOn(verifyModule, 'runVerify').mockResolvedValue(stubResult);
+    const verify = vi.spyOn(verifyModule, 'runVerify').mockResolvedValue(buildOverlayResult());
 
     await overlay({ source: '/src', target: 'relative/target' });
 
@@ -70,7 +62,7 @@ describe(overlay, () => {
 
   it('passes the caller-supplied output stream to the mode', async () => {
     vi.spyOn(versionModule, 'assertChezmoiVersion').mockResolvedValue();
-    const verify = vi.spyOn(verifyModule, 'runVerify').mockResolvedValue(stubResult);
+    const verify = vi.spyOn(verifyModule, 'runVerify').mockResolvedValue(buildOverlayResult());
     const output = new PassThrough();
 
     await overlay({ source: '/src', output });
@@ -80,7 +72,7 @@ describe(overlay, () => {
 
   it('dispatches to create mode', async () => {
     vi.spyOn(versionModule, 'assertChezmoiVersion').mockResolvedValue();
-    const create = vi.spyOn(createModule, 'runCreate').mockResolvedValue({ ...stubResult, mode: 'create' });
+    const create = vi.spyOn(createModule, 'runCreate').mockResolvedValue(buildOverlayResult({ mode: 'create' }));
 
     await overlay({ source: '/src', mode: 'create' });
 
@@ -89,7 +81,7 @@ describe(overlay, () => {
 
   it('dispatches to force mode', async () => {
     vi.spyOn(versionModule, 'assertChezmoiVersion').mockResolvedValue();
-    const force = vi.spyOn(forceModule, 'runForce').mockResolvedValue({ ...stubResult, mode: 'force' });
+    const force = vi.spyOn(forceModule, 'runForce').mockResolvedValue(buildOverlayResult({ mode: 'force' }));
 
     await overlay({ source: '/src', mode: 'force' });
 

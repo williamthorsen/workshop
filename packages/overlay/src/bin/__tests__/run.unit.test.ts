@@ -4,20 +4,12 @@ import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { OverlayError } from '../../errors/OverlayError.ts';
-import type { OverlayResult } from '../../modes/types.ts';
 import * as overlayModule from '../../overlay.ts';
 import { formatReport } from '../../reporting/formatReport.ts';
+import { buildOverlayResult } from '../../test-utils/overlay-result.ts';
 import { run } from '../run.ts';
 
 const effects = { resolveVersion: () => '9.9.9' };
-
-const stubResult: OverlayResult = {
-  mode: 'create',
-  entries: [{ path: '.newfile', outcome: 'created' }],
-  scripts: { ranCount: 0, ok: true },
-  counts: { created: 1, deleted: 0, forced: 0, conflicts: 0, pending: 0 },
-  exitCode: 0,
-};
 
 describe(run, () => {
   afterEach(() => {
@@ -25,7 +17,7 @@ describe(run, () => {
   });
 
   it.each(['verify', 'create', 'force'] as const)('runs overlay in %s mode for that subcommand', async (mode) => {
-    const overlay = vi.spyOn(overlayModule, 'overlay').mockResolvedValue(stubResult);
+    const overlay = vi.spyOn(overlayModule, 'overlay').mockResolvedValue(buildOverlayResult());
     using _io = captureStdio();
 
     await run([mode, '/src'], effects);
@@ -34,7 +26,7 @@ describe(run, () => {
   });
 
   it('passes the target directory when one is given', async () => {
-    const overlay = vi.spyOn(overlayModule, 'overlay').mockResolvedValue(stubResult);
+    const overlay = vi.spyOn(overlayModule, 'overlay').mockResolvedValue(buildOverlayResult());
     using _io = captureStdio();
 
     await run(['create', '/src', '/dest'], effects);
@@ -43,17 +35,18 @@ describe(run, () => {
   });
 
   it('writes JSON to stdout and returns the result exit code under --json', async () => {
-    vi.spyOn(overlayModule, 'overlay').mockResolvedValue(stubResult);
+    const result = buildOverlayResult();
+    vi.spyOn(overlayModule, 'overlay').mockResolvedValue(result);
     using io = captureStdio();
 
     const code = await run(['create', '/src', '--json'], effects);
 
-    expect(io.stdout).toBe(`${JSON.stringify(stubResult)}\n`);
+    expect(io.stdout).toBe(`${JSON.stringify(result)}\n`);
     expect(code).toBe(0);
   });
 
   it("sends chezmoi's streamed output to the process's stderr", async () => {
-    const overlay = vi.spyOn(overlayModule, 'overlay').mockResolvedValue(stubResult);
+    const overlay = vi.spyOn(overlayModule, 'overlay').mockResolvedValue(buildOverlayResult());
     using _io = captureStdio();
 
     await run(['create', '/src'], effects);
@@ -62,16 +55,17 @@ describe(run, () => {
   });
 
   it('writes the text report to stdout when --json is absent', async () => {
-    vi.spyOn(overlayModule, 'overlay').mockResolvedValue(stubResult);
+    const result = buildOverlayResult();
+    vi.spyOn(overlayModule, 'overlay').mockResolvedValue(result);
     using io = captureStdio();
 
     await run(['create', '/src'], effects);
 
-    expect(io.stdout).toBe(`${formatReport(stubResult)}\n`);
+    expect(io.stdout).toBe(`${formatReport(result)}\n`);
   });
 
   it('propagates the result exit code', async () => {
-    vi.spyOn(overlayModule, 'overlay').mockResolvedValue({ ...stubResult, exitCode: 1 });
+    vi.spyOn(overlayModule, 'overlay').mockResolvedValue(buildOverlayResult({ exitCode: 1 }));
     using _io = captureStdio();
 
     await expect(run(['create', '/src'], effects)).resolves.toBe(1);
@@ -115,7 +109,7 @@ describe(run, () => {
     ['a former mode flag after a subcommand', ['verify', '/src', '--force'], /^overlay: Unknown option: --force\n/],
     ['a missing source directory', ['verify'], /^overlay: Missing argument: <source-dir>\n/],
   ])('rejects %s as a usage error with exit 2', async (_label, argv, message) => {
-    const overlay = vi.spyOn(overlayModule, 'overlay').mockResolvedValue(stubResult);
+    const overlay = vi.spyOn(overlayModule, 'overlay').mockResolvedValue(buildOverlayResult());
     using io = captureStdio();
 
     const code = await run(argv, effects);
