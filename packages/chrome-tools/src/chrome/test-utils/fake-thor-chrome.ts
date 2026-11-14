@@ -56,7 +56,7 @@ export interface FakeThorChromeOptions {
 export const FIRST_RUNNING_PID = 4242;
 
 /** The commands that thor-chrome requires on PATH before it runs them. */
-const REQUIRED_COMMANDS = ['curl', 'lsof', 'pgrep'];
+const REQUIRED_COMMANDS = ['curl', 'git', 'lsof', 'pgrep'];
 
 /**
  * Builds a fake thor-chrome environment whose clock advances only when the run sleeps, so that a wait reaches its
