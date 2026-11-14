@@ -23,10 +23,9 @@ Open-source utilities by [William Thorsen](https://github.com/williamthorsen).
 
 ## Development
 
-This project uses [pnpm](https://pnpm.io/) (managed via [corepack](https://nodejs.org/api/corepack.html)) and [nmr](https://www.npmjs.com/package/@williamthorsen/nmr) as the script runner.
+Prerequisites: The tool versions pinned in `.tool-versions`, and [pnpm](https://pnpm.io/), installed [standalone](https://pnpm.io/installation); the `packageManager` field pins the version that pnpm then activates. [nmr](https://www.npmjs.com/package/@williamthorsen/nmr) is the script runner.
 
 ```shell
-corepack enable
 pnpm install
 nmr check
 ```
