@@ -13,7 +13,7 @@ import type { ShowInstancePageResult } from './results.ts';
  * that the launch wrote, which describes that launch, and never writes one.
  */
 export function showInstancePage(invocation: Invocation, profile: string | undefined): ShowInstancePageResult {
-  const { name: command } = invocation.output;
+  const { programName: command } = invocation;
   const { dir, name } = resolveDefaultProfile(invocation, profile ?? '');
 
   requireCommand(invocation, 'curl');
@@ -69,7 +69,7 @@ function describeUnavailable(
   pid: string | undefined,
   port: string | undefined,
 ) {
-  const { name } = invocation.output;
+  const { programName: name } = invocation;
   if (state === 'stopped') {
     return refuse(invocation, 'profile-not-running', `profile '${profile}' is not running`, {
       hints: [`Launch it: ${name} --profile ${profile}`],

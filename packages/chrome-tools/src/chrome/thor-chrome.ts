@@ -20,6 +20,7 @@ import {
   createInvocation,
   type Invocation,
   type JsonValue,
+  type OutputFormat,
   refuse,
   type ThorChromeDeps,
   ThorChromeRefusal,
@@ -69,7 +70,8 @@ export async function runThorChrome(
 ): Promise<number> {
   // Read --json and --help ahead of any parse, so that a refusal raised by a parse renders in the format that the
   // caller asked for, and --help shows the usage whatever precedes it
-  const invocation = createInvocation(output, args.includes('--json') ? 'json' : 'prose', deps);
+  const format: OutputFormat = args.includes('--json') ? 'json' : 'prose';
+  const invocation = createInvocation(output.name, deps);
   if (args.includes('--help') || args.includes('-h')) {
     output.stdout.write(formatUsage(output.name, invocation.profilesDir));
     return 0;
@@ -80,11 +82,9 @@ export async function runThorChrome(
     const context = createTextContext(invocation);
     // Report each profile in prose as the verb reaches it; a JSON document waits for the whole result
     const onOutcome: OutcomeObserver | undefined =
-      invocation.format === 'json'
-        ? undefined
-        : (outcome) => writeTextLines(output, renderOutcomeText(outcome, context));
+      format === 'json' ? undefined : (outcome) => writeTextLines(output, renderOutcomeText(outcome, context));
     const result = await dispatchVerb(invocation, verb, rest, onOutcome);
-    if (invocation.format === 'json') {
+    if (format === 'json') {
       writeJsonDocument(output, renderResultJson(result));
     } else {
       writeTextLines(output, renderResultText(result, context));
@@ -92,7 +92,7 @@ export async function runThorChrome(
     return deriveExitStatus(result);
   } catch (error) {
     if (!(error instanceof ThorChromeRefusal)) throw error;
-    if (invocation.format === 'json') {
+    if (format === 'json') {
       const entry = error.profile === undefined ? undefined : resolveProfileEntry(invocation, error.profile.name);
       writeJsonDocument(output, renderRefusalJson(error, entry));
     } else {
@@ -125,7 +125,7 @@ function createProcessDeps(): ThorChromeDeps {
 /** Returns what the text renderers read besides the result. */
 function createTextContext(invocation: Invocation): TextContext {
   const { env, isStdoutTerminal } = invocation.deps;
-  return { env, isStdoutTerminal, programName: invocation.output.name };
+  return { env, isStdoutTerminal, programName: invocation.programName };
 }
 
 /** Parses a verb's arguments and runs it. */

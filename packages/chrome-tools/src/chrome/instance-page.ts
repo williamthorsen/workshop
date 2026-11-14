@@ -40,7 +40,7 @@ export function escapeHtml(value: string): string {
  * started it, and the commands that reach it. Every value is escaped, since a URL or a path is the caller's text.
  */
 export function writeInstancePage(invocation: Invocation, facts: InstancePageFacts): void {
-  const { name } = invocation.output;
+  const { programName: name } = invocation;
   const { branch, repo, repoDir } = invocation.work;
   const profileDir = facts.pageFile.slice(0, facts.pageFile.lastIndexOf('/'));
   const devtools = `http://127.0.0.1:${facts.port}/json/version`;

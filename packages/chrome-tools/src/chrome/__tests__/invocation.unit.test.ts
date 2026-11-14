@@ -24,7 +24,7 @@ describe(createInvocation, () => {
 /** Returns the profiles directory of an invocation whose environment contains only the given variables. */
 function readProfilesDir(env: Record<string, string | undefined>): string {
   const fake = makeFakeThorChrome();
-  return createInvocation(fake.captured.output, 'prose', { ...fake.deps, env }).profilesDir;
+  return createInvocation('thor-chrome', { ...fake.deps, env }).profilesDir;
 }
 
 // endregion | Helpers

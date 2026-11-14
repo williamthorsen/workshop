@@ -24,7 +24,7 @@ export function assertPortAvailable(
   request: { isHeadless: boolean; port: string; profile: string; profileDir: string },
 ): { isHeadless: boolean; pid: string } | undefined {
   const { isHeadless, port, profile, profileDir } = request;
-  const { name } = invocation.output;
+  const { programName: name } = invocation;
   const lookup = findBrowserPid(invocation, profileDir);
   if (!lookup.isReadable) {
     throw refuse(

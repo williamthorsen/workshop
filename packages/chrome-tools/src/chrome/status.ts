@@ -29,7 +29,7 @@ export function showStatus(
 
   requireCommand(invocation, 'curl');
   requireCommand(invocation, 'pgrep');
-  assertProfileNotUnderived(invocation, `${invocation.output.name} status --repo <repo> --branch <branch>`);
+  assertProfileNotUnderived(invocation, `${invocation.programName} status --repo <repo> --branch <branch>`);
   const launchPort = resolvePort(invocation, givenPort);
 
   const entry = composeProfileEntry(invocation, name, resolveProfileState(invocation, dir));

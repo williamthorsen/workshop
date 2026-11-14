@@ -140,7 +140,7 @@ function isRunning(invocation: Invocation, dir: string): boolean {
  * Terminates one profile's browser and returns what it did, leaving instances on other profiles running.
  */
 async function quitProfile(invocation: Invocation, profile: string, timeout: Timeout): Promise<ProfileOutcome> {
-  const { name } = invocation.output;
+  const { programName: name } = invocation;
   const dir = `${invocation.profilesDir}/${profile}`;
   if (!isDirectory(dir)) {
     assertProfileNotUnderived(invocation, `${name} quit <repo>-<branch>`);

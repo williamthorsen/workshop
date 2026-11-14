@@ -55,7 +55,7 @@ export async function deleteProfiles(
       report(await deleteProfile(invocation, profile, isDryRun, timeout));
     }
   } else if (selection === 'derived') {
-    const { name } = invocation.output;
+    const { programName: name } = invocation;
     const { dir, name: profile } = resolveDerivedProfile(invocation, `${name} delete <repo>-<branch>`);
     // A worktree without a profile has nothing to remove, which is not a refusal
     if (isDirectory(dir)) {
@@ -83,7 +83,7 @@ async function deleteDerivedProfile(
   isDryRun: boolean,
   timeout: Timeout | undefined,
 ): Promise<ProfileOutcome> {
-  const { name } = invocation.output;
+  const { programName: name } = invocation;
   const dir = `${invocation.profilesDir}/${profile}`;
   const facts = resolveProfileFacts(invocation, dir);
   const { branch, repoDir } = invocation.work;
@@ -134,7 +134,7 @@ async function deleteProfile(
   isDryRun: boolean,
   timeout: Timeout | undefined,
 ): Promise<ProfileOutcome> {
-  const { name } = invocation.output;
+  const { programName: name } = invocation;
   const dir = `${invocation.profilesDir}/${profile}`;
   if (!isDirectory(dir)) {
     assertProfileNotUnderived(invocation, `${name} delete <repo>-<branch>`);

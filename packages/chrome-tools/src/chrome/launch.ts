@@ -160,7 +160,7 @@ function assertProfileCreatable(
   request: { isCreate: boolean; profile: string; profileDir: string },
 ): void {
   const { isCreate, profile, profileDir } = request;
-  const { name } = invocation.output;
+  const { programName: name } = invocation;
   if (isDirectory(profileDir) || isCreate || invocation.origin === 'derived') return;
   assertProfileNotUnderived(invocation, `${name} --repo <repo> --branch <branch>`);
   throw refuse(invocation, 'profile-missing', `profile '${profile}' does not exist at ${profileDir}`, {
@@ -230,7 +230,7 @@ function describeLaunchFailure(
   logFile: string,
   timeout: string,
 ) {
-  const { name } = invocation.output;
+  const { programName: name } = invocation;
   if (readLogFile(logFile).includes(POLICY_DENIAL_MESSAGE)) {
     return refuse(invocation, 'policy-denied', `policy blocked remote debugging for profile '${profile}'`, {
       extra: { log: logFile },
