@@ -344,6 +344,9 @@ importers:
 
   packages/chrome-tools:
     dependencies:
+      '@williamthorsen/readout':
+        specifier: 0.1.0
+        version: 0.1.0
       '@williamthorsen/toolbelt.cli':
         specifier: 'catalog:'
         version: 0.10.0
@@ -1777,6 +1780,10 @@ packages:
         optional: true
       vitest:
         optional: true
+
+  '@williamthorsen/readout@0.1.0':
+    resolution: {integrity: sha512-Y/EDfa1tPepWXjFfXMLu/1CCFIHw/rpIbgonL7bcfwRXZNzW0PU1z9aRv8nppckg4QbOyou9fA/s0RgS6Jy2Fg==}
+    engines: {node: '>=24'}
 
   '@williamthorsen/release-kit@18.2.0':
     resolution: {integrity: sha512-KpxIvAgQXMID5dHI3UsLQPh9ieUieNuwUzC71XIjvRuMY3XwpZ9LNo6mJSRmQKThenmSERofyK1+f+uKQR/wMQ==}
@@ -4485,6 +4492,8 @@ snapshots:
       typescript: 6.0.3
       vite: 8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
       vitest: 5.1.0(@types/node@24.19.2)(@vitest/coverage-v8@5.1.0)(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
+
+  '@williamthorsen/readout@0.1.0': {}
 
   '@williamthorsen/release-kit@18.2.0':
     dependencies:
