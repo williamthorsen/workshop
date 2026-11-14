@@ -42,7 +42,7 @@ overlay <source-dir> [target-dir] [--verify|--create|--force] [--json] [--help]
 | Code | Meaning                                                                                                 |
 | ---- | ------------------------------------------------------------------------------------------------------- |
 | `0`  | Converged / clean.                                                                                      |
-| `1`  | Drift (`--verify`) or unresolved conflicts (`--create`).                                                |
+| `1`  | Drift (`--verify`), unresolved conflicts (`--create`), or an internal error in overlay.                 |
 | `2`  | Hard error: chezmoi missing or below the minimum version, a `run_` script failed, or invalid arguments. |
 
 Exit `2` is deliberately distinct from drift so callers can tell a real failure apart from "the target has drifted".

@@ -10,7 +10,8 @@ const { defineCommand, defineGroup } = createCli<ThorNodeEffects>();
 
 const EXIT_CODES = `Exit codes:
   0  A check found nothing to fix, or prune-modules completed
-  1  A check found something to fix, or prune-modules failed to delete a directory or was declined
+  1  A check found something to fix, prune-modules failed to delete a directory or was declined, or thor-node hit an
+     internal error
   2  Usage or validation error
   3  The command does not apply; the reason is on stderr`;
 
@@ -111,8 +112,9 @@ const ROOT = defineGroup({
 
 /**
  * Runs the `thor-node` command line, writing to the given writers and resolving to the exit code rather than exiting,
- * so that the whole surface is exercisable without a process. Every failure is reported through the writers and the
- * exit code: Nothing throws.
+ * so that the whole surface is exercisable without a process. A failure inside a command is reported through the
+ * writers and the exit code, as a usage error when the command does not anticipate it; an error thrown outside a
+ * command propagates to the caller.
  *
  * @internal
  */

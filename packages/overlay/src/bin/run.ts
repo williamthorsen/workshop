@@ -32,7 +32,7 @@ Options:
 
 Exit codes:
   0  Converged / clean.
-  1  Drift (verify) or unresolved conflicts (create).
+  1  Drift (verify), unresolved conflicts (create), or an internal error in overlay.
   2  Hard error: chezmoi missing or below the minimum version, a script failed, or
      invalid arguments.
 `;
