@@ -6,10 +6,13 @@ import path from 'node:path';
 import process from 'node:process';
 import readline from 'node:readline/promises';
 
+import { installCrashHandler } from '@williamthorsen/toolbelt.cli/candidate';
 import { resolveSelfVersion } from '@williamthorsen/toolbelt.packaging/candidate';
 
 import { createNpmClient } from '../npm/createNpmClient.ts';
 import { run } from './run.ts';
+
+installCrashHandler('thor-npm');
 
 // A reader that exits first closes the pipe, which node reports as an error event rather than the quiet termination
 // that SIGPIPE would give.

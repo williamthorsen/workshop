@@ -540,6 +540,9 @@ importers:
 
   packages/overlay:
     dependencies:
+      '@williamthorsen/toolbelt.cli':
+        specifier: 'catalog:'
+        version: 0.10.0
       '@williamthorsen/toolbelt.errors':
         specifier: 'catalog:'
         version: 0.10.1
