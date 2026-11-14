@@ -79,22 +79,22 @@ describe('thor-chrome output for verbs that act on several profiles', () => {
         --- stdout
 
         --- stderr
-        thor-chrome: could not signal PID 4242 for profile 'thrive'
+        thor-chrome: not permitted to signal PID 4242 for profile 'thrive'; end it from a terminal outside the sandbox, or as the user who owns it
 
         --- combined
-        thor-chrome: could not signal PID 4242 for profile 'thrive'
+        thor-chrome: not permitted to signal PID 4242 for profile 'thrive'; end it from a terminal outside the sandbox, or as the user who owns it
         "
       `);
       await expect(transcribe(make(), ['quit', 'thrive', '--json'])).resolves.toMatchInlineSnapshot(`
         "$ quit thrive --json
         exit 1
         --- stdout
-        {"profiles":[{"name":"thrive","path":"<home>/.local/share/thor-chrome/profiles/thrive","state":"running-without-port","headless":false,"pid":4242,"port":null,"derivedPort":null,"devtools":null,"origin":null,"repo":null,"branch":null,"stale":null,"lastUsedAt":"2026-01-02T12:00:00Z","error":{"code":"quit-failed","message":"could not signal PID 4242 for profile 'thrive'"}}]}
+        {"profiles":[{"name":"thrive","path":"<home>/.local/share/thor-chrome/profiles/thrive","state":"running-without-port","headless":false,"pid":4242,"port":null,"derivedPort":null,"devtools":null,"origin":null,"repo":null,"branch":null,"stale":null,"lastUsedAt":"2026-01-02T12:00:00Z","error":{"code":"quit-failed","message":"not permitted to signal PID 4242 for profile 'thrive'; end it from a terminal outside the sandbox, or as the user who owns it"}}]}
 
         --- stderr
 
         --- combined
-        {"profiles":[{"name":"thrive","path":"<home>/.local/share/thor-chrome/profiles/thrive","state":"running-without-port","headless":false,"pid":4242,"port":null,"derivedPort":null,"devtools":null,"origin":null,"repo":null,"branch":null,"stale":null,"lastUsedAt":"2026-01-02T12:00:00Z","error":{"code":"quit-failed","message":"could not signal PID 4242 for profile 'thrive'"}}]}
+        {"profiles":[{"name":"thrive","path":"<home>/.local/share/thor-chrome/profiles/thrive","state":"running-without-port","headless":false,"pid":4242,"port":null,"derivedPort":null,"devtools":null,"origin":null,"repo":null,"branch":null,"stale":null,"lastUsedAt":"2026-01-02T12:00:00Z","error":{"code":"quit-failed","message":"not permitted to signal PID 4242 for profile 'thrive'; end it from a terminal outside the sandbox, or as the user who owns it"}}]}
         "
       `);
     });

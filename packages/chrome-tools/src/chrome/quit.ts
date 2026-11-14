@@ -1,3 +1,4 @@
+import { isErrnoException } from '../shared/errors.ts';
 import { isDirectory } from '../shared/paths.ts';
 import { findBrowserPid, resolveProfileState } from './browser-process.ts';
 import { type Invocation, PROCESS_LIST_RECOVERY_HINT, refuse, requireCommand } from './invocation.ts';
@@ -91,7 +92,8 @@ export function refuseProfile(
 }
 
 /**
- * Terminates a profile's browser and waits for it to exit, returning the profile's refusal when it could not.
+ * Terminates a profile's browser and waits for it to exit, returning the profile's refusal when it could not. A browser
+ * that exited before the signal reached it counts as stopped.
  *
  * Waiting means that a quit followed by a relaunch, which the guard messages recommend, does not race the relaunch
  * against a browser that is still shutting down. Because SIGTERM to Chrome is asynchronous, the wait polls; the bound
@@ -107,10 +109,14 @@ export async function terminateBrowser(
   const { deps } = invocation;
   try {
     deps.kill(Number(pid));
-  } catch {
+  } catch (error) {
+    if (!isErrnoException(error)) throw error;
+    // Skip the wait: A browser relaunched on the profile would otherwise time out under this PID
+    if (error.code === 'ESRCH') return undefined;
+    if (error.code !== 'EPERM') throw error;
     return refuseProfile(invocation, profile, {
       code: 'quit-failed',
-      message: `could not signal PID ${pid} for profile '${profile}'`,
+      message: `not permitted to signal PID ${pid} for profile '${profile}'; end it from a terminal outside the sandbox, or as the user who owns it`,
     });
   }
 

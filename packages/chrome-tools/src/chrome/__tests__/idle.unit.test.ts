@@ -122,7 +122,9 @@ describe('quit --idle', () => {
     await run(fake, ['quit', '--idle', '1s']);
     fake.advance(1000);
     await expect(run(fake, ['quit', '--idle', '1s'])).resolves.toBe(1);
-    expect(fake.captured.stderr()).toBe("thor-chrome: could not signal PID 4242 for profile 'thrive'\n");
+    expect(fake.captured.stderr()).toBe(
+      "thor-chrome: not permitted to signal PID 4242 for profile 'thrive'; end it from a terminal outside the sandbox, or as the user who owns it\n",
+    );
     expect(Object.keys(readRecord(fake))).toStrictEqual(['thrive']);
   });
 
