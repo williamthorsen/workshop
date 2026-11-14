@@ -90,13 +90,14 @@ describe(renderResultText, () => {
     ]);
   });
 
-  it('names what made a stale profile stale, and marks an unrecorded one', () => {
+  it('names what made a stale profile stale, marks an unrecorded one, and adds nothing for a live one', () => {
     const stale = { origin: 'derived', branch: '9', repoDir: '/w', stale: true };
     const result = {
       entries: [
         makeProfileEntry({ isRepoPresent: true, name: 'present' }, stale),
         makeProfileEntry({ isRepoPresent: false, name: 'gone' }, stale),
         makeProfileEntry({ name: 'bare' }),
+        makeProfileEntry({ name: 'live' }, { origin: 'derived', stale: false }),
       ],
       isStaleOnly: false,
       profilesDir: '/p',
@@ -106,6 +107,7 @@ describe(renderResultText, () => {
       "stdout:   INFO  present: stopped, stale: branch '9' is gone",
       'stdout:   INFO  gone: stopped, stale: repository /w is gone',
       'stdout:   INFO  bare: stopped, unrecorded',
+      'stdout:   INFO  live: stopped',
     ]);
   });
 

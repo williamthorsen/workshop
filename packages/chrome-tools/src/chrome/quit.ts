@@ -1,8 +1,15 @@
 import { isDirectory } from '../shared/paths.ts';
 import { findBrowserPid, resolveProfileState } from './browser-process.ts';
 import { type Invocation, PROCESS_LIST_RECOVERY_HINT, refuse, requireCommand } from './invocation.ts';
-import { assertProfileNotUnderived, assertStateKnown, listProfileNames, selectNamedProfiles } from './profiles.ts';
-import { finishProfileReport, renderProfile, reportProfileRefusal, writeProse } from './render.ts';
+import {
+  assertProfileNotUnderived,
+  assertStateKnown,
+  composeProfileEntry,
+  listProfileNames,
+  resolveProfileEntry,
+  selectNamedProfiles,
+} from './profiles.ts';
+import type { OutcomeObserver, ProfileOutcome, QuitOutcome, QuitResult, RefusedOutcome } from './results.ts';
 import { readTimeoutSeconds, type Timeout } from './timeouts.ts';
 
 export const DEFAULT_QUIT_TIMEOUT_SECONDS = 3;
@@ -13,6 +20,17 @@ export interface RunningProfile {
   name: string;
   pid: string;
   port: string | undefined;
+}
+
+/** Returns the outcome of a quit that left a profile stopped, with the PID of the browser that it ended, if any. */
+export function composeQuitOutcome(
+  invocation: Invocation,
+  profile: string,
+  pid: string | undefined,
+  isIdle: boolean,
+): QuitOutcome {
+  const state = { isHeadless: undefined, pid, port: undefined, state: 'stopped' } as const;
+  return { entry: composeProfileEntry(invocation, profile, state), isIdle, type: 'quit' };
 }
 
 /** Returns the profiles whose browser is running, refusing before anything is quit when the process list is unreadable. */
@@ -35,7 +53,12 @@ export function listRunningProfiles(invocation: Invocation): RunningProfile[] {
  * Terminates the browsers of the named or derived profiles, or of every running profile, refusing each profile that it
  * cannot act on separately, so that a refusal of one does not stop the rest.
  */
-export async function quitProfiles(invocation: Invocation, names: readonly string[], isAll: boolean): Promise<number> {
+export async function quitProfiles(
+  invocation: Invocation,
+  names: readonly string[],
+  isAll: boolean,
+  onOutcome: OutcomeObserver = () => {},
+): Promise<QuitResult> {
   const timeout = readQuitTimeout(invocation);
   requireCommand(invocation, 'curl');
   requireCommand(invocation, 'pgrep');
@@ -43,11 +66,13 @@ export async function quitProfiles(invocation: Invocation, names: readonly strin
   const profiles = isAll
     ? listRunningProfiles(invocation).map((profile) => profile.name)
     : selectNamedProfiles(invocation, names);
-  if (isAll && profiles.length === 0 && invocation.format === 'prose') {
-    writeProse(invocation, 'stdout', ['No running profiles.']);
+  const outcomes: ProfileOutcome[] = [];
+  for (const profile of profiles) {
+    const outcome = await quitProfile(invocation, profile, timeout);
+    outcomes.push(outcome);
+    onOutcome(outcome);
   }
-  for (const profile of profiles) await quitProfile(invocation, profile, timeout);
-  return finishProfileReport(invocation, false);
+  return { isAll, outcomes, type: 'quit' };
 }
 
 /** Reads the budget within which a quit waits for the browser to exit. */
@@ -55,19 +80,18 @@ export function readQuitTimeout(invocation: Invocation): Timeout {
   return readTimeoutSeconds(invocation, 'THOR_CHROME_QUIT_TIMEOUT', DEFAULT_QUIT_TIMEOUT_SECONDS);
 }
 
-/** Reports a profile that the quit left stopped, as its entry under `--json` or as a sentence. */
-export function reportQuit(invocation: Invocation, profile: string, pid: string | undefined, sentence: string): void {
-  if (invocation.format === 'json') {
-    const path = `${invocation.profilesDir}/${profile}`;
-    invocation.entries.push(renderProfile(invocation, { name: profile, path, pid, port: undefined, state: 'stopped' }));
-    return;
-  }
-  writeProse(invocation, 'stdout', [sentence]);
+/** Returns the refusal of one profile, with its entry as read at the refusal. */
+export function refuseProfile(
+  invocation: Invocation,
+  profile: string,
+  error: { code: string; message: string },
+  hints: readonly string[] = [],
+): RefusedOutcome {
+  return { entry: resolveProfileEntry(invocation, profile), error, hints, type: 'refused' };
 }
 
 /**
- * Terminates a profile's browser and waits for it to exit, returning false when it could not, having reported the
- * refusal for the profile.
+ * Terminates a profile's browser and waits for it to exit, returning the profile's refusal when it could not.
  *
  * Waiting means that a quit followed by a relaunch, which the guard messages recommend, does not race the relaunch
  * against a browser that is still shutting down. Because SIGTERM to Chrome is asynchronous, the wait polls; the bound
@@ -79,31 +103,29 @@ export async function terminateBrowser(
   profile: string,
   pid: string,
   timeout: Timeout,
-): Promise<boolean> {
+): Promise<RefusedOutcome | undefined> {
   const { deps } = invocation;
   try {
     deps.kill(Number(pid));
   } catch {
-    reportProfileRefusal(invocation, profile, {
+    return refuseProfile(invocation, profile, {
       code: 'quit-failed',
       message: `could not signal PID ${pid} for profile '${profile}'`,
     });
-    return false;
   }
 
   const started = deps.now();
   const dir = `${invocation.profilesDir}/${profile}`;
   while (isRunning(invocation, dir)) {
     if (deps.now() - started > timeout.seconds * 1000) {
-      reportProfileRefusal(invocation, profile, {
+      return refuseProfile(invocation, profile, {
         code: 'quit-timeout',
         message: `PID ${pid} for profile '${profile}' is still running ${timeout.text}s after SIGTERM; end it manually`,
       });
-      return false;
     }
     await deps.sleep(QUIT_POLL_INTERVAL_MILLISECONDS);
   }
-  return true;
+  return undefined;
 }
 
 // region | Helpers
@@ -115,31 +137,27 @@ function isRunning(invocation: Invocation, dir: string): boolean {
 }
 
 /**
- * Terminates one profile's browser and reports it, or reports why it did not, leaving instances on other profiles
- * running.
+ * Terminates one profile's browser and returns what it did, leaving instances on other profiles running.
  */
-async function quitProfile(invocation: Invocation, profile: string, timeout: Timeout): Promise<void> {
+async function quitProfile(invocation: Invocation, profile: string, timeout: Timeout): Promise<ProfileOutcome> {
   const { name } = invocation.output;
   const dir = `${invocation.profilesDir}/${profile}`;
   if (!isDirectory(dir)) {
     assertProfileNotUnderived(invocation, `${name} quit <repo>-<branch>`);
-    reportProfileRefusal(
+    return refuseProfile(
       invocation,
       profile,
       { code: 'profile-missing', message: `profile '${profile}' does not exist at ${dir}` },
       [`List existing profiles: ${name} list`],
     );
-    return;
   }
 
   const { pid, state } = resolveProfileState(invocation, dir);
   assertStateKnown(invocation, profile, state);
-  if (pid === undefined) {
-    reportQuit(invocation, profile, undefined, `Profile '${profile}' is not running.`);
-    return;
-  }
-  if (!(await terminateBrowser(invocation, profile, pid, timeout))) return;
-  reportQuit(invocation, profile, pid, `Quit profile '${profile}' (PID ${pid}).`);
+  if (pid === undefined) return composeQuitOutcome(invocation, profile, undefined, false);
+  return (
+    (await terminateBrowser(invocation, profile, pid, timeout)) ?? composeQuitOutcome(invocation, profile, pid, false)
+  );
 }
 
 // endregion | Helpers

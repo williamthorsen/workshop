@@ -17,9 +17,19 @@ describe(renderProfileJson, () => {
     );
   });
 
-  it('reports no mode and no endpoint for a profile without a running browser', () => {
-    const rendered = renderProfileJson(makeProfileEntry({ isHeadless: true, pid: '11', state: 'stopped' }));
-    expect(rendered).toMatchObject({ headless: null, devtools: null, pid: 11 });
+  it.each([
+    ['debugging', true, true],
+    ['unresponsive', false, false],
+    ['running-without-port', true, true],
+    ['stopped', true, null],
+    ['deleted', true, null],
+  ] as const)('reports headless in state %s with mode %s as %s', (state, isHeadless, expected) => {
+    expect(renderProfileJson(makeProfileEntry({ isHeadless, pid: '1', port: '9', state }))['headless']).toBe(expected);
+  });
+
+  it('reports no endpoint for a profile whose browser is not debugging', () => {
+    const rendered = renderProfileJson(makeProfileEntry({ pid: '11', port: '9333', state: 'unresponsive' }));
+    expect(rendered).toMatchObject({ devtools: null, pid: 11, port: 9333 });
   });
 });
 
