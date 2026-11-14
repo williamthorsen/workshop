@@ -4,16 +4,16 @@ import { isDirectory } from '../shared/paths.ts';
 import { type ProfileStateName, resolveProfileState } from './browser-process.ts';
 import { INSTANCE_PAGE_FILE } from './instance-page.ts';
 import { type Invocation, refuse, requireCommand, runTolerantly } from './invocation.ts';
-import { assertProfileNotUnderived, assertStateKnown, resolveDefaultProfile } from './profiles.ts';
-import { renderProfile, writeJson, writeProse } from './render.ts';
+import { assertProfileNotUnderived, assertStateKnown, composeProfileEntry, resolveDefaultProfile } from './profiles.ts';
+import type { ShowInstancePageResult } from './results.ts';
 
 /**
  * Opens the named or derived profile's instance page in a new tab of its running browser, through the DevTools
  * endpoint, so that the page is reachable however the tab that the launch opened has been used since. Opens the page
  * that the launch wrote, which describes that launch, and never writes one.
  */
-export function showInstancePage(invocation: Invocation, profile: string | undefined): number {
-  const { name: command } = invocation.output;
+export function showInstancePage(invocation: Invocation, profile: string | undefined): ShowInstancePageResult {
+  const { programName: command } = invocation;
   const { dir, name } = resolveDefaultProfile(invocation, profile ?? '');
 
   requireCommand(invocation, 'curl');
@@ -52,15 +52,11 @@ export function showInstancePage(invocation: Invocation, profile: string | undef
     );
   }
 
-  if (invocation.format === 'json') {
-    writeJson(invocation, {
-      profile: renderProfile(invocation, { isHeadless, name, path: dir, pid, port, state }),
-      page: pageFile,
-    });
-    return 0;
-  }
-  writeProse(invocation, 'stdout', [`Opened the instance page of '${name}' on port ${port}.`]);
-  return 0;
+  return {
+    entry: composeProfileEntry(invocation, name, { isHeadless, pid, port, state }),
+    page: pageFile,
+    type: 'show-instance-page',
+  };
 }
 
 // region | Helpers
@@ -73,7 +69,7 @@ function describeUnavailable(
   pid: string | undefined,
   port: string | undefined,
 ) {
-  const { name } = invocation.output;
+  const { programName: name } = invocation;
   if (state === 'stopped') {
     return refuse(invocation, 'profile-not-running', `profile '${profile}' is not running`, {
       hints: [`Launch it: ${name} --profile ${profile}`],

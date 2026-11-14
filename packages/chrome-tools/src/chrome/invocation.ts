@@ -3,7 +3,7 @@ import path from 'node:path';
 import type { OpenPage } from '../portable/open-background-page.ts';
 import type { SpawnDetached } from '../portable/spawn-detached.ts';
 import { CommandError } from '../shared/errors.ts';
-import type { CommandOutput, Environment } from '../shared/output.ts';
+import type { Environment } from '../shared/output.ts';
 import { findOnPath } from '../shared/paths.ts';
 import type { CommandResult, RunCommand } from '../shared/run-command.ts';
 
@@ -42,14 +42,10 @@ export interface ProfileRef {
 /** The state of one thor-chrome invocation, which every verb reads and which a refusal reports from. */
 export interface Invocation {
   deps: ThorChromeDeps;
-  /** The rendered entries of a `quit` or `delete` report under `--json`. */
-  entries: JsonValue[];
-  format: OutputFormat;
   origin: ProfileOrigin;
-  output: CommandOutput;
   profilesDir: string;
-  /** Whether a profile was refused, which makes `quit` and `delete` exit 1 once every profile has been processed. */
-  refused: boolean;
+  /** The name by which thor-chrome reports itself, which the hints of a refusal use to name a command. */
+  programName: string;
   /**
    * The profile being acted on, which a refusal reports beside its error. It is set once its name is known, so a
    * refusal raised before then reports no profile.
@@ -98,15 +94,12 @@ const USAGE_STATUS = 2;
 export const PROCESS_LIST_RECOVERY_HINT = 'Run this command from a terminal outside the sandbox.';
 
 /** Builds the invocation state for a run, with nothing resolved yet. */
-export function createInvocation(output: CommandOutput, format: OutputFormat, deps: ThorChromeDeps): Invocation {
+export function createInvocation(programName: string, deps: ThorChromeDeps): Invocation {
   return {
     deps,
-    entries: [],
-    format,
     origin: 'named',
-    output,
     profilesDir: resolveProfilesDir(deps.env),
-    refused: false,
+    programName,
     resolved: undefined,
     work: { branch: undefined, repo: undefined, repoDir: undefined },
   };

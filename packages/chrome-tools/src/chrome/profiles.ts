@@ -4,7 +4,7 @@ import { readCurrentBranch } from '../git/branches.ts';
 import { readRepoDir, readRepoName } from '../git/repos.ts';
 import { toKebabCase } from '../portable/to-kebab-case.ts';
 import { isDirectory } from '../shared/paths.ts';
-import type { ProfileStateName } from './browser-process.ts';
+import { type ProfileStateName, resolveProfileState } from './browser-process.ts';
 import {
   type Invocation,
   PROCESS_LIST_RECOVERY_HINT,
@@ -14,6 +14,7 @@ import {
   type WorkContext,
 } from './invocation.ts';
 import { derivePort } from './ports.ts';
+import type { ProfileEntry } from './results.ts';
 
 /** A profile's provenance and last use. Every field but `lastUsed` is unset for a profile without a record. */
 export interface ProfileFacts {
@@ -86,6 +87,30 @@ export function assertValidProfileName(invocation: Invocation, profile: string):
       `invalid profile name '${profile}' (letters, digits, dot, underscore and hyphen only)`,
     );
   }
+}
+
+/**
+ * Returns a profile's entry in the state that the caller found or left it in, reading the facts that the profile
+ * recorded unless the caller passes them, as it must for a profile that it has removed.
+ */
+export function composeProfileEntry(
+  invocation: Invocation,
+  name: string,
+  state: Pick<ProfileEntry, 'isHeadless' | 'pid' | 'port' | 'state'>,
+  facts?: ProfileFacts,
+): ProfileEntry {
+  const path = `${invocation.profilesDir}/${name}`;
+  const recorded = facts ?? resolveProfileFacts(invocation, path);
+  return {
+    facts: recorded,
+    isHeadless: state.isHeadless,
+    isRepoPresent: recorded.stale === true ? isDirectory(recorded.repoDir ?? '') : undefined,
+    name,
+    path,
+    pid: state.pid,
+    port: state.port,
+    state: state.state,
+  };
 }
 
 /**
@@ -174,6 +199,11 @@ export function resolveDerivedProfile(invocation: Invocation, repairCommand: str
   assertProfileNotUnderived(invocation, repairCommand);
   invocation.resolved = { dir: `${invocation.profilesDir}/${name}`, name };
   return invocation.resolved;
+}
+
+/** Returns a profile's entry, with the state of its browser as read now. */
+export function resolveProfileEntry(invocation: Invocation, name: string): ProfileEntry {
+  return composeProfileEntry(invocation, name, resolveProfileState(invocation, `${invocation.profilesDir}/${name}`));
 }
 
 /**

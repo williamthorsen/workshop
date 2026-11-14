@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { quitProfiles } from '../quit.ts';
 import { type FakeThorChrome, makeFakeThorChrome, makeRunningFakeThorChrome } from '../test-utils/fake-thor-chrome.ts';
 import { runThorChrome } from '../thor-chrome.ts';
 
@@ -148,6 +149,18 @@ describe('quit', () => {
     const fake = makeRunningFakeThorChrome(['thrive']);
     await expect(run(fake, ['quit', 'thrive', '..'])).resolves.toBe(1);
     expect(fake.killed).toStrictEqual([]);
+  });
+});
+
+describe(quitProfiles, () => {
+  it('reports each outcome to the observer before it signals the next profile', async () => {
+    const fake = makeRunningFakeThorChrome(['thrive', 'atlas']);
+    const killedAtEachOutcome: number[][] = [];
+    const result = await quitProfiles(fake.makeInvocation(), ['thrive', 'atlas'], false, () => {
+      killedAtEachOutcome.push([...fake.killed]);
+    });
+    expect(killedAtEachOutcome).toStrictEqual([[4242], [4242, 4243]]);
+    expect(result.outcomes.map((outcome) => outcome.entry.name)).toStrictEqual(['thrive', 'atlas']);
   });
 });
 

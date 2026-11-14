@@ -1,8 +1,14 @@
 import fs from 'node:fs';
 
 import { type Invocation, refuse, requireCommand, runTolerantly, USAGE_CODE } from './invocation.ts';
-import { listRunningProfiles, readQuitTimeout, reportQuit, type RunningProfile, terminateBrowser } from './quit.ts';
-import { finishProfileReport, writeProse } from './render.ts';
+import {
+  composeQuitOutcome,
+  listRunningProfiles,
+  readQuitTimeout,
+  type RunningProfile,
+  terminateBrowser,
+} from './quit.ts';
+import type { OutcomeObserver, ProfileOutcome, QuitIdleResult } from './results.ts';
 
 /** Where `quit --idle` records, across runs, since when each running browser has had no client connected. */
 export const IDLE_RECORD_FILE = '.thor-chrome.idle';
@@ -26,7 +32,11 @@ const UNIT_SECONDS: Record<string, number> = { d: 86_400, h: 3600, m: 60, s: 1 }
  * between runs, so a run quits nothing that an earlier run did not already see idle. A browser whose client state
  * cannot be read counts as connected.
  */
-export async function quitIdleProfiles(invocation: Invocation, durationText: string): Promise<number> {
+export async function quitIdleProfiles(
+  invocation: Invocation,
+  durationText: string,
+  onOutcome: OutcomeObserver = () => {},
+): Promise<QuitIdleResult> {
   const durationSeconds = parseDuration(invocation, durationText);
   const timeout = readQuitTimeout(invocation);
   requireCommand(invocation, 'curl');
@@ -37,7 +47,7 @@ export async function quitIdleProfiles(invocation: Invocation, durationText: str
   const previous = readIdleRecord(recordFile);
   const next = new Map<string, IdleEntry>();
   const now = Math.floor(invocation.deps.now() / 1000);
-  let quitCount = 0;
+  const outcomes: ProfileOutcome[] = [];
 
   for (const profile of listRunningProfiles(invocation)) {
     if (readClientState(invocation, profile) !== 'idle') continue;
@@ -48,19 +58,15 @@ export async function quitIdleProfiles(invocation: Invocation, durationText: str
       next.set(profile.name, { idleSince, pid: profile.pid });
       continue;
     }
-    if (await terminateBrowser(invocation, profile.name, profile.pid, timeout)) {
-      reportQuit(invocation, profile.name, profile.pid, `Quit idle profile '${profile.name}' (PID ${profile.pid}).`);
-      quitCount += 1;
-    } else {
-      next.set(profile.name, { idleSince, pid: profile.pid });
-    }
+    const refusal = await terminateBrowser(invocation, profile.name, profile.pid, timeout);
+    if (refusal !== undefined) next.set(profile.name, { idleSince, pid: profile.pid });
+    const outcome = refusal ?? composeQuitOutcome(invocation, profile.name, profile.pid, true);
+    outcomes.push(outcome);
+    onOutcome(outcome);
   }
 
   if (fs.existsSync(invocation.profilesDir)) writeIdleRecord(recordFile, next);
-  if (quitCount === 0 && !invocation.refused && invocation.format === 'prose') {
-    writeProse(invocation, 'stdout', ['No idle profiles.']);
-  }
-  return finishProfileReport(invocation, false);
+  return { outcomes, type: 'quit-idle' };
 }
 
 /** Returns a duration of whole seconds, minutes, hours, or days, such as `2h`, in seconds, refusing any other form. */

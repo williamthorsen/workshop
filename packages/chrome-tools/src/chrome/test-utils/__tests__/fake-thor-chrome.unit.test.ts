@@ -78,13 +78,11 @@ describe(makeFakeThorChrome, () => {
     expect(fs.readFileSync(`${recorded}/.thor-chrome.record`, 'utf8')).toBe('origin=derived\nbranch=9\n');
   });
 
-  it('builds an invocation that writes to the captured output', () => {
+  it("builds an invocation over the fake's profiles directory and program name", () => {
     const fake = makeFakeThorChrome();
-    const invocation = fake.makeInvocation('json');
-    expect(invocation.format).toBe('json');
+    const invocation = fake.makeInvocation();
     expect(invocation.profilesDir).toBe(fake.profilesDir);
-    invocation.output.stdout.write('x');
-    expect(fake.captured.stdout()).toBe('x');
+    expect(invocation.programName).toBe('thor-chrome');
   });
 });
 

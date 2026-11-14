@@ -6,7 +6,7 @@ import { type CapturedOutput, captureOutput } from '../../test-utils/capture-out
 import { type FakeCall, fakeRunCommand } from '../../test-utils/fake-run-command.ts';
 import { makeFixtureDir } from '../../test-utils/fixture-dir.ts';
 import { makeStubPath } from '../../test-utils/stub-path.ts';
-import { createInvocation, type Invocation, type OutputFormat, type ThorChromeDeps } from '../invocation.ts';
+import { createInvocation, type Invocation, type ThorChromeDeps } from '../invocation.ts';
 
 /** A fake thor-chrome environment: a scratch home, a working repository's answers, and recorded side effects. */
 export interface FakeThorChrome {
@@ -20,8 +20,8 @@ export interface FakeThorChrome {
   home: string;
   /** PIDs that the run signalled. */
   killed: number[];
-  /** Builds an invocation over the fake dependencies, writing to `captured`. */
-  makeInvocation: (format?: OutputFormat) => Invocation;
+  /** Builds an invocation over the fake dependencies. */
+  makeInvocation: () => Invocation;
   /** Creates a profile directory, with the record that a launch would have left when `record` is given. */
   makeProfile: (name: string, record?: Record<string, string>) => string;
   /** Pages that the run opened through the DevTools endpoint, failed openings included, in call order. */
@@ -142,7 +142,7 @@ export function makeFakeThorChrome(options: FakeThorChromeOptions = {}): FakeTho
     env,
     home,
     killed,
-    makeInvocation: (format = 'prose') => createInvocation(captured.output, format, deps),
+    makeInvocation: () => createInvocation(captured.output.name, deps),
     makeProfile: (name, record) => {
       const dir = `${profilesDir}/${name}`;
       fs.mkdirSync(dir, { recursive: true });

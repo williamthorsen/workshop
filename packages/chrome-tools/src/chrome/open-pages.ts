@@ -14,7 +14,7 @@ export interface PageTarget {
  * in the middle of their order. The browser stays running after a refusal, whose hint relaunches against it.
  */
 export async function openPages(invocation: Invocation, target: PageTarget, pages: readonly string[]): Promise<void> {
-  const { name } = invocation.output;
+  const { programName: name } = invocation;
   const { port, profile, relaunchOptions } = target;
   for (const page of pages) {
     const opening = await invocation.deps.openPage(port, page);

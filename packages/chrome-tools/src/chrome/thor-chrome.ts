@@ -19,6 +19,8 @@ import { quitIdleProfiles } from './idle.ts';
 import {
   createInvocation,
   type Invocation,
+  type JsonValue,
+  type OutputFormat,
   refuse,
   type ThorChromeDeps,
   ThorChromeRefusal,
@@ -26,8 +28,18 @@ import {
 } from './invocation.ts';
 import { launchProfile } from './launch.ts';
 import { listProfiles } from './list.ts';
+import { resolveProfileEntry } from './profiles.ts';
 import { quitProfiles } from './quit.ts';
-import { renderRefusal } from './render.ts';
+import { stringifyJson } from './render.ts';
+import { renderRefusalJson, renderResultJson } from './render-json.ts';
+import {
+  renderOutcomeText,
+  renderRefusalText,
+  renderResultText,
+  type TextContext,
+  type TextLine,
+} from './render-text.ts';
+import { deriveExitStatus, type OutcomeObserver, type VerbResult } from './results.ts';
 import { showInstancePage } from './show-instance-page.ts';
 import { showStatus } from './status.ts';
 import { formatUsage } from './usage.ts';
@@ -58,7 +70,8 @@ export async function runThorChrome(
 ): Promise<number> {
   // Read --json and --help ahead of any parse, so that a refusal raised by a parse renders in the format that the
   // caller asked for, and --help shows the usage whatever precedes it
-  const invocation = createInvocation(output, args.includes('--json') ? 'json' : 'prose', deps);
+  const format: OutputFormat = args.includes('--json') ? 'json' : 'prose';
+  const invocation = createInvocation(output.name, deps);
   if (args.includes('--help') || args.includes('-h')) {
     output.stdout.write(formatUsage(output.name, invocation.profilesDir));
     return 0;
@@ -66,10 +79,26 @@ export async function runThorChrome(
 
   try {
     const { rest, verb } = selectVerb(invocation, args);
-    return await dispatchVerb(invocation, verb, rest);
+    const context = createTextContext(invocation);
+    // Report each profile in prose as the verb reaches it; a JSON document waits for the whole result
+    const onOutcome: OutcomeObserver | undefined =
+      format === 'json' ? undefined : (outcome) => writeTextLines(output, renderOutcomeText(outcome, context));
+    const result = await dispatchVerb(invocation, verb, rest, onOutcome);
+    if (format === 'json') {
+      writeJsonDocument(output, renderResultJson(result));
+    } else {
+      writeTextLines(output, renderResultText(result, context));
+    }
+    return deriveExitStatus(result);
   } catch (error) {
-    if (error instanceof ThorChromeRefusal) return renderRefusal(invocation, error);
-    throw error;
+    if (!(error instanceof ThorChromeRefusal)) throw error;
+    if (format === 'json') {
+      const entry = error.profile === undefined ? undefined : resolveProfileEntry(invocation, error.profile.name);
+      writeJsonDocument(output, renderRefusalJson(error, entry));
+    } else {
+      writeTextLines(output, renderRefusalText(error, output.name));
+    }
+    return error.exitCode;
   }
 }
 
@@ -93,8 +122,19 @@ function createProcessDeps(): ThorChromeDeps {
   };
 }
 
+/** Returns what the text renderers read besides the result. */
+function createTextContext(invocation: Invocation): TextContext {
+  const { env, isStdoutTerminal } = invocation.deps;
+  return { env, isStdoutTerminal, programName: invocation.programName };
+}
+
 /** Parses a verb's arguments and runs it. */
-async function dispatchVerb(invocation: Invocation, verb: Verb, args: readonly string[]): Promise<number> {
+async function dispatchVerb(
+  invocation: Invocation,
+  verb: Verb,
+  args: readonly string[],
+  onOutcome: OutcomeObserver | undefined,
+): Promise<VerbResult> {
   switch (verb) {
     case 'delete': {
       const { flags, operands } = parseVerbArgs(invocation, verb, args, {
@@ -109,12 +149,11 @@ async function dispatchVerb(invocation: Invocation, verb: Verb, args: readonly s
         operands: PROFILES_OPERAND,
       });
       const selection = readDeleteSelection(invocation, flags, operands.profiles);
-      return deleteProfiles(invocation, {
-        isDryRun: flags.dryRun,
-        isForce: flags.force,
-        names: operands.profiles,
-        selection,
-      });
+      return deleteProfiles(
+        invocation,
+        { isDryRun: flags.dryRun, isForce: flags.force, names: operands.profiles, selection },
+        onOutcome,
+      );
     }
     case 'launch': {
       const { flags, operands } = parseVerbArgs(invocation, verb, args, {
@@ -173,8 +212,8 @@ async function dispatchVerb(invocation: Invocation, verb: Verb, args: readonly s
         const message = `--idle selects every idle running profile, so it takes no profile name (got '${first}')`;
         throw refuse(invocation, USAGE_CODE, message);
       }
-      if (flags.idle !== undefined) return quitIdleProfiles(invocation, flags.idle);
-      return quitProfiles(invocation, operands.profiles, flags.all);
+      if (flags.idle !== undefined) return quitIdleProfiles(invocation, flags.idle, onOutcome);
+      return quitProfiles(invocation, operands.profiles, flags.all, onOutcome);
     }
     case 'show-instance-page': {
       const { operands } = parseVerbArgs(invocation, verb, args, { flags: JSON_FLAG, operands: PROFILES_OPERAND });
@@ -259,6 +298,16 @@ function selectVerb(invocation: Invocation, args: readonly string[]): { rest: st
   if (word === undefined || word.startsWith('-') || /[.:/]/.test(word)) return { rest: [...args], verb: 'launch' };
   if (!isVerb(word)) throw refuse(invocation, USAGE_CODE, `unknown command '${word}'`);
   return { rest: args.toSpliced(index, 1), verb: word };
+}
+
+/** Writes one JSON document on stdout. */
+function writeJsonDocument(output: CommandOutput, value: JsonValue): void {
+  output.stdout.write(`${stringifyJson(value)}\n`);
+}
+
+/** Writes each line to its stream, in order. */
+function writeTextLines(output: CommandOutput, lines: readonly TextLine[]): void {
+  for (const { line, stream } of lines) output[stream].write(`${line}\n`);
 }
 
 // endregion | Helpers
