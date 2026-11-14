@@ -7,6 +7,7 @@ import { deriveRecordedPort } from './profiles.ts';
 import { describeProfileCount, formatCommandLine } from './render.ts';
 import type {
   DeleteResult,
+  ListResult,
   ProfileEntry,
   ProfileOutcome,
   ProfileOutcomes,
@@ -90,7 +91,7 @@ function createResultRenderers(context: TextContext): Renderers<VerbResults, Tex
         command === undefined ? `profile '${profile}' is running on port ${port}` : formatCommandLine(command);
       return toStdout([start, ...pages.map((page) => `Opens: ${page}`)]);
     },
-    list: (result) => renderList(result.entries, result, context),
+    list: (result) => renderList(result, context),
     quit: ({ isAll, outcomes }) => toStdout(isAll && outcomes.length === 0 ? ['No running profiles.'] : []),
     'quit-idle': ({ outcomes }) => toStdout(outcomes.length === 0 ? ['No idle profiles.'] : []),
     'show-instance-page': ({ entry }) =>
@@ -134,14 +135,11 @@ function describeProvenance(entry: ProfileEntry): string {
 }
 
 /** Returns one glyph-led line per listed profile, reporting its running and debugging state. */
-function renderList(
-  entries: ProfileEntry[] | undefined,
-  result: { isStaleOnly: boolean; profilesDir: string },
-  context: TextContext,
-): TextLine[] {
-  if (entries === undefined) return toStdout([`No profiles: ${result.profilesDir} does not exist.`]);
+function renderList(result: ListResult, context: TextContext): TextLine[] {
+  const { entries, isStaleOnly, profilesDir } = result;
+  if (entries === undefined) return toStdout([`No profiles: ${profilesDir} does not exist.`]);
   if (entries.length === 0) {
-    return toStdout([result.isStaleOnly ? 'No stale profiles.' : `No profiles in ${result.profilesDir}.`]);
+    return toStdout([isStaleOnly ? 'No stale profiles.' : `No profiles in ${profilesDir}.`]);
   }
 
   const { env, isStdoutTerminal } = context;
