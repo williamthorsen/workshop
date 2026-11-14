@@ -2,6 +2,7 @@ import fs from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
+import { deleteProfiles } from '../delete.ts';
 import { type FakeThorChrome, makeFakeThorChrome, makeRunningFakeThorChrome } from '../test-utils/fake-thor-chrome.ts';
 import { runThorChrome } from '../thor-chrome.ts';
 
@@ -329,6 +330,32 @@ describe('delete --derived', () => {
     const fake = makeFakeThorChrome();
     await expect(run(fake, ['--json', ...args])).resolves.toBe(2);
     expect(fake.readReport()).toStrictEqual({ error: { code: 'usage', message } });
+  });
+});
+
+describe(deleteProfiles, () => {
+  it('reports each named outcome to the observer before it signals the next profile', async () => {
+    const fake = makeRunningFakeThorChrome(['atlas', 'thrive']);
+    const killedAtEachOutcome: number[][] = [];
+    const options = { isDryRun: false, isForce: true, names: ['atlas', 'thrive'], selection: 'profile' } as const;
+    await deleteProfiles(fake.makeInvocation(), options, () => {
+      killedAtEachOutcome.push([...fake.killed]);
+    });
+    expect(killedAtEachOutcome).toStrictEqual([[4242], [4242, 4243]]);
+  });
+
+  it('reports each outcome of a sweep to the observer before it removes the next profile', async () => {
+    const fake = makeFakeThorChrome();
+    const dirs = ['atlas', 'thrive'].map((name) => fake.makeProfile(name));
+    const presentAtEachOutcome: boolean[][] = [];
+    const options = { isDryRun: false, isForce: false, names: [], selection: 'all' } as const;
+    await deleteProfiles(fake.makeInvocation(), options, () => {
+      presentAtEachOutcome.push(dirs.map((dir) => fs.existsSync(dir)));
+    });
+    expect(presentAtEachOutcome).toStrictEqual([
+      [false, true],
+      [false, false],
+    ]);
   });
 });
 

@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 import { makeStubPath } from '../../test-utils/stub-path.ts';
-import { IDLE_RECORD_FILE } from '../idle.ts';
+import { IDLE_RECORD_FILE, quitIdleProfiles } from '../idle.ts';
 import { type FakeThorChrome, makeFakeThorChrome, makeRunningFakeThorChrome } from '../test-utils/fake-thor-chrome.ts';
 import { runThorChrome } from '../thor-chrome.ts';
 
@@ -137,6 +137,19 @@ describe('quit --idle', () => {
     fake.env['PATH'] = makeStubPath({ curl: 'exit 0', pgrep: 'exit 0' }, '');
     await expect(run(fake, ['quit', '--idle', '1s'])).resolves.toBe(127);
     expect(fake.killed).toStrictEqual([]);
+  });
+});
+
+describe(quitIdleProfiles, () => {
+  it('reports each outcome to the observer before it signals the next profile', async () => {
+    const fake = makeRunningFakeThorChrome(['atlas', 'thrive'], { hasPorts: true });
+    await quitIdleProfiles(fake.makeInvocation(), '1s');
+    fake.advance(2000);
+    const killedAtEachOutcome: number[][] = [];
+    await quitIdleProfiles(fake.makeInvocation(), '1s', () => {
+      killedAtEachOutcome.push([...fake.killed]);
+    });
+    expect(killedAtEachOutcome).toStrictEqual([[4242], [4242, 4243]]);
   });
 });
 
