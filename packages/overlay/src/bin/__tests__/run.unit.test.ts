@@ -57,13 +57,24 @@ describe(run, () => {
     await expect(run(['/src', '--create'])).resolves.toBe(1);
   });
 
-  it('writes a JSON error to stderr and returns exit 2 when overlay throws', async () => {
+  it('writes the prefixed error to stderr and returns exit 2 when overlay throws', async () => {
     vi.spyOn(overlayModule, 'overlay').mockRejectedValue(new OverlayError('chezmoi not found on PATH'));
     using io = captureStdio();
 
     const code = await run(['/src', '--create']);
 
-    expect(io.stderr).toBe(`${JSON.stringify({ error: 'chezmoi not found on PATH' })}\n`);
+    expect(io.stderr).toBe('overlay: chezmoi not found on PATH\n');
+    expect(code).toBe(2);
+  });
+
+  it('writes the same prefixed error to stderr and nothing to stdout under --json', async () => {
+    vi.spyOn(overlayModule, 'overlay').mockRejectedValue(new OverlayError('chezmoi not found on PATH'));
+    using io = captureStdio();
+
+    const code = await run(['/src', '--create', '--json']);
+
+    expect(io.stderr).toBe('overlay: chezmoi not found on PATH\n');
+    expect(io.stdout).toBe('');
     expect(code).toBe(2);
   });
 
@@ -76,13 +87,13 @@ describe(run, () => {
     expect(io.stderr).toBe('');
   });
 
-  it('returns exit 2 and writes a JSON error when argument parsing fails', async () => {
+  it('returns exit 2 and writes the prefixed error when argument parsing fails', async () => {
     using io = captureStdio();
 
     const code = await run(['--unknown-flag']);
 
     expect(code).toBe(2);
-    expect(io.stderr).toContain('"error"');
+    expect(io.stderr).toMatch(/^overlay: /);
   });
 
   it('writes help to stdout and returns 0 for --help', async () => {

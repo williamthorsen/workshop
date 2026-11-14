@@ -2,7 +2,6 @@ import process from 'node:process';
 
 import { OverlayError } from '../errors/OverlayError.ts';
 import { overlay } from '../overlay.ts';
-import { formatJsonError } from '../reporting/formatJsonError.ts';
 import { formatReport } from '../reporting/formatReport.ts';
 import { parseArgs } from './parseArgs.ts';
 
@@ -39,8 +38,9 @@ Exit codes:
 /**
  * Runs the overlay CLI for the given argv and returns the process exit code.
  *
- * Writes the help text or the run result (text report, or JSON under `--json`) to stdout, and an `OverlayError` as a
- * single-line JSON object to stderr. Any other error propagates to the crash handler that the bin entrypoint installs.
+ * Writes the help text or the run result (text report, or JSON under `--json`) to stdout, and an `OverlayError` to stderr
+ * as `overlay: <message>`, under `--json` as well. Any other error propagates to the crash handler that the bin
+ * entrypoint installs.
  * Never calls `process.exit`: The bin entrypoint owns that, keeping this function testable.
  */
 export async function run(argv: string[]): Promise<number> {
@@ -64,7 +64,7 @@ export async function run(argv: string[]): Promise<number> {
     return result.exitCode;
   } catch (error: unknown) {
     if (!(error instanceof OverlayError)) throw error;
-    process.stderr.write(`${formatJsonError(error.message)}\n`);
+    process.stderr.write(`overlay: ${error.message}\n`);
     return 2;
   }
 }
