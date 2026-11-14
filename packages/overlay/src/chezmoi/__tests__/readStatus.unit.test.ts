@@ -1,6 +1,8 @@
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { createFakeContext } from '../../test-utils/fake-runner.ts';
+import { OverlayError } from '../../OverlayError.ts';
 import { readStatus } from '../readStatus.ts';
 
 describe(readStatus, () => {
@@ -14,12 +16,18 @@ describe(readStatus, () => {
   it('throws with the stderr detail when chezmoi status exits non-zero', async () => {
     const context = createFakeContext({ captured: { stderr: 'source directory does not exist', code: 1 } });
 
-    await expect(readStatus(context)).rejects.toThrow(/chezmoi status failed: source directory does not exist/);
+    await expect(captureError(OverlayError, () => readStatus(context))).resolves.toHaveProperty(
+      'message',
+      expect.stringMatching(/chezmoi status failed: source directory does not exist/),
+    );
   });
 
   it('falls back to the exit code when stderr is empty', async () => {
     const context = createFakeContext({ captured: { code: 1 } });
 
-    await expect(readStatus(context)).rejects.toThrow(/chezmoi status failed: exit code 1/);
+    await expect(captureError(OverlayError, () => readStatus(context))).resolves.toHaveProperty(
+      'message',
+      expect.stringMatching(/chezmoi status failed: exit code 1/),
+    );
   });
 });

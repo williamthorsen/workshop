@@ -1,6 +1,8 @@
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { createFakeContext } from '../../test-utils/fake-runner.ts';
+import { OverlayError } from '../../OverlayError.ts';
 import { assertChezmoiVersion, MIN_CHEZMOI_VERSION, parseVersion } from '../version.ts';
 
 describe(parseVersion, () => {
@@ -33,19 +35,28 @@ describe(assertChezmoiVersion, () => {
   it('throws when the installed version is below the minimum', async () => {
     const context = createVersionContext('chezmoi version v2.10.0');
 
-    await expect(assertChezmoiVersion(context)).rejects.toThrow(/2\.46\.0 or later is required/);
+    await expect(captureError(OverlayError, () => assertChezmoiVersion(context))).resolves.toHaveProperty(
+      'message',
+      expect.stringMatching(/2\.46\.0 or later is required/),
+    );
   });
 
   it('throws when chezmoi exits non-zero', async () => {
     const context = createVersionContext('', 1);
 
-    await expect(assertChezmoiVersion(context)).rejects.toThrow(/not available/);
+    await expect(captureError(OverlayError, () => assertChezmoiVersion(context))).resolves.toHaveProperty(
+      'message',
+      expect.stringMatching(/not available/),
+    );
   });
 
   it('throws when the version cannot be parsed', async () => {
     const context = createVersionContext('chezmoi version unknown');
 
-    await expect(assertChezmoiVersion(context)).rejects.toThrow(/could not determine chezmoi version/);
+    await expect(captureError(OverlayError, () => assertChezmoiVersion(context))).resolves.toHaveProperty(
+      'message',
+      expect.stringMatching(/could not determine chezmoi version/),
+    );
   });
 });
 
