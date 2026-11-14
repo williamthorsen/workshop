@@ -10,6 +10,7 @@ import {
   PROCESS_LIST_RECOVERY_HINT,
   type ProfileRef,
   refuse,
+  requireCommand,
   runTolerantly,
   type WorkContext,
 } from './invocation.ts';
@@ -325,9 +326,11 @@ function readRecord(file: string): Array<[string, string]> {
 /**
  * Reads the working context from which the defaults derive, letting each override stand in for the value that git
  * would report. The repository directory is read only when the repository name came from git: The directory of the
- * working directory's repository need not be that of a repository named on the command line.
+ * working directory's repository need not be that of a repository named on the command line. Git is required unless
+ * the overrides give both the branch and the repository.
  */
 function readWorkContext(invocation: Invocation, overrides: WorkOverrides): WorkContext {
+  if (overrides.branch === undefined || overrides.repo === undefined) requireCommand(invocation, 'git');
   // The defaults come from the working directory's repository, which is not the one containing this command
   const { run } = invocation.deps;
   return {

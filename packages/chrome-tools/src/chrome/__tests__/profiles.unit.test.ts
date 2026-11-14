@@ -2,7 +2,8 @@ import fs from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
-import { composeProfileName, isBranchGone, resolveProfileFacts } from '../profiles.ts';
+import { makeStubPath } from '../../test-utils/stub-path.ts';
+import { composeProfileName, isBranchGone, resolveDefaultProfile, resolveProfileFacts } from '../profiles.ts';
 import { makeFakeThorChrome } from '../test-utils/fake-thor-chrome.ts';
 
 describe(composeProfileName, () => {
@@ -36,6 +37,26 @@ describe(isBranchGone, () => {
     } finally {
       fs.chmodSync(`${fake.home}/locked`, 0o755);
     }
+  });
+});
+
+describe(resolveDefaultProfile, () => {
+  it('refuses with missing-command and status 127 when git is not on PATH and an override leaves a value to it', () => {
+    const fake = makeFakeThorChrome();
+    fake.env['PATH'] = makeStubPath({ curl: 'exit 0', lsof: 'exit 0', pgrep: 'exit 0' }, '');
+    expect(() => resolveDefaultProfile(fake.makeInvocation(), '', { branch: '9' })).toThrow(
+      expect.objectContaining({ code: 'missing-command', exitCode: 127 }),
+    );
+    expect(fake.calls).toStrictEqual([]);
+  });
+
+  it('resolves without git when the overrides give both the repository and the branch', () => {
+    const fake = makeFakeThorChrome();
+    fake.env['PATH'] = makeStubPath({ curl: 'exit 0', lsof: 'exit 0', pgrep: 'exit 0' }, '');
+    const invocation = fake.makeInvocation();
+    expect(resolveDefaultProfile(invocation, '', { branch: '9', repo: 'widget' }).name).toBe('widget-9');
+    expect(invocation.origin).toBe('derived');
+    expect(fake.calls).toStrictEqual([]);
   });
 });
 

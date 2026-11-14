@@ -58,7 +58,7 @@ describe('launch', () => {
     it('names the missing command with status 127', async () => {
       const fake = makeLaunchFake({ env: { PATH: '' } });
       await expect(run(fake, ['--dry-run', '--profile', 'thrive'])).resolves.toBe(127);
-      expect(fake.captured.stderr()).toBe("thor-chrome: required command 'curl' not found\n");
+      expect(fake.captured.stderr()).toBe("thor-chrome: required command 'git' not found\n");
     });
 
     it('refuses with browser-not-found for an absent executable, and for an uninstalled Chrome for Testing', async () => {

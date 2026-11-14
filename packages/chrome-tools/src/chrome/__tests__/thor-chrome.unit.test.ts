@@ -88,6 +88,19 @@ describe(runThorChrome, () => {
     expect(fake.captured.stderr()).toBe('');
   });
 
+  it('reports a missing git under --json as missing-command with status 127, and as prose otherwise', async () => {
+    const fake = makeFakeThorChrome();
+    fs.rmSync(`${fake.env['PATH'] ?? ''}/git`);
+    await expect(run(fake, ['status', '--json'])).resolves.toBe(127);
+    expect(fake.readReport()).toMatchObject({ error: { code: 'missing-command' } });
+    expect(fake.captured.stderr()).toBe('');
+
+    const prose = makeFakeThorChrome();
+    fs.rmSync(`${prose.env['PATH'] ?? ''}/git`);
+    await expect(run(prose, ['status'])).resolves.toBe(127);
+    expect(prose.captured.stderr()).toBe("thor-chrome: required command 'git' not found\n");
+  });
+
   it('escapes a control character in an argument that it reports', async () => {
     const fake = makeLaunchFake();
     await expect(run(fake, ['--json', '--browser', 'bo\bgus'])).resolves.toBe(2);
