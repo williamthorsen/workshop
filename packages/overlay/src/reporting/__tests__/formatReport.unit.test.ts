@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import type { OverlayResult } from '../../modes/types.ts';
+import { buildOverlayResult } from '../../test-utils/overlay-result.ts';
 import { formatReport } from '../formatReport.ts';
 
 describe(formatReport, () => {
   it('reports a converged target under verify', () => {
-    const report = formatReport(buildResult({ mode: 'verify' }));
+    const report = formatReport(buildOverlayResult());
 
     expect(report).toContain('Target is converged: no drift.');
   });
@@ -20,8 +21,7 @@ describe(formatReport, () => {
 
   it('phrases every entry as a preview under verify', () => {
     const report = formatReport(
-      buildResult({
-        mode: 'verify',
+      buildOverlayResult({
         entries: [
           { path: '.new', outcome: 'created' },
           { path: '.gone', outcome: 'deleted' },
@@ -37,7 +37,7 @@ describe(formatReport, () => {
 
   it('phrases every entry as a resulting state under create', () => {
     const report = formatReport(
-      buildResult({
+      buildOverlayResult({
         mode: 'create',
         entries: [
           { path: '.new', outcome: 'created' },
@@ -55,7 +55,7 @@ describe(formatReport, () => {
 
   it('phrases an overwritten entry as a resulting state under force', () => {
     const report = formatReport(
-      buildResult({
+      buildOverlayResult({
         mode: 'force',
         entries: [{ path: '.diff', outcome: 'forced' }],
         counts: { created: 0, deleted: 0, forced: 1, conflicts: 0, pending: 0 },
@@ -68,8 +68,7 @@ describe(formatReport, () => {
   it('pads labels to the widest one present, so a run of equal-width labels gets no dead whitespace', () => {
     const mixedWidths = formatReport(buildDriftResult());
     const equalWidths = formatReport(
-      buildResult({
-        mode: 'verify',
+      buildOverlayResult({
         entries: [{ path: '.new', outcome: 'created' }],
         counts: { created: 0, deleted: 0, forced: 0, conflicts: 0, pending: 1 },
         exitCode: 1,
@@ -81,20 +80,20 @@ describe(formatReport, () => {
   });
 
   it('phrases pending scripts as "would run" under verify', () => {
-    const report = formatReport(buildResult({ mode: 'verify', scripts: { ranCount: 2, ok: true } }));
+    const report = formatReport(buildOverlayResult({ scripts: { ranCount: 2, ok: true } }));
 
     expect(report).toContain('2 scripts would run.');
   });
 
   it('phrases executed scripts as "ran" under create', () => {
-    const report = formatReport(buildResult({ mode: 'create', scripts: { ranCount: 1, ok: true } }));
+    const report = formatReport(buildOverlayResult({ mode: 'create', scripts: { ranCount: 1, ok: true } }));
 
     expect(report).toContain('1 script ran.');
   });
 
   it('summarizes only non-zero action counts under create', () => {
     const report = formatReport(
-      buildResult({
+      buildOverlayResult({
         mode: 'create',
         counts: { created: 2, deleted: 1, forced: 0, conflicts: 1, pending: 0 },
         exitCode: 1,
@@ -105,14 +104,14 @@ describe(formatReport, () => {
   });
 
   it('reports "Nothing to do." when every action count is zero under create', () => {
-    const report = formatReport(buildResult({ mode: 'create' }));
+    const report = formatReport(buildOverlayResult({ mode: 'create' }));
 
     expect(report).toContain('Nothing to do.');
   });
 
   it('includes an `overlay force` fix-it hint when conflicts exist', () => {
     const report = formatReport(
-      buildResult({
+      buildOverlayResult({
         mode: 'create',
         entries: [{ path: '.diff', outcome: 'conflict' }],
         counts: { created: 0, deleted: 0, forced: 0, conflicts: 1, pending: 0 },
@@ -125,8 +124,7 @@ describe(formatReport, () => {
 
   it('includes a conditional fix-it hint when a verify run reports a differing file', () => {
     const report = formatReport(
-      buildResult({
-        mode: 'verify',
+      buildOverlayResult({
         entries: [{ path: '.diff', outcome: 'conflict' }],
         counts: { created: 0, deleted: 0, forced: 0, conflicts: 0, pending: 1 },
         exitCode: 1,
@@ -139,14 +137,16 @@ describe(formatReport, () => {
 
   it('omits the fix-it hint when there are no conflicts', () => {
     const report = formatReport(
-      buildResult({ mode: 'force', counts: { created: 1, deleted: 0, forced: 0, conflicts: 0, pending: 0 } }),
+      buildOverlayResult({ mode: 'force', counts: { created: 1, deleted: 0, forced: 0, conflicts: 0, pending: 0 } }),
     );
 
     expect(report).not.toContain('overlay force');
   });
 
   it('notes a script failure in the scripts summary', () => {
-    const report = formatReport(buildResult({ mode: 'force', scripts: { ranCount: 1, ok: false }, exitCode: 2 }));
+    const report = formatReport(
+      buildOverlayResult({ mode: 'force', scripts: { ranCount: 1, ok: false }, exitCode: 2 }),
+    );
 
     expect(report).toContain('a script failed');
   });
@@ -156,8 +156,7 @@ describe(formatReport, () => {
 
 /** Builds a verify result holding one addition and one differing file. */
 function buildDriftResult(): OverlayResult {
-  return buildResult({
-    mode: 'verify',
+  return buildOverlayResult({
     entries: [
       { path: '.new', outcome: 'created' },
       { path: '.diff', outcome: 'conflict' },
@@ -165,18 +164,6 @@ function buildDriftResult(): OverlayResult {
     counts: { created: 0, deleted: 0, forced: 0, conflicts: 0, pending: 2 },
     exitCode: 1,
   });
-}
-
-/** Builds an `OverlayResult` from a converged-verify baseline, applying the given overrides. */
-function buildResult(overrides: Partial<OverlayResult>): OverlayResult {
-  return {
-    mode: 'verify',
-    entries: [],
-    scripts: { ranCount: 0, ok: true },
-    counts: { created: 0, deleted: 0, forced: 0, conflicts: 0, pending: 0 },
-    exitCode: 0,
-    ...overrides,
-  };
 }
 
 // endregion | Helpers
