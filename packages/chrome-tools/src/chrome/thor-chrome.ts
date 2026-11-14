@@ -19,6 +19,7 @@ import { quitIdleProfiles } from './idle.ts';
 import {
   createInvocation,
   type Invocation,
+  type JsonValue,
   refuse,
   type ThorChromeDeps,
   ThorChromeRefusal,
@@ -26,8 +27,12 @@ import {
 } from './invocation.ts';
 import { launchProfile } from './launch.ts';
 import { listProfiles } from './list.ts';
+import { resolveProfileEntry } from './profiles.ts';
 import { quitProfiles } from './quit.ts';
-import { renderRefusal } from './render.ts';
+import { stringifyJson } from './render.ts';
+import { renderRefusalJson, renderResultJson } from './render-json.ts';
+import { renderRefusalText, renderResultText, type TextContext, type TextLine } from './render-text.ts';
+import { deriveExitStatus, type VerbResult } from './results.ts';
 import { showInstancePage } from './show-instance-page.ts';
 import { showStatus } from './status.ts';
 import { formatUsage } from './usage.ts';
@@ -66,10 +71,23 @@ export async function runThorChrome(
 
   try {
     const { rest, verb } = selectVerb(invocation, args);
-    return await dispatchVerb(invocation, verb, rest);
+    const result = await dispatchVerb(invocation, verb, rest);
+    if (typeof result === 'number') return result;
+    if (invocation.format === 'json') {
+      writeJsonDocument(output, renderResultJson(result));
+    } else {
+      writeTextLines(output, renderResultText(result, createTextContext(invocation)));
+    }
+    return deriveExitStatus(result);
   } catch (error) {
-    if (error instanceof ThorChromeRefusal) return renderRefusal(invocation, error);
-    throw error;
+    if (!(error instanceof ThorChromeRefusal)) throw error;
+    if (invocation.format === 'json') {
+      const entry = error.profile === undefined ? undefined : resolveProfileEntry(invocation, error.profile.name);
+      writeJsonDocument(output, renderRefusalJson(error, entry));
+    } else {
+      writeTextLines(output, renderRefusalText(error, output.name));
+    }
+    return error.exitCode;
   }
 }
 
@@ -93,8 +111,14 @@ function createProcessDeps(): ThorChromeDeps {
   };
 }
 
+/** Returns what the text renderers read besides the result. */
+function createTextContext(invocation: Invocation): TextContext {
+  const { env, isStdoutTerminal } = invocation.deps;
+  return { env, isStdoutTerminal, programName: invocation.output.name };
+}
+
 /** Parses a verb's arguments and runs it. */
-async function dispatchVerb(invocation: Invocation, verb: Verb, args: readonly string[]): Promise<number> {
+async function dispatchVerb(invocation: Invocation, verb: Verb, args: readonly string[]): Promise<number | VerbResult> {
   switch (verb) {
     case 'delete': {
       const { flags, operands } = parseVerbArgs(invocation, verb, args, {
@@ -259,6 +283,16 @@ function selectVerb(invocation: Invocation, args: readonly string[]): { rest: st
   if (word === undefined || word.startsWith('-') || /[.:/]/.test(word)) return { rest: [...args], verb: 'launch' };
   if (!isVerb(word)) throw refuse(invocation, USAGE_CODE, `unknown command '${word}'`);
   return { rest: args.toSpliced(index, 1), verb: word };
+}
+
+/** Writes one JSON document on stdout. */
+function writeJsonDocument(output: CommandOutput, value: JsonValue): void {
+  output.stdout.write(`${stringifyJson(value)}\n`);
+}
+
+/** Writes each line to its stream, in order. */
+function writeTextLines(output: CommandOutput, lines: readonly TextLine[]): void {
+  for (const { line, stream } of lines) output[stream].write(`${line}\n`);
 }
 
 // endregion | Helpers
