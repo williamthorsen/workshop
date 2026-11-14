@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 import { type FakeThorChrome, makeFakeThorChrome } from '../test-utils/fake-thor-chrome.ts';
+import { makeLaunchFake } from '../test-utils/launch-fixtures.ts';
 import { runThorChrome } from '../thor-chrome.ts';
 
 describe(runThorChrome, () => {
@@ -16,8 +17,7 @@ describe(runThorChrome, () => {
   });
 
   it('launches when the first argument is an option or a URL, and reads the verb after a leading --json', async () => {
-    const fake = makeFakeThorChrome({ env: { THOR_CHROME_APP: '/bin/sh' } });
-    fake.makeProfile('thrive');
+    const fake = makeLaunchFake();
     await expect(run(fake, ['http://localhost:4798', '--dry-run', '--profile', 'thrive'])).resolves.toBe(0);
     await expect(run(fake, ['--json', 'list'])).resolves.toBe(0);
     const [launchLine = '', firstPage = '', , listLine = ''] = fake.captured.stdout().split('\n', 4);
@@ -27,8 +27,7 @@ describe(runThorChrome, () => {
   });
 
   it('launches a URL that spells a verb when launch is named', async () => {
-    const fake = makeFakeThorChrome({ env: { THOR_CHROME_APP: '/bin/sh' } });
-    fake.makeProfile('thrive');
+    const fake = makeLaunchFake();
     await expect(run(fake, ['launch', '--dry-run', '--profile', 'thrive', 'list'])).resolves.toBe(0);
     expect(fake.captured.stdout()).toContain(
       `\nOpens: list\nOpens: file://${fake.profilesDir}/thrive/thor-chrome.html\n`,
@@ -82,7 +81,7 @@ describe(runThorChrome, () => {
   });
 
   it('reports a missing command under --json as missing-command with status 127, leaving stderr empty', async () => {
-    const fake = makeFakeThorChrome({ env: { THOR_CHROME_APP: '/bin/sh' } });
+    const fake = makeLaunchFake();
     fs.rmSync(`${fake.env['PATH'] ?? ''}/lsof`);
     await expect(run(fake, ['--json', '--dry-run'])).resolves.toBe(127);
     expect(fake.readReport()).toMatchObject({ error: { code: 'missing-command' } });
@@ -90,7 +89,7 @@ describe(runThorChrome, () => {
   });
 
   it('escapes a control character in an argument that it reports', async () => {
-    const fake = makeFakeThorChrome({ env: { THOR_CHROME_APP: '/bin/sh' } });
+    const fake = makeLaunchFake();
     await expect(run(fake, ['--json', '--browser', 'bo\bgus'])).resolves.toBe(2);
     expect(fake.captured.stdout()).toContain(
       String.raw`"message":"unknown browser 'bo\u0008gus' (chrome, chrome-for-testing)"`,

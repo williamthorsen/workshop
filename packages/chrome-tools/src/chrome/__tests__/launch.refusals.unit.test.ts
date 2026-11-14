@@ -3,7 +3,13 @@ import fs from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 import { type FakeThorChrome, makeFakeThorChrome } from '../test-utils/fake-thor-chrome.ts';
-import { appBundle, makeExecutable, makeRunningFake, RUNNING_PID } from '../test-utils/launch-fixtures.ts';
+import {
+  appBundle,
+  makeExecutable,
+  makeLaunchFake,
+  makeRunningFake,
+  RUNNING_PID,
+} from '../test-utils/launch-fixtures.ts';
 import { runThorChrome } from '../thor-chrome.ts';
 
 describe('launch', () => {
@@ -25,15 +31,14 @@ describe('launch', () => {
       ],
       ['profile-missing', ['--profile', 'scratch'], 1, `profile 'scratch' does not exist at PROFILES/scratch`],
     ])('refuses with %s', async (code, args, status, message) => {
-      const fake = makeFakeThorChrome({ env: { THOR_CHROME_APP: '/bin/sh' } });
-      fake.makeProfile('thrive');
+      const fake = makeLaunchFake();
       await expect(run(fake, ['--json', ...args])).resolves.toBe(status);
       expect(readError(fake)).toStrictEqual({ code, message: message.replace('PROFILES', () => fake.profilesDir) });
       expect(fake.captured.stderr()).toBe('');
     });
 
     it('hints at --create for an unknown profile that the caller named', async () => {
-      const fake = makeFakeThorChrome({ env: { THOR_CHROME_APP: '/bin/sh' } });
+      const fake = makeLaunchFake();
       await expect(run(fake, ['--dry-run', '--profile', 'scratch'])).resolves.toBe(1);
       expect(fake.captured.stderr()).toBe(
         `thor-chrome: profile 'scratch' does not exist at ${fake.profilesDir}/scratch\n` +
@@ -42,8 +47,7 @@ describe('launch', () => {
     });
 
     it('refuses an unknown THOR_CHROME_BROWSER with usage, naming the variable', async () => {
-      const fake = makeFakeThorChrome({ env: { THOR_CHROME_APP: '/bin/sh', THOR_CHROME_BROWSER: 'safari' } });
-      fake.makeProfile('thrive');
+      const fake = makeLaunchFake({ env: { THOR_CHROME_BROWSER: 'safari' } });
       await expect(run(fake, ['--json', '--profile', 'thrive'])).resolves.toBe(2);
       expect(readError(fake)).toStrictEqual({
         code: 'usage',
@@ -52,7 +56,7 @@ describe('launch', () => {
     });
 
     it('names the missing command with status 127', async () => {
-      const fake = makeFakeThorChrome({ env: { THOR_CHROME_APP: '/bin/sh', PATH: '' } });
+      const fake = makeLaunchFake({ env: { PATH: '' } });
       await expect(run(fake, ['--dry-run', '--profile', 'thrive'])).resolves.toBe(127);
       expect(fake.captured.stderr()).toBe("thor-chrome: required command 'curl' not found\n");
     });
@@ -76,8 +80,7 @@ describe('launch', () => {
     });
 
     it('refuses with underived-profile outside a repository, naming --repo and --branch', async () => {
-      const fake = makeFakeThorChrome({
-        env: { THOR_CHROME_APP: '/bin/sh' },
+      const fake = makeLaunchFake({
         results: { 'git branch': { status: 128 }, 'git rev-parse': { status: 128 } },
       });
       await expect(run(fake, ['--dry-run'])).resolves.toBe(1);
@@ -89,14 +92,13 @@ describe('launch', () => {
     });
 
     it.each(['--repo', '--branch'])('refuses an empty %s as a usage error', async (flag) => {
-      const fake = makeFakeThorChrome({ env: { THOR_CHROME_APP: '/bin/sh' } });
+      const fake = makeLaunchFake();
       await expect(run(fake, ['--json', flag, ''])).resolves.toBe(2);
       expect(readError(fake)).toStrictEqual({ code: 'usage', message: `${flag} requires a value` });
     });
 
     it('refuses with process-list-unavailable when pgrep cannot search, writing nothing', async () => {
-      const fake = makeFakeThorChrome({ env: { THOR_CHROME_APP: '/bin/sh' }, results: { pgrep: { status: 3 } } });
-      fake.makeProfile('thrive');
+      const fake = makeLaunchFake({ results: { pgrep: { status: 3 } } });
       await expect(run(fake, ['--json', '--profile', 'thrive'])).resolves.toBe(1);
       expect(readError(fake)).toMatchObject({ code: 'process-list-unavailable' });
       expect(fake.readReport()['profile']).toMatchObject({ name: 'thrive', state: 'unknown' });
@@ -104,8 +106,7 @@ describe('launch', () => {
     });
 
     it('refuses a dry run when pgrep cannot search, naming the profile whose state is unknown', async () => {
-      const fake = makeFakeThorChrome({ env: { THOR_CHROME_APP: '/bin/sh' }, results: { pgrep: { status: 3 } } });
-      fake.makeProfile('thrive');
+      const fake = makeLaunchFake({ results: { pgrep: { status: 3 } } });
       await expect(run(fake, ['--dry-run', '--profile', 'thrive'])).resolves.toBe(1);
       expect(fake.captured.stderr()).toContain(
         "could not read the process list, so the state of profile 'thrive' is unknown",
@@ -174,11 +175,9 @@ describe('launch', () => {
     });
 
     it('refuses with port-busy, naming the listener', async () => {
-      const fake = makeFakeThorChrome({
-        env: { THOR_CHROME_APP: '/bin/sh' },
+      const fake = makeLaunchFake({
         results: { lsof: { stdout: 'COMMAND PID USER FD TYPE\nno"de 4242 wthorsen 23u IPv4\n' } },
       });
-      fake.makeProfile('thrive');
       await expect(run(fake, ['--json', '--dry-run', '--profile', 'thrive'])).resolves.toBe(1);
       expect(readError(fake)).toStrictEqual({
         code: 'port-busy',
@@ -189,11 +188,9 @@ describe('launch', () => {
     });
 
     it('names the profile whose browser holds the port, and its quit command', async () => {
-      const fake = makeFakeThorChrome({
-        env: { THOR_CHROME_APP: '/bin/sh' },
+      const fake = makeLaunchFake({
         results: { lsof: { stdout: 'COMMAND PID USER FD TYPE\nGoogle 4242 wthorsen 23u IPv4\n' } },
       });
-      fake.makeProfile('thrive');
       const { run: runCommand } = fake.deps;
       const holder = `chrome --remote-debugging-port=20321 --user-data-dir=${fake.profilesDir}/soulforge-321 --no-first-run\n`;
       fake.deps.run = (program, args, options) =>
@@ -208,18 +205,15 @@ describe('launch', () => {
     });
 
     it('hints at freeing a busy port without naming a command', async () => {
-      const fake = makeFakeThorChrome({
-        env: { THOR_CHROME_APP: '/bin/sh' },
+      const fake = makeLaunchFake({
         results: { lsof: { stdout: 'COMMAND PID USER FD TYPE\nnode 4242 wthorsen 23u IPv4\n' } },
       });
-      fake.makeProfile('thrive');
       await expect(run(fake, ['--dry-run', '--profile', 'thrive'])).resolves.toBe(1);
       expect(fake.captured.stderr()).toContain('Pick another port with --port, or stop the process that holds it.\n');
     });
 
     it('refuses with invalid-timeout for a launch budget that is not whole seconds', async () => {
-      const fake = makeFakeThorChrome({ env: { THOR_CHROME_APP: '/bin/sh', THOR_CHROME_LAUNCH_TIMEOUT: 'soon' } });
-      fake.makeProfile('thrive');
+      const fake = makeLaunchFake({ env: { THOR_CHROME_LAUNCH_TIMEOUT: 'soon' } });
       await expect(run(fake, ['--profile', 'thrive'])).resolves.toBe(1);
       expect(fake.captured.stderr()).toBe(
         'thor-chrome: invalid THOR_CHROME_LAUNCH_TIMEOUT: soon (whole seconds, 1 or more)\n',
@@ -227,11 +221,10 @@ describe('launch', () => {
     });
 
     it('refuses with launch-timeout when the endpoint never answers', async () => {
-      const fake = makeFakeThorChrome({
-        env: { THOR_CHROME_APP: '/bin/sh', THOR_CHROME_LAUNCH_TIMEOUT: '1' },
+      const fake = makeLaunchFake({
+        env: { THOR_CHROME_LAUNCH_TIMEOUT: '1' },
         results: { curl: { status: 7 } },
       });
-      fake.makeProfile('thrive');
       await expect(run(fake, ['--json', '--profile', 'thrive'])).resolves.toBe(1);
       expect(readError(fake)).toStrictEqual({
         code: 'launch-timeout',
@@ -241,11 +234,9 @@ describe('launch', () => {
     });
 
     it('refuses with page-open-failed at the first page that does not open, opening none after it', async () => {
-      const fake = makeFakeThorChrome({
-        env: { THOR_CHROME_APP: '/bin/sh' },
+      const fake = makeLaunchFake({
         pageFailures: { 'http://b': 'the browser refused: bad URL' },
       });
-      fake.makeProfile('thrive');
       await expect(run(fake, ['--profile', 'thrive', 'http://a', 'http://b', 'http://c'])).resolves.toBe(1);
       expect(fake.opened.map((page) => page.url)).toStrictEqual(['http://a', 'http://b']);
       expect(fake.captured.stderr()).toBe(
@@ -256,8 +247,7 @@ describe('launch', () => {
     });
 
     it("relaunches a derived profile in the hint with the launch's own options, leaving the profile unnamed", async () => {
-      const fake = makeFakeThorChrome({
-        env: { THOR_CHROME_APP: '/bin/sh' },
+      const fake = makeLaunchFake({
         pageFailures: { 'http://x': 'refused' },
       });
       const args = ['--repo', 'widget', '--branch', 'main', '--port', '9500', '--headless', 'http://x'];
@@ -268,11 +258,9 @@ describe('launch', () => {
     });
 
     it('names the page that did not open under --json', async () => {
-      const fake = makeFakeThorChrome({
-        env: { THOR_CHROME_APP: '/bin/sh' },
+      const fake = makeLaunchFake({
         pageFailures: { 'about:blank': 'the browser did not answer within 5000 ms' },
       });
-      fake.makeProfile('thrive');
       await expect(run(fake, ['--json', '--profile', 'thrive'])).resolves.toBe(1);
       expect(readError(fake)).toStrictEqual({
         code: 'page-open-failed',
@@ -283,28 +271,26 @@ describe('launch', () => {
     });
 
     it('refuses with policy-denied when the launched browser declined the port', async () => {
-      const fake = makeFakeThorChrome({
-        env: { THOR_CHROME_APP: '/bin/sh', THOR_CHROME_LAUNCH_TIMEOUT: '1' },
+      const fake = makeLaunchFake({
+        env: { THOR_CHROME_LAUNCH_TIMEOUT: '1' },
         results: { curl: { status: 7 } },
       });
       fake.deps.spawnDetached = (_program, _args, options) => {
         fs.writeFileSync(options.logPath, 'DevTools remote debugging is disallowed by the system admin.\n');
       };
-      fake.makeProfile('thrive');
       await expect(run(fake, ['--profile', 'thrive'])).resolves.toBe(1);
       expect(fake.captured.stderr()).toContain("thor-chrome: policy blocked remote debugging for profile 'thrive'\n");
       expect(fake.captured.stderr()).toContain('  thor-chrome quit thrive\n');
     });
 
     it('names chrome-for-testing rather than a retry when policy blocked the launched browser', async () => {
-      const fake = makeFakeThorChrome({
-        env: { THOR_CHROME_APP: '/bin/sh', THOR_CHROME_LAUNCH_TIMEOUT: '1' },
+      const fake = makeLaunchFake({
+        env: { THOR_CHROME_LAUNCH_TIMEOUT: '1' },
         results: { curl: { status: 7 } },
       });
       fake.deps.spawnDetached = (_program, _args, options) => {
         fs.writeFileSync(options.logPath, 'DevTools remote debugging is disallowed by the system admin.\n');
       };
-      fake.makeProfile('thrive');
       await expect(run(fake, ['--profile', 'thrive'])).resolves.toBe(1);
       expect(fake.captured.stderr()).toContain('relaunch with --browser chrome-for-testing');
       expect(fake.captured.stderr()).not.toContain('still be starting');
@@ -312,7 +298,7 @@ describe('launch', () => {
 
     it('reads a policy refusal back from the log that open was given for the output', async () => {
       const app = '/Applications/Fake.app/Contents/MacOS/fake';
-      const fake = makeFakeThorChrome({
+      const fake = makeLaunchFake({
         env: { THOR_CHROME_LAUNCH_TIMEOUT: '1' },
         results: { launchctl: { stdout: 'Background\n' }, curl: { status: 7 } },
       });
@@ -325,7 +311,6 @@ describe('launch', () => {
         }
         return answer(program, args, options);
       };
-      fake.makeProfile('thrive');
       await expect(run(fake, ['--json', '--profile', 'thrive'])).resolves.toBe(1);
       expect(readError(fake)).toMatchObject({ code: 'policy-denied' });
     });
@@ -335,9 +320,8 @@ describe('launch', () => {
       ['the executable is outside an app bundle', {}, () => '/bin/sh'],
       ['the bundle is unsigned', { codesign: { status: 1 } }, makeBundledApp],
     ])('names the tmux restart when %s outside the GUI login session', async (_description, results, makeApp) => {
-      const fake = makeFakeThorChrome({ results: { ...results, launchctl: { stdout: 'Background\n' } } });
+      const fake = makeLaunchFake({ results: { ...results, launchctl: { stdout: 'Background\n' } } });
       fake.env['THOR_CHROME_APP'] = makeApp(fake);
-      fake.makeProfile('thrive');
       await expect(run(fake, ['--profile', 'thrive'])).resolves.toBe(1);
       expect(fake.captured.stderr()).toContain(
         '  Or restart the tmux server from a terminal in the GUI login session: tmux kill-server, then tmux\n',
@@ -345,8 +329,7 @@ describe('launch', () => {
     });
 
     it('refuses with session-unavailable for an executable outside an app bundle, before writing anything', async () => {
-      const fake = makeFakeThorChrome({
-        env: { THOR_CHROME_APP: '/bin/sh' },
+      const fake = makeLaunchFake({
         results: { launchctl: { stdout: 'Background\n' } },
       });
       await expect(run(fake, ['--json', '--dry-run'])).resolves.toBe(1);
@@ -360,11 +343,10 @@ describe('launch', () => {
 
     it('refuses with session-unavailable for an unsigned bundle, naming the ad hoc signature', async () => {
       const app = '/Applications/My Fake.app/Contents/MacOS/fake';
-      const fake = makeFakeThorChrome({
+      const fake = makeLaunchFake({
         results: { launchctl: { stdout: 'Background\n' }, codesign: { status: 1 } },
       });
       fake.env['THOR_CHROME_APP'] = makeExecutable(fake, app);
-      fake.makeProfile('thrive');
       await expect(run(fake, ['--profile', 'thrive'])).resolves.toBe(1);
       expect(fake.captured.stderr()).toContain(
         `  Or sign the bundle ad hoc, which open accepts: codesign --force --deep --sign - ${appBundle(fake, app).replaceAll(' ', String.raw`\ `)}\n`,
@@ -373,9 +355,8 @@ describe('launch', () => {
 
     it('refuses with session-unavailable when open refuses the launch', async () => {
       const app = '/Applications/Fake.app/Contents/MacOS/fake';
-      const fake = makeFakeThorChrome({ results: { launchctl: { stdout: 'Background\n' }, open: { status: 1 } } });
+      const fake = makeLaunchFake({ results: { launchctl: { stdout: 'Background\n' }, open: { status: 1 } } });
       fake.env['THOR_CHROME_APP'] = makeExecutable(fake, app);
-      fake.makeProfile('thrive');
       await expect(run(fake, ['--json', '--profile', 'thrive'])).resolves.toBe(1);
       expect(readError(fake)).toStrictEqual({
         code: 'session-unavailable',
