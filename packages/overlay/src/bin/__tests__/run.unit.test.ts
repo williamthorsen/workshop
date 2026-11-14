@@ -3,6 +3,7 @@ import process from 'node:process';
 import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { OverlayError } from '../../errors/OverlayError.ts';
 import type { OverlayResult } from '../../modes/types.ts';
 import * as overlayModule from '../../overlay.ts';
 import { formatReport } from '../../reporting/formatReport.ts';
@@ -57,13 +58,22 @@ describe(run, () => {
   });
 
   it('writes a JSON error to stderr and returns exit 2 when overlay throws', async () => {
-    vi.spyOn(overlayModule, 'overlay').mockRejectedValue(new Error('chezmoi not found on PATH'));
+    vi.spyOn(overlayModule, 'overlay').mockRejectedValue(new OverlayError('chezmoi not found on PATH'));
     using io = captureStdio();
 
     const code = await run(['/src', '--create']);
 
     expect(io.stderr).toBe(`${JSON.stringify({ error: 'chezmoi not found on PATH' })}\n`);
     expect(code).toBe(2);
+  });
+
+  it('lets an error other than an OverlayError propagate', async () => {
+    const bug = new TypeError("Cannot read properties of undefined (reading 'path')");
+    vi.spyOn(overlayModule, 'overlay').mockRejectedValue(bug);
+    using io = captureStdio();
+
+    await expect(run(['/src', '--create'])).rejects.toBe(bug);
+    expect(io.stderr).toBe('');
   });
 
   it('returns exit 2 and writes a JSON error when argument parsing fails', async () => {

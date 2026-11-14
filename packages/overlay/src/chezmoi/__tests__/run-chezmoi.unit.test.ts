@@ -1,6 +1,9 @@
 import { PassThrough } from 'node:stream';
 
+import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+import { OverlayError } from '../../errors/OverlayError.ts';
 
 const execFileMock = vi.fn();
 const spawnMock = vi.fn();
@@ -57,7 +60,10 @@ describe(runChezmoiCaptured, () => {
   it('throws a clear error when chezmoi is missing from PATH', async () => {
     rejectExecFile({ code: 'ENOENT' });
 
-    await expect(runChezmoiCaptured(context, ['--version'])).rejects.toThrow(/chezmoi not found on PATH/);
+    await expect(captureError(OverlayError, () => runChezmoiCaptured(context, ['--version']))).resolves.toHaveProperty(
+      'message',
+      expect.stringMatching(/chezmoi not found on PATH/),
+    );
   });
 });
 

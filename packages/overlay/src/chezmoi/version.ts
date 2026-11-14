@@ -1,3 +1,4 @@
+import { OverlayError } from '../errors/OverlayError.ts';
 import type { ChezmoiContext } from './run-chezmoi.ts';
 
 interface SemverParts {
@@ -12,20 +13,19 @@ const MINIMUM_VERSION: SemverParts = { major: 2, minor: 46, patch: 0 };
 /**
  * Verifies chezmoi is installed and meets `MIN_CHEZMOI_VERSION`.
  *
- * Throws an actionable error (which the caller maps to exit 2) when chezmoi is absent, its version cannot be parsed,
- * or it is below the minimum.
+ * Throws an actionable `OverlayError` when chezmoi is absent, its version cannot be parsed, or it is below the minimum.
  */
 export async function assertChezmoiVersion(context: ChezmoiContext): Promise<void> {
   const { stdout, code } = await context.runner.runCaptured(context, ['--version']);
   if (code !== 0) {
-    throw new Error('chezmoi is not available; install it (e.g. `brew install chezmoi`)');
+    throw new OverlayError('chezmoi is not available; install it (e.g. `brew install chezmoi`)');
   }
   const installed = parseVersion(stdout);
   if (installed === undefined) {
-    throw new Error(`could not determine chezmoi version from: ${stdout.trim()}`);
+    throw new OverlayError(`could not determine chezmoi version from: ${stdout.trim()}`);
   }
   if (compareVersions(installed, MINIMUM_VERSION) < 0) {
-    throw new Error(`chezmoi ${MIN_CHEZMOI_VERSION} or later is required; found ${formatVersion(installed)}`);
+    throw new OverlayError(`chezmoi ${MIN_CHEZMOI_VERSION} or later is required; found ${formatVersion(installed)}`);
   }
 }
 

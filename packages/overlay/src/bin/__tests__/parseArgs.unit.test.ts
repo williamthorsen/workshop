@@ -1,6 +1,7 @@
 import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
+import { OverlayError } from '../../errors/OverlayError.ts';
 import { parseArgs } from '../parseArgs.ts';
 
 describe(parseArgs, () => {
@@ -40,32 +41,46 @@ describe(parseArgs, () => {
     expect(parseArgs(['-h'])).toStrictEqual({ kind: 'help' });
   });
 
-  it('rejects more than one mode flag', () => {
-    expect(() => parseArgs(['./source', '--create', '--force'])).toThrow(/only one of/);
+  it('rejects more than one mode flag', async () => {
+    await expect(
+      captureError(OverlayError, () => parseArgs(['./source', '--create', '--force'])),
+    ).resolves.toHaveProperty('message', expect.stringMatching(/only one of/));
   });
 
-  it('throws when the source positional is missing', () => {
-    expect(() => parseArgs(['--create'])).toThrow(/missing required argument/);
+  it('throws when the source positional is missing', async () => {
+    await expect(captureError(OverlayError, () => parseArgs(['--create']))).resolves.toHaveProperty(
+      'message',
+      expect.stringMatching(/missing required argument/),
+    );
   });
 
-  it('throws on an unknown option', () => {
-    expect(() => parseArgs(['./source', '--nope'])).toThrow(/unknown option: --nope/);
+  it('throws on an unknown option', async () => {
+    await expect(captureError(OverlayError, () => parseArgs(['./source', '--nope']))).resolves.toHaveProperty(
+      'message',
+      expect.stringMatching(/unknown option: --nope/),
+    );
   });
 
-  it('throws when a boolean option is given a value', () => {
-    expect(() => parseArgs(['./source', '--json=x'])).toThrow(/option takes no value: --json/);
+  it('throws when a boolean option is given a value', async () => {
+    await expect(captureError(OverlayError, () => parseArgs(['./source', '--json=x']))).resolves.toHaveProperty(
+      'message',
+      expect.stringMatching(/option takes no value: --json/),
+    );
   });
 
-  it.each([['--h'], ['--h=1']])('reports %s as an unknown option, not the -h short flag', (flag) => {
-    expect(() => parseArgs(['./source', flag])).toThrow(/unknown option: --h/);
+  it.each([['--h'], ['--h=1']])('reports %s as an unknown option, not the -h short flag', async (flag) => {
+    await expect(captureError(OverlayError, () => parseArgs(['./source', flag]))).resolves.toHaveProperty(
+      'message',
+      expect.stringMatching(/unknown option: --h/),
+    );
   });
 
   it('keeps the underlying parse error as the cause', async () => {
-    await expect(captureError(() => parseArgs(['./source', '--nope']))).resolves.toHaveProperty(
+    await expect(captureError(OverlayError, () => parseArgs(['./source', '--nope']))).resolves.toHaveProperty(
       'cause.code',
       'ERR_PARSE_ARGS_UNKNOWN_OPTION',
     );
-    await expect(captureError(() => parseArgs(['./source', '--json=x']))).resolves.toHaveProperty(
+    await expect(captureError(OverlayError, () => parseArgs(['./source', '--json=x']))).resolves.toHaveProperty(
       'cause.code',
       'ERR_PARSE_ARGS_INVALID_OPTION_VALUE',
     );

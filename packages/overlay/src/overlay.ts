@@ -22,7 +22,7 @@ export interface OverlayOptions {
  *
  * Resolves defaults (`target = process.cwd()`, `mode = 'verify'`, `output = process.stderr`), preflights the chezmoi
  * version, then dispatches to the mode strategy. A failed preflight (chezmoi missing or below the minimum version)
- * throws; the CLI maps that to exit `2`.
+ * throws an `OverlayError`, which the CLI maps to exit `2`.
  */
 export async function overlay(options: OverlayOptions): Promise<OverlayResult> {
   const mode: OverlayMode = options.mode ?? 'verify';

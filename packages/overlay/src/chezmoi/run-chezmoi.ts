@@ -4,6 +4,8 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 
+import { OverlayError } from '../errors/OverlayError.ts';
+
 const execFileAsync = promisify(execFile);
 
 /** Result of a captured (non-streaming) chezmoi invocation. */
@@ -100,11 +102,11 @@ function hasFileDescriptor(stream: NodeJS.WritableStream): stream is NodeJS.Writ
   return 'fd' in stream && typeof stream.fd === 'number';
 }
 
-/** Translates an `execFile` rejection into a `CapturedResult`, surfacing a missing binary as a clear error. */
+/** Translates an `execFile` rejection into a `CapturedResult`, surfacing a missing binary as an `OverlayError`. */
 function interpretExecFileError(error: unknown): CapturedResult {
   if (isExecFileError(error)) {
     if (error.code === 'ENOENT') {
-      throw new Error('chezmoi not found on PATH; install it (e.g. `brew install chezmoi`)');
+      throw new OverlayError('chezmoi not found on PATH; install it (e.g. `brew install chezmoi`)');
     }
     return {
       stdout: typeof error.stdout === 'string' ? error.stdout : '',
