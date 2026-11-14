@@ -5,9 +5,10 @@
 import process from 'node:process';
 
 import { installCrashHandler } from '@williamthorsen/toolbelt.cli/candidate';
+import { resolveSelfVersion } from '@williamthorsen/toolbelt.packaging/candidate';
 
 import { run } from './run.ts';
 
 installCrashHandler('overlay');
 
-process.exit(await run(process.argv.slice(2)));
+process.exit(await run(process.argv.slice(2), { resolveVersion: () => resolveSelfVersion(import.meta.url) }));

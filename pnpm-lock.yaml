@@ -546,6 +546,9 @@ importers:
       '@williamthorsen/toolbelt.errors':
         specifier: 'catalog:'
         version: 0.10.1
+      '@williamthorsen/toolbelt.packaging':
+        specifier: 'catalog:'
+        version: 0.8.0
       '@williamthorsen/toolbelt.strings':
         specifier: 'catalog:'
         version: 9.0.0

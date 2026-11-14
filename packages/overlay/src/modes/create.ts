@@ -42,7 +42,7 @@ export async function runCreate(context: ChezmoiContext): Promise<OverlayResult>
         )
       : 0;
 
-  // A failed file-apply aborts before the scripts pass, mirroring `--force`'s single apply: don't run normalization
+  // A failed file-apply aborts before the scripts pass, mirroring `force` mode's single apply: don't run normalization
   // scripts against a target whose files never converged.
   if (applyCode !== 0) {
     return { mode: 'create', entries, scripts: { ranCount: pendingScriptCount, ok: false }, counts, exitCode: 2 };

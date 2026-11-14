@@ -14,7 +14,7 @@ export function describeOutcome(outcome: EntryOutcome, mode: OverlayMode): strin
 
 /**
  * The `verify` and `create`/`force` label for each outcome. Labels name the entry's resulting state rather than an
- * action overlay took, which is the frame `conflict` fits: `forced` reads as `overwritten` because `--force` permits
+ * action overlay took, which is the frame `conflict` fits: `forced` reads as `overwritten` because `force` mode permits
  * the write rather than describing what happened to the path.
  */
 const OUTCOME_LABELS: Record<EntryOutcome, { preview: string; applied: string }> = {

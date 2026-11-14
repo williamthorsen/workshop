@@ -110,7 +110,7 @@ describe(formatReport, () => {
     expect(report).toContain('Nothing to do.');
   });
 
-  it('includes a --force fix-it hint when conflicts exist', () => {
+  it('includes an `overlay force` fix-it hint when conflicts exist', () => {
     const report = formatReport(
       buildResult({
         mode: 'create',
@@ -120,7 +120,7 @@ describe(formatReport, () => {
       }),
     );
 
-    expect(report).toContain('overlay --force');
+    expect(report).toContain('overlay force');
   });
 
   it('includes a conditional fix-it hint when a verify run reports a differing file', () => {
@@ -133,8 +133,8 @@ describe(formatReport, () => {
       }),
     );
 
-    expect(report).toContain('would be left untouched by `--create`');
-    expect(report).toContain('overlay --force');
+    expect(report).toContain('would be left untouched by `overlay create`');
+    expect(report).toContain('overlay force');
   });
 
   it('omits the fix-it hint when there are no conflicts', () => {
@@ -142,7 +142,7 @@ describe(formatReport, () => {
       buildResult({ mode: 'force', counts: { created: 1, deleted: 0, forced: 0, conflicts: 0, pending: 0 } }),
     );
 
-    expect(report).not.toContain('overlay --force');
+    expect(report).not.toContain('overlay force');
   });
 
   it('notes a script failure in the scripts summary', () => {

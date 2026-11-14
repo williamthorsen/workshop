@@ -7,7 +7,7 @@ import { describeOutcome } from './describeOutcome.ts';
  * Renders an `OverlayResult` as human-readable report text for stdout.
  *
  * Lists per-entry outcomes in an aligned label column, a counts summary, the scripts summary (phrased "would run"
- * under verify, "ran" otherwise), and a fix-it hint to re-run with `--force` whenever any entry conflicts. Built
+ * under verify, "ran" otherwise), and a fix-it hint to re-run as `overlay force` whenever any entry conflicts. Built
  * entirely from the structured result; chezmoi's own output never reaches stdout.
  */
 export function formatReport(result: OverlayResult): string {
@@ -33,9 +33,12 @@ export function formatReport(result: OverlayResult): string {
  */
 function hintAtForce(result: OverlayResult): string {
   if (result.mode === 'verify') {
-    return 'Differing files would be left untouched by `--create`. Re-run with `overlay --force` to overwrite them.';
+    return (
+      'Differing files would be left untouched by `overlay create`. ' +
+      'Re-run as `overlay force` with the same directories to overwrite them.'
+    );
   }
-  return 'Conflicts left untouched. Re-run with `overlay --force` to overwrite differing files.';
+  return 'Conflicts left untouched. Re-run as `overlay force` with the same directories to overwrite differing files.';
 }
 
 /** Builds the entry lines, padding each label to the widest one present so the paths align in a single column. */
