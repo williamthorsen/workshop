@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 
-import { type FakeThorChrome, makeFakeThorChrome } from './fake-thor-chrome.ts';
+import { type FakeThorChrome, type FakeThorChromeOptions, makeFakeThorChrome } from './fake-thor-chrome.ts';
 
 /** The PID of the browser that `makeRunningFake` reports as running. */
 export const RUNNING_PID = '4242';
@@ -18,6 +18,13 @@ export function makeExecutable(fake: FakeThorChrome, app: string): string {
   return file;
 }
 
+/** Builds a fake whose browser app is the runnable `/bin/sh` and whose profile `thrive` exists. */
+export function makeLaunchFake(options: FakeThorChromeOptions = {}): FakeThorChrome {
+  const fake = makeFakeThorChrome({ ...options, env: { THOR_CHROME_APP: '/bin/sh', ...options.env } });
+  fake.makeProfile('thrive');
+  return fake;
+}
+
 /**
  * Builds a fake whose profile `thrive` exists and has a running browser that declares the given port, started headless
  * when `isHeadless` is set.
@@ -29,14 +36,11 @@ export function makeRunningFake(options: {
 }): FakeThorChrome {
   const portFlag = options.port === undefined ? '' : ` --remote-debugging-port=${options.port}`;
   const headlessFlag = options.isHeadless === true ? ' --headless' : '';
-  const fake = makeFakeThorChrome({
-    env: { THOR_CHROME_APP: '/bin/sh' },
+  return makeLaunchFake({
     results: {
       ...options.results,
       pgrep: { stdout: `${RUNNING_PID}\n` },
       [`ps -o command= -p ${RUNNING_PID}`]: { stdout: `chrome${portFlag}${headlessFlag} --user-data-dir=/p/thrive\n` },
     },
   });
-  fake.makeProfile('thrive');
-  return fake;
 }
