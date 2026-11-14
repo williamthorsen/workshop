@@ -111,9 +111,9 @@ describe(run, () => {
     ['an unknown subcommand', ['verfy', '/src'], /^overlay: Unknown command: verfy\nDid you mean 'verify'\?\n/],
     ['a bare source directory', ['./src'], /^overlay: Unknown command: \.\/src\n/],
     ['a missing subcommand', [], /^overlay: A command is required\.\n/],
-    ['a former mode flag', ['--create', '/src'], /^overlay: /],
-    ['a former mode flag after a subcommand', ['verify', '/src', '--force'], /^overlay: /],
-    ['a missing source directory', ['verify'], /^overlay: /],
+    ['a former mode flag', ['--create', '/src'], /^overlay: Unknown option: --create\n/],
+    ['a former mode flag after a subcommand', ['verify', '/src', '--force'], /^overlay: Unknown option: --force\n/],
+    ['a missing source directory', ['verify'], /^overlay: Missing argument: <source-dir>\n/],
   ])('rejects %s as a usage error with exit 2', async (_label, argv, message) => {
     const overlay = vi.spyOn(overlayModule, 'overlay').mockResolvedValue(stubResult);
     using io = captureStdio();

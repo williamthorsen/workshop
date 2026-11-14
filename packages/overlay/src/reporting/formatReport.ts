@@ -33,7 +33,10 @@ export function formatReport(result: OverlayResult): string {
  */
 function hintAtForce(result: OverlayResult): string {
   if (result.mode === 'verify') {
-    return 'Differing files would be left untouched by `overlay create`. Re-run as `overlay force` with the same directories to overwrite them.';
+    return (
+      'Differing files would be left untouched by `overlay create`. ' +
+      'Re-run as `overlay force` with the same directories to overwrite them.'
+    );
   }
   return 'Conflicts left untouched. Re-run as `overlay force` with the same directories to overwrite differing files.';
 }
