@@ -38,10 +38,9 @@ Exit codes:
 /**
  * Runs the overlay CLI for the given argv and returns the process exit code.
  *
- * Writes the help text or the run result (text report, or JSON under `--json`) to stdout, and an `OverlayError` to stderr
- * as `overlay: <message>`, under `--json` as well. Any other error propagates to the crash handler that the bin
- * entrypoint installs.
- * Never calls `process.exit`: The bin entrypoint owns that, keeping this function testable.
+ * Writes the help text or the run result (text report, or JSON under `--json`) to stdout, and an `OverlayError` to
+ * stderr as `overlay: <message>`, under `--json` as well. Any other error propagates to the crash handler that the bin
+ * entrypoint installs. Never calls `process.exit`: The bin entrypoint owns that, keeping this function testable.
  */
 export async function run(argv: string[]): Promise<number> {
   try {
