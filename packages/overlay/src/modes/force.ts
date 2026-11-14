@@ -15,7 +15,7 @@ export async function runForce(context: ChezmoiContext): Promise<OverlayResult> 
     M: 'forced',
   });
 
-  const applyCode = await context.runner.runStreamed(context, ['apply']);
+  const applyCode = await context.runner.runStreamed(context, ['apply'], context.output);
   const ok = applyCode === 0;
 
   return {

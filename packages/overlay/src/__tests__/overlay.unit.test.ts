@@ -1,5 +1,6 @@
 import path from 'node:path';
 import process from 'node:process';
+import { PassThrough } from 'node:stream';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -45,7 +46,12 @@ describe(overlay, () => {
 
     await overlay({ source: 'src' });
 
-    expect(verify).toHaveBeenCalledWith({ source: path.resolve('src'), target: process.cwd(), runner: chezmoiRunner });
+    expect(verify).toHaveBeenCalledWith({
+      source: path.resolve('src'),
+      target: process.cwd(),
+      output: process.stderr,
+      runner: chezmoiRunner,
+    });
   });
 
   it('resolves the target to an absolute path', async () => {
@@ -57,8 +63,19 @@ describe(overlay, () => {
     expect(verify).toHaveBeenCalledWith({
       source: '/src',
       target: path.resolve('relative/target'),
+      output: process.stderr,
       runner: chezmoiRunner,
     });
+  });
+
+  it('passes the caller-supplied output stream to the mode', async () => {
+    vi.spyOn(versionModule, 'assertChezmoiVersion').mockResolvedValue();
+    const verify = vi.spyOn(verifyModule, 'runVerify').mockResolvedValue(stubResult);
+    const output = new PassThrough();
+
+    await overlay({ source: '/src', output });
+
+    expect(verify).toHaveBeenCalledWith(expect.objectContaining({ output }));
   });
 
   it('dispatches to create mode', async () => {

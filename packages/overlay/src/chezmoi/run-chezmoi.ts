@@ -2,7 +2,6 @@ import { execFile, spawn } from 'node:child_process';
 import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import process from 'node:process';
 import { promisify } from 'node:util';
 
 const execFileAsync = promisify(execFile);
@@ -23,11 +22,12 @@ export interface ChezmoiDirs {
 /** Adapter through which overlay invokes chezmoi, so that tests can substitute a fake. */
 export interface ChezmoiRunner {
   runCaptured(dirs: ChezmoiDirs, args: string[]): Promise<CapturedResult>;
-  runStreamed(dirs: ChezmoiDirs, args: string[]): Promise<number>;
+  runStreamed(dirs: ChezmoiDirs, args: string[], output: NodeJS.WritableStream): Promise<number>;
 }
 
-/** Directories of an overlay run, and the runner that invokes chezmoi against them. */
+/** Directories of an overlay run, the runner that invokes chezmoi against them, and the stream for streamed output. */
 export interface ChezmoiContext extends ChezmoiDirs {
+  output: NodeJS.WritableStream;
   runner: ChezmoiRunner;
 }
 
@@ -49,15 +49,25 @@ export async function runChezmoiCaptured(dirs: ChezmoiDirs, args: string[]): Pro
 }
 
 /**
- * Runs chezmoi with the child's stdout and stderr inherited to overlay's `process.stderr`, never stdout. Used for
- * every `apply` that may run `run_` scripts, so script output streams live while overlay's stdout stays clean for the
- * reporter or `--json`. Resolves with the child's exit code.
+ * Runs chezmoi with the child's stdout and stderr both sent to `output`. Used for every `apply` that may run `run_`
+ * scripts, so script output streams live. Resolves with the child's exit code, never ending `output`.
+ *
+ * A stream backed by a file descriptor is handed to the child as that descriptor, so scripts write to it directly and
+ * see a terminal when it is one. Any other stream receives both child streams through pipes.
  */
-export async function runChezmoiStreamed(dirs: ChezmoiDirs, args: string[]): Promise<number> {
+export async function runChezmoiStreamed(
+  dirs: ChezmoiDirs,
+  args: string[],
+  output: NodeJS.WritableStream,
+): Promise<number> {
   return withSandbox(dirs, args, async (fullArgs) => {
     return new Promise<number>((resolve, reject) => {
-      const child = spawn('chezmoi', fullArgs, { stdio: ['ignore', process.stderr, process.stderr] });
+      const stdio = hasFileDescriptor(output) ? output.fd : 'pipe';
+      const child = spawn('chezmoi', fullArgs, { stdio: ['ignore', stdio, stdio] });
+      child.stdout?.pipe(output, { end: false });
+      child.stderr?.pipe(output, { end: false });
       child.on('error', reject);
+      // Node emits `close` only after the child's stdio streams end, so every piped chunk has been written by then.
       child.on('close', (code) => resolve(code ?? 1));
     });
   });
@@ -83,6 +93,11 @@ function buildArgs(dirs: ChezmoiDirs, persistentStatePath: string, configPath: s
     '--no-tty',
     ...args,
   ];
+}
+
+/** Reports whether `stream` exposes an open file descriptor that a child process can write to directly. */
+function hasFileDescriptor(stream: NodeJS.WritableStream): stream is NodeJS.WritableStream & { fd: number } {
+  return 'fd' in stream && typeof stream.fd === 'number';
 }
 
 /** Translates an `execFile` rejection into a `CapturedResult`, surfacing a missing binary as a clear error. */

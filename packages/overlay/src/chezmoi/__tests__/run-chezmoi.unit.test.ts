@@ -1,4 +1,4 @@
-import process from 'node:process';
+import { PassThrough } from 'node:stream';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -66,25 +66,47 @@ describe(runChezmoiStreamed, () => {
     vi.clearAllMocks();
   });
 
-  it('inherits child stdout and stderr to process.stderr, never stdout', async () => {
+  it('hands a stream backed by a file descriptor to the child as that descriptor', async () => {
     arrangeSpawn('close', 0);
+    const output = Object.assign(new PassThrough(), { fd: 2 });
 
-    await runChezmoiStreamed(context, ['apply']);
+    await runChezmoiStreamed(context, ['apply'], output);
 
     const options: unknown = spawnMock.mock.calls[0]?.[2];
-    expect(readStdio(options)).toStrictEqual(['ignore', process.stderr, process.stderr]);
+    expect(readStdio(options)).toStrictEqual(['ignore', 2, 2]);
+  });
+
+  it('pipes both child streams into a stream without a file descriptor, leaving it open', async () => {
+    const stdout = new PassThrough();
+    const stderr = new PassThrough();
+    stdout.end('out\n');
+    stderr.end('err\n');
+    arrangeSpawn('close', 0, { stdout, stderr });
+    const output = new PassThrough();
+    const chunks: string[] = [];
+    output.on('data', (chunk: Buffer) => {
+      chunks.push(chunk.toString());
+    });
+
+    await runChezmoiStreamed(context, ['apply'], output);
+
+    const options: unknown = spawnMock.mock.calls[0]?.[2];
+    expect(readStdio(options)).toStrictEqual(['ignore', 'pipe', 'pipe']);
+    expect(chunks.join('')).toContain('out\n');
+    expect(chunks.join('')).toContain('err\n');
+    expect(output.writableEnded).toBe(false);
   });
 
   it('resolves with the child exit code', async () => {
     arrangeSpawn('close', 2);
 
-    await expect(runChezmoiStreamed(context, ['apply'])).resolves.toBe(2);
+    await expect(runChezmoiStreamed(context, ['apply'], new PassThrough())).resolves.toBe(2);
   });
 
   it('rejects when the child emits an error', async () => {
     arrangeSpawn('error', new Error('spawn failed'));
 
-    await expect(runChezmoiStreamed(context, ['apply'])).rejects.toThrow(/spawn failed/);
+    await expect(runChezmoiStreamed(context, ['apply'], new PassThrough())).rejects.toThrow(/spawn failed/);
   });
 });
 
@@ -94,20 +116,28 @@ describe(runChezmoiStreamed, () => {
 interface ChildStub {
   handlers: Map<string, (value: unknown) => void>;
   on: (event: string, handler: (value: unknown) => void) => ChildStub;
+  stdout: PassThrough | null;
+  stderr: PassThrough | null;
 }
 
-/** Creates a child stub and arranges for `spawn` to return it and emit `event` with `value` on the next microtask. */
-function arrangeSpawn(event: string, value: unknown): ChildStub {
+/**
+ * Creates a child stub and arranges for `spawn` to return it and emit `event` with `value` on the next macrotask, after
+ * any buffered stdio has flowed. The stub's stdio streams are `null`, as for a descriptor-backed spawn, unless `streams`
+ * supplies them.
+ */
+function arrangeSpawn(event: string, value: unknown, streams?: Pick<ChildStub, 'stdout' | 'stderr'>): ChildStub {
   const handlers: ChildStub['handlers'] = new Map();
   const child: ChildStub = {
     handlers,
+    stdout: streams?.stdout ?? null,
+    stderr: streams?.stderr ?? null,
     on(name, handler) {
       handlers.set(name, handler);
       return child;
     },
   };
   spawnMock.mockImplementation((_cmd: string, _args: string[], _options: unknown) => {
-    queueMicrotask(() => child.handlers.get(event)?.(value));
+    setTimeout(() => child.handlers.get(event)?.(value), 0);
     return child;
   });
   return child;
