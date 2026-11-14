@@ -1,7 +1,7 @@
 import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
-import { OverlayError } from '../../OverlayError.ts';
+import { OverlayError } from '../../errors/OverlayError.ts';
 import { parseArgs } from '../parseArgs.ts';
 
 describe(parseArgs, () => {

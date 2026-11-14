@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
 
-import { OverlayError } from '../OverlayError.ts';
+import { OverlayError } from '../errors/OverlayError.ts';
 
 const execFileAsync = promisify(execFile);
 

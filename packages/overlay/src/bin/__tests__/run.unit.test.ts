@@ -3,8 +3,8 @@ import process from 'node:process';
 import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { OverlayError } from '../../errors/OverlayError.ts';
 import type { OverlayResult } from '../../modes/types.ts';
-import { OverlayError } from '../../OverlayError.ts';
 import * as overlayModule from '../../overlay.ts';
 import { formatReport } from '../../reporting/formatReport.ts';
 import { run } from '../run.ts';

@@ -1,4 +1,4 @@
-import { OverlayError } from '../OverlayError.ts';
+import { OverlayError } from '../errors/OverlayError.ts';
 import type { ChezmoiContext } from './run-chezmoi.ts';
 
 /**

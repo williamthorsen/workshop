@@ -1,8 +1,8 @@
 import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
+import { OverlayError } from '../../errors/OverlayError.ts';
 import { createFakeContext } from '../../test-utils/fake-runner.ts';
-import { OverlayError } from '../../OverlayError.ts';
 import { assertChezmoiVersion, MIN_CHEZMOI_VERSION, parseVersion } from '../version.ts';
 
 describe(parseVersion, () => {

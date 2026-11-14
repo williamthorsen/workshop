@@ -3,7 +3,7 @@ import { PassThrough } from 'node:stream';
 import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { OverlayError } from '../../OverlayError.ts';
+import { OverlayError } from '../../errors/OverlayError.ts';
 
 const execFileMock = vi.fn();
 const spawnMock = vi.fn();

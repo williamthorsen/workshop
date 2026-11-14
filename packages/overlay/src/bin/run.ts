@@ -1,6 +1,6 @@
 import process from 'node:process';
 
-import { OverlayError } from '../OverlayError.ts';
+import { OverlayError } from '../errors/OverlayError.ts';
 import { overlay } from '../overlay.ts';
 import { formatJsonError } from '../reporting/formatJsonError.ts';
 import { formatReport } from '../reporting/formatReport.ts';
