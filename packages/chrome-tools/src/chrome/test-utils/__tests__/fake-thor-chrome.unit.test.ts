@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 import { findOnPath } from '../../../shared/paths.ts';
+import { makeErrnoError } from '../../../test-utils/errno-error.ts';
 import { FIRST_RUNNING_PID, makeFakeThorChrome, makeRunningFakeThorChrome } from '../fake-thor-chrome.ts';
 
 describe(makeFakeThorChrome, () => {
@@ -45,15 +46,15 @@ describe(makeFakeThorChrome, () => {
     expect(fake.deps.now() - started).toBe(250);
   });
 
-  it('records signals and launches, and refuses every signal when asked to', () => {
+  it('records signals and launches, and throws the configured error from every signal', () => {
     const fake = makeFakeThorChrome();
     fake.deps.kill(4242);
     fake.deps.spawnDetached('chrome', ['--flag'], { logPath: '/log' });
     expect(fake.killed).toStrictEqual([4242]);
     expect(fake.spawned).toStrictEqual([{ args: ['--flag'], options: { logPath: '/log' }, program: 'chrome' }]);
     expect(() => {
-      makeFakeThorChrome({ isKillRefused: true }).deps.kill(1);
-    }).toThrow('EPERM');
+      makeFakeThorChrome({ killError: makeErrnoError('EPERM') }).deps.kill(1);
+    }).toThrow(expect.objectContaining({ code: 'EPERM' }));
   });
 
   it('records each page opening in order and fails the pages that it names', async () => {

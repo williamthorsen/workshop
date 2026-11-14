@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { makeErrnoError } from '../../test-utils/errno-error.ts';
 import { makeFakeThorChrome, makeRunningFakeThorChrome } from '../test-utils/fake-thor-chrome.ts';
 import { transcribe, transcribeBoth } from '../test-utils/transcribe.ts';
 
@@ -71,7 +72,7 @@ describe('thor-chrome output for verbs that act on several profiles', () => {
     });
 
     it('reports a browser that could not be signalled', async () => {
-      const make = () => makeRunningFakeThorChrome(['thrive'], { isKillRefused: true });
+      const make = () => makeRunningFakeThorChrome(['thrive'], { killError: makeErrnoError('EPERM') });
       await expect(transcribe(make(), ['quit', 'thrive'])).resolves.toMatchInlineSnapshot(`
         "$ quit thrive
         exit 1

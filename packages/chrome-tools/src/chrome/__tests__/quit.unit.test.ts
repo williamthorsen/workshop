@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { makeErrnoError } from '../../test-utils/errno-error.ts';
 import { quitProfiles } from '../quit.ts';
 import { type FakeThorChrome, makeFakeThorChrome, makeRunningFakeThorChrome } from '../test-utils/fake-thor-chrome.ts';
 import { runThorChrome } from '../thor-chrome.ts';
@@ -90,7 +91,7 @@ describe('quit', () => {
   });
 
   it('refuses with quit-failed when the browser cannot be signalled', async () => {
-    const fake = makeRunningFakeThorChrome(['thrive'], { isKillRefused: true });
+    const fake = makeRunningFakeThorChrome(['thrive'], { killError: makeErrnoError('EPERM') });
     await expect(run(fake, ['quit', 'thrive'])).resolves.toBe(1);
     expect(fake.captured.stderr()).toBe("thor-chrome: could not signal PID 4242 for profile 'thrive'\n");
   });

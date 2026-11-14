@@ -38,8 +38,8 @@ export interface FakeThorChrome {
 export interface FakeThorChromeOptions {
   /** Variables set over the fake environment; an `undefined` value removes one. */
   env?: Record<string, string | undefined>;
-  /** Makes every signal fail, as for a process owned by another user. */
-  isKillRefused?: boolean | undefined;
+  /** The error that every signal throws, such as a coded `EPERM` for a process owned by another user. */
+  killError?: Error | undefined;
   /** Failure reasons keyed by URL, for the pages whose opening fails. */
   pageFailures?: Record<string, string>;
   /**
@@ -113,7 +113,7 @@ export function makeFakeThorChrome(options: FakeThorChromeOptions = {}): FakeTho
     env,
     isStdoutTerminal: false,
     kill: (pid) => {
-      if (options.isKillRefused === true) throw new Error('EPERM');
+      if (options.killError !== undefined) throw options.killError;
       killed.push(pid);
     },
     now: () => clock,
@@ -174,7 +174,7 @@ export interface RunningFakeThorChrome extends FakeThorChrome {
   relaunch: (profile: string) => number;
 }
 
-export interface RunningFakeThorChromeOptions extends Pick<FakeThorChromeOptions, 'isKillRefused'> {
+export interface RunningFakeThorChromeOptions extends Pick<FakeThorChromeOptions, 'killError'> {
   /** Gives each browser a debugging port, 9000 plus its index. */
   hasPorts?: boolean;
 }
@@ -193,7 +193,7 @@ export function makeRunningFakeThorChrome(
   let nextPid = FIRST_RUNNING_PID + profiles.length;
   let patterns = new Map<string, number>();
   const fake = makeFakeThorChrome({
-    isKillRefused: options.isKillRefused,
+    killError: options.killError,
     run: (program, args) => {
       if (program === 'ps') {
         const pid = Number(args.at(-1) ?? '');

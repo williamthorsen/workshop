@@ -2,6 +2,7 @@ import fs from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
+import { makeErrnoError } from '../../test-utils/errno-error.ts';
 import { makeStubPath } from '../../test-utils/stub-path.ts';
 import { IDLE_RECORD_FILE, quitIdleProfiles } from '../idle.ts';
 import { type FakeThorChrome, makeFakeThorChrome, makeRunningFakeThorChrome } from '../test-utils/fake-thor-chrome.ts';
@@ -117,7 +118,7 @@ describe('quit --idle', () => {
   });
 
   it('exits 1 when an idle browser cannot be quit, keeping it in the record', async () => {
-    const fake = makeRunningFakeThorChrome(['thrive'], { hasPorts: true, isKillRefused: true });
+    const fake = makeRunningFakeThorChrome(['thrive'], { hasPorts: true, killError: makeErrnoError('EPERM') });
     await run(fake, ['quit', '--idle', '1s']);
     fake.advance(1000);
     await expect(run(fake, ['quit', '--idle', '1s'])).resolves.toBe(1);
