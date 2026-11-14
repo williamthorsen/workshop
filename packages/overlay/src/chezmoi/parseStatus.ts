@@ -31,6 +31,7 @@ export function parseStatus(stdout: string): StatusEntry[] {
 
 // region | Helpers
 
+/** Reports whether a status-column character is one of the apply-side codes that overlay acts on. */
 function isStatusCode(value: string): value is StatusCode {
   return APPLY_CODES.has(value);
 }
