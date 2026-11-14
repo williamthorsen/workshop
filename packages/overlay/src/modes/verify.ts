@@ -9,7 +9,7 @@ import type { OverlayResult } from './types.ts';
  * `status` instead of shelling out to `chezmoi verify`, which exits non-zero on pending scripts under throwaway
  * persistent-state.
  *
- * A drift entry's outcome is the one it *would* have under `--create`: an `A` row reads as `created`, `D` as
+ * A drift entry's outcome is the one it *would* have in `create` mode: an `A` row reads as `created`, `D` as
  * `deleted`, and `M` as `conflict`.
  */
 export async function runVerify(context: ChezmoiContext): Promise<OverlayResult> {
