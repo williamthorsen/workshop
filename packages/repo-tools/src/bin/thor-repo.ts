@@ -4,6 +4,10 @@
 
 import process from 'node:process';
 
+import { installCrashHandler } from '@williamthorsen/toolbelt.cli/candidate';
+
 import { run } from './run.ts';
+
+installCrashHandler('thor-repo');
 
 process.exit(await run(process.argv.slice(2)));

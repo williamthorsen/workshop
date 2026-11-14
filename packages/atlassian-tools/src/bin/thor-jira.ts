@@ -4,12 +4,15 @@ import fs from 'node:fs';
 import process from 'node:process';
 
 import { createTokenTransport } from '@williamthorsen/toolbelt.atlassian/candidate';
+import { installCrashHandler } from '@williamthorsen/toolbelt.cli/candidate';
 import { resolveSelfVersion } from '@williamthorsen/toolbelt.packaging/candidate';
 import { createKeychainStore, promptSecret } from '@williamthorsen/toolbelt.secrets/candidate';
 
 import { findSpecPath } from './findSpecPath.ts';
 import { readStreamText } from './readStreamText.ts';
 import { run } from './run.ts';
+
+installCrashHandler('thor-jira');
 
 // A reader that exits first closes the pipe, which node reports as an error event rather than the quiet termination
 // that SIGPIPE would give.

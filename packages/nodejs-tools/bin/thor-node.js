@@ -20,6 +20,10 @@ if (!existsSync(entryPoint)) {
 try {
   await import(entryPoint.href);
 } catch (error) {
+  // The entry installs its crash handler before any other work, so a listener means that the failure happened in the
+  // entry's work rather than while it loaded, and the handler reports it.
+  if (process.listenerCount('uncaughtException') > 0) throw error;
+
   const message = error instanceof Error ? error.message : String(error);
   process.stderr.write(`thor-node: failed to load: ${message}\n`);
   process.exit(1);

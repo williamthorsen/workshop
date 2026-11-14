@@ -12,7 +12,7 @@ const ROOT = defineGroup({
     'Reconcile a Jira Cloud project against a declarative spec, list its work items, and manage the API token with which it authenticates.',
   epilog: `Exit codes:
   0  The command succeeded
-  1  No token is stored, or nothing was there to remove
+  1  No token is stored, nothing was there to remove, or thor-jira hit an internal error
   2  Usage or validation error
   3  The keychain could not be reached
   4  A Jira request failed, or its response could not be read
@@ -30,7 +30,8 @@ Jira Cloud and team-managed projects only.`,
 /**
  * Runs the `thor-jira` command line, writing through the effects that it is given and returning the code to exit
  * with. Output streams as the run proceeds, so a process killed partway still leaves a record of what it did.
- * Every failure is reported through the effects: Nothing throws.
+ * A failure inside a command is reported through the effects, as a usage error when it does not have an exit code of
+ * its own; an error thrown outside a command propagates to the caller.
  *
  * @internal
  */

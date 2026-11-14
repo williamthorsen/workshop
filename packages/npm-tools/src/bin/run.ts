@@ -55,7 +55,8 @@ const ROOT = defineGroup({
   summary: 'Run npm package and registry chores.',
   epilog: `Exit codes:
   0    The command succeeded, or help or version was printed
-  1    A check failed, the listing, the publish, or the move failed, or the confirmation was declined
+  1    A check failed, the listing, the publish, or the move failed, the confirmation was declined, or thor-npm hit
+       an internal error
   2    Usage or validation error
   127  npm is not on PATH`,
   commands: {
@@ -115,8 +116,9 @@ const ROOT = defineGroup({
 
 /**
  * Runs the `thor-npm` command line, writing to the given writers and resolving to the exit code rather than
- * exiting, so that the whole surface is exercisable without a process. An empty argv prints the help. Every failure
- * is reported through the writers and the exit code: Nothing throws.
+ * exiting, so that the whole surface is exercisable without a process. An empty argv prints the help. A failure
+ * inside a command is reported through the writers and the exit code; an error thrown outside a command propagates
+ * to the caller.
  */
 export async function run(args: readonly string[], effects: RunEffects, streams: RunStreams): Promise<number> {
   return runCli(args.length === 0 ? ['--help'] : args, ROOT, {

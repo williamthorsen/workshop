@@ -36,7 +36,7 @@ is local to this Mac: \`security\` offers no iCloud Keychain synchronization.
 
 Exit codes:
   0  The command succeeded
-  1  No secret is stored under that service and account
+  1  No secret is stored under that service and account, or thor-secret hit an internal error
   2  Usage or validation error
   3  The keychain could not be reached`,
   commands: {
@@ -105,7 +105,9 @@ share one 4,095-byte command line with it; a secret that would not fit is refuse
 
 /**
  * Runs the `thor-secret` command line, returning what to write and exit with rather than doing either, so that
- * the whole surface is exercisable without a process. Every failure is reported through the result: Nothing throws.
+ * the whole surface is exercisable without a process. A failure inside a command is reported through the result, as a
+ * usage error when it is neither a keychain failure nor anticipated by the command; an error thrown outside a command
+ * propagates to the caller.
  */
 export async function run(args: readonly string[], effects: RunEffects): Promise<RunResult> {
   const stdout = createTextBuffer();

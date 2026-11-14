@@ -22,7 +22,7 @@ const ROOT = defineGroup({
   summary: 'Utilities for working with git branch names.',
   epilog: `Exit codes:
   0  A result was printed
-  1  ticket-ref found no ticket in the branch name
+  1  ticket-ref found no ticket in the branch name, or thor-git hit an internal error
   2  Usage or validation error`,
   commands: {
     'branch-number': defineCommand({
@@ -80,8 +80,9 @@ const ROOT = defineGroup({
 
 /**
  * Runs the `thor-git` command line, returning what to write and exit with rather than doing either, so that the whole
- * surface is exercisable without a process. An empty argv prints the help. Every failure is reported through the
- * result: Nothing throws.
+ * surface is exercisable without a process. An empty argv prints the help. A failure inside a command is reported
+ * through the result, as a usage error when the command does not anticipate it; an error thrown outside a command
+ * propagates to the caller.
  */
 export async function run(args: readonly string[], effects: RunEffects): Promise<RunResult> {
   const stdout = createTextBuffer();

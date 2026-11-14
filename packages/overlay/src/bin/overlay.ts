@@ -4,6 +4,10 @@
 
 import process from 'node:process';
 
+import { installCrashHandler } from '@williamthorsen/toolbelt.cli/candidate';
+
 import { run } from './run.ts';
+
+installCrashHandler('overlay');
 
 process.exit(await run(process.argv.slice(2)));

@@ -1,10 +1,12 @@
 /* eslint n/hashbang: off -- this is the CLI entrypoint; the build prepends the hashbang. */
 import process from 'node:process';
 
-import { defineCommand, runCli } from '@williamthorsen/toolbelt.cli/candidate';
+import { defineCommand, installCrashHandler, runCli } from '@williamthorsen/toolbelt.cli/candidate';
 
 import { runThorChrome } from '../chrome/thor-chrome.ts';
 import { reportCommandErrorsAsync } from '../shared/errors.ts';
+
+installCrashHandler('thor-chrome');
 
 const name = 'thor-chrome';
 
