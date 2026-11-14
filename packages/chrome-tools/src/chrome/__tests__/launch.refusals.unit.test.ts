@@ -270,7 +270,7 @@ describe('launch', () => {
       });
     });
 
-    it('refuses with policy-denied when the launched browser declined the port', async () => {
+    it('refuses with policy-denied when the launched browser declined the port, naming chrome-for-testing rather than a retry', async () => {
       const fake = makeLaunchFake({
         env: { THOR_CHROME_LAUNCH_TIMEOUT: '1' },
         results: { curl: { status: 7 } },
@@ -281,17 +281,6 @@ describe('launch', () => {
       await expect(run(fake, ['--profile', 'thrive'])).resolves.toBe(1);
       expect(fake.captured.stderr()).toContain("thor-chrome: policy blocked remote debugging for profile 'thrive'\n");
       expect(fake.captured.stderr()).toContain('  thor-chrome quit thrive\n');
-    });
-
-    it('names chrome-for-testing rather than a retry when policy blocked the launched browser', async () => {
-      const fake = makeLaunchFake({
-        env: { THOR_CHROME_LAUNCH_TIMEOUT: '1' },
-        results: { curl: { status: 7 } },
-      });
-      fake.deps.spawnDetached = (_program, _args, options) => {
-        fs.writeFileSync(options.logPath, 'DevTools remote debugging is disallowed by the system admin.\n');
-      };
-      await expect(run(fake, ['--profile', 'thrive'])).resolves.toBe(1);
       expect(fake.captured.stderr()).toContain('relaunch with --browser chrome-for-testing');
       expect(fake.captured.stderr()).not.toContain('still be starting');
     });
