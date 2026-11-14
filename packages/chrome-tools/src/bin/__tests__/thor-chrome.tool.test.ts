@@ -177,6 +177,25 @@ describe('thor-chrome wrapper', () => {
     // key on fires for any unresolved module in the graph.
     expect(stderr).not.toMatch(/build output not found/);
   });
+
+  it('passes a failure to the crash handler once the entry has installed one', () => {
+    using tree = createTempTree({
+      [WRAPPER_ENTRY]: WRAPPER_SOURCE,
+      [BUILD_ENTRY]: [
+        "process.on('uncaughtException', (error) => {",
+        '  process.stderr.write(`handled: ${error.message}\\n`, () => process.exit(1));',
+        '});',
+        'await Promise.resolve();',
+        "throw new Error('boom');",
+        '',
+      ].join('\n'),
+    });
+
+    const { status, stderr } = runWrapper(tree);
+
+    expect(status).toBe(1);
+    expect(stderr).toBe('handled: boom\n');
+  });
 });
 
 // region | Helpers
