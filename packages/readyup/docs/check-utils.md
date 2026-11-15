@@ -64,7 +64,7 @@ Each utility's doc comment states its edge cases and the reasons for its rules. 
 | `readEnginesNodeFloor(manifest)`     | `{ kind: 'found', floor, raw }`, `{ kind: 'absent' }`, or `{ kind: 'unparseable', raw }` |
 | `satisfiesNodeFloor(version, floor)` | Whether a runtime meets a floor; `undefined` if either is uncomparable                   |
 | `readToolVersionsNode(path?)`        | Node version declared in `.tool-versions`                                                |
-| `esYearForNodeMajor(major)`          | ECMAScript year supported by a Node major (`24` → `es2025`)                              |
+| `esYearForNodeMajor(major)`          | Latest ECMAScript year that a Node major implements in full (`24` → `es2025`)            |
 | `readTsconfigLanguageLevel(path)`    | Effective `lib` and `target`, resolved through `extends`                                 |
 | `readTsconfigChain(path)`            | Each config in the `extends` chain, and what it declares in its own right                |
 

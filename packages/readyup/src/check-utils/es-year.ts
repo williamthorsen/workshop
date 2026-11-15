@@ -1,12 +1,13 @@
 /** ECMAScript language level, lowercased to match the `lib` and `target` values returned by a tsconfig reader. */
 export type EsYear = 'es2022' | 'es2023' | 'es2024' | 'es2025';
 
-/** Node LTS major versions and the ECMAScript year supported by each one. */
+/** Node LTS major versions and the latest ECMAScript year that each one implements in full. */
 const ES_YEAR_BY_NODE_MAJOR: Readonly<Record<number, EsYear>> = {
   18: 'es2022',
   20: 'es2023',
   22: 'es2024',
   24: 'es2025',
+  26: 'es2025',
 };
 
 /**
