@@ -85,10 +85,22 @@ export function readCloneRoot(dir: string): string | undefined {
   return commonDir !== undefined && path.basename(commonDir) === '.git' ? path.dirname(commonDir) : topLevel;
 }
 
-/** Returns the branch checked out in the checkout containing a directory, or `undefined` when HEAD is detached. */
-export function readCurrentBranch(dir: string): string | undefined {
+/**
+ * Returns the branch checked out in the checkout containing a directory, a `branch` of `undefined` when HEAD is
+ * detached or the directory is not in any checkout, or the reason that git cannot tell.
+ */
+export function readCurrentBranch(dir: string): { branch: string | undefined } | { failure: string } {
   // `symbolic-ref` also names the unborn branch of a repository without commits, which `rev-parse` cannot.
-  return runGit(dir, ['symbolic-ref', '--quiet', '--short', 'HEAD'])?.trim() || undefined;
+  const args = ['symbolic-ref', '--quiet', '--short', 'HEAD'];
+  // Force the C locale, in which git reports a directory outside any checkout in the words matched below.
+  const run = spawnGit(dir, args, { LC_ALL: 'C' });
+  if (run.error === undefined && run.signal === null) {
+    // `symbolic-ref --quiet` exits 1, without a message, when HEAD is detached.
+    if (run.status === 1 && run.stderr === '') return { branch: undefined };
+    if (run.stderr.startsWith('fatal: not a git repository')) return { branch: undefined };
+  }
+  const failure = describeGitFailure(args, run);
+  return failure === undefined ? { branch: run.stdout.trim() || undefined } : { failure };
 }
 
 /** Returns the URL of a clone's `origin` remote, or `undefined` when it has none. */
@@ -128,13 +140,19 @@ function runGit(dir: string, args: readonly string[]): string | undefined {
 
 /** Runs git in a directory, without a cap on its output, and returns its stdout or the reason that it failed. */
 function runGitForOutcome(dir: string, args: readonly string[]): { stdout: string } | { failure: string } {
-  const result = spawnSync('git', ['-C', dir, ...args], {
+  const result = spawnGit(dir, args);
+  const failure = describeGitFailure(args, result);
+  return failure === undefined ? { stdout: result.stdout } : { failure };
+}
+
+/** Runs git in a directory, without a cap on its output, with the given variables added to the environment. */
+function spawnGit(dir: string, args: readonly string[], env: Record<string, string> = {}): SpawnSyncReturns<string> {
+  return spawnSync('git', ['-C', dir, ...args], {
     encoding: 'utf8',
+    env: { ...process.env, ...env },
     maxBuffer: Infinity,
     stdio: ['ignore', 'pipe', 'pipe'],
   });
-  const failure = describeGitFailure(args, result);
-  return failure === undefined ? { stdout: result.stdout } : { failure };
 }
 
 // endregion | Helpers

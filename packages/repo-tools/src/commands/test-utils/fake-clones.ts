@@ -38,7 +38,7 @@ export function buildFakeAdapters(
     listWorktrees: () => [],
     makeDirectory: () => 'not exercised',
     pathExists: (target) => clones[cloneName(target) ?? ''] !== undefined,
-    readCurrentBranch: () => branch,
+    readCurrentBranch: () => ({ branch }),
     readDeviceId: () => 1,
     readFile: (file) => {
       const name = cloneName(file) ?? '';

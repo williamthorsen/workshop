@@ -184,7 +184,7 @@ export const REPO_COMMANDS = defineGroup({
 
 scan and add read visibility and runner through gh. runner is the label that a repo's CI_RUNS_ON Actions variable selects: a bare label, or a JSON string.
 
---write and move refuse a registry whose resolved file is in a checkout on a branch named live. When ~/.config/repos.yaml links into a live worktree, pass --file naming the copy in a branch worktree.
+--write and move refuse a registry whose resolved file is in a checkout on a branch named live, or one whose branch git cannot report. When ~/.config/repos.yaml links into a live worktree, pass --file naming the copy in a branch worktree.
 
 Examples:
   ${PROG} list --tag live

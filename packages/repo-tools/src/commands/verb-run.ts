@@ -63,7 +63,7 @@ export interface CloneAdapters {
   makeDirectory: (dir: string) => string | undefined;
   /** Reports whether anything, a dangling symlink included, exists at a path. */
   pathExists: (target: string) => boolean;
-  readCurrentBranch: (dir: string) => string | undefined;
+  readCurrentBranch: (dir: string) => { branch: string | undefined } | { failure: string };
   /** Returns the id of the device that holds a path, or `undefined` when nothing exists at it. */
   readDeviceId: (target: string) => number | undefined;
   readFile: (file: string) => string;
