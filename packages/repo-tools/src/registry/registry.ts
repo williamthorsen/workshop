@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { describeError } from '@williamthorsen/toolbelt.errors';
 import { type Document, isMap, isScalar, isSeq, parseDocument, type YAMLMap } from 'yaml';
 
 /** One entry of the registry, with the YAML node from which it was read. */
@@ -70,17 +71,25 @@ export function appendEntry(registry: Registry, entry: NewEntry): void {
 }
 
 /**
- * Returns a message refusing a write to a file whose resolved path is in a checkout on the `live` branch, or
- * `undefined` when the write may proceed. A file outside any git checkout may be written.
+ * Returns a message refusing a write to a file whose resolved path is in a checkout on the `live` branch, or whose
+ * path or branch cannot be determined, or `undefined` when the write may proceed. A file outside any git checkout,
+ * or in a checkout whose HEAD is detached, may be written.
  */
-export function assertWritable(file: string, readBranch: (dir: string) => string | undefined): string | undefined {
+export function assertWritable(
+  file: string,
+  readBranch: (dir: string) => { branch: string | undefined } | { failure: string },
+): string | undefined {
   let resolved: string;
   try {
     resolved = fs.realpathSync(file);
-  } catch {
-    return undefined;
+  } catch (error) {
+    return `cannot resolve ${file}: ${describeError(error)}`;
   }
-  if (readBranch(path.dirname(resolved)) !== 'live') return undefined;
+  const outcome = readBranch(path.dirname(resolved));
+  if ('failure' in outcome) {
+    return `cannot tell whether ${resolved} is in a worktree on the live branch: ${outcome.failure}`;
+  }
+  if (outcome.branch !== 'live') return undefined;
   return `${file} resolves to ${resolved}, which is in a worktree on the live branch; pass --file <branch worktree copy> to write the registry in a branch worktree`;
 }
 

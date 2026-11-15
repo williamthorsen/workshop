@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   appendEntry,
+  assertWritable,
   parseRegistry,
   readRegistry,
   recordMove,
@@ -289,6 +290,29 @@ describe(appendEntry, () => {
     expect(serializeRegistry(registry)).toBe(
       `${FIXTURE}  - name: delta\n    path: ~/repos/delta\n    repo: owner/delta\n`,
     );
+  });
+});
+
+describe(assertWritable, () => {
+  it('refuses a file whose path cannot be resolved, naming the reason', () => {
+    using tree = createTempTree({}, { prefix: 'repo-tools-' });
+    const file = tree.resolve('repos.yaml');
+    const message = assertWritable(file, () => ({ branch: 'main' }));
+    expect(message).toContain(`cannot resolve ${file}: `);
+    expect(message).toContain('ENOENT');
+  });
+
+  it("refuses a file whose branch git cannot report, naming git's reason", () => {
+    using tree = createTempTree({}, { prefix: 'repo-tools-' });
+    const file = tree.write('repos.yaml', FIXTURE);
+    const message = assertWritable(file, () => ({ failure: 'cannot run git symbolic-ref: spawn git ENOENT' }));
+    expect(message).toContain('cannot tell whether');
+    expect(message).toContain('cannot run git symbolic-ref: spawn git ENOENT');
+  });
+
+  it('allows a file for which no branch is reported', () => {
+    using tree = createTempTree({}, { prefix: 'repo-tools-' });
+    expect(assertWritable(tree.write('repos.yaml', FIXTURE), () => ({ branch: undefined }))).toBeUndefined();
   });
 });
 

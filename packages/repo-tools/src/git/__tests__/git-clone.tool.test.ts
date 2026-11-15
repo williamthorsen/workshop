@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 import { git, initWithCommit } from '../../test-utils/git-fixture.ts';
 import { buildLargeListingTree, LARGE_LISTING_FILE_COUNT } from '../../test-utils/large-listing.ts';
-import { listTrackedFiles, listWorktrees, repairWorktrees } from '../git-clone.ts';
+import { listTrackedFiles, listWorktrees, readCurrentBranch, repairWorktrees } from '../git-clone.ts';
 
 describe(listTrackedFiles, () => {
   it('lists every tracked path of a clone whose listing exceeds 1 MiB', () => {
@@ -38,6 +38,37 @@ describe(listWorktrees, () => {
       { isPrunable: false, path: fs.realpathSync(tree.resolve('app.one')) },
       { isPrunable: true, path: `${fs.realpathSync(tree.dir)}/app.two` },
     ]);
+  });
+});
+
+describe(readCurrentBranch, () => {
+  it('names the branch checked out in a checkout', () => {
+    using tree = createTempTree({ 'app/README.md': '' }, { prefix: 'repo-tools-' });
+    initWithCommit(tree.resolve('app'));
+    expect(readCurrentBranch(tree.resolve('app'))).toStrictEqual({ branch: 'main' });
+  });
+
+  it('names the unborn branch of a repository without commits', () => {
+    using tree = createTempTree({ 'app/README.md': '' }, { prefix: 'repo-tools-' });
+    git(tree.resolve('app'), 'init', '--quiet', '--initial-branch', 'live');
+    expect(readCurrentBranch(tree.resolve('app'))).toStrictEqual({ branch: 'live' });
+  });
+
+  it('reports no branch for a detached HEAD', () => {
+    using tree = createTempTree({ 'app/README.md': '' }, { prefix: 'repo-tools-' });
+    initWithCommit(tree.resolve('app'));
+    git(tree.resolve('app'), 'checkout', '--quiet', '--detach');
+    expect(readCurrentBranch(tree.resolve('app'))).toStrictEqual({ branch: undefined });
+  });
+
+  it('reports no branch for a directory that is not in a checkout', () => {
+    using tree = createTempTree({ 'plain/file.txt': '' }, { prefix: 'repo-tools-' });
+    expect(readCurrentBranch(tree.resolve('plain'))).toStrictEqual({ branch: undefined });
+  });
+
+  it("returns git's reason for a directory that git cannot enter", () => {
+    using tree = createTempTree({}, { prefix: 'repo-tools-' });
+    expect(readCurrentBranch(tree.resolve('missing'))).toStrictEqual({ failure: expect.stringMatching(/^fatal: /) });
   });
 });
 

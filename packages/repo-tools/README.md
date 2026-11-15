@@ -87,4 +87,4 @@ repos:
 
 ## The `live` guard
 
-`--write` and `move` refuse a registry whose resolved file is in a checkout on a branch named `live`, because that checkout deploys verified code rather than work in progress. When `~/.config/repos.yaml` is a link into a `live` worktree, pass `--file` naming the registry's copy in a branch worktree.
+`--write` and `move` refuse a registry whose resolved file is in a checkout on a branch named `live`, because that checkout deploys verified code rather than work in progress. They also refuse a registry whose checkout's branch git cannot report. When `~/.config/repos.yaml` is a link into a `live` worktree, pass `--file` naming the registry's copy in a branch worktree.
