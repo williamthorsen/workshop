@@ -1,5 +1,100 @@
 [
   {
+    "version": "0.3.0",
+    "date": "2026-11-15",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Installs a crash handler in `thor-demo` so that an error that the CLI does not handle prints `thor-demo: internal error: <message>` with its stack frames and exits 1, and adds that case to exit code 1 in the help text. (#852)",
+            "hash": "6119982af8d2dbadd4cf5116fcee85037186080d",
+            "entry": 1
+          }
+        ]
+      },
+      {
+        "title": "🐛 Bug fixes",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Fixes the issue that `thor-demo revoice` could exit before stopping the voice-clone server when aidemo disconnected in the middle of a speech request, and reports any other speech-proxy fault as the reason that the aidemo stage failed. (#856)",
+            "hash": "3764cac8311caa358b1f08117644b7cef77ad449",
+            "entry": 1
+          },
+          {
+            "description": "Fixes the issue that an installed `thor-chrome`, `thor-demo`, `thor-git`, `thor-jira`, `thor-node`, `thor-npm`, `thor-repo`, `thor-secret`, or `overlay` reported an unanticipated error as `<bin>: failed to load: <message>` without stack frames, and now prints `<bin>: internal error: <message>` with the stack frames. (#876)",
+            "hash": "0ed6b0ecc44d7f8169116aa0e9d0a9fd7377135d",
+            "entry": 1
+          }
+        ]
+      },
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Replaces the local `isRecord` module in `demo-tools` with the identical `isRecord` exported by `@williamthorsen/toolbelt.objects`, which is added to the workspace catalog and to the package's dependencies. (#847)",
+            "hash": "5cd812c98b3ac348e1048a431a1f635665d8c923",
+            "entry": 1
+          },
+          {
+            "description": "Replaces the `launch`, `revoice`, and `voice` fields of `run`'s result and the three `CommandContext` callbacks with one `RunRequest` union discriminated by `kind`, which makes the type enforce that a command requests at most one action. (#848)",
+            "hash": "e73edac076b5234bcb0b9f9516a07bff458d51ab",
+            "entry": 1
+          },
+          {
+            "description": "Orders the helpers and peer exports in `demo-tools` source and test utilities alphabetically, as the declaration-order rule of the layout conventions requires. (#853)",
+            "hash": "30cd502332109c36235ca7519e42c9185cd3d9f9",
+            "entry": 1
+          },
+          {
+            "description": "Injects the voice-clone server start into `performRevoice` as a `startServer` effect, which `thor-demo` supplies as `startVoiceServer`, so that unit tests can replace the start. (#854)",
+            "hash": "acda4fa91418a33f6f5bb1ac14e19ce7a58193ea",
+            "entry": 1
+          },
+          {
+            "description": "Renames `nonEmpty` in `build-aidemo-env.ts` to `omitEmpty`, and the test helpers `fakeFfmpeg` and `refusal` to `createFakeFfmpeg` and `buildRefusalSummary`, following the convention that a function name starts with a verb. (#857)",
+            "hash": "bc033639234613df90ebc6367021c3ec91c9d145",
+            "entry": 1
+          },
+          {
+            "description": "Makes eight `demo-tools` constants and functions module-private, among them `REQUEST_BUDGET_MS` and `planReferenceConversion`, because other modules don't import any of them, and moves `planReferenceConversion` below its caller in `build-voice-profile.ts`. (#858)",
+            "hash": "b761a20a8dd75025fd7fb545cdb28c38108b43c4",
+            "entry": 1
+          },
+          {
+            "description": "Deletes the five identical copies of `createTextBuffer` and imports the one exported by `@williamthorsen/toolbelt.cli/candidate` in their place. (#861)",
+            "hash": "b9b240faa9915b4c5b5f1fc7417ec2c4e8f42b6d",
+            "entry": 1
+          }
+        ]
+      },
+      {
+        "title": "🧪 Tests",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Adds unit tests for `performRevoice` that cover its stage order, a server that does not start, a stage that exits non-zero or throws, and a stage that fails after the proxy refused a text, and removes the silent-clip example from the revoice tool test along with the `FAKE_CLIP_SILENT` switch of the fake ffmpeg. (#854)",
+            "hash": "acda4fa91418a33f6f5bb1ac14e19ce7a58193ea",
+            "entry": 2
+          },
+          {
+            "description": "Moves the `sha256` helper, which four test files each defined separately, into one shared `hashContent` helper in `src/test-utils/hash-content.ts`, which the plan-take test also uses in place of its inline hash. (#857)",
+            "hash": "bc033639234613df90ebc6367021c3ec91c9d145",
+            "entry": 2
+          },
+          {
+            "description": "Adds the `buildRunEffects` test helper, which returns inert `RunEffects` for a run at `/` on Apple Silicon macOS with the caller's overrides applied, and uses it in place of the stubs that `run.unit.test.ts`, `run.profile.unit.test.ts`, and `run.revoice.unit.test.ts` each defined, which moves `run.unit.test.ts` back from its `max-lines` limit. (#860)",
+            "hash": "b1a6d0ff3cf0dd6c8b155a4acb12b04e2f3b847e",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.2.1",
     "date": "2026-11-12",
     "sections": [{ "title": "Notes", "audience": "dev", "items": [{ "description": "Forced version bump." }] }]

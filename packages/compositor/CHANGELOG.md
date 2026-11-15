@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.6.2 — 2026-11-15
+
+### ♻️ Refactoring
+
+- Replaces compositor's local `reportsMissingPath` predicate with `isMissingPathError` from `@williamthorsen/toolbelt.errors/candidate`, and deletes the local predicate and its unit test. (#835)
+
 ## 0.6.1 — 2026-11-12
 
 ### ♻️ Refactoring

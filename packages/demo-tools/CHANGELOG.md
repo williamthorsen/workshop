@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.3.0 — 2026-11-15
+
+### 🎉 Features
+
+- Installs a crash handler in `thor-demo` so that an error that the CLI does not handle prints `thor-demo: internal error: <message>` with its stack frames and exits 1, and adds that case to exit code 1 in the help text. (#852)
+
+### 🐛 Bug fixes
+
+- Fixes the issue that `thor-demo revoice` could exit before stopping the voice-clone server when aidemo disconnected in the middle of a speech request, and reports any other speech-proxy fault as the reason that the aidemo stage failed. (#856)
+- Fixes the issue that an installed `thor-chrome`, `thor-demo`, `thor-git`, `thor-jira`, `thor-node`, `thor-npm`, `thor-repo`, `thor-secret`, or `overlay` reported an unanticipated error as `<bin>: failed to load: <message>` without stack frames, and now prints `<bin>: internal error: <message>` with the stack frames. (#876)
+
+### ♻️ Refactoring
+
+- Replaces the local `isRecord` module in `demo-tools` with the identical `isRecord` exported by `@williamthorsen/toolbelt.objects`, which is added to the workspace catalog and to the package's dependencies. (#847)
+- Replaces the `launch`, `revoice`, and `voice` fields of `run`'s result and the three `CommandContext` callbacks with one `RunRequest` union discriminated by `kind`, which makes the type enforce that a command requests at most one action. (#848)
+- Orders the helpers and peer exports in `demo-tools` source and test utilities alphabetically, as the declaration-order rule of the layout conventions requires. (#853)
+- Injects the voice-clone server start into `performRevoice` as a `startServer` effect, which `thor-demo` supplies as `startVoiceServer`, so that unit tests can replace the start. (#854)
+- Renames `nonEmpty` in `build-aidemo-env.ts` to `omitEmpty`, and the test helpers `fakeFfmpeg` and `refusal` to `createFakeFfmpeg` and `buildRefusalSummary`, following the convention that a function name starts with a verb. (#857)
+- Makes eight `demo-tools` constants and functions module-private, among them `REQUEST_BUDGET_MS` and `planReferenceConversion`, because other modules don't import any of them, and moves `planReferenceConversion` below its caller in `build-voice-profile.ts`. (#858)
+- Deletes the five identical copies of `createTextBuffer` and imports the one exported by `@williamthorsen/toolbelt.cli/candidate` in their place. (#861)
+
+### 🧪 Tests
+
+- Adds unit tests for `performRevoice` that cover its stage order, a server that does not start, a stage that exits non-zero or throws, and a stage that fails after the proxy refused a text, and removes the silent-clip example from the revoice tool test along with the `FAKE_CLIP_SILENT` switch of the fake ffmpeg. (#854)
+- Moves the `sha256` helper, which four test files each defined separately, into one shared `hashContent` helper in `src/test-utils/hash-content.ts`, which the plan-take test also uses in place of its inline hash. (#857)
+- Adds the `buildRunEffects` test helper, which returns inert `RunEffects` for a run at `/` on Apple Silicon macOS with the caller's overrides applied, and uses it in place of the stubs that `run.unit.test.ts`, `run.profile.unit.test.ts`, and `run.revoice.unit.test.ts` each defined, which moves `run.unit.test.ts` back from its `max-lines` limit. (#860)
+
 ## 0.2.1 — 2026-11-12
 
 ### Notes

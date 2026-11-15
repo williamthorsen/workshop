@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.6.1 — 2026-11-15
+
+### 🐛 Bug fixes
+
+- Fixes the issue that an installed `thor-chrome`, `thor-demo`, `thor-git`, `thor-jira`, `thor-node`, `thor-npm`, `thor-repo`, `thor-secret`, or `overlay` reported an unanticipated error as `<bin>: failed to load: <message>` without stack frames, and now prints `<bin>: internal error: <message>` with the stack frames. (#876)
+- Fixes the issue that `overlay` and `thor-repo` printed their build-first message whenever any module imported by the built entry failed to resolve, and now print it only when the build output itself is missing. (#876)
+
 ## 0.6.0 — 2026-11-12
 
 ### 🎉 Features

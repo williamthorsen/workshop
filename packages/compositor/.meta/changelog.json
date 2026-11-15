@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.6.2",
+    "date": "2026-11-15",
+    "sections": [
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Replaces compositor's local `reportsMissingPath` predicate with `isMissingPathError` from `@williamthorsen/toolbelt.errors/candidate`, and deletes the local predicate and its unit test. (#835)",
+            "hash": "96c70f7acf4a3ddfc5a636ab7efcc97ecd0f62d9",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.6.1",
     "date": "2026-11-12",
     "sections": [

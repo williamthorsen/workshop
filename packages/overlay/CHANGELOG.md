@@ -2,6 +2,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.5.0 — 2026-11-15
+
+### 🎉 Features
+
+- Adds an `output` option to `overlay()` that receives chezmoi's apply output and the stdout and stderr of `run_` scripts, defaulting to `process.stderr` and accepting a stream without a file descriptor, such as a `PassThrough`, which overlay leaves open. (#874)
+- Changes the `overlay` CLI to write a handled error to stderr as `overlay: <message>` rather than as the JSON object `{"error":"<message>"}`, with or without `--json`, and still exits 2. (#878)
+- 🚨 **Breaking:** Replaces the `--verify`, `--create`, and `--force` flags of `overlay` with the `verify`, `create`, and `force` subcommands, each of which takes the same `<source-dir> [target-dir]` operands and `--json` and prints its own usage under `--help`. (#879)
+- Adds a `--version` option to `overlay`, which prints the installed package version. (#879)
+
+### 🐛 Bug fixes
+
+- Fixes the issue that an installed `thor-chrome`, `thor-demo`, `thor-git`, `thor-jira`, `thor-node`, `thor-npm`, `thor-repo`, `thor-secret`, or `overlay` reported an unanticipated error as `<bin>: failed to load: <message>` without stack frames, and now prints `<bin>: internal error: <message>` with the stack frames. (#876)
+- Fixes the issue that `overlay` and `thor-repo` printed their build-first message whenever any module imported by the built entry failed to resolve, and now print it only when the build output itself is missing. (#876)
+- Fixes the issue that the `overlay` CLI reported an unanticipated error, which is a bug in overlay, with the JSON error and exit code 2 that it uses for a rejected argument or a missing or outdated chezmoi, rather than as an internal error with exit code 1. (#877)
+
+### ♻️ Refactoring
+
+- Adds a `runner` field to `ChezmoiContext`, which `overlay` sets to `chezmoiRunner` and which `assertChezmoiVersion`, `readStatus`, and the create and force modes now call, so that the unit tests can build a context with the fake runner in `test-utils/fake-runner.ts` in place of the spies on `run-chezmoi.ts` and the `chezmoi-mocks.ts` helper. (#871)
+- Adds `readPartitionedStatus` to `packages/overlay/src/modes/entry-outcomes.ts` and replaces the read, parse, and partition expression that `runCreate`, `runForce`, and `runVerify` each repeated with a call to it. (#872)
+
+### 🧪 Tests
+
+- Moves the baseline `OverlayResult` that three overlay test files each declared into `buildOverlayResult` in `test-utils/overlay-result.ts`, which returns a converged verify result and applies any overrides given to it. (#881)
+
+### 📚 Documentation
+
+- Adds a one-line doc description to each of the five helper functions in `overlay` that did not have one. (#880)
+
 ## 0.4.7 — 2026-11-12
 
 ### Notes

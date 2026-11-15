@@ -1,5 +1,33 @@
 [
   {
+    "version": "0.46.3",
+    "date": "2026-11-15",
+    "sections": [
+      {
+        "title": "🐛 Bug fixes",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Fixes the issue that `rdy` printed the Node 26 deprecation warning DEP0205 to stderr on every run, by registering its resolver hook with `module.registerHooks()` instead of the deprecated `module.register()`. (#859)",
+            "hash": "6f7553e895427ca3fa8f80259937cb7968c2781a",
+            "entry": 1
+          }
+        ]
+      },
+      {
+        "title": "⚙️ Tooling",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Stops tracking readyup's `presentation/deck.js` bundle and runs `config/buildDeck.ts` from the package's `prepare` script and a new `build:post` script, which write the bundle in a fresh checkout and after every `build`, so that a dependency upgrade no longer leaves a stale committed bundle that the freshness test fails on. (#898)",
+            "hash": "270169b4c225ae900a63800aa56edd633fe0367c",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.46.2",
     "date": "2026-11-12",
     "sections": [

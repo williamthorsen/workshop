@@ -1,5 +1,99 @@
 [
   {
+    "version": "0.5.0",
+    "date": "2026-11-15",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Adds an `output` option to `overlay()` that receives chezmoi's apply output and the stdout and stderr of `run_` scripts, defaulting to `process.stderr` and accepting a stream without a file descriptor, such as a `PassThrough`, which overlay leaves open. (#874)",
+            "hash": "a2e97377c98d31ffe6cd5c7475f0669e7fb863f5",
+            "entry": 1
+          },
+          {
+            "description": "Changes the `overlay` CLI to write a handled error to stderr as `overlay: <message>` rather than as the JSON object `{\"error\":\"<message>\"}`, with or without `--json`, and still exits 2. (#878)",
+            "migration": "Read a handled error from stderr as a line that begins with `overlay: ` instead of parsing it as JSON, including in a run that passes `--json`, which still writes only the result to stdout.",
+            "hash": "452b6f3ec4487e539cf0e1f5a92dce3ba7cd007f",
+            "entry": 1
+          },
+          {
+            "description": "Replaces the `--verify`, `--create`, and `--force` flags of `overlay` with the `verify`, `create`, and `force` subcommands, each of which takes the same `<source-dir> [target-dir]` operands and `--json` and prints its own usage under `--help`. (#879)",
+            "breaking": true,
+            "migration": "Replace `overlay <source-dir> --verify`, `--create`, or `--force` with `overlay verify <source-dir>`, `overlay create <source-dir>`, or `overlay force <source-dir>`, and add `verify` to a bare `overlay <source-dir>` call, which no longer defaults to verify and now exits 2 with a usage error.",
+            "hash": "c1f3f702a77420a23ae1e6b57647b9c80c5ee3db",
+            "entry": 1
+          },
+          {
+            "description": "Adds a `--version` option to `overlay`, which prints the installed package version. (#879)",
+            "hash": "c1f3f702a77420a23ae1e6b57647b9c80c5ee3db",
+            "entry": 2
+          }
+        ]
+      },
+      {
+        "title": "🐛 Bug fixes",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Fixes the issue that an installed `thor-chrome`, `thor-demo`, `thor-git`, `thor-jira`, `thor-node`, `thor-npm`, `thor-repo`, `thor-secret`, or `overlay` reported an unanticipated error as `<bin>: failed to load: <message>` without stack frames, and now prints `<bin>: internal error: <message>` with the stack frames. (#876)",
+            "hash": "0ed6b0ecc44d7f8169116aa0e9d0a9fd7377135d",
+            "entry": 1
+          },
+          {
+            "description": "Fixes the issue that `overlay` and `thor-repo` printed their build-first message whenever any module imported by the built entry failed to resolve, and now print it only when the build output itself is missing. (#876)",
+            "hash": "0ed6b0ecc44d7f8169116aa0e9d0a9fd7377135d",
+            "entry": 2
+          },
+          {
+            "description": "Fixes the issue that the `overlay` CLI reported an unanticipated error, which is a bug in overlay, with the JSON error and exit code 2 that it uses for a rejected argument or a missing or outdated chezmoi, rather than as an internal error with exit code 1. (#877)",
+            "hash": "ac97d5452d05da0ad7bbb0270e754c4e4c9c33a2",
+            "entry": 1
+          }
+        ]
+      },
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Adds a `runner` field to `ChezmoiContext`, which `overlay` sets to `chezmoiRunner` and which `assertChezmoiVersion`, `readStatus`, and the create and force modes now call, so that the unit tests can build a context with the fake runner in `test-utils/fake-runner.ts` in place of the spies on `run-chezmoi.ts` and the `chezmoi-mocks.ts` helper. (#871)",
+            "hash": "4aaeafa35b56d8bd1b8ebb11387655719d9872f1",
+            "entry": 1
+          },
+          {
+            "description": "Adds `readPartitionedStatus` to `packages/overlay/src/modes/entry-outcomes.ts` and replaces the read, parse, and partition expression that `runCreate`, `runForce`, and `runVerify` each repeated with a call to it. (#872)",
+            "hash": "d5a44027e043eefc4add2275b44604463538239f",
+            "entry": 1
+          }
+        ]
+      },
+      {
+        "title": "🧪 Tests",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Moves the baseline `OverlayResult` that three overlay test files each declared into `buildOverlayResult` in `test-utils/overlay-result.ts`, which returns a converged verify result and applies any overrides given to it. (#881)",
+            "hash": "4fd7b332a07d3de8580098112b819aba992413bc",
+            "entry": 1
+          }
+        ]
+      },
+      {
+        "title": "📚 Documentation",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Adds a one-line doc description to each of the five helper functions in `overlay` that did not have one. (#880)",
+            "hash": "ca1bb5648b1b02a1e2832e60fdccc4683bc60d63",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.4.7",
     "date": "2026-11-12",
     "sections": [{ "title": "Notes", "audience": "dev", "items": [{ "description": "Forced version bump." }] }]
