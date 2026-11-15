@@ -1,6 +1,7 @@
 import { createCli, runCli, UsageError, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
+import { ManifestReadError } from '../workspace/listWorkspacePackages.ts';
 import { type ListPackagesEffects, runListPackages } from './runListPackages.ts';
 import { type MoveTrustEffects, runMoveTrust } from './runMoveTrust.ts';
 import { type PublishPlaceholderEffects, runPublishPlaceholder } from './runPublishPlaceholder.ts';
@@ -116,9 +117,9 @@ const ROOT = defineGroup({
 
 /**
  * Runs the `thor-npm` command line, writing to the given writers and resolving to the exit code rather than
- * exiting, so that the whole surface is exercisable without a process. An empty argv prints the help. A failure
- * inside a command is reported through the writers and the exit code; an error thrown outside a command propagates
- * to the caller.
+ * exiting, so that the whole surface is exercisable without a process. An empty argv prints the help. A usage error
+ * is reported through the writers with exit 2, and a workspace manifest that cannot be read with exit 1; any other
+ * error propagates to the caller.
  */
 export async function run(args: readonly string[], effects: RunEffects, streams: RunStreams): Promise<number> {
   return runCli(args.length === 0 ? ['--help'] : args, ROOT, {
@@ -143,14 +144,14 @@ export interface RunStreams {
 
 // region | Helpers
 
-/** Runs a command's body, reporting an unexpected error on stderr with exit 1; a usage error passes through. */
+/** Runs a command's body, reporting a workspace manifest that cannot be read on stderr with exit 1. */
 async function reportFailures(stderr: Writer, body: () => Promise<number>): Promise<number> {
   try {
     return await body();
   } catch (error) {
-    if (error instanceof UsageError) throw error;
+    if (!(error instanceof ManifestReadError)) throw error;
 
-    stderr.write(`thor-npm: ${describeError(error)}\n`);
+    stderr.write(`thor-npm: ${error.message}\n`);
     return 1;
   }
 }
