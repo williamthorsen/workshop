@@ -54,24 +54,6 @@ describe('thor-chrome', () => {
     expect(result.stderr).toBe('');
   });
 
-  it('refuses a usage error with status 2, naming --help', () => {
-    const result = runEntry(['frobnicate'], makeEnvironment());
-    expect(result).toMatchObject({
-      status: 2,
-      stderr: "thor-chrome: unknown command 'frobnicate'\nTry 'thor-chrome --help'.\n",
-      stdout: '',
-    });
-  });
-
-  it('refuses a usage error under --json with one document on stdout and status 2', () => {
-    const result = runEntry(['list', '--port', '1', '--json'], makeEnvironment());
-    expect(result).toMatchObject({
-      status: 2,
-      stderr: '',
-      stdout: '{"error":{"code":"usage","message":"unknown option --port for list"}}\n',
-    });
-  });
-
   it('reports status --json with the profile fields and the endpoint', () => {
     const environment = makeEnvironment();
     const result = runEntry(['status', '--json'], environment);
@@ -87,17 +69,6 @@ describe('thor-chrome', () => {
         state: 'stopped',
       },
     });
-  });
-
-  it('reports list --json with the profile fields', () => {
-    const environment = makeEnvironment();
-    fs.mkdirSync(`${environment.home}/.local/share/thor-chrome/profiles/thrive`, { recursive: true });
-    const result = runEntry(['list', '--json'], environment);
-    expect(result.status).toBe(0);
-    const report: unknown = JSON.parse(result.stdout);
-    expect(report).toMatchObject({ profiles: [{ name: 'thrive', state: 'stopped' }] });
-    const [profile] = readArray(readRecord(report)['profiles']);
-    expect(Object.keys(readRecord(profile))).toStrictEqual(PROFILE_FIELDS);
   });
 
   it("keeps git's refusal to read a profile's recorded repository out of list --json", () => {
@@ -227,12 +198,6 @@ function makeEnvironment(options: { isProcessListReal?: boolean } = {}): Environ
     XDG_DATA_HOME: undefined,
   };
   return { cwd: clone, env, home };
-}
-
-/** Returns a value as an array, failing the test when it is not one. */
-function readArray(value: unknown): unknown[] {
-  if (!Array.isArray(value)) throw new TypeError(`expected an array: ${JSON.stringify(value)}`);
-  return value;
 }
 
 /** Returns a value as a record, failing the test when it is not an object. */

@@ -70,6 +70,7 @@ describe(runThorChrome, () => {
     const fake = makeFakeThorChrome();
     await expect(run(fake, ['--json', ...args])).resolves.toBe(2);
     expect(fake.readReport()).toStrictEqual({ error: { code: 'usage', message } });
+    expect(fake.captured.stderr()).toBe('');
   });
 
   it('sweeps stale profiles with THOR_CHROME_PROFILE set, which names no profile on the command line', async () => {
