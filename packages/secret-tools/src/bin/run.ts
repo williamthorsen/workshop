@@ -1,7 +1,9 @@
 import { createCli, createTextBuffer, runCli, UsageError, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 import {
+  SecretPromptError,
   type SecretQuery,
+  SecretStoreError,
   UnstorableSecretError,
   type WritableSecretStore,
 } from '@williamthorsen/toolbelt.secrets/candidate';
@@ -48,7 +50,7 @@ Exit codes:
       run: ({ context, flags, operands, stderr }) =>
         reportFailures(stderr, () => {
           const query = buildQuery(operands.service, flags.account);
-          const removed = callKeystore(() => context.createStore(flags.keychain).deleteSecret(query));
+          const removed = context.createStore(flags.keychain).deleteSecret(query);
 
           return removed ? EXIT_OK : EXIT_NO_RESULT;
         }),
@@ -61,7 +63,7 @@ Exit codes:
       run: ({ context, flags, operands, stderr, stdout }) =>
         reportFailures(stderr, () => {
           const query = buildQuery(operands.service, flags.account);
-          const secret = callKeystore(() => context.createStore(flags.keychain).findSecret(query));
+          const secret = context.createStore(flags.keychain).findSecret(query);
           if (secret === undefined) return EXIT_NO_RESULT;
 
           stdout.write(`${secret}\n`);
@@ -77,7 +79,7 @@ read, so this raises no keychain access prompt.`,
       run: ({ context, flags, operands, stderr }) =>
         reportFailures(stderr, () => {
           const query = buildQuery(operands.service, flags.account);
-          const stored = callKeystore(() => context.createStore(flags.keychain).hasSecret(query));
+          const stored = context.createStore(flags.keychain).hasSecret(query);
 
           return stored ? EXIT_OK : EXIT_NO_RESULT;
         }),
@@ -105,9 +107,9 @@ share one 4,095-byte command line with it; a secret that would not fit is refuse
 
 /**
  * Runs the `thor-secret` command line, returning what to write and exit with rather than doing either, so that
- * the whole surface is exercisable without a process. A failure inside a command is reported through the result, as a
- * usage error when it is neither a keychain failure nor anticipated by the command; an error thrown outside a command
- * propagates to the caller.
+ * the whole surface is exercisable without a process. A usage error, which includes an empty service name, an
+ * abandoned prompt, and a secret that the keychain cannot store, is reported through the result with exit 2, and a
+ * keychain that cannot be reached with exit 3; any other error propagates to the caller.
  */
 export async function run(args: readonly string[], effects: RunEffects): Promise<RunResult> {
   const stdout = createTextBuffer();
@@ -142,46 +144,30 @@ export interface RunResult {
 
 // region | Helpers
 
-/** The error for a failure to reach the keychain, which is neither a usage error nor an absent secret. */
-class KeystoreError extends Error {}
-
 /** Names the item on which a command acts. An empty service is refused rather than passed to the keychain. */
 function buildQuery(service: string, account: string | undefined): SecretQuery {
-  if (service === '') throw new Error('The service name is empty.');
+  if (service === '') throw new UsageError('The service name is empty.');
 
   return { account, service };
 }
 
 /**
- * Runs a keychain operation, reporting what it threw as a failure to reach the keychain. The error for a value
- * that the keychain cannot store passes through unwrapped, since nothing was reached: It is a usage error like any
- * other.
- */
-function callKeystore<T>(operation: () => T): T {
-  try {
-    return operation();
-  } catch (error) {
-    if (error instanceof UnstorableSecretError) throw error;
-
-    throw new KeystoreError(describeError(error));
-  }
-}
-
-/**
- * Runs a command's body, writing a keychain failure to stderr with exit 3 and reporting anything else that it
- * throws as a usage error, which exits 2 with a pointer to help.
+ * Runs a command's body, writing a keychain failure to stderr with exit 3 and reporting a prompt that produced no
+ * secret or a secret that the keychain cannot store as a usage error, which exits 2 with a pointer to help.
  */
 async function reportFailures(stderr: Writer, body: () => number | Promise<number>): Promise<number> {
   try {
     return await body();
   } catch (error) {
-    if (error instanceof UsageError) throw error;
-    if (error instanceof KeystoreError) {
-      stderr.write(`${error.message}\n`);
+    if (error instanceof SecretStoreError) {
+      stderr.write(`${describeError(error)}\n`);
       return EXIT_KEYSTORE;
     }
+    if (error instanceof SecretPromptError || error instanceof UnstorableSecretError) {
+      throw new UsageError(describeError(error), { cause: error });
+    }
 
-    throw new UsageError(describeError(error), { cause: error });
+    throw error;
   }
 }
 
@@ -204,12 +190,12 @@ async function runSet(
   effects: RunEffects,
 ): Promise<number> {
   const query = buildQuery(service, flags.account);
-  const store = callKeystore(() => effects.createStore(flags.keychain));
+  const store = effects.createStore(flags.keychain);
   const secret = effects.isStdinTty()
     ? await effects.promptSecret()
     : stripOneTrailingNewline(await effects.readStdin());
 
-  callKeystore(() => store.setSecret(query, secret));
+  store.setSecret(query, secret);
 
   return EXIT_OK;
 }

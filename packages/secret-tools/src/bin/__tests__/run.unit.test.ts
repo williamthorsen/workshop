@@ -1,5 +1,7 @@
 import {
+  SecretPromptError,
   type SecretQuery,
+  SecretStoreError,
   UnstorableSecretError,
   type WritableSecretStore,
 } from '@williamthorsen/toolbelt.secrets/candidate';
@@ -219,6 +221,27 @@ describe(run, () => {
     expect(result.exitCode).toBe(3);
     expect(result.stderr).toBe('A keychain store needs macOS. This platform is linux.\n');
   });
+
+  describe('unanticipated errors', () => {
+    it('propagates an error that opening the store throws, which is not a keychain failure', async () => {
+      const bug = new TypeError('store is not a function');
+      const effects = {
+        ...createHarness().effects,
+        createStore: () => {
+          throw bug;
+        },
+      };
+
+      await expect(run(['get', 'token'], effects)).rejects.toBe(bug);
+    });
+
+    it('propagates a failure to read stdin', async () => {
+      const bug = new Error('stdin closed unexpectedly');
+      const effects = { ...createHarness().effects, readStdin: () => Promise.reject(bug) };
+
+      await expect(run(['set', 'token'], effects)).rejects.toBe(bug);
+    });
+  });
 });
 
 // region | Helpers
@@ -235,7 +258,7 @@ function createHarness(options: HarnessOptions = {}): Harness {
   return {
     effects: {
       createStore: (keychain): WritableSecretStore => {
-        if (failure !== undefined) throw new Error(failure);
+        if (failure !== undefined) throw new SecretStoreError(failure);
 
         return {
           deleteSecret: (query) => secrets.delete(buildKey(query, keychain)),
@@ -252,7 +275,9 @@ function createHarness(options: HarnessOptions = {}): Harness {
       promptSecret: () => {
         state.prompted = true;
 
-        return promptFailure === undefined ? Promise.resolve(promptAnswer) : Promise.reject(new Error(promptFailure));
+        return promptFailure === undefined
+          ? Promise.resolve(promptAnswer)
+          : Promise.reject(new SecretPromptError(promptFailure));
       },
       readStdin: () => Promise.resolve(stdin),
       resolveVersion: () => VERSION,
