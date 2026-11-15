@@ -5,6 +5,8 @@ import path from 'node:path';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 import { type Document, isMap, isScalar, isSeq, parseDocument, type YAMLMap } from 'yaml';
 
+import { normalizePath } from '../portable/paths.ts';
+
 /** One entry of the registry, with the YAML node from which it was read. */
 export interface RegistryEntry {
   formerPaths: string[];
@@ -91,6 +93,18 @@ export function assertWritable(
   }
   if (outcome.branch !== 'live') return undefined;
   return `${file} resolves to ${resolved}, which is in a worktree on the live branch; pass --file <branch worktree copy> to write the registry in a branch worktree`;
+}
+
+/** Returns the first entry other than `entry` whose path, once normalized, is `target`, an already normalized path. */
+export function findPathClaimant(
+  entries: readonly RegistryEntry[],
+  entry: RegistryEntry,
+  target: string,
+  home: string,
+): RegistryEntry | undefined {
+  return entries.find(
+    (other) => other !== entry && other.path !== undefined && normalizePath(other.path, home) === target,
+  );
 }
 
 /**

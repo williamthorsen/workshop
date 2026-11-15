@@ -1,7 +1,7 @@
 import { executeMove } from '../move/move-clone.ts';
 import type { Move, MovePlan } from '../move/move-plan.ts';
 import { formatDisplayPath, normalizePath } from '../portable/paths.ts';
-import { readRegistry, type RegistryEntry } from '../registry/registry.ts';
+import { findPathClaimant, readRegistry, type RegistryEntry } from '../registry/registry.ts';
 import {
   type MoveOptions,
   planCloneMove,
@@ -117,9 +117,7 @@ function planEntry(
     }
     return isClone;
   });
-  const claimant = entries.find(
-    (other) => other !== entry && other.path !== undefined && normalizePath(other.path, run.home) === to,
-  );
+  const claimant = findPathClaimant(entries, entry, to, run.home);
   if (claimant !== undefined && candidates.length > 0) {
     return `its path, ${entry.path}, is also the path of ${formatEntryName(claimant)}`;
   }

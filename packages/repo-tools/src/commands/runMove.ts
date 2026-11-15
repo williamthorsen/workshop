@@ -6,7 +6,14 @@ import { describeError } from '@williamthorsen/toolbelt.errors';
 import { executeMove } from '../move/move-clone.ts';
 import type { MovePlan } from '../move/move-plan.ts';
 import { expandTilde, formatDisplayPath, normalizePath } from '../portable/paths.ts';
-import { assertWritable, readRegistry, recordMove, type RegistryEntry, saveRegistry } from '../registry/registry.ts';
+import {
+  assertWritable,
+  findPathClaimant,
+  readRegistry,
+  recordMove,
+  type RegistryEntry,
+  saveRegistry,
+} from '../registry/registry.ts';
 import {
   type MoveOptions,
   planCloneMove,
@@ -38,9 +45,7 @@ export function runMove(run: VerbRun, name: string, target: string, options: Mov
     return reportFailure(run, `${oldPath} is not the root of a clone; the main worktree is at ${cloneRoot}`);
   }
   const to = path.resolve(run.cwd, expandTilde(target, run.home));
-  const claimant = registry.entries.find(
-    (other) => other !== entry && other.path !== undefined && normalizePath(other.path, run.home) === to,
-  );
+  const claimant = findPathClaimant(registry.entries, entry, to, run.home);
   if (claimant !== undefined) {
     return reportFailure(run, `${formatDisplayPath(to, run.home)} is the path of ${claimant.name ?? 'another entry'}`);
   }
