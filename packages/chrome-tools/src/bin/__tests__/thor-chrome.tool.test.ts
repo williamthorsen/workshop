@@ -3,10 +3,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, onTestFinished } from 'vitest';
 
 import { itWithPlaceholderBrowser } from '../../chrome/test-utils/placeholder-browser.ts';
-import { makeFixtureDir } from '../../test-utils/fixture-dir.ts';
 import { ISOLATED_GIT_ENV, makeGitFixture } from '../../test-utils/git-fixture.ts';
 import { makeStubPath } from '../../test-utils/stub-path.ts';
 
@@ -183,7 +182,11 @@ interface Environment {
  * stubbed too unless the test reads the real process list.
  */
 function makeEnvironment(options: { isProcessListReal?: boolean } = {}): Environment {
-  const home = makeFixtureDir();
+  const tree = createTempTree({}, { prefix: 'thor-chrome-' });
+  onTestFinished(() => {
+    tree[Symbol.dispose]();
+  });
+  const home = tree.dir;
   const { clone } = makeGitFixture();
   const stubs = options.isProcessListReal === true ? TOOL_STUBS : { ...TOOL_STUBS, ...PGREP_STUB };
   const env: NodeJS.ProcessEnv = {

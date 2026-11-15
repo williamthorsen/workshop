@@ -2,17 +2,15 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
-
-import { makeFixtureDir } from '../../test-utils/fixture-dir.ts';
 
 const MODULE = path.resolve(import.meta.dirname, '../spawn-detached.ts');
 
 describe('spawnDetached', () => {
   it('lets the caller exit while the program runs, and writes its output to the emptied log', async () => {
-    const dir = makeFixtureDir();
-    const log = path.join(dir, 'program.log');
-    fs.writeFileSync(log, 'earlier output\n');
+    using tree = createTempTree({ 'program.log': 'earlier output\n' }, { prefix: 'thor-chrome-' });
+    const log = tree.resolve('program.log');
     const script = `echo out; echo err >&2; sleep 1; echo late`;
 
     const started = Date.now();
@@ -27,9 +25,9 @@ describe('spawnDetached', () => {
   });
 
   it('appends the reason to the log when the program cannot be started', async () => {
-    const dir = makeFixtureDir();
-    const log = path.join(dir, 'program.log');
-    const absent = path.join(dir, 'absent-program');
+    using tree = createTempTree({}, { prefix: 'thor-chrome-' });
+    const log = tree.resolve('program.log');
+    const absent = tree.resolve('absent-program');
 
     const result = runCaller(`spawnDetached(${JSON.stringify(absent)}, [], { logPath: ${JSON.stringify(log)} });`);
     expect(result.status).toBe(0);
