@@ -8,11 +8,8 @@ import { build, type Plugin } from 'esbuild';
  */
 const PACKAGE_ROOT = path.resolve(import.meta.dirname, '..', '..');
 
-/** The committed bundle that `index.html` loads. */
+/** The bundle that `index.html` loads, written by `build:deck`. */
 export const DECK_BUNDLE_PATH = path.join(PACKAGE_ROOT, 'presentation', 'deck.js');
-
-/** The command that rewrites `DECK_BUNDLE_PATH` from its source. */
-export const BUILD_DECK_COMMAND = 'pnpm --filter readyup run build:deck';
 
 /**
  * Returns the deck's script: `deck.ts` and the readyup modules that it imports, as a classic script that assigns its

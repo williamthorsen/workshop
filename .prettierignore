@@ -6,5 +6,5 @@ packages/compositor/samples/
 pnpm-lock.yaml
 # Recorded output of `rdy run`, kept byte for byte so that the presentation deck is checked against it.
 packages/readyup/presentation/captures/*.json
-# Written by readyup's `build:deck`, and pinned byte for byte by a freshness test.
+# Written by readyup's `build:deck`, whose esbuild output Prettier would reformat on every build.
 packages/readyup/presentation/deck.js
