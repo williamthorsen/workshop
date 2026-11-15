@@ -153,7 +153,8 @@ function buildQuery(service: string, account: string | undefined): SecretQuery {
 
 /**
  * Runs a command's body, writing a keychain failure to stderr with exit 3 and reporting a prompt that produced no
- * secret or a secret that the keychain cannot store as a usage error, which exits 2 with a pointer to help.
+ * secret or a secret that the keychain cannot store as a usage error, which exits 2 with a pointer to help. Any other
+ * error propagates.
  */
 async function reportFailures(stderr: Writer, body: () => number | Promise<number>): Promise<number> {
   try {

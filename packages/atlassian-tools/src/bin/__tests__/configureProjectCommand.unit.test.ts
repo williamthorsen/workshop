@@ -1,3 +1,4 @@
+import { JiraRefusalError } from '@williamthorsen/toolbelt.atlassian/candidate';
 import { describe, expect, it } from 'vitest';
 
 import type { FakeRoutes } from '../../test-utils/createFakeRequest.ts';
@@ -322,7 +323,21 @@ describe('thor-jira configure-project', () => {
     const harness = createHarness({ files: { [SPEC_PATH]: JSON.stringify({ statuses: 'To Do' }) } });
 
     await expect(runSubcommand(harness, [KEY])).resolves.toBe(2);
+    expect(harness.readErrors()).toContain('A spec needs a non-empty `statuses` array.');
     expect(harness.readErrors()).toContain("Try 'thor-jira configure-project --help'.");
+  });
+
+  it('reports a write that Jira would refuse as a usage error', async () => {
+    const harness = createHarness();
+    const effects = {
+      ...harness.effects,
+      createRequest: () => {
+        throw new JiraRefusalError('Refusing to write: Status To Do would be dropped from the workflow.');
+      },
+    };
+
+    await expect(run(['configure-project', KEY], effects)).resolves.toBe(2);
+    expect(harness.readErrors()).toContain('Refusing to write: Status To Do would be dropped from the workflow.');
   });
 
   it('propagates an error that it does not anticipate', async () => {
