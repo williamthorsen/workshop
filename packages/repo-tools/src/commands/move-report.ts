@@ -5,6 +5,12 @@ import { findReferences } from '../references/find-references.ts';
 import type { RegistryEntry } from '../registry/registry.ts';
 import { formatEntryName, PROG, type VerbRun } from './verb-run.ts';
 
+/** How a `move` or `apply-moves` run behaves. */
+export interface MoveOptions {
+  isDryRun: boolean;
+  searchPaths: readonly string[];
+}
+
 /**
  * Lists a clone's worktrees and plans its move, or returns the last refusal as a message after reporting the others on
  * stderr.

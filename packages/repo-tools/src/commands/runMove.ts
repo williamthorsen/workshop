@@ -7,14 +7,15 @@ import { executeMove } from '../move/move-clone.ts';
 import type { MovePlan } from '../move/move-plan.ts';
 import { expandTilde, formatDisplayPath, normalizePath } from '../portable/paths.ts';
 import { assertWritable, readRegistry, recordMove, type RegistryEntry, saveRegistry } from '../registry/registry.ts';
-import { planCloneMove, printMove, printReferences, printSettlement, reportSkippedWorktrees } from './move-report.ts';
+import {
+  type MoveOptions,
+  planCloneMove,
+  printMove,
+  printReferences,
+  printSettlement,
+  reportSkippedWorktrees,
+} from './move-report.ts';
 import { PROG, reportFailure, type VerbRun } from './verb-run.ts';
-
-/** How a `move` or `apply-moves` run behaves. */
-export interface MoveOptions {
-  isDryRun: boolean;
-  searchPaths: readonly string[];
-}
 
 /**
  * Runs `move`: moves the clone of the entry named `name` to `target` with its worktrees, rewrites the entry, and

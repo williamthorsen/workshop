@@ -2,8 +2,14 @@ import { executeMove } from '../move/move-clone.ts';
 import type { Move, MovePlan } from '../move/move-plan.ts';
 import { formatDisplayPath, normalizePath } from '../portable/paths.ts';
 import { readRegistry, type RegistryEntry } from '../registry/registry.ts';
-import { planCloneMove, printMove, printReferences, printSettlement, reportSkippedWorktrees } from './move-report.ts';
-import type { MoveOptions } from './runMove.ts';
+import {
+  type MoveOptions,
+  planCloneMove,
+  printMove,
+  printReferences,
+  printSettlement,
+  reportSkippedWorktrees,
+} from './move-report.ts';
 import { formatEntryName, parseRemoteUrl, PROG, reportFailure, type VerbRun } from './verb-run.ts';
 
 /**
