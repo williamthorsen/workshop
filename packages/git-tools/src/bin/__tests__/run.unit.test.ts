@@ -1,3 +1,4 @@
+import { UsageError } from '@williamthorsen/toolbelt.cli/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { run, type RunEffects } from '../run.ts';
@@ -137,7 +138,7 @@ describe(run, () => {
     it('reports a failure to resolve the checked-out branch', async () => {
       const failing: RunEffects = {
         resolveBranch: () => {
-          throw new Error('HEAD names no branch.');
+          throw new UsageError('HEAD names no branch.');
         },
         resolveVersion: () => VERSION,
       };
@@ -155,6 +156,20 @@ describe(run, () => {
 
     it('suggests the closest command for a near miss', async () => {
       expect((await run(['ticket-rf'], EFFECTS)).stderr).toContain("Did you mean 'ticket-ref'?");
+    });
+  });
+
+  describe('given an unanticipated error', () => {
+    it.each(['branch-number', 'ticket-ref'])('lets it propagate from %s', async (command) => {
+      const bug = new Error('bug');
+      const throwing: RunEffects = {
+        resolveBranch: () => {
+          throw bug;
+        },
+        resolveVersion: () => VERSION,
+      };
+
+      await expect(run([command], throwing)).rejects.toBe(bug);
     });
   });
 });
