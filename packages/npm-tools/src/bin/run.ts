@@ -92,7 +92,7 @@ const ROOT = defineGroup({
       },
       operands: [{ name: 'package-name', description: 'The package whose trusted publisher moves' }],
       run: ({ context, flags, operands, stderr }) =>
-        reportFailures(stderr, () => runMoveTrust({ ...flags, name: operands['package-name'] }, context, { stderr })),
+        runMoveTrust({ ...flags, name: operands['package-name'] }, context, { stderr }),
     }),
     'publish-placeholder': defineCommand({
       summary: 'Publish a 0.0.0 placeholder so that npm trust can be configured for a new package',
@@ -108,9 +108,7 @@ const ROOT = defineGroup({
       },
       operands: [{ name: 'package-name', description: 'The scoped or unscoped name to register' }],
       run: ({ context, flags, operands, stderr }) =>
-        reportFailures(stderr, () =>
-          runPublishPlaceholder({ ...flags, name: operands['package-name'] }, context, { stderr }),
-        ),
+        runPublishPlaceholder({ ...flags, name: operands['package-name'] }, context, { stderr }),
     }),
   },
 });
