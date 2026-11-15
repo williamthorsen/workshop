@@ -16,20 +16,24 @@ import { defineConfig, globalIgnores } from 'eslint/config';
 // that a file of that kind belongs at the path it guards.
 
 /**
+ * The statement bans of the shared config's `no-restricted-syntax`, which every block here that sets the rule
+ * restates.
+ */
+const STATEMENT_BANS = ['DebuggerStatement', 'LabeledStatement', 'WithStatement'];
+
+/**
  * Every `no-restricted-syntax` entry that applies to TypeScript repo-wide.
  *
  * Shared because ESLint substitutes a rule's options across config objects instead of merging them, so an object
- * that sets this rule for a narrower glob discards every entry it does not restate. The three statement bans come
- * from the shared config and would be lost the same way.
+ * that sets this rule for a narrower glob discards every entry it does not restate. The statement bans come from the
+ * shared config and would be lost the same way.
  *
- * The scope is TypeScript alone, though the base block this overrides also covers `patterns.javaScriptFiles`. The
- * `describeError` entry covers the `unknown` type TypeScript gives a catch binding, which JavaScript has no
- * equivalent of, so a `.js` file receives the three statement bans without it.
+ * The scope is TypeScript alone, though the base block this overrides also covers `patterns.javaScriptFiles`. A `.js`
+ * file keeps the shared config's own `describeError` entry, which reports only a ternary whose fallback is
+ * `String(error)`; the entry here reports one with any fallback.
  */
 const RESTRICTED_SYNTAX = [
-  'DebuggerStatement',
-  'LabeledStatement',
-  'WithStatement',
+  ...STATEMENT_BANS,
   {
     // Constraining the consequent to a `.message` read is what leaves the other `instanceof Error` shapes alone: an
     // `if` that narrows before reading an errno, and the ternary that coerces an unknown value into an `Error`.
@@ -104,6 +108,14 @@ const config = defineConfig([
     files: patterns.typeScriptFiles,
     rules: {
       'no-restricted-syntax': ['error', ...RESTRICTED_SYNTAX],
+    },
+  },
+  {
+    // A bin wrapper imports only node builtins, so that a missing dependency cannot replace its build-first message,
+    // and the shared `describeError` helper is therefore out of its reach.
+    files: ['packages/*/bin/*.js'],
+    rules: {
+      'no-restricted-syntax': ['error', ...STATEMENT_BANS],
     },
   },
   {
