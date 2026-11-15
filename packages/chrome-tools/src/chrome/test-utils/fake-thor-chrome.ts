@@ -1,10 +1,12 @@
 import fs from 'node:fs';
 
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { onTestFinished } from 'vitest';
+
 import type { SpawnDetachedOptions } from '../../portable/spawn-detached.ts';
 import type { CommandResult, RunCommand } from '../../shared/run-command.ts';
 import { type CapturedOutput, captureOutput } from '../../test-utils/capture-output.ts';
 import { type FakeCall, fakeRunCommand } from '../../test-utils/fake-run-command.ts';
-import { makeFixtureDir } from '../../test-utils/fixture-dir.ts';
 import { makeStubPath } from '../../test-utils/stub-path.ts';
 import { createInvocation, type Invocation, type ThorChromeDeps } from '../invocation.ts';
 
@@ -63,11 +65,14 @@ const REQUIRED_COMMANDS = ['curl', 'git', 'lsof', 'pgrep'];
  * deadline at once.
  */
 export function makeFakeThorChrome(options: FakeThorChromeOptions = {}): FakeThorChrome {
-  const home = makeFixtureDir();
-  const profilesDir = `${home}/.local/share/thor-chrome/profiles`;
+  const tree = createTempTree({}, { prefix: 'thor-chrome-' });
+  onTestFinished(() => {
+    tree[Symbol.dispose]();
+  });
+  const home = tree.dir;
+  const profilesDir = tree.mkdir('.local/share/thor-chrome/profiles');
   const workRepoDir = `${home}/work/widget`;
-  fs.mkdirSync(profilesDir, { recursive: true });
-  fs.mkdirSync(`${home}/tmp`);
+  tree.mkdir('tmp');
 
   const defaults: Record<string, Partial<CommandResult>> = {
     'git branch --show-current': { stdout: '321\n' },

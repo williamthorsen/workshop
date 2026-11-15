@@ -1,7 +1,8 @@
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 
-import { makeFixtureDir } from './fixture-dir.ts';
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { onTestFinished } from 'vitest';
 
 /** A bare remote and a clone of it, whose checked-out branch, `feature`, has no upstream. */
 export interface GitFixture {
@@ -24,7 +25,11 @@ export const ISOLATED_GIT_ENV: Readonly<Record<string, string>> = {
 
 /** Builds a bare remote and a clone with one commit on `main`, pushed, and `feature` created from it and checked out. */
 export function makeGitFixture(): GitFixture {
-  const root = makeFixtureDir();
+  const tree = createTempTree({}, { prefix: 'thor-chrome-' });
+  onTestFinished(() => {
+    tree[Symbol.dispose]();
+  });
+  const root = tree.dir;
   const remote = path.join(root, 'remote.git');
   const clone = path.join(root, 'clone');
   const env: NodeJS.ProcessEnv = { ...process.env, ...ISOLATED_GIT_ENV };
