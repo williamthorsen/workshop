@@ -109,7 +109,7 @@ export function makeFakeThorChrome(options: FakeThorChromeOptions = {}): FakeTho
     Object.entries(variables).filter((entry): entry is [string, string] => entry[1] !== undefined),
   );
 
-  let clock = 1_767_323_045_000;
+  let clockMilliseconds = 1_767_323_045_000;
   const killed: number[] = [];
   const opened: FakeThorChrome['opened'] = [];
   const spawned: FakeThorChrome['spawned'] = [];
@@ -121,7 +121,7 @@ export function makeFakeThorChrome(options: FakeThorChromeOptions = {}): FakeTho
       if (options.killError !== undefined) throw options.killError;
       killed.push(pid);
     },
-    now: () => clock,
+    now: () => clockMilliseconds,
     openPage: (port, url) => {
       opened.push({ port, url });
       const reason = options.pageFailures?.[url];
@@ -129,7 +129,7 @@ export function makeFakeThorChrome(options: FakeThorChromeOptions = {}): FakeTho
     },
     run,
     sleep: (milliseconds) => {
-      clock += milliseconds;
+      clockMilliseconds += milliseconds;
       return Promise.resolve();
     },
     spawnDetached: (program, args, spawnOptions) => {
@@ -139,7 +139,7 @@ export function makeFakeThorChrome(options: FakeThorChromeOptions = {}): FakeTho
 
   return {
     advance: (milliseconds) => {
-      clock += milliseconds;
+      clockMilliseconds += milliseconds;
     },
     calls: fake.calls,
     captured,

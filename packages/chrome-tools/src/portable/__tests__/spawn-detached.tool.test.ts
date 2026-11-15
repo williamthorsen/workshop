@@ -13,12 +13,12 @@ describe('spawnDetached', () => {
     const log = tree.resolve('program.log');
     const script = `echo out; echo err >&2; sleep 1; echo late`;
 
-    const started = Date.now();
+    const startedMilliseconds = Date.now();
     const result = runCaller(
       `spawnDetached('sh', ['-c', ${JSON.stringify(script)}], { logPath: ${JSON.stringify(log)} });`,
     );
     expect(result.status).toBe(0);
-    expect(Date.now() - started).toBeLessThan(1000);
+    expect(Date.now() - startedMilliseconds).toBeLessThan(1000);
 
     await waitFor(() => fs.readFileSync(log, 'utf8').includes('late'));
     expect(fs.readFileSync(log, 'utf8')).toBe('out\nerr\nlate\n');
@@ -46,9 +46,9 @@ function runCaller(body: string) {
 
 /** Resolves once `condition` holds, polling for up to five seconds. */
 async function waitFor(condition: () => boolean): Promise<void> {
-  const deadline = Date.now() + 5000;
+  const deadlineMilliseconds = Date.now() + 5000;
   while (!condition()) {
-    if (Date.now() > deadline) throw new Error('condition did not hold within 5s');
+    if (Date.now() > deadlineMilliseconds) throw new Error('condition did not hold within 5s');
     // eslint-disable-next-line sky-pilot/no-real-time-sleep -- polls a real process; fake timers cannot advance it.
     await new Promise((resolve) => setTimeout(resolve, 50));
   }

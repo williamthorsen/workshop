@@ -80,8 +80,8 @@ async function startHeadlessChrome(): Promise<HeadlessChrome | undefined> {
     fs.rmSync(profileDir, { force: true, recursive: true });
   };
 
-  const deadline = Date.now() + 10_000;
-  while (Date.now() < deadline && child.exitCode === null) {
+  const deadlineMilliseconds = Date.now() + 10_000;
+  while (Date.now() < deadlineMilliseconds && child.exitCode === null) {
     try {
       const response = await fetch(`http://127.0.0.1:${port}/json/version`);
       if (response.ok) return { port, stop };
