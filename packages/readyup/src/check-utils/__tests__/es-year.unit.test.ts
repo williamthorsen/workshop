@@ -8,6 +8,7 @@ describe(esYearForNodeMajor, () => {
     [20, 'es2023'],
     [22, 'es2024'],
     [24, 'es2025'],
+    [26, 'es2025'],
   ])('maps Node %i to %s', (major, esYear) => {
     expect(esYearForNodeMajor(major)).toBe(esYear);
   });
@@ -21,6 +22,6 @@ describe(esYearForNodeMajor, () => {
   });
 
   it('returns undefined for a major above the table', () => {
-    expect(esYearForNodeMajor(26)).toBeUndefined();
+    expect(esYearForNodeMajor(28)).toBeUndefined();
   });
 });
