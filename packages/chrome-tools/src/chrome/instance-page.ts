@@ -105,8 +105,8 @@ function describeOrigin(
 /** Returns a path's creation time in epoch seconds, or `undefined` when its filesystem records none. */
 function readBirthTime(value: string): number | undefined {
   try {
-    const birthTime = Math.floor(fs.statSync(value).birthtimeMs / 1000);
-    return birthTime > 0 ? birthTime : undefined;
+    const birthTimeSeconds = Math.floor(fs.statSync(value).birthtimeMs / 1000);
+    return birthTimeSeconds > 0 ? birthTimeSeconds : undefined;
   } catch {
     return undefined;
   }
