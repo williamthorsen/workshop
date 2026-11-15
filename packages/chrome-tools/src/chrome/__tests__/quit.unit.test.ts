@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { makeErrnoError } from '../../test-utils/errno-error.ts';
 import { quitProfiles } from '../quit.ts';
 import { type FakeThorChrome, makeFakeThorChrome, makeRunningFakeThorChrome } from '../test-utils/fake-thor-chrome.ts';
 import { runThorChrome } from '../thor-chrome.ts';
@@ -89,10 +90,30 @@ describe('quit', () => {
     ]);
   });
 
+  it('reports the profile stopped when the browser exited before the signal', async () => {
+    const fake = makeRunningFakeThorChrome(['thrive'], { killError: makeErrnoError('ESRCH') });
+    await expect(run(fake, ['quit', 'thrive', '--json'])).resolves.toBe(0);
+    expect(fake.readReport()['profiles']).toMatchObject([{ name: 'thrive', state: 'stopped' }]);
+  });
+
+  it('propagates an error from the signal that is not a refusal', async () => {
+    const error = new TypeError('The "pid" argument must be of type number');
+    const fake = makeRunningFakeThorChrome(['thrive'], { killError: error });
+    await expect(run(fake, ['quit', 'thrive'])).rejects.toBe(error);
+  });
+
+  it('propagates a system error from the signal other than ESRCH and EPERM', async () => {
+    const error = makeErrnoError('EINVAL');
+    const fake = makeRunningFakeThorChrome(['thrive'], { killError: error });
+    await expect(run(fake, ['quit', 'thrive'])).rejects.toBe(error);
+  });
+
   it('refuses with quit-failed when the browser cannot be signalled', async () => {
-    const fake = makeRunningFakeThorChrome(['thrive'], { isKillRefused: true });
+    const fake = makeRunningFakeThorChrome(['thrive'], { killError: makeErrnoError('EPERM') });
     await expect(run(fake, ['quit', 'thrive'])).resolves.toBe(1);
-    expect(fake.captured.stderr()).toBe("thor-chrome: could not signal PID 4242 for profile 'thrive'\n");
+    expect(fake.captured.stderr()).toBe(
+      "thor-chrome: not permitted to signal PID 4242 for profile 'thrive'; end it from a terminal outside the sandbox, or as the user who owns it\n",
+    );
   });
 
   it('refuses with quit-timeout when the browser outlives the budget', async () => {

@@ -2,6 +2,7 @@ import fs from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
+import { makeErrnoError } from '../../test-utils/errno-error.ts';
 import { deleteProfiles } from '../delete.ts';
 import { type FakeThorChrome, makeFakeThorChrome, makeRunningFakeThorChrome } from '../test-utils/fake-thor-chrome.ts';
 import { runThorChrome } from '../thor-chrome.ts';
@@ -74,9 +75,11 @@ describe('delete', () => {
   });
 
   it('keeps the profile when the forced quit fails', async () => {
-    const fake = makeRunningFakeThorChrome(['thrive'], { isKillRefused: true });
+    const fake = makeRunningFakeThorChrome(['thrive'], { killError: makeErrnoError('EPERM') });
     await expect(run(fake, ['delete', 'thrive', '--force'])).resolves.toBe(1);
-    expect(fake.captured.stderr()).toBe("thor-chrome: could not signal PID 4242 for profile 'thrive'\n");
+    expect(fake.captured.stderr()).toBe(
+      "thor-chrome: not permitted to signal PID 4242 for profile 'thrive'; end it from a terminal outside the sandbox, or as the user who owns it\n",
+    );
     expect(fs.existsSync(`${fake.profilesDir}/thrive`)).toBe(true);
   });
 
@@ -222,7 +225,7 @@ describe('delete', () => {
     });
 
     it('counts a forced quit that failed', async () => {
-      const fake = makeRunningFakeThorChrome(['thrive'], { isKillRefused: true });
+      const fake = makeRunningFakeThorChrome(['thrive'], { killError: makeErrnoError('EPERM') });
       await expect(run(fake, ['delete', '--all', '--force', '--dry-run'])).resolves.toBe(0);
       await expect(run(fake, ['delete', '--all', '--force'])).resolves.toBe(1);
       expect(fake.captured.stdout()).toMatch(
