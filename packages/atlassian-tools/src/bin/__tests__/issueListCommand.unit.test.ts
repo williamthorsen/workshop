@@ -184,6 +184,19 @@ describe('thor-jira issue list', () => {
 
     expect(harness.readErrors()).toContain("Try 'thor-jira issue list --help'.");
   });
+
+  it('propagates an error that it does not anticipate', async () => {
+    const bug = new TypeError('request is not a function');
+    const harness = createHarness();
+    const effects = {
+      ...harness.effects,
+      createRequest: () => {
+        throw bug;
+      },
+    };
+
+    await expect(run(['issue', 'list'], effects)).rejects.toBe(bug);
+  });
 });
 
 describe('thor-jira issue', () => {

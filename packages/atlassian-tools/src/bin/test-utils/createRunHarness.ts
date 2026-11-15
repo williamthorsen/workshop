@@ -3,6 +3,7 @@ import path from 'node:path';
 import type { JiraRequest, TokenTransportOptions } from '@williamthorsen/toolbelt.atlassian/candidate';
 import {
   type SecretQuery,
+  SecretStoreError,
   UnstorableSecretError,
   type WritableSecretStore,
 } from '@williamthorsen/toolbelt.secrets/candidate';
@@ -50,23 +51,29 @@ export function createRunHarness(options: HarnessOptions = {}): RunHarness {
   const { calls, request } = createFakeRequest(routes, { baseUrl: HARNESS_BASE_URL });
   let transportOptions: TokenTransportOptions | undefined;
 
-  /** Throws the configured keychain fault. */
-  function refuse(): never {
-    throw new Error(keystoreFault);
-  }
+  const refusal = keystoreFault === undefined ? undefined : new SecretStoreError(keystoreFault);
 
   let secretReads = 0;
   const store: WritableSecretStore = {
-    deleteSecret: (query) => (keystoreFault === undefined ? secrets.delete(buildKey(query)) : refuse()),
+    deleteSecret: (query) => {
+      if (refusal !== undefined) throw refusal;
+
+      return secrets.delete(buildKey(query));
+    },
     findSecret: (query) => {
       secretReads += 1;
+      if (refusal !== undefined) throw refusal;
 
-      return keystoreFault === undefined ? secrets.get(buildKey(query)) : refuse();
+      return secrets.get(buildKey(query));
     },
-    hasSecret: (query) => (keystoreFault === undefined ? secrets.has(buildKey(query)) : refuse()),
+    hasSecret: (query) => {
+      if (refusal !== undefined) throw refusal;
+
+      return secrets.has(buildKey(query));
+    },
     setSecret: (query, secret) => {
       if (unstorable !== undefined) throw new UnstorableSecretError(unstorable);
-      if (keystoreFault !== undefined) refuse();
+      if (refusal !== undefined) throw refusal;
 
       secrets.set(buildKey(query), secret);
     },

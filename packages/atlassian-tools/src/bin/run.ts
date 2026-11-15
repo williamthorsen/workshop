@@ -30,8 +30,10 @@ Jira Cloud and team-managed projects only.`,
 /**
  * Runs the `thor-jira` command line, writing through the effects that it is given and returning the code to exit
  * with. Output streams as the run proceeds, so a process killed partway still leaves a record of what it did.
- * A failure inside a command is reported through the effects, as a usage error when it does not have an exit code of
- * its own; an error thrown outside a command propagates to the caller.
+ * An anticipated failure is reported through the effects: a usage error, which includes an invalid setting, spec, or
+ * prompt, with exit 2, a keychain that cannot be reached with exit 3, a request that Jira rejects or answers
+ * unexpectedly with exit 4, and a request that never reached Jira with exit 6. Any other error propagates to the
+ * caller.
  *
  * @internal
  */
