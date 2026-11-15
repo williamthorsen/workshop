@@ -3,7 +3,6 @@ import process from 'node:process';
 
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
-import { EXIT_OK, EXIT_PROBLEMS_FOUND } from '../bin/exitCodes.ts';
 import { buildEsbuildInstallHint } from '../compile/buildBundle.ts';
 import { collectSourceKitNames } from '../compile/collectSourceKitNames.ts';
 import { loadEsbuild } from '../compile/loadEsbuild.ts';
@@ -11,24 +10,17 @@ import { loadConfig } from '../config/loadConfig.ts';
 import { extractHint } from '../errors/extractHint.ts';
 import { configError } from '../errors/RdyError.ts';
 import type { ResolvedRdyConfig } from '../kits/types.ts';
-import { getLayout } from '../layout/engine.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import type { RdyManifest } from '../manifest/manifestSchema.ts';
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
-import { writeHuman } from '../output/writeHuman.ts';
-import {
-  type JsonVerifyKitEntry,
-  type JsonVerifyOutput,
-  type JsonVerifyProjectEntry,
-  type JsonVerifyUncompiledEntry,
-  SCHEMA_VERSION,
-} from '../schemas/verifyOutputSchema.ts';
+import type { JsonVerifyKitEntry, JsonVerifyUncompiledEntry } from '../schemas/verifyOutputSchema.ts';
 import { checkDrift } from './checkDrift.ts';
 import { checkInputDrift } from './checkInputDrift.ts';
 import { checkRebuild } from './checkRebuild.ts';
 import { checkSourceDrift } from './checkSourceDrift.ts';
 import type { KitVerdicts } from './verdicts.ts';
-import { buildVerifyEntry, formatStatusLine, formatUncompiledLine, isPassingVerdict } from './verify-report.ts';
+import type { ManifestVerification, VerifyEvent } from './verify-events.ts';
+import { buildVerifyEntry, isPassingVerdict } from './verify-report.ts';
 
 /** The real collaborators of verification. */
 export const defaultVerifyDependencies: VerifyDependencies = {
@@ -76,22 +68,6 @@ export interface FindUncompiledKitsArgs {
   project?: string;
 }
 
-/** Emits the verify payload under `--json` and turns the run's verdict into an exit code. */
-export function finishVerify({ kits, passed, projects, uncompiled }: VerifyOutcome, isJson: boolean): number {
-  if (isJson) {
-    const output: JsonVerifyOutput = {
-      schemaVersion: SCHEMA_VERSION,
-      passed,
-      kits,
-      ...(projects !== undefined && { projects }),
-      ...(uncompiled.length > 0 && { uncompiled }),
-    };
-    process.stdout.write(JSON.stringify(output) + '\n');
-  }
-
-  return passed ? EXIT_OK : EXIT_PROBLEMS_FOUND;
-}
-
 /**
  * Reads a manifest, raising a config error when it is missing, unreadable, or invalid.
  *
@@ -128,14 +104,6 @@ export async function loadVerifyConfig(
   } catch (error: unknown) {
     throw configError(describeError(error), { cause: error, hint: extractHint(error) });
   }
-}
-
-/** One manifest's contribution to a verify run. */
-export interface ManifestVerification {
-  kits: JsonVerifyKitEntry[];
-  /** `true` when every kit in the manifest passed and every selected source is recorded. */
-  passed: boolean;
-  uncompiled: JsonVerifyUncompiledEntry[];
 }
 
 /**
@@ -178,23 +146,25 @@ export interface VerifyDependencies {
   readManifest: typeof readManifest;
 }
 
-/** Verifies every kit that a manifest lists, writing a heading, one line per kit, and one per uncompiled kit. */
-export async function verifyManifest(
+/**
+ * Verifies every kit that a manifest lists, yielding an event as the manifest starts, after each kit, and as the
+ * manifest finishes, and returns the manifest's contribution to the run.
+ */
+export async function* verifyManifest(
   args: VerifyManifestArgs,
   dependencies: VerifyDependencies = defaultVerifyDependencies,
-): Promise<ManifestVerification> {
-  const { manifest, manifestPath, shouldRebuild, isJson, project, uncompiled } = args;
+): AsyncGenerator<VerifyEvent, ManifestVerification> {
+  const { manifest, manifestPath, shouldRebuild, project, uncompiled } = args;
   const manifestDir = path.dirname(manifestPath);
 
-  const relManifestPath = path.relative(process.cwd(), manifestPath);
-  writeHuman(`${getLayout().formatHeading(`Verifying kits against ${relManifestPath}`, 'section')}\n`, isJson);
-
-  if (manifest.kits.length === 0) {
-    writeHuman('(no kits in manifest)\n', isJson);
-  }
+  yield {
+    kind: 'manifestStarted',
+    kitCount: manifest.kits.length,
+    manifestPath: path.relative(process.cwd(), manifestPath),
+  };
 
   const entries: JsonVerifyKitEntry[] = [];
-  let failed = 0;
+  let failedCount = 0;
   for (const kit of manifest.kits) {
     const verdicts: KitVerdicts = {
       drift: dependencies.checkDrift(kit, manifestDir),
@@ -202,23 +172,17 @@ export async function verifyManifest(
       rebuild: shouldRebuild ? await dependencies.checkRebuild(kit, manifestDir) : undefined,
       source: dependencies.checkSourceDrift(kit, manifestDir),
     };
-    writeHuman(formatStatusLine(kit, verdicts), isJson);
+    yield { kind: 'kitVerified', kit, verdicts };
     entries.push(buildVerifyEntry(kit.name, verdicts, project));
     if (!isPassingVerdict(verdicts)) {
-      failed += 1;
+      failedCount += 1;
     }
   }
 
-  for (const entry of uncompiled) {
-    writeHuman(formatUncompiledLine(entry), isJson);
-  }
-  failed += uncompiled.length;
+  failedCount += uncompiled.length;
+  yield { kind: 'manifestFinished', failedCount, totalCount: manifest.kits.length + uncompiled.length, uncompiled };
 
-  if (failed > 0) {
-    writeHuman(`\n${failed} of ${manifest.kits.length + uncompiled.length} kits failed verification.\n`, isJson);
-  }
-
-  return { kits: entries, passed: failed === 0, uncompiled };
+  return { kits: entries, passed: failedCount === 0, uncompiled };
 }
 
 /** Arguments for verifying the kits of one manifest. */
@@ -226,15 +190,17 @@ export interface VerifyManifestArgs {
   manifest: RdyManifest;
   manifestPath: string;
   shouldRebuild: boolean;
-  isJson: boolean;
   /** The project named on each kit's JSON entry, given by a recursive verify alone. */
   project?: string;
   /** The kits that the compile settings select and the manifest does not record. */
   uncompiled: JsonVerifyUncompiledEntry[];
 }
 
-/** A verify run's result, before it is emitted. */
-export interface VerifyOutcome extends ManifestVerification {
-  /** Every project that a recursive verify visited; absent from any other run. */
-  projects?: JsonVerifyProjectEntry[];
+/** Verifies the kits of one manifest outside a sweep, ending with the run's `verifyFinished` event. */
+export async function* verifySingleManifest(
+  args: VerifyManifestArgs,
+  dependencies: VerifyDependencies = defaultVerifyDependencies,
+): AsyncGenerator<VerifyEvent> {
+  const outcome = yield* verifyManifest(args, dependencies);
+  yield { kind: 'verifyFinished', outcome };
 }

@@ -1,20 +1,32 @@
 import path from 'node:path';
 import process from 'node:process';
 
+import { EXIT_OK, EXIT_PROBLEMS_FOUND } from '../bin/exitCodes.ts';
 import { parseSubcommandArgs } from '../bin/parseSubcommandArgs.ts';
 import { usageError } from '../errors/RdyError.ts';
 import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
+import { writeError } from '../output/writeError.ts';
+import { writeHuman } from '../output/writeHuman.ts';
+import { writeWarnings } from '../output/writeWarnings.ts';
+import type { VerifyEvent, VerifyOutcome } from './verify-events.ts';
 import {
   defaultVerifyDependencies,
   findUncompiledKits,
-  finishVerify,
   loadManifest,
   loadVerifyConfig,
   requireEsbuild,
   resolveManifestProjectDir,
   type VerifyDependencies,
-  verifyManifest,
+  verifySingleManifest,
 } from './verify-manifest.ts';
+import {
+  buildVerifyOutput,
+  formatKitsFailedSummary,
+  formatManifestHeading,
+  formatProjectsSummary,
+  formatStatusLine,
+  formatUncompiledLine,
+} from './verify-report.ts';
 import { verifyRecursive } from './verifyRecursive.ts';
 
 const verifyOptions = {
@@ -68,7 +80,7 @@ export async function verifyCommand(
   if (shouldRebuild) await requireEsbuild(dependencies);
 
   if (recursive) {
-    return verifyRecursive({ shouldRebuild, isJson }, dependencies);
+    return toExitCode(await writeVerifyEvents(verifyRecursive({ shouldRebuild }, dependencies), isJson));
   }
 
   const manifestPath = path.resolve(process.cwd(), values.manifest ?? DEFAULT_MANIFEST_PATH);
@@ -81,8 +93,78 @@ export async function verifyCommand(
     srcDir: path.resolve(projectDir, config.compile.srcDir),
     selection: config.compile,
   });
-  return finishVerify(
-    await verifyManifest({ manifest, manifestPath, shouldRebuild, isJson, uncompiled }, dependencies),
-    isJson,
-  );
+  const events = verifySingleManifest({ manifest, manifestPath, shouldRebuild, uncompiled }, dependencies);
+  return toExitCode(await writeVerifyEvents(events, isJson));
 }
+
+// region | Helpers
+
+/** Turns a run's verdict into its exit code. */
+function toExitCode(outcome: VerifyOutcome): number {
+  return outcome.passed ? EXIT_OK : EXIT_PROBLEMS_FOUND;
+}
+
+/**
+ * Writes each event of a verify run as it arrives, and returns the outcome of the run's `verifyFinished` event.
+ *
+ * Human text goes to stdout, or to stderr under `--json`, which reserves stdout for the one JSON document written
+ * once the run finishes.
+ */
+async function writeVerifyEvents(events: AsyncGenerator<VerifyEvent>, isJson: boolean): Promise<VerifyOutcome> {
+  let hasWrittenBlock = false;
+  for await (const event of events) {
+    switch (event.kind) {
+      case 'discoveryFinished':
+        writeWarnings(event.warnings);
+        break;
+
+      case 'manifestStarted':
+        // A project that fails before verifying writes no block, so separation follows the blocks actually written.
+        if (hasWrittenBlock) writeHuman('\n', isJson);
+        hasWrittenBlock = true;
+        writeHuman(formatManifestHeading(event.manifestPath), isJson);
+        if (event.kitCount === 0) writeHuman('(no kits in manifest)\n', isJson);
+        break;
+
+      case 'kitVerified':
+        writeHuman(formatStatusLine(event.kit, event.verdicts), isJson);
+        break;
+
+      case 'manifestFinished':
+        for (const entry of event.uncompiled) {
+          writeHuman(formatUncompiledLine(entry), isJson);
+        }
+        if (event.failedCount > 0) writeHuman(formatKitsFailedSummary(event.failedCount, event.totalCount), isJson);
+        break;
+
+      case 'projectFailed':
+        writeError(event.message, event.project);
+        break;
+
+      case 'verifyFinished': {
+        const { outcome } = event;
+        if (outcome.projects !== undefined) writeProjectsClosing(outcome.projects, isJson);
+        if (isJson) process.stdout.write(JSON.stringify(buildVerifyOutput(outcome)) + '\n');
+        return outcome;
+      }
+
+      default:
+        event satisfies never;
+    }
+  }
+
+  throw new Error('rdy verify ended without a verifyFinished event');
+}
+
+/** Writes what closes a recursive verify: a note when it found no projects, or the list of projects that failed. */
+function writeProjectsClosing(projects: NonNullable<VerifyOutcome['projects']>, isJson: boolean): void {
+  if (projects.length === 0) {
+    writeHuman('No kit projects found.\n', isJson);
+    return;
+  }
+
+  const failedDirs = projects.filter((entry) => !entry.passed).map((entry) => entry.project);
+  if (failedDirs.length > 0) writeHuman(formatProjectsSummary(failedDirs, projects.length), isJson);
+}
+
+// endregion | Helpers

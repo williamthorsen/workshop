@@ -3,23 +3,20 @@ import path from 'node:path';
 import process from 'node:process';
 
 import { describeError } from '@williamthorsen/toolbelt.errors';
-import { pluralizeWithCount } from '@williamthorsen/toolbelt.strings';
 
 import { RdyError } from '../errors/RdyError.ts';
 import type { RdyManifest } from '../manifest/manifestSchema.ts';
-import { writeError } from '../output/writeError.ts';
-import { writeHuman } from '../output/writeHuman.ts';
-import { type ReportedWarning, writeWarnings } from '../output/writeWarnings.ts';
+import type { ReportedWarning } from '../output/writeWarnings.ts';
 import { discoverKitProjects, type Project } from '../projects/project-discovery.ts';
 import type {
   JsonVerifyKitEntry,
   JsonVerifyProjectEntry,
   JsonVerifyUncompiledEntry,
 } from '../schemas/verifyOutputSchema.ts';
+import type { VerifyEvent } from './verify-events.ts';
 import {
   defaultVerifyDependencies,
   findUncompiledKits,
-  finishVerify,
   loadManifest,
   type VerifyDependencies,
   verifyManifest,
@@ -28,58 +25,50 @@ import {
 /** Arguments for the recursive verify path. */
 export interface VerifyRecursiveArgs {
   shouldRebuild: boolean;
-  isJson: boolean;
 }
 
 /**
- * Verifies the kits of every kit project below the working directory, each against its own manifest.
+ * Verifies the kits of every kit project below the working directory, each against its own manifest, yielding an
+ * event at each step boundary and ending with the run's `verifyFinished` event.
  *
  * The sweep runs to completion across projects: A project that cannot be verified at all is reported, the
  * next project is tried, and the run fails. A project whose config cannot be evaluated is one of those, and
  * is never verified under the defaults with which discovery read it.
  */
-export async function verifyRecursive(
+export async function* verifyRecursive(
   args: VerifyRecursiveArgs,
   dependencies: VerifyDependencies = defaultVerifyDependencies,
-): Promise<number> {
-  const { shouldRebuild, isJson } = args;
+): AsyncGenerator<VerifyEvent> {
+  const { shouldRebuild } = args;
   const root = process.cwd();
   const discoveryWarnings: ReportedWarning[] = [];
   let projects: Project[];
   try {
     projects = await discoverKitProjects({ root }, discoveryWarnings);
-  } finally {
-    // Write the warnings raised before a failure too, so that they precede its error.
-    writeWarnings(discoveryWarnings);
+  } catch (error: unknown) {
+    // Yield the warnings raised before a failure too, so that they precede its error.
+    yield { kind: 'discoveryFinished', warnings: discoveryWarnings };
+    throw error;
   }
-
-  if (projects.length === 0) {
-    writeHuman('No kit projects found.\n', isJson);
-    return finishVerify({ kits: [], passed: true, projects: [], uncompiled: [] }, isJson);
-  }
+  yield { kind: 'discoveryFinished', warnings: discoveryWarnings };
 
   const kits: JsonVerifyKitEntry[] = [];
   const projectEntries: JsonVerifyProjectEntry[] = [];
   const uncompiled: JsonVerifyUncompiledEntry[] = [];
-  let hasWrittenBlock = false;
 
   for (const project of projects) {
     const loaded = loadSweptProject(project, root, dependencies);
     if ('failure' in loaded) {
-      projectEntries.push(reportProjectFailure(project.dir, loaded.failure));
+      yield { kind: 'projectFailed', message: loaded.failure, project: project.dir };
+      projectEntries.push({ project: project.dir, passed: false, error: loaded.failure });
       continue;
     }
 
-    // No block is written for a project that fails before verifying, so separation follows the blocks actually written.
-    if (hasWrittenBlock) writeHuman('\n', isJson);
-    hasWrittenBlock = true;
-
-    const outcome = await verifyManifest(
+    const outcome = yield* verifyManifest(
       {
         manifest: loaded.manifest,
         manifestPath: project.manifestPath,
         shouldRebuild,
-        isJson,
         project: project.dir,
         uncompiled: loaded.uncompiled,
       },
@@ -90,15 +79,8 @@ export async function verifyRecursive(
     projectEntries.push({ project: project.dir, passed: outcome.passed });
   }
 
-  const failedDirs = projectEntries.filter((entry) => !entry.passed).map((entry) => entry.project);
-  if (failedDirs.length > 0) {
-    writeHuman(
-      `\nProblems in ${failedDirs.length} of ${pluralizeWithCount(projects.length, 'project')}: ${failedDirs.join(', ')}\n`,
-      isJson,
-    );
-  }
-
-  return finishVerify({ kits, passed: failedDirs.length === 0, projects: projectEntries, uncompiled }, isJson);
+  const passed = projectEntries.every((entry) => entry.passed);
+  yield { kind: 'verifyFinished', outcome: { kits, passed, projects: projectEntries, uncompiled } };
 }
 
 // region | Helpers
@@ -137,12 +119,6 @@ function loadSweptProject(
     if (!(error instanceof RdyError)) throw error;
     return { failure: error.message };
   }
-}
-
-/** Writes the failure of a project that could not be verified at all, and returns the project's entry. */
-function reportProjectFailure(dir: string, message: string): JsonVerifyProjectEntry {
-  writeError(message, dir);
-  return { project: dir, passed: false, error: message };
 }
 
 // endregion | Helpers
