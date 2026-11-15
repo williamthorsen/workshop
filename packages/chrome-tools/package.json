@@ -42,7 +42,7 @@
     "prepare": "nmr-compile"
   },
   "dependencies": {
-    "@williamthorsen/readout": "0.1.0",
+    "@williamthorsen/readout": "0.2.0",
     "@williamthorsen/toolbelt.cli": "catalog:",
     "@williamthorsen/toolbelt.errors": "catalog:",
     "@williamthorsen/toolbelt.git": "catalog:",
