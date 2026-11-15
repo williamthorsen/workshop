@@ -1,3 +1,4 @@
+import { SecretPromptError } from '@williamthorsen/toolbelt.secrets/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { run } from '../run.ts';
@@ -187,6 +188,26 @@ describe(run, () => {
 
       await expect(run(['auth', 'status'], harness.effects)).resolves.toBe(2);
       expect(harness.readErrors()).toContain('No Atlassian account email was given');
+    });
+
+    it('reports a prompt that produced no token as a usage error', async () => {
+      const harness = createRunHarness({ env: EMAIL_ENV, isTty: true });
+      const effects = {
+        ...harness.effects,
+        promptSecret: () => Promise.reject(new SecretPromptError('The two entries differ. Nothing was stored.')),
+      };
+
+      await expect(run(['auth', 'set'], effects)).resolves.toBe(2);
+      expect(harness.readErrors()).toContain('The two entries differ.');
+    });
+
+    it('propagates an error that it does not anticipate', async () => {
+      const bug = new Error('stdin closed unexpectedly');
+      const harness = createRunHarness({ env: EMAIL_ENV });
+
+      await expect(run(['auth', 'set'], { ...harness.effects, readStdin: () => Promise.reject(bug) })).rejects.toBe(
+        bug,
+      );
     });
   });
 });

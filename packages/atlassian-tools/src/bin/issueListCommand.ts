@@ -1,5 +1,5 @@
 import { listIssueSummaries } from '@williamthorsen/toolbelt.atlassian/candidate';
-import { type Command, createCli } from '@williamthorsen/toolbelt.cli/candidate';
+import { type Command, createCli, UsageError } from '@williamthorsen/toolbelt.cli/candidate';
 
 import { composeIssueListJql, ISSUE_STATES } from './composeIssueListJql.ts';
 import { createSubcommandRequest, CREDENTIAL_OPTIONS } from './createSubcommandRequest.ts';
@@ -76,7 +76,7 @@ function selectProjectKey(flag: string | undefined, loaded: LoadedProjectSpec | 
       ? `the search found no jira-project-spec.json at or above ${cwd}`
       : `${loaded.path} does not set \`projectKey\``;
 
-  throw new Error(`A project key is required: pass --project, or set \`projectKey\` in the spec; ${specSource}.`);
+  throw new UsageError(`A project key is required: pass --project, or set \`projectKey\` in the spec; ${specSource}.`);
 }
 
 // endregion | Helpers

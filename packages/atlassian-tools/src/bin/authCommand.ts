@@ -4,10 +4,9 @@ import {
   type JiraTokenSource,
   resolveJiraEmail,
 } from '@williamthorsen/toolbelt.atlassian/candidate';
-import { type Command, createCli } from '@williamthorsen/toolbelt.cli/candidate';
+import { type Command, createCli, UsageError } from '@williamthorsen/toolbelt.cli/candidate';
 
 import {
-  callKeystore,
   createDeferredStore,
   EXIT_NO_RESULT,
   EXIT_OK,
@@ -75,7 +74,7 @@ reported here and dropped by the resolver, which \`set\` refuses to create.`,
 
 /** Removes the stored token, reporting through the exit code whether one was there. */
 function runDelete(effects: RunEffects, account: string, service: string): number {
-  const removed = callKeystore(() => effects.createStore().deleteSecret({ account, service }));
+  const removed = effects.createStore().deleteSecret({ account, service });
   if (!removed) return EXIT_NO_RESULT;
 
   return succeed(effects, `Removed the token for ${account}.`);
@@ -86,16 +85,16 @@ function runDelete(effects: RunEffects, account: string, service: string): numbe
  * opened first, so that a platform without a keychain is reported before a token is typed into this process.
  */
 async function runSet(effects: RunEffects, account: string, service: string): Promise<number> {
-  const store = callKeystore(() => effects.createStore());
+  const store = effects.createStore();
   const token = effects.isStdinTty()
     ? await effects.promptSecret()
     : stripOneTrailingNewline(await effects.readStdin());
 
   // The resolution chain drops a blank token, so storing one leaves an item that `auth status` reports and
   // `configure-project` cannot use.
-  if (token.trim() === '') throw new Error('The token is blank. Nothing was stored.');
+  if (token.trim() === '') throw new UsageError('The token is blank. Nothing was stored.');
 
-  callKeystore(() => store.setSecret({ account, service }, token));
+  store.setSecret({ account, service }, token);
 
   return succeed(effects, `Stored a token for ${account} under ${service}.`);
 }

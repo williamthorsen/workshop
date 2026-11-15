@@ -1,13 +1,19 @@
 import {
+  JiraRefusalError,
   type JiraRequest,
   JiraRequestError,
   JiraResponseError,
+  JiraSettingError,
+  JiraTokenCommandError,
   JiraTransportError,
+  ProjectSpecError,
   type TokenTransportOptions,
 } from '@williamthorsen/toolbelt.atlassian/candidate';
 import { UsageError, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
 import {
+  SecretPromptError,
   type SecretStore,
+  SecretStoreError,
   UnstorableSecretError,
   type WritableSecretStore,
 } from '@williamthorsen/toolbelt.secrets/candidate';
@@ -18,9 +24,6 @@ export const EXIT_KEYSTORE = 3;
 export const EXIT_REQUEST = 4;
 export const EXIT_MISMATCH = 5;
 export const EXIT_TRANSPORT = 6;
-
-/** Reports a failure to reach the keychain, which is neither a usage error nor an absent secret. */
-export class KeystoreError extends Error {}
 
 /** The effects deferred to the entry point, which keeps every subcommand free of I/O. */
 export interface RunEffects {
@@ -43,22 +46,6 @@ export interface RunEffects {
 }
 
 /**
- * Runs a keychain operation, reporting what it threw as a failure to reach the keychain. A value that the
- * keychain cannot store passes through unwrapped, since nothing was reached: It is a usage error like any other.
- *
- * @internal
- */
-export function callKeystore<T>(operation: () => T): T {
-  try {
-    return operation();
-  } catch (error) {
-    if (error instanceof UnstorableSecretError) throw error;
-
-    throw new KeystoreError(describeError(error));
-  }
-}
-
-/**
  * Wraps the keychain so that it is opened on first use rather than on construction. A run authenticated from
  * the environment then never opens the keychain, and a platform without one is reported only when a caller
  * actually reads from it.
@@ -74,9 +61,9 @@ export function createDeferredStore(effects: RunEffects): SecretStore {
   }
 
   return {
-    deleteSecret: (query) => callKeystore(() => open().deleteSecret(query)),
-    findSecret: (query) => callKeystore(() => open().findSecret(query)),
-    hasSecret: (query) => callKeystore(() => open().hasSecret(query)),
+    deleteSecret: (query) => open().deleteSecret(query),
+    findSecret: (query) => open().findSecret(query),
+    hasSecret: (query) => open().hasSecret(query),
   };
 }
 
@@ -103,8 +90,9 @@ export function describeError(error: unknown): string {
 }
 
 /**
- * Runs a command's body, writing each failure that has an exit code of its own to `stderr` and returning that code,
- * and reporting anything else that it throws as a usage error, which exits 2 with a pointer to help.
+ * Runs a command's body, writing each anticipated failure that has an exit code of its own to `stderr` and returning
+ * that code, and reporting a setting, spec, refusal, or prompt failure as a usage error, which exits 2 with a pointer
+ * to help. Any other error propagates.
  *
  * @internal
  */
@@ -112,10 +100,10 @@ export async function reportFailures(stderr: Writer, body: () => number | Promis
   try {
     return await body();
   } catch (error) {
-    if (error instanceof UsageError) throw error;
+    if (isUsageFailure(error)) throw new UsageError(describeError(error), { cause: error });
 
     const failure = describeFailure(error);
-    if (failure === undefined) throw new UsageError(describeError(error), { cause: error });
+    if (failure === undefined) throw error;
 
     stderr.write(`${failure.message}\n`);
     return failure.exitCode;
@@ -144,9 +132,9 @@ export function succeed(effects: RunEffects, output: string): number {
 
 // region | Helpers
 
-/** Returns the exit code and message of a failure that is not a usage error, or `undefined` for any other error. */
+/** Returns the exit code and message of an anticipated failure that is not a usage error, or `undefined` otherwise. */
 function describeFailure(error: unknown): { exitCode: number; message: string } | undefined {
-  if (error instanceof KeystoreError) return { exitCode: EXIT_KEYSTORE, message: error.message };
+  if (error instanceof SecretStoreError) return { exitCode: EXIT_KEYSTORE, message: describeError(error) };
   if (error instanceof JiraRequestError || error instanceof JiraResponseError) {
     return { exitCode: EXIT_REQUEST, message: error.message };
   }
@@ -154,6 +142,18 @@ function describeFailure(error: unknown): { exitCode: number; message: string } 
   if (error instanceof JiraTransportError) return { exitCode: EXIT_TRANSPORT, message: describeError(error) };
 
   return undefined;
+}
+
+/** Reports whether an error is an anticipated failure that the user fixes by changing the input or the settings. */
+function isUsageFailure(error: unknown): boolean {
+  return (
+    error instanceof JiraRefusalError ||
+    error instanceof JiraSettingError ||
+    error instanceof JiraTokenCommandError ||
+    error instanceof ProjectSpecError ||
+    error instanceof SecretPromptError ||
+    error instanceof UnstorableSecretError
+  );
 }
 
 // endregion | Helpers

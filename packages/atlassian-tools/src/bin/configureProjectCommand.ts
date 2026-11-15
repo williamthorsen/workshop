@@ -9,7 +9,7 @@ import {
   readBoardColumnReport,
   readProjectConfiguration,
 } from '@williamthorsen/toolbelt.atlassian/candidate';
-import { type Command, createCli } from '@williamthorsen/toolbelt.cli/candidate';
+import { type Command, createCli, UsageError } from '@williamthorsen/toolbelt.cli/candidate';
 
 import { createSubcommandRequest, CREDENTIAL_OPTIONS, type CredentialValues } from './createSubcommandRequest.ts';
 import { formatContinuationLine, formatLabelledLine } from './labelled-lines.ts';
@@ -87,7 +87,7 @@ async function configureProject(
   const seedBacklog = values.seedBacklog;
   const loaded = loadProjectSpec(effects, values.spec);
   if (loaded === undefined) {
-    throw new Error(`No jira-project-spec.json at or above ${effects.cwd()}. Name one with --spec.`);
+    throw new UsageError(`No jira-project-spec.json at or above ${effects.cwd()}. Name one with --spec.`);
   }
   const { spec } = loaded;
   const projectKey = selectProjectKey(keyOperand, loaded);
@@ -133,7 +133,7 @@ function selectProjectKey(projectKey: string | undefined, loaded: LoadedProjectS
   if (projectKey !== undefined && projectKey !== '') return projectKey;
   if (loaded.spec.projectKey !== undefined) return loaded.spec.projectKey;
 
-  throw new Error(
+  throw new UsageError(
     `A project key is required: pass it as an argument, or set \`projectKey\` in the spec; ${loaded.path} does not set \`projectKey\`.`,
   );
 }

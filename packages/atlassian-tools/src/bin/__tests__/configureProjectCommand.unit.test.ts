@@ -310,6 +310,33 @@ describe('thor-jira configure-project', () => {
       expect(harness.readErrors()).not.toContain('--help');
     });
   });
+
+  it('exits 2 naming the read failure when --spec names a spec that cannot be read', async () => {
+    const harness = createHarness();
+
+    await expect(runSubcommand(harness, [KEY, '--spec', '/missing.json'])).resolves.toBe(2);
+    expect(harness.readErrors()).toContain("No fake file at '/missing.json'.");
+  });
+
+  it('exits 2 naming the fault when the spec cannot be parsed', async () => {
+    const harness = createHarness({ files: { [SPEC_PATH]: JSON.stringify({ statuses: 'To Do' }) } });
+
+    await expect(runSubcommand(harness, [KEY])).resolves.toBe(2);
+    expect(harness.readErrors()).toContain("Try 'thor-jira configure-project --help'.");
+  });
+
+  it('propagates an error that it does not anticipate', async () => {
+    const bug = new TypeError('request is not a function');
+    const harness = createHarness();
+    const effects = {
+      ...harness.effects,
+      createRequest: () => {
+        throw bug;
+      },
+    };
+
+    await expect(run(['configure-project', KEY], effects)).rejects.toBe(bug);
+  });
 });
 
 // region | Helpers
