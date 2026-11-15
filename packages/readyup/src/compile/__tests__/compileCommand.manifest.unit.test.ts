@@ -21,7 +21,7 @@ import {
   kitMetadata,
   SOURCE_HASH,
 } from '../test-utils/compile-result-fixtures.ts';
-import { compile, compileRaising } from '../test-utils/compile-runners.ts';
+import { compile, compileForPayload, compileRaising } from '../test-utils/compile-runners.ts';
 import { readTreeManifest } from '../test-utils/readTreeManifest.ts';
 import type { KitMetadata } from '../validateCompiledOutput.ts';
 
@@ -282,7 +282,7 @@ describe(compileCommand, () => {
     }
   });
 
-  it('warns on stderr when the existing manifest is unreadable during batch compile', async () => {
+  it('warns once on stderr when the existing manifest is unreadable during batch compile', async () => {
     using tree = createTempTree(
       { '.readyup/kits/alpha.ts': COMPILED, '.readyup/manifest.json': '{ not json' },
       { prefix: 'rdy-compile-manifest-' },
@@ -291,8 +291,24 @@ describe(compileCommand, () => {
 
     const { stderr } = await compile([]);
 
+    expect(stderr.match(/^Warning:/gm)).toHaveLength(1);
+    expect(stderr).toContain('.readyup/manifest.json could not be read, so no kit was checked for drift against it');
     expect(stderr).toContain('Manifest file contains invalid JSON');
-    expect(stderr).toContain('drift gate skipped');
+  });
+
+  it('reports an unreadable manifest under --json during batch compile', async () => {
+    using tree = createTempTree(
+      { '.readyup/kits/alpha.ts': COMPILED, '.readyup/manifest.json': '{ not json' },
+      { prefix: 'rdy-compile-manifest-' },
+    );
+    using _cwd = pointCwdAt(tree.dir);
+
+    const payload = await compileForPayload([]);
+
+    expect(payload).toMatchObject({
+      warnings: [{ code: 'manifest-unreadable', message: expect.stringContaining('could not be read') }],
+    });
+    expect(payload).not.toHaveProperty('warnings.0.remedy');
   });
 
   it('is silent when the manifest is missing during batch compile', async () => {
@@ -301,7 +317,19 @@ describe(compileCommand, () => {
 
     const { stderr } = await compile([]);
 
-    expect(stderr).not.toContain('drift gate skipped');
+    expect(stderr).not.toContain('Warning:');
+  });
+
+  it('neither reads nor reports an unreadable manifest during batch compile under --skip-manifest', async () => {
+    using tree = createTempTree(
+      { '.readyup/kits/alpha.ts': COMPILED, '.readyup/manifest.json': '{ not json' },
+      { prefix: 'rdy-compile-manifest-' },
+    );
+    using _cwd = pointCwdAt(tree.dir);
+
+    const payload = await compileForPayload(['--skip-manifest']);
+
+    expect(payload).not.toHaveProperty('warnings');
   });
 });
 

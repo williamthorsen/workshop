@@ -11,8 +11,14 @@ import { configError, usageError } from '../errors/RdyError.ts';
 import { deriveKitNameFromBundle } from '../kits/deriveKitName.ts';
 import type { ResolvedRdyConfig } from '../kits/types.ts';
 import { writeHuman } from '../output/writeHuman.ts';
+import { writeWarnings } from '../output/writeWarnings.ts';
 import { toDisplayPath } from '../portable/toDisplayPath.ts';
-import { loadExistingKitsByName, resolveManifestPath, upsertManifest } from './compile-manifest.ts';
+import {
+  type ExistingManifest,
+  loadExistingManifest,
+  resolveManifestPath,
+  upsertManifest,
+} from './compile-manifest.ts';
 import { finishCompile } from './compile-outcome.ts';
 import { formatDriftRemedy, formatSectionHeading } from './compile-report.ts';
 import { compileKit } from './compileKit.ts';
@@ -29,6 +35,9 @@ const compileOptions = {
   recursive: { type: 'boolean' },
   'skip-manifest': { type: 'boolean' },
 } as const;
+
+/** Remedy for an unreadable manifest in a single-file compile, which records no kit but its own. */
+const SINGLE_FILE_MANIFEST_REMEDY = 'Run `rdy compile` without an input file to record every kit.';
 
 /** Domain-specific hints for compile flags that require a value. */
 const compileHints: Record<string, string> = {
@@ -149,10 +158,15 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
 
   writeHuman(formatSectionHeading('Compiling kit'), isJson);
 
+  const existingManifest: ExistingManifest = shouldSkipManifest
+    ? { kitsByName: new Map(), warnings: [] }
+    : loadExistingManifest(manifestPath, SINGLE_FILE_MANIFEST_REMEDY);
+  writeWarnings(existingManifest.warnings);
+
   const outcome = await compileKit({
     describeFailure: describeError,
     displayInput,
-    existingKit: shouldSkipManifest ? undefined : loadExistingKitsByName(manifestPath).get(kitName),
+    existingKit: existingManifest.kitsByName.get(kitName),
     failureSubject: undefined,
     formatOutput: toDisplayPath,
     inputPath,
@@ -171,20 +185,21 @@ async function compileSingle(args: CompileSingleArgs): Promise<number> {
   }
 
   if (outcome.kit.status !== 'compiled') {
-    return finishCompile({ kits: [outcome.kit], removed: [], warnings: [] }, isJson);
+    return finishCompile({ kits: [outcome.kit], removed: [], warnings: existingManifest.warnings }, isJson);
   }
 
   if (!shouldSkipManifest) {
     const { entry } = outcome;
     assert.ok(entry !== undefined, 'A compiled kit has a manifest entry');
     try {
-      upsertManifest(manifestPath, entry);
+      upsertManifest(manifestPath, existingManifest.kitsByName.values(), entry);
     } catch (error: unknown) {
       throw configError(`Cannot write manifest: ${describeError(error)}`, { cause: error });
     }
   }
 
-  return finishCompile({ kits: [outcome.kit], removed: [], warnings: outcome.warnings }, isJson);
+  const warnings = [...existingManifest.warnings, ...outcome.warnings];
+  return finishCompile({ kits: [outcome.kit], removed: [], warnings }, isJson);
 }
 
 /** Arguments for the single-file compile path. */

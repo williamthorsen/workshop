@@ -19,7 +19,7 @@ import {
   kitMetadata,
   SOURCE_HASH,
 } from '../test-utils/compile-result-fixtures.ts';
-import { compile } from '../test-utils/compile-runners.ts';
+import { compile, compileForPayload } from '../test-utils/compile-runners.ts';
 import { readTreeManifest } from '../test-utils/readTreeManifest.ts';
 
 describe(compileCommand, () => {
@@ -96,7 +96,7 @@ describe(compileCommand, () => {
     expect(stderr).not.toContain('Warning:');
   });
 
-  it('writes warning to stderr when upsert encounters non-missing-file error', async () => {
+  it('warns once with a remedy when the existing manifest is unreadable, and still writes the manifest', async () => {
     using tree = createTempTree(
       { 'deploy.ts': COMPILED, '.readyup/manifest.json': JSON.stringify({ version: 1, kits: 'bad data' }) },
       { prefix: 'rdy-compile-upsert-' },
@@ -105,10 +105,45 @@ describe(compileCommand, () => {
 
     const { stderr } = await compile(['deploy.ts']);
 
-    expect(stderr).toContain('Warning:');
+    expect(stderr.match(/^Warning:/gm)).toHaveLength(1);
     expect(stderr).toContain('Invalid manifest schema');
-    // Still writes the manifest despite the warning
+    expect(stderr).toContain('Run `rdy compile` without an input file to record every kit.');
     expect(readTreeManifest(tree)).toStrictEqual({ version: 1, kits: [buildDeployEntry()] });
+  });
+
+  it('reports an unreadable manifest under --json for a compiled kit', async () => {
+    using tree = createTempTree(
+      { 'deploy.ts': COMPILED, '.readyup/manifest.json': '{ not json' },
+      { prefix: 'rdy-compile-upsert-' },
+    );
+    using _cwd = pointCwdAt(tree.dir);
+
+    const payload = await compileForPayload(['deploy.ts']);
+
+    expect(payload).toMatchObject({
+      warnings: [
+        {
+          code: 'manifest-unreadable',
+          remedy: 'Run `rdy compile` without an input file to record every kit.',
+        },
+      ],
+    });
+  });
+
+  it('reports an unreadable manifest under --json for a kit that failed to compile', async () => {
+    using tree = createTempTree(
+      { 'deploy.ts': COMPILED, '.readyup/manifest.json': '{ not json' },
+      { prefix: 'rdy-compile-upsert-' },
+    );
+    using _cwd = pointCwdAt(tree.dir);
+    mockCompileConfig.mockRejectedValueOnce(new Error('deploy is not valid TypeScript'));
+
+    const payload = await compileForPayload(['deploy.ts']);
+
+    expect(payload).toMatchObject({
+      kits: [{ status: 'failed' }],
+      warnings: [{ code: 'manifest-unreadable' }],
+    });
   });
 
   it('uses custom manifest path from --manifest flag for single-file compile', async () => {

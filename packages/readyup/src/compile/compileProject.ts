@@ -15,7 +15,7 @@ import { writeWarnings } from '../output/writeWarnings.ts';
 import { toDisplayPath } from '../portable/toDisplayPath.ts';
 import type { RaisedWarning } from '../schemas/common.ts';
 import { collectSourceFiles } from './collectSourceFiles.ts';
-import { loadExistingKitsByName } from './compile-manifest.ts';
+import { loadExistingManifest } from './compile-manifest.ts';
 import type { ProjectCompileOutcome } from './compile-outcome.ts';
 import {
   buildNoSourcesHint,
@@ -74,9 +74,11 @@ export async function compileProject(args: CompileProjectArgs): Promise<ProjectC
   }
 
   const manifestDir = path.dirname(manifestPath);
-  const existingKitsByName = shouldSkipManifest
-    ? new Map<string, RdyManifestKit>()
-    : loadExistingKitsByName(manifestPath);
+  const existingManifest = shouldSkipManifest
+    ? { kitsByName: new Map<string, RdyManifestKit>(), warnings: [] }
+    : loadExistingManifest(manifestPath);
+  const existingKitsByName = existingManifest.kitsByName;
+  writeWarnings(existingManifest.warnings);
   const sourceContext: SourceSweepContext = {
     existingKitsByName,
     isJson,
@@ -96,7 +98,7 @@ export async function compileProject(args: CompileProjectArgs): Promise<ProjectC
 
   const kitEntries = sources.flatMap((source) => (source.entry === undefined ? [] : [source.entry]));
   const kitResults = sources.map((source) => source.kit);
-  const warnings = sources.flatMap((source) => source.warnings);
+  const warnings = [...existingManifest.warnings, ...sources.flatMap((source) => source.warnings)];
   const skippedCount = kitResults.filter((kit) => kit.status === 'skipped').length;
   const failedCount = kitResults.filter((kit) => kit.status === 'failed').length;
 
