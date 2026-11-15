@@ -1,7 +1,14 @@
+import { pluralizeWithCount } from '@williamthorsen/toolbelt.strings';
+
 import { getLayout } from '../layout/engine.ts';
 import type { TokenName } from '../layout/formatter.ts';
 import type { RdyManifestKit } from '../manifest/manifestSchema.ts';
-import type { JsonVerifyKitEntry, JsonVerifyUncompiledEntry } from '../schemas/verifyOutputSchema.ts';
+import {
+  type JsonVerifyKitEntry,
+  type JsonVerifyOutput,
+  type JsonVerifyUncompiledEntry,
+  SCHEMA_VERSION,
+} from '../schemas/verifyOutputSchema.ts';
 import { VERSION } from '../version.ts';
 import type { DriftStatus } from './checkDrift.ts';
 import type { InputFailure, InputsStatus } from './checkInputDrift.ts';
@@ -9,6 +16,7 @@ import type { DependencyChange, RebuildStatus } from './checkRebuild.ts';
 import type { SourceStatus } from './checkSourceDrift.ts';
 import { resolveRemedies } from './resolveRemedies.ts';
 import { hasSourceFailed, hasTargetFailed, type KitVerdicts } from './verdicts.ts';
+import type { VerifyOutcome } from './verify-events.ts';
 
 /** Builds a kit's JSON entry, stating what a verdict compared only when it compared something. */
 export function buildVerifyEntry(
@@ -38,6 +46,32 @@ export function buildVerifyEntry(
     }),
     ...(rebuild?.kind === 'failed' && { rebuildError: rebuild.message }),
   };
+}
+
+/** Builds the `--json` document of a verify run from its outcome. */
+export function buildVerifyOutput({ kits, passed, projects, uncompiled }: VerifyOutcome): JsonVerifyOutput {
+  return {
+    schemaVersion: SCHEMA_VERSION,
+    passed,
+    kits,
+    ...(projects !== undefined && { projects }),
+    ...(uncompiled.length > 0 && { uncompiled }),
+  };
+}
+
+/** Returns the line that closes a manifest's block when any of its kits failed. */
+export function formatKitsFailedSummary(failedCount: number, totalCount: number): string {
+  return `\n${failedCount} of ${totalCount} kits failed verification.\n`;
+}
+
+/** Returns the heading that opens a manifest's block. */
+export function formatManifestHeading(manifestPath: string): string {
+  return `${getLayout().formatHeading(`Verifying kits against ${manifestPath}`, 'section')}\n`;
+}
+
+/** Returns the line that closes a recursive verify when any project failed, naming each failed project. */
+export function formatProjectsSummary(failedDirs: readonly string[], projectCount: number): string {
+  return `\nProblems in ${failedDirs.length} of ${pluralizeWithCount(projectCount, 'project')}: ${failedDirs.join(', ')}\n`;
 }
 
 /**

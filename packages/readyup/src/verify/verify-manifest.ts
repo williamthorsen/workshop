@@ -16,19 +16,20 @@ import { DEFAULT_MANIFEST_PATH } from '../manifest/manifestPath.ts';
 import type { RdyManifest } from '../manifest/manifestSchema.ts';
 import { ManifestNotFoundError, readManifest } from '../manifest/readManifest.ts';
 import { writeHuman } from '../output/writeHuman.ts';
-import {
-  type JsonVerifyKitEntry,
-  type JsonVerifyOutput,
-  type JsonVerifyProjectEntry,
-  type JsonVerifyUncompiledEntry,
-  SCHEMA_VERSION,
-} from '../schemas/verifyOutputSchema.ts';
+import type { JsonVerifyKitEntry, JsonVerifyUncompiledEntry } from '../schemas/verifyOutputSchema.ts';
 import { checkDrift } from './checkDrift.ts';
 import { checkInputDrift } from './checkInputDrift.ts';
 import { checkRebuild } from './checkRebuild.ts';
 import { checkSourceDrift } from './checkSourceDrift.ts';
 import type { KitVerdicts } from './verdicts.ts';
-import { buildVerifyEntry, formatStatusLine, formatUncompiledLine, isPassingVerdict } from './verify-report.ts';
+import type { ManifestVerification, VerifyOutcome } from './verify-events.ts';
+import {
+  buildVerifyEntry,
+  buildVerifyOutput,
+  formatStatusLine,
+  formatUncompiledLine,
+  isPassingVerdict,
+} from './verify-report.ts';
 
 /** The real collaborators of verification. */
 export const defaultVerifyDependencies: VerifyDependencies = {
@@ -77,19 +78,12 @@ export interface FindUncompiledKitsArgs {
 }
 
 /** Emits the verify payload under `--json` and turns the run's verdict into an exit code. */
-export function finishVerify({ kits, passed, projects, uncompiled }: VerifyOutcome, isJson: boolean): number {
+export function finishVerify(outcome: VerifyOutcome, isJson: boolean): number {
   if (isJson) {
-    const output: JsonVerifyOutput = {
-      schemaVersion: SCHEMA_VERSION,
-      passed,
-      kits,
-      ...(projects !== undefined && { projects }),
-      ...(uncompiled.length > 0 && { uncompiled }),
-    };
-    process.stdout.write(JSON.stringify(output) + '\n');
+    process.stdout.write(JSON.stringify(buildVerifyOutput(outcome)) + '\n');
   }
 
-  return passed ? EXIT_OK : EXIT_PROBLEMS_FOUND;
+  return outcome.passed ? EXIT_OK : EXIT_PROBLEMS_FOUND;
 }
 
 /**
@@ -128,14 +122,6 @@ export async function loadVerifyConfig(
   } catch (error: unknown) {
     throw configError(describeError(error), { cause: error, hint: extractHint(error) });
   }
-}
-
-/** One manifest's contribution to a verify run. */
-export interface ManifestVerification {
-  kits: JsonVerifyKitEntry[];
-  /** `true` when every kit in the manifest passed and every selected source is recorded. */
-  passed: boolean;
-  uncompiled: JsonVerifyUncompiledEntry[];
 }
 
 /**
@@ -231,10 +217,4 @@ export interface VerifyManifestArgs {
   project?: string;
   /** The kits that the compile settings select and the manifest does not record. */
   uncompiled: JsonVerifyUncompiledEntry[];
-}
-
-/** A verify run's result, before it is emitted. */
-export interface VerifyOutcome extends ManifestVerification {
-  /** Every project that a recursive verify visited; absent from any other run. */
-  projects?: JsonVerifyProjectEntry[];
 }
