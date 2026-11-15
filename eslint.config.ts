@@ -92,6 +92,7 @@ const config = defineConfig([
           allowNumber: true,
         },
       ],
+      'sky-pilot/helpers-last': 'error',
     },
   },
   defineConfig({
