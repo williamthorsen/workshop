@@ -68,11 +68,6 @@ describe('readyup source tree is side-effect-free', () => {
 });
 
 // region | Helpers
-
-function toSrcRelative(absolutePath: string): string {
-  return relative(SRC_ROOT, absolutePath).split('\\').join('/');
-}
-
 function collectSrcFiles(dir: string): string[] {
   const out: string[] = [];
   const entries = readdirSync(dir, { withFileTypes: true });
@@ -86,6 +81,13 @@ function collectSrcFiles(dir: string): string[] {
     }
   }
   return out;
+}
+
+function extractSideEffectsArray(parsed: unknown): Set<string> {
+  if (!isRecord(parsed)) return new Set();
+  const value = parsed['sideEffects'];
+  if (!Array.isArray(value)) return new Set();
+  return new Set(value.filter((entry): entry is string => typeof entry === 'string'));
 }
 
 function findTopLevelSideEffects(absolutePath: string): Offender[] {
@@ -104,11 +106,7 @@ function findTopLevelSideEffects(absolutePath: string): Offender[] {
   return offenders;
 }
 
-function extractSideEffectsArray(parsed: unknown): Set<string> {
-  if (!isRecord(parsed)) return new Set();
-  const value = parsed['sideEffects'];
-  if (!Array.isArray(value)) return new Set();
-  return new Set(value.filter((entry): entry is string => typeof entry === 'string'));
+function toSrcRelative(absolutePath: string): string {
+  return relative(SRC_ROOT, absolutePath).split('\\').join('/');
 }
-
 // endregion | Helpers

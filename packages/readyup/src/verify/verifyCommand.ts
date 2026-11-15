@@ -98,10 +98,20 @@ export async function verifyCommand(
 }
 
 // region | Helpers
-
 /** Turns a run's verdict into its exit code. */
 function toExitCode(outcome: VerifyOutcome): number {
   return outcome.passed ? EXIT_OK : EXIT_PROBLEMS_FOUND;
+}
+
+/** Writes what closes a recursive verify: a note when it found no projects, or the list of projects that failed. */
+function writeProjectsClosing(projects: NonNullable<VerifyOutcome['projects']>, isJson: boolean): void {
+  if (projects.length === 0) {
+    writeHuman('No kit projects found.\n', isJson);
+    return;
+  }
+
+  const failedDirs = projects.filter((entry) => !entry.passed).map((entry) => entry.project);
+  if (failedDirs.length > 0) writeHuman(formatProjectsSummary(failedDirs, projects.length), isJson);
 }
 
 /**
@@ -155,16 +165,4 @@ async function writeVerifyEvents(events: AsyncGenerator<VerifyEvent>, isJson: bo
 
   throw new Error('rdy verify ended without a verifyFinished event');
 }
-
-/** Writes what closes a recursive verify: a note when it found no projects, or the list of projects that failed. */
-function writeProjectsClosing(projects: NonNullable<VerifyOutcome['projects']>, isJson: boolean): void {
-  if (projects.length === 0) {
-    writeHuman('No kit projects found.\n', isJson);
-    return;
-  }
-
-  const failedDirs = projects.filter((entry) => !entry.passed).map((entry) => entry.project);
-  if (failedDirs.length > 0) writeHuman(formatProjectsSummary(failedDirs, projects.length), isJson);
-}
-
 // endregion | Helpers

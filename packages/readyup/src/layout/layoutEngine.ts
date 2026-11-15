@@ -322,11 +322,6 @@ export function createLayoutEngine(formatter: Formatter): LayoutEngine {
   };
 }
 
-/** Returns `segments` separated as a heading separates them, without the role glyphs added by a heading. */
-function formatBreadcrumbLabel(segments: BreadcrumbSegment[]): string {
-  return segments.map((segment) => segment.text).join(SEGMENT_SEPARATOR);
-}
-
 /** Returns the token for a severity, or the `passed` token for `null`. */
 export function resolveWorstToken(worstSeverity: Severity | null): TokenName {
   if (worstSeverity === 'error') return 'failedError';
@@ -335,13 +330,20 @@ export function resolveWorstToken(worstSeverity: Severity | null): TokenName {
   return 'passed';
 }
 
-/** Returns the formatted duration, or `undefined` for a skipped token or a duration under the floor. */
-function resolveDuration(token: TokenName, durationMs: number | undefined): string | undefined {
-  if (durationMs === undefined || SKIPPED_TOKENS.has(token)) return undefined;
-  return durationMs >= DURATION_FLOOR_MS ? formatDuration(durationMs) : undefined;
+// region | Helpers
+/** Returns `segments` separated as a heading separates them, without the role glyphs added by a heading. */
+function formatBreadcrumbLabel(segments: BreadcrumbSegment[]): string {
+  return segments.map((segment) => segment.text).join(SEGMENT_SEPARATOR);
 }
 
 /** Returns a whole number of milliseconds with its unit. */
 function formatDuration(ms: number): string {
   return `${Math.round(ms)}ms`;
 }
+
+/** Returns the formatted duration, or `undefined` for a skipped token or a duration under the floor. */
+function resolveDuration(token: TokenName, durationMs: number | undefined): string | undefined {
+  if (durationMs === undefined || SKIPPED_TOKENS.has(token)) return undefined;
+  return durationMs >= DURATION_FLOOR_MS ? formatDuration(durationMs) : undefined;
+}
+// endregion | Helpers

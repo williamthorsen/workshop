@@ -6,20 +6,6 @@ import { initialize, load, resolve } from '../readyupResolverHook.ts';
 const READYUP_PARENT_URL = 'file:///runner/node_modules/readyup/dist/esm/bin/rdy.js';
 const KIT_PARENT_URL = 'file:///tmp/rdy-XYZ/kit.js';
 
-/** Returns the minimal `context` object that Node passes to a resolve hook. */
-function buildContext(overrides: Partial<{ parentURL: string; conditions: string[] }> = {}) {
-  return {
-    conditions: overrides.conditions ?? ['node', 'import'],
-    importAttributes: {},
-    parentURL: overrides.parentURL,
-  };
-}
-
-/** Stands in for `nextResolve`, returning a synthetic URL. */
-function buildNextResolve() {
-  return vi.fn().mockReturnValue({ url: 'file:///resolved.js', shortCircuit: true });
-}
-
 describe('readyupResolverHook', () => {
   beforeEach(() => {
     initialize({ readyupParentURL: READYUP_PARENT_URL });
@@ -160,3 +146,19 @@ describe('readyupResolverHook', () => {
     });
   });
 });
+
+// region | Helpers
+/** Returns the minimal `context` object that Node passes to a resolve hook. */
+function buildContext(overrides: Partial<{ parentURL: string; conditions: string[] }> = {}) {
+  return {
+    conditions: overrides.conditions ?? ['node', 'import'],
+    importAttributes: {},
+    parentURL: overrides.parentURL,
+  };
+}
+
+/** Stands in for `nextResolve`, returning a synthetic URL. */
+function buildNextResolve() {
+  return vi.fn().mockReturnValue({ url: 'file:///resolved.js', shortCircuit: true });
+}
+// endregion | Helpers

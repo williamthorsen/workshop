@@ -41,31 +41,10 @@ export function listUnusedPragmaWarnings(ledger: PragmaLedger): RaisedWarning[] 
 }
 
 // region | Helpers
-
 /** Orders two pragmas by the path printed for them, then by the line on which they sit. */
 function byPathThenLine(a: UnusedPragma, b: UnusedPragma): number {
   if (a.displayPath !== b.displayPath) return a.displayPath < b.displayPath ? -1 : 1;
   return a.line - b.line;
-}
-
-/** Returns every pragma in the run's examined sources against which no check suppressed a finding. */
-function listUnusedPragmas(ledger: PragmaLedger): UnusedPragma[] {
-  const unused: UnusedPragma[] = [];
-
-  for (const scannedPath of ledger.scannedPaths()) {
-    if (!isJsFamilyPath(scannedPath)) continue;
-
-    // Read the file by the path under which a sweep read it, so that the scan reads the sweep's cached text.
-    const displayPath = path.relative(process.cwd(), scannedPath);
-    const text = readSourceText(displayPath);
-    if (text === undefined) continue;
-
-    for (const site of listPragmaSites(text)) {
-      if (!ledger.hasSuppressed(scannedPath, site.coveredLine)) unused.push({ ...site, displayPath });
-    }
-  }
-
-  return unused;
 }
 
 /** Returns the remedy for the ids that an unused pragma names and no check of the run accepts. */
@@ -92,6 +71,26 @@ function listUnmatchedIds(pragma: UnusedPragma, checkIds: readonly CheckIds[]): 
   return [...new Set(unmatched)];
 }
 
+/** Returns every pragma in the run's examined sources against which no check suppressed a finding. */
+function listUnusedPragmas(ledger: PragmaLedger): UnusedPragma[] {
+  const unused: UnusedPragma[] = [];
+
+  for (const scannedPath of ledger.scannedPaths()) {
+    if (!isJsFamilyPath(scannedPath)) continue;
+
+    // Read the file by the path under which a sweep read it, so that the scan reads the sweep's cached text.
+    const displayPath = path.relative(process.cwd(), scannedPath);
+    const text = readSourceText(displayPath);
+    if (text === undefined) continue;
+
+    for (const site of listPragmaSites(text)) {
+      if (!ledger.hasSuppressed(scannedPath, site.coveredLine)) unused.push({ ...site, displayPath });
+    }
+  }
+
+  return unused;
+}
+
 /** Composes the warning raised by one unused pragma. */
 function toWarning(pragma: UnusedPragma, checkIds: readonly CheckIds[]): RaisedWarning {
   const site = `\`${pragma.token}\` pragma at ${pragma.displayPath}:${pragma.line} suppressed no finding in this run`;
@@ -106,5 +105,4 @@ function toWarning(pragma: UnusedPragma, checkIds: readonly CheckIds[]): RaisedW
     remedy: composeIdRemedy(unmatched, checkIds),
   };
 }
-
 // endregion | Helpers

@@ -159,12 +159,7 @@ export function assertIsRdyKit(raw: unknown, source?: string): asserts raw is Rd
   throw new Error(formatValidationError(result.error, heading));
 }
 
-/** Returns a heading plus one sentence per issue from a failed parse. */
-function formatValidationError(error: ZodError, heading: string): string {
-  const lines = error.issues.map((issue) => `  ${formatIssuePath(issue.path)}: ${issue.message}`);
-  return [heading, ...lines].join('\n');
-}
-
+// region | Helpers
 /**
  * Renders an issue path in the notation that an author would use to reach the value.
  *
@@ -180,6 +175,12 @@ function formatIssuePath(path: ReadonlyArray<PropertyKey>): string {
       return index === 0 ? String(segment) : `.${String(segment)}`;
     })
     .join('');
+}
+
+/** Returns a heading plus one sentence per issue from a failed parse. */
+function formatValidationError(error: ZodError, heading: string): string {
+  const lines = error.issues.map((issue) => `  ${formatIssuePath(issue.path)}: ${issue.message}`);
+  return [heading, ...lines].join('\n');
 }
 
 /**
@@ -205,3 +206,4 @@ function hideDeferredFields(value: unknown): unknown {
   // `Reflect.getPrototypeOf` rather than `Object.getPrototypeOf`, which is declared to return `any`.
   return Object.create(Reflect.getPrototypeOf(value), descriptors);
 }
+// endregion | Helpers

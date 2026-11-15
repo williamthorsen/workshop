@@ -65,6 +65,13 @@ export interface JitiImportOptions {
   transformSource?: (source: string, filename: string) => string;
 }
 
+// region | Helpers
+/** What a reader is told about a specifier that jiti could not resolve. */
+interface UnresolvedModuleReport {
+  hint: string | undefined;
+  message: string;
+}
+
 /**
  * Returns a jiti instance that applies `transformSource` to each module's source and then jiti's own transform.
  *
@@ -85,12 +92,6 @@ function createTransformingJiti(
       return { code: base.transform({ ...transformOptions, source: rewritten }) };
     },
   });
-}
-
-/** What a reader is told about a specifier that jiti could not resolve. */
-interface UnresolvedModuleReport {
-  hint: string | undefined;
-  message: string;
 }
 
 /**
@@ -140,3 +141,4 @@ function isPackageSpecifier(specifier: string): boolean {
 function readImporter(message: string): string | undefined {
   return message.match(/Require stack:\n- (.+)/)?.[1];
 }
+// endregion | Helpers

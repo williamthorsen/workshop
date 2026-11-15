@@ -45,7 +45,6 @@ export async function listUnmarkedGeneratedSourceWarnings(ledger: PragmaLedger):
 }
 
 // region | Helpers
-
 /** Orders two sources by the path printed for them. */
 function byDisplayPath(a: UnmarkedSource, b: UnmarkedSource): number {
   if (a.displayPath === b.displayPath) return 0;
@@ -71,6 +70,11 @@ function formatAttributePattern(rootPath: string): string {
   }
 
   return needsQuotes ? `"${quoted}"` : pattern;
+}
+
+/** Reports whether a character is a C0 control character, which a quoted pattern writes as an escape. */
+function isControlCharacter(character: string): boolean {
+  return (character.codePointAt(0) ?? 0) < 0x20;
 }
 
 /** Returns the examined sources that look like bundler output and that the project has not marked. */
@@ -111,11 +115,6 @@ async function listUnmarkedSources(ledger: PragmaLedger): Promise<UnmarkedSource
   return unmarked;
 }
 
-/** Reports whether a character is a C0 control character, which a quoted pattern writes as an escape. */
-function isControlCharacter(character: string): boolean {
-  return (character.codePointAt(0) ?? 0) < 0x20;
-}
-
 /** Reports whether a character cannot appear in an unquoted `.gitattributes` pattern. */
 function needsQuoting(character: string): boolean {
   return character === '"' || /\s/.test(character) || isControlCharacter(character);
@@ -149,5 +148,4 @@ function toWarning(source: UnmarkedSource): RaisedWarning {
     remedy: `Add \`${formatAttributePattern(source.rootPath)} linguist-generated=true\` to .gitattributes, so that kits stop sweeping it.`,
   };
 }
-
 // endregion | Helpers

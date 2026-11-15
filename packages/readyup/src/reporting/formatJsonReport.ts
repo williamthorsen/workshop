@@ -113,6 +113,7 @@ export function formatJsonReport(kitInputs: KitInput[], options: FormatJsonRepor
   return JSON.stringify(report);
 }
 
+// region | Helpers
 /** Returns one kit's entry alongside the raw figures that the report aggregates from it. */
 function aggregateKit(input: KitResultInput, detail: JsonDetail): AggregatedKit {
   const counts = emptyCounts();
@@ -145,54 +146,6 @@ function aggregateKit(input: KitResultInput, detail: JsonDetail): AggregatedKit 
   };
 
   return { entry, counts, durationMs };
-}
-
-/**
- * Splits the runner's internal tally into the wire shape: six numbers under `counts`, worst severity
- * beside them.
- *
- * `worstSeverity` is derived verdict data rather than a count, so it is outside the object that it
- * summarizes; a run that failed nothing has no worst severity and omits the field.
- */
-function splitCounts(counts: SummaryCounts): { counts: JsonCounts; worstSeverity?: Severity } {
-  const { worstSeverity, ...numeric } = counts;
-  return worstSeverity === null ? { counts: numeric } : { counts: numeric, worstSeverity };
-}
-
-/**
- * Returns a checklist entry's `checks` property, omitted when the projection leaves it empty.
- *
- * Because the reporting threshold prunes first and the detail projection second, `summary` shows the same
- * failures that `full` would, without the checks that passed around them.
- */
-function buildDetailTree(results: RdyResult[], reportOn: Severity, detail: JsonDetail): { checks?: JsonCheckEntry[] } {
-  const visibleResults = selectVisibleResults(results, reportOn);
-  const checks =
-    detail === 'summary' ? buildSummaryEntries(visibleResults) : buildCheckEntries(visibleResults, 0, 0).entries;
-  return checks.length > 0 ? { checks } : {};
-}
-
-/**
- * Returns visible results reduced to what `--detail summary` shows: the failures and their remedies.
- *
- * Nesting is dropped along with the checks that passed, because what survives is a work list rather
- * than a trace of the run.
- */
-function buildSummaryEntries(results: RdyResult[]): JsonCheckEntry[] {
-  return results
-    .filter((result) => result.status === 'failed')
-    .map((result) => {
-      const entry: JsonCheckEntry = {
-        name: result.name,
-        status: result.status,
-        ok: result.ok,
-        severity: result.severity,
-        durationMs: Math.round(result.durationMs),
-      };
-      if (result.id !== null) entry.id = result.id;
-      if (result.fix !== null) entry.fix = result.fix;
-      return entry;
-    });
 }
 
 /**
@@ -256,3 +209,52 @@ function buildCheckEntry(result: RdyResult, children: JsonCheckEntry[]): JsonChe
 
   return entry;
 }
+
+/**
+ * Returns a checklist entry's `checks` property, omitted when the projection leaves it empty.
+ *
+ * Because the reporting threshold prunes first and the detail projection second, `summary` shows the same
+ * failures that `full` would, without the checks that passed around them.
+ */
+function buildDetailTree(results: RdyResult[], reportOn: Severity, detail: JsonDetail): { checks?: JsonCheckEntry[] } {
+  const visibleResults = selectVisibleResults(results, reportOn);
+  const checks =
+    detail === 'summary' ? buildSummaryEntries(visibleResults) : buildCheckEntries(visibleResults, 0, 0).entries;
+  return checks.length > 0 ? { checks } : {};
+}
+
+/**
+ * Returns visible results reduced to what `--detail summary` shows: the failures and their remedies.
+ *
+ * Nesting is dropped along with the checks that passed, because what survives is a work list rather
+ * than a trace of the run.
+ */
+function buildSummaryEntries(results: RdyResult[]): JsonCheckEntry[] {
+  return results
+    .filter((result) => result.status === 'failed')
+    .map((result) => {
+      const entry: JsonCheckEntry = {
+        name: result.name,
+        status: result.status,
+        ok: result.ok,
+        severity: result.severity,
+        durationMs: Math.round(result.durationMs),
+      };
+      if (result.id !== null) entry.id = result.id;
+      if (result.fix !== null) entry.fix = result.fix;
+      return entry;
+    });
+}
+
+/**
+ * Splits the runner's internal tally into the wire shape: six numbers under `counts`, worst severity
+ * beside them.
+ *
+ * `worstSeverity` is derived verdict data rather than a count, so it is outside the object that it
+ * summarizes; a run that failed nothing has no worst severity and omits the field.
+ */
+function splitCounts(counts: SummaryCounts): { counts: JsonCounts; worstSeverity?: Severity } {
+  const { worstSeverity, ...numeric } = counts;
+  return worstSeverity === null ? { counts: numeric } : { counts: numeric, worstSeverity };
+}
+// endregion | Helpers

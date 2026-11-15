@@ -6,22 +6,6 @@ import { describe, expect, it } from 'vitest';
 import { isRecord } from '../../portable/isRecord.ts';
 import { listRunnerExports, listRunnerSpecifiers } from '../listRunnerExports.ts';
 
-/**
- * Returns the specifiers that this package's `exports` map serves as JavaScript.
- *
- * A JSON subpath is excluded: It has no named exports for the table to account for.
- */
-function readPublishedSpecifiers(): string[] {
-  const packageJsonPath = path.resolve(import.meta.dirname, '../../../package.json');
-  const parsed: unknown = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
-  if (!isRecord(parsed) || !isRecord(parsed['exports'])) throw new Error('package.json declares no exports map');
-
-  return Object.keys(parsed['exports'])
-    .filter((subpath) => !subpath.endsWith('.json'))
-    .map((subpath) => (subpath === '.' ? 'readyup' : subpath.replace('.', 'readyup')))
-    .toSorted();
-}
-
 describe(listRunnerSpecifiers, () => {
   it('accounts for every JavaScript subpath published by the package', () => {
     expect(listRunnerSpecifiers().toSorted()).toStrictEqual(readPublishedSpecifiers());
@@ -56,3 +40,21 @@ describe(listRunnerExports, () => {
     expect(listRunnerExports('readyup/legacy')).toBeUndefined();
   });
 });
+
+// region | Helpers
+/**
+ * Returns the specifiers that this package's `exports` map serves as JavaScript.
+ *
+ * A JSON subpath is excluded: It has no named exports for the table to account for.
+ */
+function readPublishedSpecifiers(): string[] {
+  const packageJsonPath = path.resolve(import.meta.dirname, '../../../package.json');
+  const parsed: unknown = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
+  if (!isRecord(parsed) || !isRecord(parsed['exports'])) throw new Error('package.json declares no exports map');
+
+  return Object.keys(parsed['exports'])
+    .filter((subpath) => !subpath.endsWith('.json'))
+    .map((subpath) => (subpath === '.' ? 'readyup' : subpath.replace('.', 'readyup')))
+    .toSorted();
+}
+// endregion | Helpers

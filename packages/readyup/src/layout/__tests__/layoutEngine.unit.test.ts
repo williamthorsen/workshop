@@ -425,6 +425,10 @@ describe('token and glyph', () => {
 });
 
 // region | Helpers
+/** Returns a line's count of leading spaces, one per column. */
+function measureIndent(line: string): number {
+  return line.length - line.trimStart().length;
+}
 
 /**
  * Returns the display column at which a rendered line's name begins.
@@ -442,10 +446,4 @@ function measureNameColumn(line: string): number {
 
   return (indent?.length ?? 0) + token.width + (pad?.length ?? 0);
 }
-
-/** Returns a line's count of leading spaces, one per column. */
-function measureIndent(line: string): number {
-  return line.length - line.trimStart().length;
-}
-
 // endregion | Helpers

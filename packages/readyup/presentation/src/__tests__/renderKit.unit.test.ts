@@ -115,6 +115,12 @@ describe(renderKit, () => {
 });
 
 // region | Helpers
+/** Returns the lines that rdy prints for `kit` in `env`, without escape sequences. */
+function listPrintedLines(kit: KitModel, env: Record<string, boolean>): string[] {
+  return renderKit(kit, env)
+    .lines.filter(({ printed }) => printed)
+    .map(({ text }) => stripEscapes(text));
+}
 
 /** Returns the parsed report, whose top level and first kit the tests read. */
 function parseReport(json: string): { kits: unknown[] } {
@@ -124,12 +130,4 @@ function parseReport(json: string): { kits: unknown[] } {
   }
   return { ...parsed, kits: parsed.kits };
 }
-
-/** Returns the lines that rdy prints for `kit` in `env`, without escape sequences. */
-function listPrintedLines(kit: KitModel, env: Record<string, boolean>): string[] {
-  return renderKit(kit, env)
-    .lines.filter(({ printed }) => printed)
-    .map(({ text }) => stripEscapes(text));
-}
-
 // endregion | Helpers

@@ -12,10 +12,6 @@ const FAILED = richFormatter.tokens.failedError.text;
 
 const PATH = '.config/readyup.config.ts';
 
-function makeResult(overrides: Partial<WriteResult> = {}): WriteResult {
-  return { filePath: PATH, outcome: 'created', ...overrides };
-}
-
 describe(printStep, () => {
   it('renders a step label as a section heading, separated from what precedes it', () => {
     using silent = silenceConsole(['info']);
@@ -137,3 +133,9 @@ describe(reportWriteResult, () => {
     expect(written).not.toContain(retired);
   });
 });
+
+// region | Helpers
+function makeResult(overrides: Partial<WriteResult> = {}): WriteResult {
+  return { filePath: PATH, outcome: 'created', ...overrides };
+}
+// endregion | Helpers

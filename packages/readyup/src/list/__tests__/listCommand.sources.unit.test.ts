@@ -259,21 +259,6 @@ describe('list --sources', () => {
 });
 
 // region | Helpers
-
-/** Serves one manifest URL a manifest listing the given kits, and every other URL as absent. */
-function serveManifest(manifestUrl: string, kits: Array<{ name: string; description?: string }>): void {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn((url: string) =>
-      Promise.resolve(
-        url === manifestUrl
-          ? mockResponse(JSON.stringify({ version: 1, kits }))
-          : mockResponse('', { status: 404, statusText: 'Not Found' }),
-      ),
-    ),
-  );
-}
-
 /** Points the mocked config loader at the given source entries, leaving every other setting at its default. */
 function configurePackages(entries: string[]): void {
   mockLoadConfig.mockResolvedValue({
@@ -312,4 +297,17 @@ async function runForPayload(): Promise<unknown> {
   return JSON.parse(stdout);
 }
 
+/** Serves one manifest URL a manifest listing the given kits, and every other URL as absent. */
+function serveManifest(manifestUrl: string, kits: Array<{ name: string; description?: string }>): void {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn((url: string) =>
+      Promise.resolve(
+        url === manifestUrl
+          ? mockResponse(JSON.stringify({ version: 1, kits }))
+          : mockResponse('', { status: 404, statusText: 'Not Found' }),
+      ),
+    ),
+  );
+}
 // endregion | Helpers

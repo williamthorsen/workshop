@@ -42,6 +42,7 @@ export function buildInstallCommand(...packageNames: string[]): string {
   return `${findInstallCommand() ?? DEFAULT_COMMAND} ${packageNames.join(' ')}`;
 }
 
+// region | Helpers
 /**
  * Returns the install command for the package manager governing the current directory.
  *
@@ -67,21 +68,6 @@ function findInstallCommand(): string | undefined {
   return undefined;
 }
 
-/** Returns the package-manager name in a `package.json`, dropping the version pinned by Corepack. */
-function readDeclaredManager(packageJsonPath: string): string | undefined {
-  if (!existsSync(packageJsonPath)) return undefined;
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
-  } catch {
-    return undefined;
-  }
-
-  const declared = isRecord(parsed) ? parsed['packageManager'] : undefined;
-  return typeof declared === 'string' ? /^[a-z]+/.exec(declared)?.[0] : undefined;
-}
-
 /** Returns a directory and every directory above it, nearest first. */
 function listSelfAndAncestors(from: string): string[] {
   const directories = [from];
@@ -96,3 +82,19 @@ function listSelfAndAncestors(from: string): string[] {
 
   return directories;
 }
+
+/** Returns the package-manager name in a `package.json`, dropping the version pinned by Corepack. */
+function readDeclaredManager(packageJsonPath: string): string | undefined {
+  if (!existsSync(packageJsonPath)) return undefined;
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
+  } catch {
+    return undefined;
+  }
+
+  const declared = isRecord(parsed) ? parsed['packageManager'] : undefined;
+  return typeof declared === 'string' ? /^[a-z]+/.exec(declared)?.[0] : undefined;
+}
+// endregion | Helpers

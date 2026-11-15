@@ -104,8 +104,10 @@ describe(buildInstallCommand, () => {
   });
 });
 
+// region | Helpers
 /** Makes `existsSync` return true for exactly the given paths. */
 function presentFiles(...paths: string[]): void {
   const present = new Set(paths);
   mockExistsSync.mockImplementation((target: string) => present.has(target));
 }
+// endregion | Helpers

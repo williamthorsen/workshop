@@ -30,14 +30,6 @@ vi.mock(import('../../installed-packages/isPackageInstalled.ts'), () => ({
 
 import { initCommand } from '../initCommand.ts';
 
-/** Returns a scaffold result whose two files share one outcome. */
-function makeScaffoldResult(outcome: string) {
-  return {
-    configResult: { filePath: '.config/readyup.config.ts', outcome },
-    kitResult: { filePath: '.readyup/kits/default.ts', outcome },
-  };
-}
-
 describe(`${initCommand.name} error handling`, () => {
   afterEach(() => {
     mockScaffoldConfig.mockReset();
@@ -210,7 +202,17 @@ describe(`${initCommand.name} next steps`, () => {
   });
 });
 
+// region | Helpers
+/** Returns a scaffold result whose two files share one outcome. */
+function makeScaffoldResult(outcome: string) {
+  return {
+    configResult: { filePath: '.config/readyup.config.ts', outcome },
+    kitResult: { filePath: '.readyup/kits/default.ts', outcome },
+  };
+}
+
 /** Returns everything written to `console.info` joined into one string. */
 function printedSteps(infoSpy: MockInstance): string {
   return infoSpy.mock.calls.map((call) => String(call[0])).join('\n');
 }
+// endregion | Helpers

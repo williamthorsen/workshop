@@ -13,15 +13,6 @@ export interface WriteResult {
   error?: string;
 }
 
-/** Returns `content` with trailing whitespace stripped from each line and from the end of the file. */
-function normalizeTrailingWhitespace(content: string): string {
-  return content
-    .split('\n')
-    .map((line) => line.trimEnd())
-    .join('\n')
-    .trimEnd();
-}
-
 /**
  * Writes a file, reporting what the write did to what was already there.
  *
@@ -73,3 +64,14 @@ export function writeFileWithCheck(
 
   return { filePath, outcome };
 }
+
+// region | Helpers
+/** Returns `content` with trailing whitespace stripped from each line and from the end of the file. */
+function normalizeTrailingWhitespace(content: string): string {
+  return content
+    .split('\n')
+    .map((line) => line.trimEnd())
+    .join('\n')
+    .trimEnd();
+}
+// endregion | Helpers

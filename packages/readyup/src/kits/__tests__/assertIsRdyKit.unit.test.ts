@@ -3,11 +3,6 @@ import { describe, expect, it } from 'vitest';
 
 import { assertIsBuiltCheckList, assertIsRdyKit } from '../assertIsRdyKit.ts';
 
-/** Runs the assertion and returns the message that it threw, failing the test when it accepted the value. */
-async function messageFrom(raw: unknown, source?: string): Promise<string> {
-  return (await captureError(() => assertIsRdyKit(raw, source))).message;
-}
-
 describe(assertIsRdyKit, () => {
   describe('kit shape', () => {
     it('throws when input is not an object', () => {
@@ -570,3 +565,10 @@ describe(assertIsBuiltCheckList, () => {
     expect(message).toContain('checks[1].checks[0].name: expected a non-empty string');
   });
 });
+
+// region | Helpers
+/** Runs the assertion and returns the message that it threw, failing the test when it accepted the value. */
+async function messageFrom(raw: unknown, source?: string): Promise<string> {
+  return (await captureError(() => assertIsRdyKit(raw, source))).message;
+}
+// endregion | Helpers

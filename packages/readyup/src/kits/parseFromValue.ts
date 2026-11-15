@@ -77,29 +77,7 @@ export function parseFromValue(value: string): FromSource {
   return { type: 'local', path: value };
 }
 
-/**
- * Parses `owner/name[@ref]` into owner, name, and ref components.
- *
- * The `@ref` part is optional; defaults to `main`.
- */
-function parseOrgRepo(value: string): { owner: string; name: string; ref: string } {
-  const atIndex = value.lastIndexOf('@');
-  const slug = atIndex === -1 ? value : value.slice(0, atIndex);
-  const ref = atIndex === -1 ? 'main' : value.slice(atIndex + 1);
-
-  if (ref === '') {
-    throw new InvalidFromValueError(`Invalid --from value: ref after '@' must not be empty in "${value}"`);
-  }
-
-  // The slash must be strictly inside the slug, leaving a non-empty owner and name on either side.
-  const slashIndex = slug.indexOf('/');
-  if (slashIndex <= 0 || slashIndex === slug.length - 1) {
-    throw new InvalidFromValueError(`Invalid --from value: expected "owner/repo" format, got "${slug}"`);
-  }
-
-  return { owner: slug.slice(0, slashIndex), name: slug.slice(slashIndex + 1), ref };
-}
-
+// region | Helpers
 /**
  * Parses `name[@version]` into an npm package name and an optional version spec.
  *
@@ -128,3 +106,27 @@ function parseNpmSpecifier(value: string): { name: string; versionSpec: string |
 
   return { name, versionSpec };
 }
+
+/**
+ * Parses `owner/name[@ref]` into owner, name, and ref components.
+ *
+ * The `@ref` part is optional; defaults to `main`.
+ */
+function parseOrgRepo(value: string): { owner: string; name: string; ref: string } {
+  const atIndex = value.lastIndexOf('@');
+  const slug = atIndex === -1 ? value : value.slice(0, atIndex);
+  const ref = atIndex === -1 ? 'main' : value.slice(atIndex + 1);
+
+  if (ref === '') {
+    throw new InvalidFromValueError(`Invalid --from value: ref after '@' must not be empty in "${value}"`);
+  }
+
+  // The slash must be strictly inside the slug, leaving a non-empty owner and name on either side.
+  const slashIndex = slug.indexOf('/');
+  if (slashIndex <= 0 || slashIndex === slug.length - 1) {
+    throw new InvalidFromValueError(`Invalid --from value: expected "owner/repo" format, got "${slug}"`);
+  }
+
+  return { owner: slug.slice(0, slashIndex), name: slug.slice(slashIndex + 1), ref };
+}
+// endregion | Helpers

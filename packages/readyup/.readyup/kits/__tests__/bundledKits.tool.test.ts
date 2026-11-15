@@ -127,15 +127,6 @@ describe('kits that readyup publishes', () => {
 });
 
 // region | Helpers
-
-/** The report entry for a kit that ran, failing the test when the runner reported a load error instead. */
-function pickKitResult(report: JsonReport, kitName: string): JsonKitResultEntry {
-  const kit = report.kits.find((candidate) => candidate.name === kitName);
-  assert.ok(kit !== undefined, `Report contains no entry named "${kitName}"`);
-  assert.ok(!('error' in kit), `Kit "${kitName}" failed to load`);
-  return kit;
-}
-
 /**
  * Installs this package's kits into a fixture project as an npm dependency would deliver them.
  *
@@ -166,4 +157,11 @@ async function installReadyupKits(projectRoot: string): Promise<void> {
   writeFileSync(path.join(packageRoot, '.readyup', 'manifest.json'), JSON.stringify({ version: 1, kits }));
 }
 
+/** The report entry for a kit that ran, failing the test when the runner reported a load error instead. */
+function pickKitResult(report: JsonReport, kitName: string): JsonKitResultEntry {
+  const kit = report.kits.find((candidate) => candidate.name === kitName);
+  assert.ok(kit !== undefined, `Report contains no entry named "${kitName}"`);
+  assert.ok(!('error' in kit), `Kit "${kitName}" failed to load`);
+  return kit;
+}
 // endregion | Helpers

@@ -52,11 +52,6 @@ const RdyConfigSchema = z.looseObject({
   sources: z.array(z.string()).optional(),
 });
 
-/** Validates that a raw value has the expected RdyConfig shape. */
-function assertIsRdyConfig(raw: unknown): asserts raw is RdyConfig {
-  RdyConfigSchema.parse(raw);
-}
-
 /** Options for `loadConfig`. */
 export interface LoadConfigOptions {
   /** Directory for which the config is read. Both the lookup chain and `overridePath` resolve against it. */
@@ -94,28 +89,7 @@ export async function loadConfig(options: LoadConfigOptions = {}): Promise<Resol
   return applyDefaults(raw);
 }
 
-/**
- * Locates the config file, or `undefined` when no config file exists at any lookup path.
- *
- * An override path skips the lookup chain, and a file missing at that path is an error rather than a
- * fall-through to defaults: Naming a config that is not there is a mistake, not a request for defaults.
- */
-function resolveConfigPath(fromDir: string, overridePath: string | undefined): string | undefined {
-  if (overridePath !== undefined) {
-    const resolvedPath = path.resolve(fromDir, overridePath);
-    if (!existsSync(resolvedPath)) {
-      throw new Error(`Config not found: ${resolvedPath}`);
-    }
-    return resolvedPath;
-  }
-
-  for (const lookupPath of CONFIG_LOOKUP_PATHS) {
-    const candidate = path.resolve(fromDir, lookupPath);
-    if (existsSync(candidate)) return candidate;
-  }
-  return undefined;
-}
-
+// region | Helpers
 /**
  * Fills every key that the config file left out with its default.
  *
@@ -141,6 +115,11 @@ function applyDefaults(raw: Record<string, unknown> & RdyConfig): ResolvedRdyCon
   };
 }
 
+/** Validates that a raw value has the expected RdyConfig shape. */
+function assertIsRdyConfig(raw: unknown): asserts raw is RdyConfig {
+  RdyConfigSchema.parse(raw);
+}
+
 /**
  * Validates one `omittedSources` entry, returning it as written.
  *
@@ -163,8 +142,31 @@ function rejectRetiredKeys(raw: Record<string, unknown>): void {
   }
 }
 
+/**
+ * Locates the config file, or `undefined` when no config file exists at any lookup path.
+ *
+ * An override path skips the lookup chain, and a file missing at that path is an error rather than a
+ * fall-through to defaults: Naming a config that is not there is a mistake, not a request for defaults.
+ */
+function resolveConfigPath(fromDir: string, overridePath: string | undefined): string | undefined {
+  if (overridePath !== undefined) {
+    const resolvedPath = path.resolve(fromDir, overridePath);
+    if (!existsSync(resolvedPath)) {
+      throw new Error(`Config not found: ${resolvedPath}`);
+    }
+    return resolvedPath;
+  }
+
+  for (const lookupPath of CONFIG_LOOKUP_PATHS) {
+    const candidate = path.resolve(fromDir, lookupPath);
+    if (existsSync(candidate)) return candidate;
+  }
+  return undefined;
+}
+
 /** Returns a glob key's patterns as a list, or `undefined` when the config did not declare the key. */
 function toPatterns(value: string | readonly string[] | undefined): string[] | undefined {
   if (value === undefined) return undefined;
   return typeof value === 'string' ? [value] : [...value];
 }
+// endregion | Helpers

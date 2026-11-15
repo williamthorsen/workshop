@@ -59,6 +59,7 @@ export function initCommand({ isDryRun, shouldForce }: InitOptions): number {
   return EXIT_OK;
 }
 
+// region | Helpers
 /**
  * Returns the numbered next steps printed after scaffolding.
  *
@@ -73,13 +74,10 @@ function buildNextSteps(): string {
   return steps.map((step, index) => `  ${index + 1}. ${step}`).join('\n');
 }
 
-// region | Helpers
-
 /** Returns the step that installs the missing packages, naming why esbuild is among them. */
 function describeInstallStep(missing: string[]): string {
   const noun = missing.length === 1 ? 'a dev dependency' : 'dev dependencies';
   const reason = missing.includes('esbuild') ? ' (rdy compile needs esbuild)' : '';
   return `Install ${missing.join(' and ')} as ${noun}${reason}: ${buildInstallCommand(...missing)}`;
 }
-
 // endregion | Helpers

@@ -71,7 +71,9 @@ describe(translateParseArgsError, () => {
   });
 });
 
+// region | Helpers
 /** Returns the error that `node:util.parseArgs` raises for `args`, failing the test when it parses them. */
 async function parseArgsError(args: string[]): Promise<Error> {
   return captureError(() => parseArgs({ args, options, strict: true, allowPositionals: true }));
 }
+// endregion | Helpers
