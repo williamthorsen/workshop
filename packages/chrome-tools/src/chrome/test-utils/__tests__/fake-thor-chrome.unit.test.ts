@@ -41,9 +41,9 @@ describe(makeFakeThorChrome, () => {
 
   it('advances the clock only when the run sleeps', async () => {
     const fake = makeFakeThorChrome();
-    const started = fake.deps.now();
+    const startedMilliseconds = fake.deps.now();
     await fake.deps.sleep(250);
-    expect(fake.deps.now() - started).toBe(250);
+    expect(fake.deps.now() - startedMilliseconds).toBe(250);
   });
 
   it('records signals and launches, and throws the configured error from every signal', () => {

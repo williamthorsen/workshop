@@ -46,15 +46,15 @@ export async function quitIdleProfiles(
   const recordFile = `${invocation.profilesDir}/${IDLE_RECORD_FILE}`;
   const previous = readIdleRecord(recordFile);
   const next = new Map<string, IdleEntry>();
-  const now = Math.floor(invocation.deps.now() / 1000);
+  const nowSeconds = Math.floor(invocation.deps.now() / 1000);
   const outcomes: ProfileOutcome[] = [];
 
   for (const profile of listRunningProfiles(invocation)) {
     if (readClientState(invocation, profile) !== 'idle') continue;
 
     const entry = previous.get(profile.name);
-    const idleSince = entry?.pid === profile.pid ? entry.idleSince : now;
-    if (now - idleSince < durationSeconds) {
+    const idleSince = entry?.pid === profile.pid ? entry.idleSince : nowSeconds;
+    if (nowSeconds - idleSince < durationSeconds) {
       next.set(profile.name, { idleSince, pid: profile.pid });
       continue;
     }

@@ -120,10 +120,10 @@ export async function terminateBrowser(
     });
   }
 
-  const started = deps.now();
+  const startedMilliseconds = deps.now();
   const dir = `${invocation.profilesDir}/${profile}`;
   while (isRunning(invocation, dir)) {
-    if (deps.now() - started > timeout.seconds * 1000) {
+    if (deps.now() - startedMilliseconds > timeout.seconds * 1000) {
       return refuseProfile(invocation, profile, {
         code: 'quit-timeout',
         message: `PID ${pid} for profile '${profile}' is still running ${timeout.text}s after SIGTERM; end it manually`,

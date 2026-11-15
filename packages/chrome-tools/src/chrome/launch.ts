@@ -171,9 +171,9 @@ function assertProfileCreatable(
 /** Reports whether the DevTools endpoint answers within the launch budget. */
 async function awaitDevtools(invocation: Invocation, port: string, timeoutSeconds: number): Promise<boolean> {
   const { deps } = invocation;
-  const started = deps.now();
+  const startedMilliseconds = deps.now();
   while (!probeDevtools(invocation, port)) {
-    if (deps.now() - started > timeoutSeconds * 1000) return false;
+    if (deps.now() - startedMilliseconds > timeoutSeconds * 1000) return false;
     await deps.sleep(LAUNCH_POLL_INTERVAL_MILLISECONDS);
   }
   return true;
