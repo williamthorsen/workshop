@@ -87,7 +87,7 @@ export function readCloneRoot(dir: string): string | undefined {
 
 /**
  * Returns the branch checked out in the checkout containing a directory, a `branch` of `undefined` when HEAD is
- * detached or the directory is in no checkout, or the reason that git cannot tell.
+ * detached or the directory is not in any checkout, or the reason that git cannot tell.
  */
 export function readCurrentBranch(dir: string): { branch: string | undefined } | { failure: string } {
   // `symbolic-ref` also names the unborn branch of a repository without commits, which `rev-parse` cannot.
