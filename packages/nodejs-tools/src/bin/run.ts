@@ -1,5 +1,4 @@
-import { createCli, runCli, UsageError, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
-import { describeError } from '@williamthorsen/toolbelt.errors';
+import { createCli, runCli, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
 
 import { runAsdfShims } from './runAsdfShims.ts';
 import { runPnpm } from './runPnpm.ts';
@@ -75,13 +74,13 @@ const ROOT = defineGroup({
       summary: 'Report asdf node shims that the active nodejs version does not provide',
       description: ASDF_SHIMS_DESCRIPTION,
       epilog: ASDF_SHIMS_EPILOG,
-      run: ({ context, stderr, stdout }) => reportFailures(() => writeResult(runAsdfShims(context), stdout, stderr)),
+      run: ({ context, stderr, stdout }) => writeResult(runAsdfShims(context), stdout, stderr),
     }),
     [PNPM]: defineCommand({
       summary: 'Check the pnpm that runs here against the nearest packageManager pin',
       description: PNPM_DESCRIPTION,
       epilog: PNPM_EPILOG,
-      run: ({ context, stderr, stdout }) => reportFailures(() => writeResult(runPnpm(context), stdout, stderr)),
+      run: ({ context, stderr, stdout }) => writeResult(runPnpm(context), stdout, stderr),
     }),
     'prune-modules': defineCommand({
       summary: 'Delete the node_modules directories that the protect-list and the active guard do not keep',
@@ -104,17 +103,15 @@ const ROOT = defineGroup({
         },
         root: { type: 'path', description: `The directory to scan (default ~/${DEFAULT_ROOT})`, valueHint: 'path' },
       },
-      run: ({ context, flags, stderr, stdout }) =>
-        reportFailures(() => runPruneModules(flags, context, { stderr, stdout })),
+      run: ({ context, flags, stderr, stdout }) => runPruneModules(flags, context, { stderr, stdout }),
     }),
   },
 });
 
 /**
  * Runs the `thor-node` command line, writing to the given writers and resolving to the exit code rather than exiting,
- * so that the whole surface is exercisable without a process. A failure inside a command is reported through the
- * writers and the exit code, as a usage error when the command does not anticipate it; an error thrown outside a
- * command propagates to the caller.
+ * so that the whole surface is exercisable without a process. A usage error is reported through the writers with exit
+ * 2; any other error propagates to the caller.
  *
  * @internal
  */
@@ -136,17 +133,6 @@ export interface ThorNodeStreams {
 }
 
 // region | Helpers
-
-/** Runs a command's body, reporting anything that it throws as a usage error, which exits 2 with a pointer to help. */
-async function reportFailures(body: () => number | Promise<number>): Promise<number> {
-  try {
-    return await body();
-  } catch (error) {
-    if (error instanceof UsageError) throw error;
-
-    throw new UsageError(describeError(error), { cause: error });
-  }
-}
 
 /** Writes a check's result to the streams and returns its exit code. */
 function writeResult(result: ThorNodeResult, stdout: Writer, stderr: Writer): number {

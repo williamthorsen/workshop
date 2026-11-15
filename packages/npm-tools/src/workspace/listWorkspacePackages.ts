@@ -6,7 +6,7 @@ import { describeError } from '@williamthorsen/toolbelt.errors';
 
 /**
  * Lists the packages of the pnpm workspace that contains `cwd`, sorted by directory and excluding the root package.
- * Throws when a package's manifest cannot be read or parsed, naming the file.
+ * Throws a `ManifestReadError` when a package's manifest cannot be read or parsed.
  */
 export function listWorkspacePackages(cwd: string): WorkspaceListing {
   const root = findMonorepoRoot(cwd);
@@ -24,6 +24,14 @@ export function listWorkspacePackages(cwd: string): WorkspaceListing {
     .toSorted((left, right) => left.directory.localeCompare(right.directory));
 
   return { kind: 'packages', root, packages };
+}
+
+/** A workspace package's manifest that cannot be read or parsed, named in the message. */
+export class ManifestReadError extends Error {
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options);
+    this.name = 'ManifestReadError';
+  }
 }
 
 /** A workspace package as its manifest declares it, with `null` for a field that the manifest does not set. */
@@ -55,15 +63,17 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** Returns the manifest at `manifestPath` as an object, throwing an error that names the file otherwise. */
+/** Returns the manifest at `manifestPath` as an object, throwing a `ManifestReadError` otherwise. */
 function parseManifest(manifestPath: string): Record<string, unknown> {
   let parsed: unknown;
   try {
     parsed = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
   } catch (error) {
-    throw new Error(`could not read ${manifestPath}: ${describeError(error)}`, { cause: error });
+    throw new ManifestReadError(`could not read ${manifestPath}: ${describeError(error)}`, { cause: error });
   }
-  if (!isRecord(parsed)) throw new Error(`could not read ${manifestPath}: the manifest is not a JSON object`);
+  if (!isRecord(parsed)) {
+    throw new ManifestReadError(`could not read ${manifestPath}: the manifest is not a JSON object`);
+  }
 
   return parsed;
 }

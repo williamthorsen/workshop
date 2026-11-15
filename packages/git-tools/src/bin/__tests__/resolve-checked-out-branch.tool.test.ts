@@ -1,5 +1,6 @@
 import { spawnSync } from 'node:child_process';
 
+import { UsageError } from '@williamthorsen/toolbelt.cli/candidate';
 import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
@@ -34,6 +35,7 @@ describe(resolveCheckedOutBranch, () => {
     git(tree, 'checkout', '--detach');
 
     expect(() => resolveCheckedOutBranch(tree.dir)).toThrow(`HEAD names no branch.${REMEDY}`);
+    expect(() => resolveCheckedOutBranch(tree.dir)).toThrow(UsageError);
   });
 
   it("throws, naming git's cause and the remedy, outside a repository", () => {

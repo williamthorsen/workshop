@@ -158,22 +158,19 @@ describe(run, () => {
       expect(stderr).toContain("Try 'thor-npm publish-placeholder --help'.");
     });
 
-    it('reports an unexpected error on stderr with exit 1', async () => {
+    it('lets an unanticipated error propagate', async () => {
+      const bug = new Error('boom');
       const throwing: RunEffects = {
         ...EFFECTS,
         npm: {
           ...EFFECTS.npm,
           findVersion: () => {
-            throw new Error('boom');
+            throw bug;
           },
         },
       };
 
-      await expect(runWithBuffers(['publish-placeholder', 'free-name'], throwing)).resolves.toStrictEqual({
-        exitCode: 1,
-        stderr: 'thor-npm: boom\n',
-        stdout: '',
-      });
+      await expect(runWithBuffers(['publish-placeholder', 'free-name'], throwing)).rejects.toBe(bug);
     });
   });
 

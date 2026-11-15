@@ -10,6 +10,8 @@ const DATA_DIR = '/Users/me/.asdf';
 const EXEC_PATH = `${DATA_DIR}/installs/nodejs/24.20.0/bin/node`;
 const VERSION = '9.9.9';
 
+const BUG = new Error('bug');
+
 const NO_PROVIDER: StrandedAsdfShim = {
   backingPackage: 'pnpm',
   name: 'pn',
@@ -466,6 +468,18 @@ describe(run, () => {
       });
     });
   });
+
+  describe('given an unanticipated error', () => {
+    it.each([
+      [['asdf-shims'], { listStrandedShims: throwBug }],
+      [['pnpm'], { findPin: throwBug }],
+      [['prune-modules', '--apply'], { isStdinTty: throwBug }],
+    ])('lets it propagate from %o', async (args, override) => {
+      const effects: ThorNodeEffects = { ...buildEffects([], []), ...override };
+
+      await expect(runWithBuffers(args, effects)).rejects.toBe(BUG);
+    });
+  });
 });
 
 // region | Helpers
@@ -516,6 +530,11 @@ function runAsdfShims(shims: StrandedAsdfShim[], pathDirs: string[]) {
 /** Runs `pnpm` under the scenario's effects. */
 function runPnpm(options: PnpmScenario) {
   return runWithBuffers(['pnpm'], buildPnpmEffects(options));
+}
+
+/** Throws the shared unanticipated error, standing in for a bug in a command. */
+function throwBug(): never {
+  throw BUG;
 }
 
 // endregion | Helpers

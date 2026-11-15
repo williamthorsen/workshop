@@ -47,16 +47,13 @@ const ROOT = defineGroup({
         },
       },
       operands: [BRANCH_OPERAND],
-      run: ({ context, flags, operands, stdout }) =>
-        reportFailures(() => {
-          const number = deriveBranchNumber(selectBranch(operands.branch, context), {
-            key: flags.key,
-            max: flags.max,
-            min: flags.min,
-            offset: flags.offset,
-          });
-          stdout.write(`${number}\n`);
-        }),
+      run: ({ context, flags, operands, stdout }) => {
+        const branch = selectBranch(operands.branch, context);
+        const number = reportInvalidOptions(() =>
+          deriveBranchNumber(branch, { key: flags.key, max: flags.max, min: flags.min, offset: flags.offset }),
+        );
+        stdout.write(`${number}\n`);
+      },
     }),
     'ticket-ref': defineCommand({
       summary: 'Print the ID of the ticket encoded by a branch name',
@@ -66,23 +63,23 @@ const ROOT = defineGroup({
         key: KEY_FLAG,
       },
       operands: [BRANCH_OPERAND],
-      run: ({ context, flags, operands, stdout }) =>
-        reportFailures(() => {
-          const ref = findBranchTicketRef(selectBranch(operands.branch, context), { key: flags.key });
-          if (ref === undefined) return EXIT_NO_RESULT;
+      run: ({ context, flags, operands, stdout }) => {
+        const branch = selectBranch(operands.branch, context);
+        const ref = reportInvalidOptions(() => findBranchTicketRef(branch, { key: flags.key }));
+        if (ref === undefined) return EXIT_NO_RESULT;
 
-          stdout.write(`${flags.json ? JSON.stringify(ref) : ref.id}\n`);
-          return;
-        }),
+        stdout.write(`${flags.json ? JSON.stringify(ref) : ref.id}\n`);
+        return;
+      },
     }),
   },
 });
 
 /**
  * Runs the `thor-git` command line, returning what to write and exit with rather than doing either, so that the whole
- * surface is exercisable without a process. An empty argv prints the help. A failure inside a command is reported
- * through the result, as a usage error when the command does not anticipate it; an error thrown outside a command
- * propagates to the caller.
+ * surface is exercisable without a process. An empty argv prints the help. A usage error, which includes a malformed
+ * option and a branch that cannot be resolved, is reported through the result with exit 2; any other error propagates
+ * to the caller.
  */
 export async function run(args: readonly string[], effects: RunEffects): Promise<RunResult> {
   const stdout = createTextBuffer();
@@ -123,14 +120,15 @@ function parseNumber(value: string): number {
   return Number(value);
 }
 
-/** Runs a command's body, reporting anything that it throws as a usage error, which exits 2 with a pointer to help. */
-async function reportFailures(
-  body: () => number | undefined | Promise<number | undefined>,
-): Promise<number | undefined> {
+/**
+ * Calls a branch-name derivation, reporting the `RangeError` that it documents for a malformed key, bound, or offset
+ * as a usage error.
+ */
+function reportInvalidOptions<T>(derive: () => T): T {
   try {
-    return await body();
+    return derive();
   } catch (error) {
-    if (error instanceof UsageError) throw error;
+    if (!(error instanceof RangeError)) throw error;
 
     throw new UsageError(describeError(error), { cause: error });
   }
@@ -152,7 +150,7 @@ function resolveVersion(effects: RunEffects): string {
  */
 function selectBranch(branch: string | undefined, effects: RunEffects): string {
   if (branch === undefined) return effects.resolveBranch();
-  if (branch === '') throw new Error('The branch name is empty. Omit it to use the checked-out branch.');
+  if (branch === '') throw new UsageError('The branch name is empty. Omit it to use the checked-out branch.');
 
   return branch;
 }
