@@ -220,16 +220,9 @@ describe('list', () => {
 });
 
 // region | Helpers
-
 /** Returns the record that a launch derived from the working repository and a branch would have left. */
 function derivedRecord(fake: FakeThorChrome, branch: string): Record<string, string> {
   return { origin: 'derived', branch, repo: 'widget', repo_dir: fake.workRepoDir };
-}
-
-/** Creates a profile whose mtime is the fixed last use against which the reports are written. */
-function makeFrozenProfile(fake: FakeThorChrome, name: string, record?: Record<string, string>): void {
-  const dir = fake.makeProfile(name, record);
-  fs.utimesSync(dir, LAST_USED, LAST_USED);
 }
 
 /**
@@ -251,6 +244,12 @@ function makeFakeWithBranches(
   return fake;
 }
 
+/** Creates a profile whose mtime is the fixed last use against which the reports are written. */
+function makeFrozenProfile(fake: FakeThorChrome, name: string, record?: Record<string, string>): void {
+  const dir = fake.makeProfile(name, record);
+  fs.utimesSync(dir, LAST_USED, LAST_USED);
+}
+
 /** Replaces the PROFILES placeholder in the fake's answer keys with the profiles directory, escaped as pgrep receives it. */
 function rewritePatterns(fake: FakeThorChrome): void {
   const { run } = fake.deps;
@@ -267,5 +266,4 @@ function rewritePatterns(fake: FakeThorChrome): void {
 function run(fake: FakeThorChrome, args: string[]): Promise<number> {
   return runThorChrome(args, fake.captured.output, fake.deps);
 }
-
 // endregion | Helpers

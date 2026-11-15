@@ -161,14 +161,13 @@ export async function readTargetState(target: RenderTarget, options: ReadTargetS
   };
 }
 
-// region | Helpers
-
 /** One file one deployment's claim rule matched, before the matches across deployments are gathered per path. */
 interface Claim {
   readonly path: string;
   readonly artifact: ClaimedArtifact;
 }
 
+// region | Helpers
 /** Builds the record a claim recovers: the composed id, beside the parts it was composed from. */
 function composeClaimedArtifact(kindId: KindId, slug: string): ClaimedArtifact {
   return { id: composeArtifactId(kindId, slug), kindId, slug };
@@ -280,14 +279,6 @@ async function readClaims(
   );
 }
 
-/** Reads one entries host, or reports that the target holds none there. */
-async function readOwnedHost(root: string, host: string): Promise<OwnedHostState> {
-  const content = await readFileIfPresent(path.join(root, host));
-  return content === undefined
-    ? { path: host, state: 'absent' }
-    : { path: host, state: 'present', content, hash: hashUtf8(content) };
-}
-
 /** Reads one region host, along with the contributions its region contains. */
 async function readHost(root: string, deployment: RegionKindDeployment): Promise<HostState> {
   const { host, kindId } = deployment;
@@ -310,4 +301,11 @@ async function readHost(root: string, deployment: RegionKindDeployment): Promise
   };
 }
 
+/** Reads one entries host, or reports that the target holds none there. */
+async function readOwnedHost(root: string, host: string): Promise<OwnedHostState> {
+  const content = await readFileIfPresent(path.join(root, host));
+  return content === undefined
+    ? { path: host, state: 'absent' }
+    : { path: host, state: 'present', content, hash: hashUtf8(content) };
+}
 // endregion | Helpers

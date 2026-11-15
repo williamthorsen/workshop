@@ -44,8 +44,6 @@ export function openDocument(
   return format === 'yaml' ? openYamlDocument(content) : openJsonDocument(content);
 }
 
-// region | Helpers
-
 /**
  * The formatting a JSON host is written back in: the indent unit read from the source, and whether the file ends in a
  * newline.
@@ -58,6 +56,7 @@ interface JsonFormat {
   readonly hasTrailingNewline: boolean;
 }
 
+// region | Helpers
 /**
  * Reads the indent unit from the first indented line.
  *
@@ -89,15 +88,6 @@ function holdsNothing(node: unknown): boolean {
 /** True for a plain object, the only shape a collection path descends through. */
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-/** Reads a YAML item back as the data a sentinel check compares, leaving a value that is not a node as it is. */
-function readYamlNode(item: ItemHandle): unknown {
-  if (!isNode(item)) {
-    return item;
-  }
-  const plain: unknown = item.toJSON();
-  return plain;
 }
 
 /** Builds access to a JSON host, where an item is a plain value and formatting is reproduced from the source text. */
@@ -244,4 +234,12 @@ function openYamlDocument(content: string): { readonly document: DocumentAccess 
   };
 }
 
+/** Reads a YAML item back as the data a sentinel check compares, leaving a value that is not a node as it is. */
+function readYamlNode(item: ItemHandle): unknown {
+  if (!isNode(item)) {
+    return item;
+  }
+  const plain: unknown = item.toJSON();
+  return plain;
+}
 // endregion | Helpers

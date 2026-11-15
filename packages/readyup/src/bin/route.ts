@@ -121,6 +121,13 @@ export function reportFailure(error: unknown, isJson: boolean): number {
   return EXIT_TOOL_FAILURE;
 }
 
+// region | Helpers
+/** Whether a bare word names a kit, with the config that was loaded to decide it, if any. */
+interface BareWordProbe {
+  config: ResolvedRdyConfig | undefined;
+  namesAKit: boolean;
+}
+
 /** Selects and runs the subcommand named by the first argument. */
 async function dispatchCommand(argv: string[], isJson: boolean): Promise<number> {
   const args = dropLeadingStyleFlag(argv);
@@ -181,6 +188,45 @@ async function dispatchCommand(argv: string[], isJson: boolean): Promise<number>
   }
 
   return handleRun(args, isJson, probe.config);
+}
+
+/**
+ * Returns `argv` without a leading `--style` and the value beside it.
+ *
+ * Command selection reads the first argument, so a style named ahead of the command would otherwise be
+ * taken for a kit name. `routeCommand` has already read the value. Nothing downstream needs the
+ * tokens. Scanning stops at the first argument that is not part of a style flag, which leaves a later
+ * occurrence for the subcommand's own parser. A `--style` with no value beside it, whether it ends argv
+ * or precedes another flag, is left for that parser to reject.
+ */
+function dropLeadingStyleFlag(argv: string[]): string[] {
+  const assignment = `${STYLE_FLAG}=`;
+  let index = 0;
+
+  while (index < argv.length) {
+    const arg = argv[index];
+    if (arg?.startsWith(assignment) === true) index += 1;
+    else if (arg === STYLE_FLAG && isFlagValue(argv[index + 1])) index += 2;
+    else break;
+  }
+
+  return argv.slice(index);
+}
+
+/** Parses and executes the `init` subcommand. */
+function handleInit(flags: string[]): number {
+  const initOptions = {
+    'dry-run': { type: 'boolean', short: 'n' },
+    force: { type: 'boolean' },
+  } as const;
+
+  const parsed = parseSubcommandArgs({ args: flags, command: 'init', options: initOptions });
+
+  if (parsed.positionals.length > 0) {
+    throw usageError('rdy init does not accept positional arguments.');
+  }
+
+  return initCommand({ isDryRun: parsed.values['dry-run'] === true, shouldForce: parsed.values.force === true });
 }
 
 /** Parses and executes the `run` subcommand, reading `config` when the caller already loaded it. */
@@ -244,53 +290,33 @@ async function handleRun(flags: string[], isJson: boolean, config?: ResolvedRdyC
   );
 }
 
-/** Parses and executes the `init` subcommand. */
-function handleInit(flags: string[]): number {
-  const initOptions = {
-    'dry-run': { type: 'boolean', short: 'n' },
-    force: { type: 'boolean' },
-  } as const;
-
-  const parsed = parseSubcommandArgs({ args: flags, command: 'init', options: initOptions });
-
-  if (parsed.positionals.length > 0) {
-    throw usageError('rdy init does not accept positional arguments.');
+/**
+ * Detects a kit-source flag by scanning raw argv.
+ *
+ * The scan runs before any flag parsing, so it accepts both `--from value` and `--from=value` and
+ * stops at the `--` terminator, after which arguments are positional rather than flags.
+ */
+function hasSourceFlag(args: string[]): boolean {
+  for (const arg of args) {
+    if (arg === '--') return false;
+    const flag = arg.includes('=') ? arg.slice(0, arg.indexOf('=')) : arg;
+    if (SOURCE_FLAGS.has(flag)) return true;
   }
-
-  return initCommand({ isDryRun: parsed.values['dry-run'] === true, shouldForce: parsed.values.force === true });
+  return false;
 }
 
 /**
- * Returns `argv` without a leading `--style` and the value beside it.
+ * Reports whether rdy anticipated a failure: an `RdyError`, or a value carrying a hint.
  *
- * Command selection reads the first argument, so a style named ahead of the command would otherwise be
- * taken for a kit name. `routeCommand` has already read the value. Nothing downstream needs the
- * tokens. Scanning stops at the first argument that is not part of a style flag, which leaves a later
- * occurrence for the subcommand's own parser. A `--style` with no value beside it, whether it ends argv
- * or precedes another flag, is left for that parser to reject.
+ * The `internal` code does not decide it, because rdy also raises `internal` for failures that it diagnoses.
  */
-function dropLeadingStyleFlag(argv: string[]): string[] {
-  const assignment = `${STYLE_FLAG}=`;
-  let index = 0;
-
-  while (index < argv.length) {
-    const arg = argv[index];
-    if (arg?.startsWith(assignment) === true) index += 1;
-    else if (arg === STYLE_FLAG && isFlagValue(argv[index + 1])) index += 2;
-    else break;
-  }
-
-  return argv.slice(index);
+function isAnticipated(error: unknown): boolean {
+  return error instanceof RdyError || extractHint(error) !== undefined;
 }
 
 /** Reports whether an argument can be a spaced flag's value, which a dash-led one cannot unless it is `-`. */
 function isFlagValue(arg: string | undefined): boolean {
   return arg !== undefined && (!arg.startsWith('-') || arg === '-');
-}
-
-/** Returns `true` when the flags request help for the current subcommand. */
-function wantsHelp(flags: string[]): boolean {
-  return flags.some((f) => HELP_FLAGS.has(f));
 }
 
 /** Loads the config that a run reads, reporting a file that cannot be evaluated as a config error. */
@@ -300,12 +326,6 @@ async function loadRunConfig(overridePath: string | undefined): Promise<Resolved
   } catch (error: unknown) {
     throw configError(describeError(error), { cause: error, hint: extractHint(error) });
   }
-}
-
-/** Whether a bare word names a kit, with the config that was loaded to decide it, if any. */
-interface BareWordProbe {
-  config: ResolvedRdyConfig | undefined;
-  namesAKit: boolean;
 }
 
 /**
@@ -350,28 +370,9 @@ function readConfigFlag(args: string[]): string | undefined {
   return undefined;
 }
 
-/**
- * Detects a kit-source flag by scanning raw argv.
- *
- * The scan runs before any flag parsing, so it accepts both `--from value` and `--from=value` and
- * stops at the `--` terminator, after which arguments are positional rather than flags.
- */
-function hasSourceFlag(args: string[]): boolean {
-  for (const arg of args) {
-    if (arg === '--') return false;
-    const flag = arg.includes('=') ? arg.slice(0, arg.indexOf('=')) : arg;
-    if (SOURCE_FLAGS.has(flag)) return true;
-  }
-  return false;
-}
-
-/**
- * Reports whether rdy anticipated a failure: an `RdyError`, or a value carrying a hint.
- *
- * The `internal` code does not decide it, because rdy also raises `internal` for failures that it diagnoses.
- */
-function isAnticipated(error: unknown): boolean {
-  return error instanceof RdyError || extractHint(error) !== undefined;
+/** Returns `true` when the flags request help for the current subcommand. */
+function wantsHelp(flags: string[]): boolean {
+  return flags.some((f) => HELP_FLAGS.has(f));
 }
 
 /** Writes a crash to stderr as `rdy: internal error: <message>`, then the stack frames of `error`, then any hint. */
@@ -382,3 +383,4 @@ function writeCrash(message: string, error: unknown, hint?: string): void {
   }
   writeHint(hint);
 }
+// endregion | Helpers

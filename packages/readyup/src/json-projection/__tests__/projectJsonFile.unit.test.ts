@@ -10,22 +10,6 @@ vi.mock(import('node:fs'), () => ({
 import { JsonProjectionError } from '../JsonProjectionError.ts';
 import { projectJsonFile } from '../projectJsonFile.ts';
 
-/** Runs the projection over a file with the given contents and returns the `JsonProjectionError` that it raised. */
-async function captureProjectionError(
-  fileContents: string | Error,
-  paths: string[] = ['name'],
-): Promise<JsonProjectionError> {
-  if (fileContents instanceof Error) {
-    mockReadFileSync.mockImplementationOnce(() => {
-      throw fileContents;
-    });
-  } else {
-    mockReadFileSync.mockReturnValueOnce(fileContents);
-  }
-
-  return captureError(JsonProjectionError, () => projectJsonFile('/project/data.json', paths));
-}
-
 describe(projectJsonFile, () => {
   it('returns the projection serialized', () => {
     mockReadFileSync.mockReturnValueOnce(JSON.stringify({ license: 'ISC', name: 'my-pkg', version: '1.0.0' }));
@@ -90,3 +74,21 @@ describe(projectJsonFile, () => {
     expect(error.message).toBe('Path not found in JSON: version');
   });
 });
+
+// region | Helpers
+/** Runs the projection over a file with the given contents and returns the `JsonProjectionError` that it raised. */
+async function captureProjectionError(
+  fileContents: string | Error,
+  paths: string[] = ['name'],
+): Promise<JsonProjectionError> {
+  if (fileContents instanceof Error) {
+    mockReadFileSync.mockImplementationOnce(() => {
+      throw fileContents;
+    });
+  } else {
+    mockReadFileSync.mockReturnValueOnce(fileContents);
+  }
+
+  return captureError(JsonProjectionError, () => projectJsonFile('/project/data.json', paths));
+}
+// endregion | Helpers

@@ -49,16 +49,6 @@ const KIT_IMPORT_PARAM = 'rdy-kit';
 
 let readyupParentURL: string | undefined;
 
-/** Reports whether a URL carries the kit marker. */
-function isKitImport(url: string): boolean {
-  return URL.canParse(url) && new URL(url).searchParams.has(KIT_IMPORT_PARAM);
-}
-
-/** Reports whether a specifier should resolve against the runner's readyup installation. */
-function isReadyupSpecifier(specifier: string): boolean {
-  return specifier === 'readyup' || specifier.startsWith('readyup/');
-}
-
 /** Initializes the hook with the runner's readyup location, which happens exactly once. */
 export function initialize(data: ReadyupResolverHookData): void {
   // eslint-disable-next-line unicorn/no-top-level-assignment-in-function -- the runner supplies this once.
@@ -89,3 +79,15 @@ export function resolve(specifier: string, context: ResolveHookContext, nextReso
   }
   return nextResolve(specifier, context);
 }
+
+// region | Helpers
+/** Reports whether a URL carries the kit marker. */
+function isKitImport(url: string): boolean {
+  return URL.canParse(url) && new URL(url).searchParams.has(KIT_IMPORT_PARAM);
+}
+
+/** Reports whether a specifier should resolve against the runner's readyup installation. */
+function isReadyupSpecifier(specifier: string): boolean {
+  return specifier === 'readyup' || specifier.startsWith('readyup/');
+}
+// endregion | Helpers

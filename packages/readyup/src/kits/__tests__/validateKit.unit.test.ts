@@ -3,17 +3,6 @@ import { describe, expect, it } from 'vitest';
 import type { RdyKit } from '../types.ts';
 import { validateKit } from '../validateKit.ts';
 
-/** Returns a minimal valid kit. */
-function makeKit(overrides?: Partial<RdyKit>): RdyKit {
-  return {
-    checklists: [
-      { name: 'a', checks: [{ name: 'check-a', check: () => true }] },
-      { name: 'b', checks: [{ name: 'check-b', check: () => true }] },
-    ],
-    ...overrides,
-  };
-}
-
 describe(validateKit, () => {
   it('passes when kit has no suites', () => {
     expect(() => validateKit(makeKit())).not.toThrow();
@@ -73,3 +62,16 @@ describe(validateKit, () => {
     expect(() => validateKit(kit)).not.toThrow();
   });
 });
+
+// region | Helpers
+/** Returns a minimal valid kit. */
+function makeKit(overrides?: Partial<RdyKit>): RdyKit {
+  return {
+    checklists: [
+      { name: 'a', checks: [{ name: 'check-a', check: () => true }] },
+      { name: 'b', checks: [{ name: 'check-b', check: () => true }] },
+    ],
+    ...overrides,
+  };
+}
+// endregion | Helpers

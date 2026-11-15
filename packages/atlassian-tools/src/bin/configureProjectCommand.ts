@@ -77,7 +77,6 @@ export const configureProjectCommand: Command<RunEffects> = defineCommand({
 });
 
 // region | Helpers
-
 /** Reconciles the project and reports the outcome, returning the exit code. */
 async function configureProject(
   effects: RunEffects,
@@ -128,16 +127,6 @@ async function configureProject(
   return report.matches ? EXIT_OK : EXIT_MISMATCH;
 }
 
-/** Chooses the project to reconcile: the operand, or else the spec's `projectKey`. */
-function selectProjectKey(projectKey: string | undefined, loaded: LoadedProjectSpec): string {
-  if (projectKey !== undefined && projectKey !== '') return projectKey;
-  if (loaded.spec.projectKey !== undefined) return loaded.spec.projectKey;
-
-  throw new UsageError(
-    `A project key is required: pass it as an argument, or set \`projectKey\` in the spec; ${loaded.path} does not set \`projectKey\`.`,
-  );
-}
-
 /** Moves every work item in one status off the board, reporting the call that puts them back. */
 async function seedTheBacklog(
   request: Parameters<typeof listIssueKeys>[0],
@@ -163,4 +152,13 @@ async function seedTheBacklog(
   effects.write(`${formatContinuationLine(`keys: ${jql}`)}\n`);
 }
 
+/** Chooses the project to reconcile: the operand, or else the spec's `projectKey`. */
+function selectProjectKey(projectKey: string | undefined, loaded: LoadedProjectSpec): string {
+  if (projectKey !== undefined && projectKey !== '') return projectKey;
+  if (loaded.spec.projectKey !== undefined) return loaded.spec.projectKey;
+
+  throw new UsageError(
+    `A project key is required: pass it as an argument, or set \`projectKey\` in the spec; ${loaded.path} does not set \`projectKey\`.`,
+  );
+}
 // endregion | Helpers

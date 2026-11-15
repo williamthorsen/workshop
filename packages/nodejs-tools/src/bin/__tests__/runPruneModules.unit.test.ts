@@ -216,6 +216,24 @@ describe(parseActiveDays, () => {
 });
 
 // region | Helpers
+/** Builds effects whose home directory is the tree, with no terminal on stdin and the clock at `NOW`. */
+function buildEffects(tree: TempTree, overrides: Partial<ThorNodeEffects> = {}): ThorNodeEffects {
+  return {
+    cwd: tree.dir,
+    execPath: '/usr/local/bin/node',
+    findPin: () => undefined,
+    homeDir: tree.dir,
+    isStdinTty: () => false,
+    listStrandedShims: () => [],
+    now: () => NOW,
+    pathDirs: [],
+    readAnswer: () => Promise.resolve(undefined),
+    resolvePnpmProvider: () => ({ kind: 'absent' }),
+    resolveVersion: () => '0.0.0',
+    runPnpmVersion: () => ({ failure: 'not run' }),
+    ...overrides,
+  };
+}
 
 /**
  * Creates three projects under `repos/`: one active three days ago, one protected by the default protect-list, and one
@@ -238,25 +256,6 @@ function createProjects(): TempTree {
   return tree;
 }
 
-/** Builds effects whose home directory is the tree, with no terminal on stdin and the clock at `NOW`. */
-function buildEffects(tree: TempTree, overrides: Partial<ThorNodeEffects> = {}): ThorNodeEffects {
-  return {
-    cwd: tree.dir,
-    execPath: '/usr/local/bin/node',
-    findPin: () => undefined,
-    homeDir: tree.dir,
-    isStdinTty: () => false,
-    listStrandedShims: () => [],
-    now: () => NOW,
-    pathDirs: [],
-    readAnswer: () => Promise.resolve(undefined),
-    resolvePnpmProvider: () => ({ kind: 'absent' }),
-    resolveVersion: () => '0.0.0',
-    runPnpmVersion: () => ({ failure: 'not run' }),
-    ...overrides,
-  };
-}
-
 /** Lists the projects under `repos/` that still have a `node_modules` directory. */
 function listRemaining(tree: TempTree): string[] {
   return tree.list('repos').filter((project) => tree.exists(`repos/${project}/node_modules`));
@@ -267,5 +266,4 @@ function setActivity(tree: TempTree, project: string, time: number): void {
   const date = new Date(time);
   fs.utimesSync(tree.resolve(`${project}/.git/index`), date, date);
 }
-
 // endregion | Helpers

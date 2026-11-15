@@ -4,18 +4,6 @@ import { describe, expect, it } from 'vitest';
 import type { RdyKit } from '../../kits/types.ts';
 import { resolveRequestedNames } from '../resolveRequestedNames.ts';
 
-/** Returns a minimal kit with named checklists and optional suites. */
-function makeKit(overrides?: Partial<RdyKit>): RdyKit {
-  return {
-    checklists: [
-      { name: 'deploy', checks: [{ name: 'a', check: () => true }] },
-      { name: 'infra', checks: [{ name: 'b', check: () => true }] },
-      { name: 'lint', checks: [{ name: 'c', check: () => true }] },
-    ],
-    ...overrides,
-  };
-}
-
 describe(resolveRequestedNames, () => {
   it('returns all checklist names when no names are requested', () => {
     const result = resolveRequestedNames([], makeKit());
@@ -94,3 +82,17 @@ describe(resolveRequestedNames, () => {
     expect(() => resolveRequestedNames(['toString'], kit)).toThrow('Unknown name(s): toString');
   });
 });
+
+// region | Helpers
+/** Returns a minimal kit with named checklists and optional suites. */
+function makeKit(overrides?: Partial<RdyKit>): RdyKit {
+  return {
+    checklists: [
+      { name: 'deploy', checks: [{ name: 'a', check: () => true }] },
+      { name: 'infra', checks: [{ name: 'b', check: () => true }] },
+      { name: 'lint', checks: [{ name: 'c', check: () => true }] },
+    ],
+    ...overrides,
+  };
+}
+// endregion | Helpers

@@ -86,45 +86,54 @@ interface RunContext {
  */
 const AUTHORING_ERROR_SEVERITY: Severity = 'error';
 
-/** Returns the effective severity for a check. */
-function resolveSeverity(check: RdyCheck, defaultSeverity: Severity): Severity {
-  return check.severity ?? defaultSeverity;
-}
-
 /**
- * Resolves a failure's remediation message from its outcome's `fix`, or else from its check's, absorbing
- * a value that is not a string.
+ * Runs every check in a checklist and returns the report.
  *
- * Because the check's `fix` may be an accessor, it is read here and nowhere else: Only a failure that the check
- * expressed renders one, and a check that passes, skips, is blocked, or is broken, or whose outcome
- * supplies its own `fix`, must not do work that it discards. An accessor that throws, or either `fix`
- * yielding a non-string, is a defect in the kit rather than in the check's subject, so it is reported in
- * the slot that the remediation would occupy and leaves the verdict and its severity alone. A malformed
- * outcome `fix` is reported without consulting the check's, to keep the defect visible.
+ * Preconditions run first, and a failure among them skips every check that follows; a precondition
+ * skipped `n/a` does not gate the checklist. A flat checklist runs all its checks concurrently. A
+ * staged checklist runs its groups sequentially, abandoning later groups once an earlier one has a
+ * failure at or above the failure threshold.
+ *
+ * Diagnosis, when asked for, runs once the duration and the verdict are settled. Observing the run
+ * cannot then alter it: No diagnostic check can change a conclusion that already exists, and none
+ * is counted in the wall clock that the report records.
  */
-function resolveFix(check: RdyCheck, outcomeFix: unknown): string | null {
-  if (outcomeFix !== undefined) {
-    return typeof outcomeFix === 'string'
-      ? outcomeFix
-      : `Unresolvable fix: The outcome returned ${describeValue(outcomeFix)}`;
-  }
+export async function runRdy(
+  checklist: RdyChecklist | RdyStagedChecklist,
+  options: RunRdyOptions = {},
+): Promise<RdyReport> {
+  const defaultSeverity = options.defaultSeverity ?? 'error';
+  const failOn = options.failOn ?? 'error';
+  const start = performance.now();
+  const results: RdyResult[] = [];
 
-  let raw: unknown;
-  try {
-    // Widened to `unknown`: Because a kit runs as JavaScript, an accessor yields whatever its author
-    // wrote, whatever the declared type promised.
-    raw = check.fix;
-  } catch (error_: unknown) {
-    const error = toError(error_);
-    // Quoted so that the kit's message stays distinguishable from the sentence around it.
-    return `Unresolvable fix: The accessor threw ${JSON.stringify(error.message)}`;
-  }
+  const run: RunContext = {
+    defaultSeverity,
+    pendingDiagnoses: [],
+    pragmaLedger: options.pragmaLedger,
+    provenance: options.provenance,
+  };
 
-  if (raw === undefined) return null;
-  if (typeof raw === 'string') return raw;
-  return `Unresolvable fix: The accessor returned ${describeValue(raw)}`;
+  const preconditionsPassed = await runPreconditions(checklist.preconditions ?? [], results, run);
+
+  await (isFlatChecklist(checklist)
+    ? runFlatChecks(checklist, results, preconditionsPassed, run)
+    : runStagedChecks(checklist, results, preconditionsPassed, run, failOn));
+
+  const durationMs = performance.now() - start;
+
+  // The run passes when no failed result has severity at or above the failure threshold.
+  const passed = results.every((r) => !(r.status === 'failed' && meetsThreshold(r.severity, failOn)));
+
+  const diagnoses: SkipDiagnosis[] | undefined =
+    options.shouldDiagnose === true
+      ? await diagnoseSkips(orderByResult(results, run.pendingDiagnoses), run.provenance)
+      : undefined;
+
+  return { results, passed, durationMs, ...(diagnoses !== undefined && { diagnoses }) };
 }
 
+// region | Helpers
 /** The fields contributed by a check to every result that it can produce. */
 interface CheckContext {
   name: string;
@@ -140,34 +149,6 @@ interface RanFields {
   durationMs: number;
   progress: Progress | null;
   examinedCount: number | null;
-}
-
-/** Returns the fields contributed by a check to every result that it can produce. */
-function buildCheckContext(check: RdyCheck, run: RunContext, depth: number): CheckContext {
-  return {
-    name: check.name,
-    id: resolveCheckIds(check.id, run.provenance)?.printed ?? null,
-    severity: resolveSeverity(check, run.defaultSeverity),
-    quiet: check.quiet ?? false,
-    depth,
-  };
-}
-
-/** Returns a passed result. */
-function buildPassedResult(fields: CheckContext & RanFields): PassedResult {
-  return { ...fields, status: 'passed', ok: true, error: null };
-}
-
-/** Builds a failed result from the check's verdict, resolving its fix because only such a failure renders one. */
-function buildFailedResult(check: RdyCheck, fields: CheckContext & RanFields, outcomeFix?: unknown): FailedResult {
-  return { ...fields, error: null, fix: resolveFix(check, outcomeFix), status: 'failed', ok: false };
-}
-
-/** Returns a skipped result. */
-function buildSkippedResult(
-  fields: CheckContext & { detail: string | null; skipReason: 'n/a' | 'precondition' },
-): SkippedResult {
-  return { ...fields, status: 'skipped', ok: null, error: null, progress: null, examinedCount: null, durationMs: 0 };
 }
 
 /**
@@ -189,6 +170,55 @@ function buildAuthoringErrorResult(context: CheckContext, durationMs: number, er
     status: 'failed',
     ok: false,
   };
+}
+
+/** Returns the fields contributed by a check to every result that it can produce. */
+function buildCheckContext(check: RdyCheck, run: RunContext, depth: number): CheckContext {
+  return {
+    name: check.name,
+    id: resolveCheckIds(check.id, run.provenance)?.printed ?? null,
+    severity: resolveSeverity(check, run.defaultSeverity),
+    quiet: check.quiet ?? false,
+    depth,
+  };
+}
+
+/** Builds a failed result from the check's verdict, resolving its fix because only such a failure renders one. */
+function buildFailedResult(check: RdyCheck, fields: CheckContext & RanFields, outcomeFix?: unknown): FailedResult {
+  return { ...fields, error: null, fix: resolveFix(check, outcomeFix), status: 'failed', ok: false };
+}
+
+/** Returns a passed result. */
+function buildPassedResult(fields: CheckContext & RanFields): PassedResult {
+  return { ...fields, status: 'passed', ok: true, error: null };
+}
+
+/** Returns a skipped result. */
+function buildSkippedResult(
+  fields: CheckContext & { detail: string | null; skipReason: 'n/a' | 'precondition' },
+): SkippedResult {
+  return { ...fields, status: 'skipped', ok: null, error: null, progress: null, examinedCount: null, durationMs: 0 };
+}
+
+/**
+ * Returns the results of a parent's child checks, decided by the parent's own outcome.
+ *
+ * A passed parent runs its children concurrently and returns them in depth-first declaration order;
+ * a failed parent skips every descendant.
+ */
+async function collectChildResults(
+  parentResult: PassedResult | FailedResult,
+  children: readonly RdyCheck[],
+  run: RunContext,
+  childDepth: number,
+): Promise<RdyResult[]> {
+  if (children.length === 0) return [];
+
+  if (parentResult.status === 'failed') {
+    return skipAllDescendants(children, run, childDepth);
+  }
+
+  return runSiblingChecks(children, run, childDepth);
 }
 
 /**
@@ -274,54 +304,70 @@ async function executeCheck(check: RdyCheck, run: RunContext, depth = 0): Promis
 }
 
 /**
- * Returns the results of a parent's child checks, decided by the parent's own outcome.
+ * Orders the checks awaiting diagnosis by where their results appear in the report.
  *
- * A passed parent runs its children concurrently and returns them in depth-first declaration order;
- * a failed parent skips every descendant.
+ * Siblings resolve concurrently, so an asynchronous `skip` records out of declaration order. Reading
+ * the order back off `results`, which is declaration-ordered by construction, keeps the advisories
+ * in the order the reader met the skipped lines, run after run.
  */
-async function collectChildResults(
-  parentResult: PassedResult | FailedResult,
-  children: readonly RdyCheck[],
+function orderByResult(results: RdyResult[], pending: PendingDiagnosis[]): RdyCheck[] {
+  const checkByResult = new Map<RdyResult, RdyCheck>(pending.map(({ check, result }) => [result, check]));
+  return results.map((result) => checkByResult.get(result)).filter((check) => check !== undefined);
+}
+
+/**
+ * Resolves a failure's remediation message from its outcome's `fix`, or else from its check's, absorbing
+ * a value that is not a string.
+ *
+ * Because the check's `fix` may be an accessor, it is read here and nowhere else: Only a failure that the check
+ * expressed renders one, and a check that passes, skips, is blocked, or is broken, or whose outcome
+ * supplies its own `fix`, must not do work that it discards. An accessor that throws, or either `fix`
+ * yielding a non-string, is a defect in the kit rather than in the check's subject, so it is reported in
+ * the slot that the remediation would occupy and leaves the verdict and its severity alone. A malformed
+ * outcome `fix` is reported without consulting the check's, to keep the defect visible.
+ */
+function resolveFix(check: RdyCheck, outcomeFix: unknown): string | null {
+  if (outcomeFix !== undefined) {
+    return typeof outcomeFix === 'string'
+      ? outcomeFix
+      : `Unresolvable fix: The outcome returned ${describeValue(outcomeFix)}`;
+  }
+
+  let raw: unknown;
+  try {
+    // Widened to `unknown`: Because a kit runs as JavaScript, an accessor yields whatever its author
+    // wrote, whatever the declared type promised.
+    raw = check.fix;
+  } catch (error_: unknown) {
+    const error = toError(error_);
+    // Quoted so that the kit's message stays distinguishable from the sentence around it.
+    return `Unresolvable fix: The accessor threw ${JSON.stringify(error.message)}`;
+  }
+
+  if (raw === undefined) return null;
+  if (typeof raw === 'string') return raw;
+  return `Unresolvable fix: The accessor returned ${describeValue(raw)}`;
+}
+
+/** Returns the effective severity for a check. */
+function resolveSeverity(check: RdyCheck, defaultSeverity: Severity): Severity {
+  return check.severity ?? defaultSeverity;
+}
+
+/** Runs a flat checklist, every check concurrently. */
+async function runFlatChecks(
+  checklist: RdyChecklist,
+  results: RdyResult[],
+  preconditionsPassed: boolean,
   run: RunContext,
-  childDepth: number,
-): Promise<RdyResult[]> {
-  if (children.length === 0) return [];
-
-  if (parentResult.status === 'failed') {
-    return skipAllDescendants(children, run, childDepth);
+): Promise<void> {
+  if (!preconditionsPassed) {
+    results.push(...skipAllDescendants(checklist.checks, run, 0));
+    return;
   }
 
-  return runSiblingChecks(children, run, childDepth);
-}
-
-/**
- * Runs sibling checks concurrently and returns their results in depth-first declaration order.
- *
- * Each sibling's own result is followed by its subtree before the next sibling appears.
- */
-async function runSiblingChecks(checks: readonly RdyCheck[], run: RunContext, depth: number): Promise<RdyResult[]> {
-  const siblingTrees = await Promise.all(checks.map((c) => executeCheck(c, run, depth)));
-  return siblingTrees.flat();
-}
-
-/**
- * Skips a check and every descendant below it.
- *
- * Every skip produced here is a `precondition` skip: An `n/a` skip terminates its own subtree before
- * reaching this point.
- */
-function skipAllDescendants(checks: readonly RdyCheck[], run: RunContext, depth: number): RdyResult[] {
-  const results: RdyResult[] = [];
-  for (const check of checks) {
-    results.push(skipCheck(check, run, depth), ...skipAllDescendants(listStaticChildren(check), run, depth + 1));
-  }
-  return results;
-}
-
-/** Returns a skipped result for a check whose precondition or ancestor check failed. */
-function skipCheck(check: RdyCheck, run: RunContext, depth: number): RdyResult {
-  const context = buildCheckContext(check, run, depth);
-  return buildSkippedResult({ ...context, skipReason: 'precondition', detail: null });
+  const checkResults = await runSiblingChecks(checklist.checks, run, 0);
+  results.push(...checkResults);
 }
 
 /** Runs preconditions concurrently, reporting whether every one of them passed. */
@@ -341,20 +387,14 @@ async function runPreconditions(
   return flat.filter((r) => r.depth === 0).every((r) => r.status !== 'failed');
 }
 
-/** Runs a flat checklist, every check concurrently. */
-async function runFlatChecks(
-  checklist: RdyChecklist,
-  results: RdyResult[],
-  preconditionsPassed: boolean,
-  run: RunContext,
-): Promise<void> {
-  if (!preconditionsPassed) {
-    results.push(...skipAllDescendants(checklist.checks, run, 0));
-    return;
-  }
-
-  const checkResults = await runSiblingChecks(checklist.checks, run, 0);
-  results.push(...checkResults);
+/**
+ * Runs sibling checks concurrently and returns their results in depth-first declaration order.
+ *
+ * Each sibling's own result is followed by its subtree before the next sibling appears.
+ */
+async function runSiblingChecks(checks: readonly RdyCheck[], run: RunContext, depth: number): Promise<RdyResult[]> {
+  const siblingTrees = await Promise.all(checks.map((c) => executeCheck(c, run, depth)));
+  return siblingTrees.flat();
 }
 
 /** Runs a staged checklist: groups sequentially, and the checks within each group concurrently. */
@@ -394,60 +434,22 @@ async function runStagedChecks(
 }
 
 /**
- * Orders the checks awaiting diagnosis by where their results appear in the report.
+ * Skips a check and every descendant below it.
  *
- * Siblings resolve concurrently, so an asynchronous `skip` records out of declaration order. Reading
- * the order back off `results`, which is declaration-ordered by construction, keeps the advisories
- * in the order the reader met the skipped lines, run after run.
+ * Every skip produced here is a `precondition` skip: An `n/a` skip terminates its own subtree before
+ * reaching this point.
  */
-function orderByResult(results: RdyResult[], pending: PendingDiagnosis[]): RdyCheck[] {
-  const checkByResult = new Map<RdyResult, RdyCheck>(pending.map(({ check, result }) => [result, check]));
-  return results.map((result) => checkByResult.get(result)).filter((check) => check !== undefined);
-}
-
-/**
- * Runs every check in a checklist and returns the report.
- *
- * Preconditions run first, and a failure among them skips every check that follows; a precondition
- * skipped `n/a` does not gate the checklist. A flat checklist runs all its checks concurrently. A
- * staged checklist runs its groups sequentially, abandoning later groups once an earlier one has a
- * failure at or above the failure threshold.
- *
- * Diagnosis, when asked for, runs once the duration and the verdict are settled. Observing the run
- * cannot then alter it: No diagnostic check can change a conclusion that already exists, and none
- * is counted in the wall clock that the report records.
- */
-export async function runRdy(
-  checklist: RdyChecklist | RdyStagedChecklist,
-  options: RunRdyOptions = {},
-): Promise<RdyReport> {
-  const defaultSeverity = options.defaultSeverity ?? 'error';
-  const failOn = options.failOn ?? 'error';
-  const start = performance.now();
+function skipAllDescendants(checks: readonly RdyCheck[], run: RunContext, depth: number): RdyResult[] {
   const results: RdyResult[] = [];
-
-  const run: RunContext = {
-    defaultSeverity,
-    pendingDiagnoses: [],
-    pragmaLedger: options.pragmaLedger,
-    provenance: options.provenance,
-  };
-
-  const preconditionsPassed = await runPreconditions(checklist.preconditions ?? [], results, run);
-
-  await (isFlatChecklist(checklist)
-    ? runFlatChecks(checklist, results, preconditionsPassed, run)
-    : runStagedChecks(checklist, results, preconditionsPassed, run, failOn));
-
-  const durationMs = performance.now() - start;
-
-  // The run passes when no failed result has severity at or above the failure threshold.
-  const passed = results.every((r) => !(r.status === 'failed' && meetsThreshold(r.severity, failOn)));
-
-  const diagnoses: SkipDiagnosis[] | undefined =
-    options.shouldDiagnose === true
-      ? await diagnoseSkips(orderByResult(results, run.pendingDiagnoses), run.provenance)
-      : undefined;
-
-  return { results, passed, durationMs, ...(diagnoses !== undefined && { diagnoses }) };
+  for (const check of checks) {
+    results.push(skipCheck(check, run, depth), ...skipAllDescendants(listStaticChildren(check), run, depth + 1));
+  }
+  return results;
 }
+
+/** Returns a skipped result for a check whose precondition or ancestor check failed. */
+function skipCheck(check: RdyCheck, run: RunContext, depth: number): RdyResult {
+  const context = buildCheckContext(check, run, depth);
+  return buildSkippedResult({ ...context, skipReason: 'precondition', detail: null });
+}
+// endregion | Helpers

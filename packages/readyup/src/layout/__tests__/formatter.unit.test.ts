@@ -193,7 +193,6 @@ describe.each([
 });
 
 // region | Helpers
-
 /** Lists the characters from one to another by code point, inclusive. */
 function listCharacters(first: string, last: string): string[] {
   const start = first.codePointAt(0) ?? 0;
@@ -214,6 +213,11 @@ function makeCounts(overrides?: Partial<SummaryCounts>): SummaryCounts {
   };
 }
 
+/** Returns a line's count of leading spaces, one per column. */
+function measureIndent(line: string): number {
+  return line.length - line.trimStart().length;
+}
+
 /** Returns the display column at which a rendered line's name begins. */
 function measureNameColumn(line: string): number {
   const match = /^(?<indent> *)(?<word>[A-Z]*)(?<pad> +)/u.exec(line);
@@ -222,11 +226,6 @@ function measureNameColumn(line: string): number {
   const { indent, pad, word } = groups;
 
   return (indent?.length ?? 0) + (word?.length ?? 0) + (pad?.length ?? 0);
-}
-
-/** Returns a line's count of leading spaces, one per column. */
-function measureIndent(line: string): number {
-  return line.length - line.trimStart().length;
 }
 
 /** Returns every line that the engine can produce, so a whole-vocabulary assertion has something to run against. */
@@ -276,5 +275,4 @@ function renderEverything(): string {
     ...TOKEN_NAMES.map((token) => plainEngine.inlineGlyph(token)),
   ].join('\n');
 }
-
 // endregion | Helpers

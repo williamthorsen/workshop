@@ -63,6 +63,13 @@ export async function loadRdyKit(kitPath: string, requestedName?: string): Promi
   return { kit: resolved, compileTimeVersion };
 }
 
+// region | Helpers
+/** The kit to which a load failure is attributed. */
+interface KitFailureContext {
+  kitName: string;
+  resolvedPath: string;
+}
+
 /**
  * Returns the error message for a kit path that does not exist.
  *
@@ -142,12 +149,6 @@ function readCompileTimeVersion(moduleRecord: Record<string, unknown>): string |
   return typeof value === 'string' ? value : undefined;
 }
 
-/** The kit to which a load failure is attributed. */
-interface KitFailureContext {
-  kitName: string;
-  resolvedPath: string;
-}
-
 /**
  * Runs one step of a kit's load, rethrowing its failure with the kit's name and file and keeping any `hint`.
  *
@@ -167,3 +168,4 @@ async function withKitContext<T>(context: KitFailureContext, step: () => T | Pro
     throw wrapped;
   }
 }
+// endregion | Helpers

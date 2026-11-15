@@ -34,6 +34,18 @@ describe('published tarball', () => {
 });
 
 // region | Helpers
+/** Narrows `pnpm pack --json` output to the one field that this test reads. */
+function isPackReport(value: unknown): value is { files: Array<{ path: string }> } {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'files' in value &&
+    Array.isArray(value.files) &&
+    value.files.every(
+      (file: unknown) => typeof file === 'object' && file !== null && 'path' in file && typeof file.path === 'string',
+    )
+  );
+}
 
 /**
  * Returns the package-root-relative paths that `pnpm pack` would publish. Scripts are skipped so that `prepare` does not
@@ -54,18 +66,4 @@ function listPackedPaths(): Array<string> {
   }
   return parsed.files.map((file) => file.path);
 }
-
-/** Narrows `pnpm pack --json` output to the one field that this test reads. */
-function isPackReport(value: unknown): value is { files: Array<{ path: string }> } {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'files' in value &&
-    Array.isArray(value.files) &&
-    value.files.every(
-      (file: unknown) => typeof file === 'object' && file !== null && 'path' in file && typeof file.path === 'string',
-    )
-  );
-}
-
 // endregion | Helpers

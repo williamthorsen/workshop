@@ -83,6 +83,10 @@ describe('rdy wrapper', () => {
 });
 
 // region | Helpers
+/** Returns the body of a stub entry point that writes a marker line to stdout. */
+function buildMarkerEntry(marker: string): string {
+  return `process.stdout.write(${JSON.stringify(`${marker}\n`)});\n`;
+}
 
 /** Runs the wrapper written into a tree, returning its exit status and what it wrote to each stream. */
 function runWrapper(tree: TempTree): { status: number | null; stderr: string; stdout: string } {
@@ -90,10 +94,4 @@ function runWrapper(tree: TempTree): { status: number | null; stderr: string; st
 
   return { status, stderr, stdout };
 }
-
-/** Returns the body of a stub entry point that writes a marker line to stdout. */
-function buildMarkerEntry(marker: string): string {
-  return `process.stdout.write(${JSON.stringify(`${marker}\n`)});\n`;
-}
-
 // endregion | Helpers

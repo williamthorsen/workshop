@@ -150,7 +150,6 @@ export async function launchProfile(
 }
 
 // region | Helpers
-
 /**
  * Refuses a profile that does not exist unless the launch may create it. A derived name contains no typo, so only a
  * name given on the command line has to be confirmed with --create.
@@ -180,30 +179,6 @@ async function awaitDevtools(invocation: Invocation, port: string, timeoutSecond
 }
 
 /**
- * Returns the launch options that select the same instance again: the profile only when it was named, since naming a
- * derived profile records it as named, and the work overrides, the port, and the mode as this launch was given them.
- */
-function composeRelaunchOptions(invocation: Invocation, options: LaunchOptions, profile: string): string[] {
-  return [
-    ...(invocation.origin === 'named' ? ['--profile', profile] : []),
-    ...(options.work.repo === undefined ? [] : ['--repo', options.work.repo]),
-    ...(options.work.branch === undefined ? [] : ['--branch', options.work.branch]),
-    ...(options.port === undefined ? [] : ['--port', options.port]),
-    ...(options.isHeadless ? ['--headless'] : []),
-  ];
-}
-
-/**
- * Returns the pages that a launch opens, in order. A launch that starts the browser opens the instance page after a tab
- * of another kind, a blank one when no URL is given, because Chromium reports targets to a client in the order of the
- * calls that created them, and the Playwright MCP server works in the first one.
- */
-function composePages(urls: readonly string[], pageFile: string | undefined): string[] {
-  if (pageFile === undefined) return [...urls];
-  return [...(urls.length === 0 ? ['about:blank'] : urls), `file://${pageFile}`];
-}
-
-/**
  * Returns the command that starts the browser: the command line itself, or, given the launchd session outside the GUI
  * login session that made it necessary, `open` with the command line as its arguments.
  */
@@ -217,6 +192,30 @@ function composeLaunchCommand(
   if (openSession === undefined) return commandLine;
   const bundle = resolveAppBundle(invocation, browserApp, openSession);
   return ['open', '-g', '-n', '-a', bundle, '--stdout', logFile, '--stderr', logFile, '--args', ...args];
+}
+
+/**
+ * Returns the pages that a launch opens, in order. A launch that starts the browser opens the instance page after a tab
+ * of another kind, a blank one when no URL is given, because Chromium reports targets to a client in the order of the
+ * calls that created them, and the Playwright MCP server works in the first one.
+ */
+function composePages(urls: readonly string[], pageFile: string | undefined): string[] {
+  if (pageFile === undefined) return [...urls];
+  return [...(urls.length === 0 ? ['about:blank'] : urls), `file://${pageFile}`];
+}
+
+/**
+ * Returns the launch options that select the same instance again: the profile only when it was named, since naming a
+ * derived profile records it as named, and the work overrides, the port, and the mode as this launch was given them.
+ */
+function composeRelaunchOptions(invocation: Invocation, options: LaunchOptions, profile: string): string[] {
+  return [
+    ...(invocation.origin === 'named' ? ['--profile', profile] : []),
+    ...(options.work.repo === undefined ? [] : ['--repo', options.work.repo]),
+    ...(options.work.branch === undefined ? [] : ['--branch', options.work.branch]),
+    ...(options.port === undefined ? [] : ['--port', options.port]),
+    ...(options.isHeadless ? ['--headless'] : []),
+  ];
 }
 
 /**
@@ -280,5 +279,4 @@ function startBrowser(
     );
   }
 }
-
 // endregion | Helpers

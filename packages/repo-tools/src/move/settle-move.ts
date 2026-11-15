@@ -40,7 +40,6 @@ export function settleMove(relocated: readonly Move[], moves: readonly Move[], c
 }
 
 // region | Helpers
-
 /** Allows direnv in each moved worktree that has an `.envrc` at its root, silently when direnv is not installed. */
 function allowMovedEnvrcs(relocated: readonly Move[], context: SettleContext): ReportLine[] {
   const { adapters, home, isDryRun } = context;
@@ -63,11 +62,6 @@ function allowMovedEnvrcs(relocated: readonly Move[], context: SettleContext): R
     );
   }
   return lines;
-}
-
-/** Builds a report line. */
-function report(stream: ReportLine['stream'], text: string): ReportLine {
-  return { stream, text };
 }
 
 /**
@@ -131,4 +125,8 @@ function renameSessionDirectories(relocated: readonly Move[], context: SettleCon
   return lines;
 }
 
+/** Builds a report line. */
+function report(stream: ReportLine['stream'], text: string): ReportLine {
+  return { stream, text };
+}
 // endregion | Helpers

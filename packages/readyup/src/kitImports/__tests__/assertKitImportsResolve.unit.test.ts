@@ -12,11 +12,6 @@ const COMPILED_KIT_PATHS = ['default.js', 'publishing.js'].map((name) =>
   path.resolve(import.meta.dirname, '../../../.readyup/kits', name),
 );
 
-/** Runs the assertion and returns the findings that it threw, failing the test when it did not throw. */
-async function captureFindings(bundle: string) {
-  return (await captureError(UnresolvableKitImportsError, () => assertKitImportsResolve(bundle))).findings;
-}
-
 describe(assertKitImportsResolve, () => {
   it('resolves for a bundle importing only symbols exported by the runner', async () => {
     const bundle = 'import { defineRdyKit } from "readyup";\nimport { fileExists } from "readyup/check-utils";\n';
@@ -95,3 +90,10 @@ describe(assertKitImportsResolve, () => {
     await expect(assertKitImportsResolve(readFileSync(kitPath, 'utf8'), kitPath)).resolves.toBeUndefined();
   });
 });
+
+// region | Helpers
+/** Runs the assertion and returns the findings that it threw, failing the test when it did not throw. */
+async function captureFindings(bundle: string) {
+  return (await captureError(UnresolvableKitImportsError, () => assertKitImportsResolve(bundle))).findings;
+}
+// endregion | Helpers

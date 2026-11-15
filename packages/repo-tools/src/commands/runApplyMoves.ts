@@ -70,6 +70,18 @@ export function runApplyMoves(run: VerbRun, options: MoveOptions): number {
 }
 
 // region | Helpers
+/** Joins paths in their `~` form. */
+function display(run: VerbRun, paths: readonly string[]): string {
+  return paths.map((value) => formatDisplayPath(value, run.home)).join(', ');
+}
+
+/** Reports whether a directory is the root of a clone whose origin, when `repo` is given, is that GitHub repo. */
+function isCloneOf(run: VerbRun, dir: string, repo: string | undefined): boolean {
+  if (run.adapters.readCloneRoot(dir) !== dir) return false;
+  if (repo === undefined) return true;
+  const origin = run.adapters.readOriginUrl(dir);
+  return origin !== undefined && parseRemoteUrl(origin)?.path === repo;
+}
 
 /**
  * Plans the move of an entry's clone from a former path to its path, or returns `undefined` when there is nothing to
@@ -110,18 +122,4 @@ function planEntry(
   if (from === undefined) return undefined;
   return planCloneMove(run, from, to);
 }
-
-/** Joins paths in their `~` form. */
-function display(run: VerbRun, paths: readonly string[]): string {
-  return paths.map((value) => formatDisplayPath(value, run.home)).join(', ');
-}
-
-/** Reports whether a directory is the root of a clone whose origin, when `repo` is given, is that GitHub repo. */
-function isCloneOf(run: VerbRun, dir: string, repo: string | undefined): boolean {
-  if (run.adapters.readCloneRoot(dir) !== dir) return false;
-  if (repo === undefined) return true;
-  const origin = run.adapters.readOriginUrl(dir);
-  return origin !== undefined && parseRemoteUrl(origin)?.path === repo;
-}
-
 // endregion | Helpers

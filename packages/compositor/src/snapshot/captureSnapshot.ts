@@ -127,8 +127,6 @@ export async function captureSnapshot(input: CaptureSnapshotInput): Promise<Comp
   };
 }
 
-// region | Helpers
-
 /** One artifact's render for one target, paired so an assembly in catalog order needs no positional lookup. */
 interface MatrixEntry {
   readonly artifactId: ArtifactId;
@@ -147,6 +145,7 @@ interface TargetRenders {
   readonly renders: ReadonlyMap<ArtifactId, ArtifactRender>;
 }
 
+// region | Helpers
 /**
  * Collects the artifacts whose files are worth reading, in catalog order.
  *
@@ -196,19 +195,6 @@ async function readTargetStates(
   return Promise.all(targets.map((target) => readTargetState(target, { baseDir })));
 }
 
-/** Renders every artifact every target deploys, target by artifact. */
-async function renderMatrix(
-  catalog: Catalog,
-  targets: ReadonlyArray<RenderTarget>,
-  tokenKinds: ReadonlyArray<TokenKind>,
-  resolveDeployedName: DeployedNameLookup,
-): Promise<ReadonlyMap<TargetId, ReadonlyMap<ArtifactId, ArtifactRender>>> {
-  const columns = await Promise.all(
-    targets.map((target) => renderTarget(catalog, target, tokenKinds, resolveDeployedName)),
-  );
-  return new Map(columns.map(({ targetId, renders }) => [targetId, renders]));
-}
-
 /**
  * Renders one artifact for one target.
  *
@@ -231,6 +217,19 @@ async function renderEntry(
     tokenKinds,
   });
   return { artifactId: entry.id, render };
+}
+
+/** Renders every artifact every target deploys, target by artifact. */
+async function renderMatrix(
+  catalog: Catalog,
+  targets: ReadonlyArray<RenderTarget>,
+  tokenKinds: ReadonlyArray<TokenKind>,
+  resolveDeployedName: DeployedNameLookup,
+): Promise<ReadonlyMap<TargetId, ReadonlyMap<ArtifactId, ArtifactRender>>> {
+  const columns = await Promise.all(
+    targets.map((target) => renderTarget(catalog, target, tokenKinds, resolveDeployedName)),
+  );
+  return new Map(columns.map(({ targetId, renders }) => [targetId, renders]));
 }
 
 /**
@@ -271,5 +270,4 @@ function requireSource(sources: ReadonlyMap<string, SourceSpec>, entry: CatalogE
   }
   return source;
 }
-
 // endregion | Helpers

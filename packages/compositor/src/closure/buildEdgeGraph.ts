@@ -88,8 +88,6 @@ export async function buildEdgeGraph(input: EdgeGraphInput): Promise<EdgeGraph> 
   };
 }
 
-// region | Helpers
-
 /** The rules of a kind no rule names, shared rather than rebuilt per artifact of every such kind. */
 const EMPTY_RULES: KindEdgeRules = { rules: [], foreignKeys: new Set() };
 
@@ -109,6 +107,38 @@ interface EntryRead {
   readonly edges: ReadonlyArray<DependencyEdge>;
   readonly partials: ReadonlyArray<PartialEntry>;
   readonly diagnostics: ReadonlyArray<ClosureDiagnostic>;
+}
+
+// region | Helpers
+/**
+ * Runs the contributor over one entry, if there is one.
+ *
+ * A contributed token edge naming its own artifact is dropped: a body naming itself renders per target, but it is not a
+ * dependency, and letting it through would report every self-naming artifact as a cycle. A self-dependency written in
+ * frontmatter is left alone, an author who declared one having said something a cycle diagnostic should report.
+ */
+async function contribute(
+  entry: CatalogEntry,
+  relativePath: string,
+  content: string,
+  context: EntryContext,
+): Promise<EdgeContribution> {
+  if (context.contributeEdges === undefined) {
+    return { edges: [], partials: [] };
+  }
+
+  const contribution = await context.contributeEdges({
+    artifactId: entry.id,
+    kindId: entry.kindId,
+    slug: entry.slug,
+    source: { id: context.source.id, dir: context.source.dir },
+    path: relativePath,
+    content,
+  });
+  return {
+    edges: contribution.edges.filter((edge) => !(edge.via === 'token' && edge.to === entry.id)),
+    partials: contribution.partials,
+  };
 }
 
 /**
@@ -158,37 +188,6 @@ async function readEntry(entry: CatalogEntry, context: EntryContext): Promise<En
   };
 }
 
-/**
- * Runs the contributor over one entry, if there is one.
- *
- * A contributed token edge naming its own artifact is dropped: a body naming itself renders per target, but it is not a
- * dependency, and letting it through would report every self-naming artifact as a cycle. A self-dependency written in
- * frontmatter is left alone, an author who declared one having said something a cycle diagnostic should report.
- */
-async function contribute(
-  entry: CatalogEntry,
-  relativePath: string,
-  content: string,
-  context: EntryContext,
-): Promise<EdgeContribution> {
-  if (context.contributeEdges === undefined) {
-    return { edges: [], partials: [] };
-  }
-
-  const contribution = await context.contributeEdges({
-    artifactId: entry.id,
-    kindId: entry.kindId,
-    slug: entry.slug,
-    source: { id: context.source.id, dir: context.source.dir },
-    path: relativePath,
-    content,
-  });
-  return {
-    edges: contribution.edges.filter((edge) => !(edge.via === 'token' && edge.to === entry.id)),
-    partials: contribution.partials,
-  };
-}
-
 /** Reads the source an entry resolved from, which a catalog the engine produced always contains. */
 function requireSource(sources: ReadonlyMap<string, SourceSpec>, entry: CatalogEntry): SourceSpec {
   const source = sources.get(entry.resolution.winner.sourceId);
@@ -199,5 +198,4 @@ function requireSource(sources: ReadonlyMap<string, SourceSpec>, entry: CatalogE
   }
   return source;
 }
-
 // endregion | Helpers

@@ -35,6 +35,7 @@ export function reportWriteResult(result: WriteResult, isDryRun: boolean): void 
   else console.info(output);
 }
 
+// region | Helpers
 /**
  * Returns the token and text for a write outcome, phrasing `isDryRun` outcomes as what would happen.
  *
@@ -62,3 +63,4 @@ function describeWriteResult(result: WriteResult, isDryRun: boolean): WriteLine 
       };
   }
 }
+// endregion | Helpers

@@ -10,17 +10,6 @@ import { loadRemoteKit } from '../loadRemoteKit.ts';
 /** Fetch options that bypass the cache and send no headers. */
 const uncachedOptions = { cache: undefined, resolveHeaders: () => undefined };
 
-/** Returns a minimal successful mock Response with the given body. */
-function mockResponse(body: string): Pick<Response, 'ok' | 'status' | 'statusText' | 'text' | 'headers'> {
-  return {
-    ok: true,
-    status: 200,
-    statusText: 'OK',
-    text: () => Promise.resolve(body),
-    headers: new Headers(),
-  };
-}
-
 describe('loadRemoteKit validation', () => {
   afterEach(() => {
     mockFetch.mockReset();
@@ -174,3 +163,16 @@ describe('loadRemoteKit validation', () => {
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 });
+
+// region | Helpers
+/** Returns a minimal successful mock Response with the given body. */
+function mockResponse(body: string): Pick<Response, 'ok' | 'status' | 'statusText' | 'text' | 'headers'> {
+  return {
+    ok: true,
+    status: 200,
+    statusText: 'OK',
+    text: () => Promise.resolve(body),
+    headers: new Headers(),
+  };
+}
+// endregion | Helpers

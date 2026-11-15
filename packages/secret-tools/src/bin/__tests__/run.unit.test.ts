@@ -245,6 +245,26 @@ describe(run, () => {
 });
 
 // region | Helpers
+interface Harness {
+  effects: RunEffects;
+  secrets: Map<string, string>;
+  /** What the effects recorded, which is how a test sees that the command never prompted. */
+  state: { prompted: boolean };
+}
+
+interface HarnessOptions {
+  failure?: string;
+  promptAnswer?: string;
+  promptFailure?: string;
+  stdin?: string;
+  stored?: Record<string, string>;
+  tty?: boolean;
+}
+
+/** Renders the key under which one item is stored, which a wrong keychain or account fails to match. */
+function buildKey({ account = '', service }: SecretQuery, keychain: string | undefined): string {
+  return `${keychain ?? 'default'}|${account}|${service}`;
+}
 
 /**
  * Builds effects over a map of secrets keyed by keychain, account, and service, so that a test reads back which key a
@@ -286,26 +306,4 @@ function createHarness(options: HarnessOptions = {}): Harness {
     state,
   };
 }
-
-/** Renders the key under which one item is stored, which a wrong keychain or account fails to match. */
-function buildKey({ account = '', service }: SecretQuery, keychain: string | undefined): string {
-  return `${keychain ?? 'default'}|${account}|${service}`;
-}
-
-interface Harness {
-  effects: RunEffects;
-  secrets: Map<string, string>;
-  /** What the effects recorded, which is how a test sees that the command never prompted. */
-  state: { prompted: boolean };
-}
-
-interface HarnessOptions {
-  failure?: string;
-  promptAnswer?: string;
-  promptFailure?: string;
-  stdin?: string;
-  stored?: Record<string, string>;
-  tty?: boolean;
-}
-
 // endregion | Helpers

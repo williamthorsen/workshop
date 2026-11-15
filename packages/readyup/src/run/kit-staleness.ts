@@ -102,7 +102,6 @@ export function listKitStalenessWarnings(
 }
 
 // region | Helpers
-
 /**
  * Finds the manifest entry describing a kit, matching on resolved compiled path.
  *
@@ -128,15 +127,6 @@ function hasChangedInput(status: InputsStatus | undefined): boolean {
   return status?.kind === 'stale' && status.failures.some((failure) => failure.reason === 'changed');
 }
 
-/** Builds the advisory for a manifest that is present and unreadable. */
-function toUnreadableManifestWarning(manifestPath: string, error: unknown): RaisedWarning {
-  return {
-    code: 'manifest-unreadable',
-    message: `${toDisplayPath(manifestPath)} could not be read, so no kit was checked against it: ${describeError(error)}`,
-    remedy: 'Run `rdy compile` to rewrite it.',
-  };
-}
-
 /** Returns a staleness verdict, or `undefined` when reaching one needed a file that cannot be read. */
 function readVerdict<TStatus>(check: () => TStatus): TStatus | undefined {
   try {
@@ -146,4 +136,12 @@ function readVerdict<TStatus>(check: () => TStatus): TStatus | undefined {
   }
 }
 
+/** Builds the advisory for a manifest that is present and unreadable. */
+function toUnreadableManifestWarning(manifestPath: string, error: unknown): RaisedWarning {
+  return {
+    code: 'manifest-unreadable',
+    message: `${toDisplayPath(manifestPath)} could not be read, so no kit was checked against it: ${describeError(error)}`,
+    remedy: 'Run `rdy compile` to rewrite it.',
+  };
+}
 // endregion | Helpers

@@ -87,7 +87,6 @@ export function renderTitleRun(): TerminalLine[] {
 }
 
 // region | Helpers
-
 /**
  * Returns a kit's command with the flags in `options`, in the form `rdy run {kit} --fail-on={level} --json`; the
  * default threshold adds no flag.
@@ -99,24 +98,6 @@ function buildCommand(kit: KitModel, { failOn = FAIL_ON, isJson = false }: Rende
 /** Returns the environment in which every condition of `kit` takes its declared default. */
 function buildDefaultEnvironment(kit: KitModel): Environment {
   return Object.fromEntries(kit.conditions.map((condition) => [condition.id, condition.on]));
-}
-
-/**
- * Returns the segments heading a kit's blocks, as a single-kit run builds them: the package or the repository and the
- * kit when the kit came from one, then the checklist when the kit has several.
- */
-function buildSegments(kit: KitModel, checklist: ChecklistModel): BreadcrumbSegment[] {
-  const segments: BreadcrumbSegment[] = [];
-  if (kit.origin !== undefined) {
-    const { source } = kit.origin;
-    const version = kit.origin.version === undefined ? '' : `@${kit.origin.version}`;
-    const sourceSegment: BreadcrumbSegment = source.startsWith('npm:')
-      ? { role: 'sourcePackage', text: `${source.slice('npm:'.length)}${version}` }
-      : { role: 'sourceRemote', text: `${source}${version}` };
-    segments.push(sourceSegment, { role: 'kit', text: kit.name });
-  }
-  if (kit.checklists.length > 1) segments.push({ role: 'checklist', text: checklist.name });
-  return segments;
 }
 
 /** Returns the result that readyup would record for a check with `status`. */
@@ -138,6 +119,24 @@ function buildResult(check: CheckModel, depth: number, status: Status): RdyResul
   if (status === 'blocked') return { ...base, status: 'skipped', ok: null, skipReason: 'precondition', detail: null };
   const detail = check.sites === undefined ? (check.failDetail ?? null) : check.sites.join(', ');
   return { ...base, status: 'failed', ok: false, detail, fix: check.fix ?? null };
+}
+
+/**
+ * Returns the segments heading a kit's blocks, as a single-kit run builds them: the package or the repository and the
+ * kit when the kit came from one, then the checklist when the kit has several.
+ */
+function buildSegments(kit: KitModel, checklist: ChecklistModel): BreadcrumbSegment[] {
+  const segments: BreadcrumbSegment[] = [];
+  if (kit.origin !== undefined) {
+    const { source } = kit.origin;
+    const version = kit.origin.version === undefined ? '' : `@${kit.origin.version}`;
+    const sourceSegment: BreadcrumbSegment = source.startsWith('npm:')
+      ? { role: 'sourcePackage', text: `${source.slice('npm:'.length)}${version}` }
+      : { role: 'sourceRemote', text: `${source}${version}` };
+    segments.push(sourceSegment, { role: 'kit', text: kit.name });
+  }
+  if (kit.checklists.length > 1) segments.push({ role: 'checklist', text: checklist.name });
+  return segments;
 }
 
 /** Composes a kit's run block by block, as `rdy run` writes it after the command, with the deck's steps. */
@@ -272,5 +271,4 @@ function resolveStatus(check: CheckModel, env: Environment, isBlocked: boolean):
   if (check.na !== undefined) return 'skip';
   return check.when === undefined || env[check.when] === true ? 'pass' : check.severity;
 }
-
 // endregion | Helpers

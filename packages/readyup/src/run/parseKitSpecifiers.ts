@@ -14,6 +14,7 @@ export function parseKitSpecifiers(positionals: string[]): KitSpecifier[] {
   return positionals.map(parseOneSpecifier);
 }
 
+// region | Helpers
 /** Returns a single `kit[:checklist,...]` string as a `KitSpecifier`. */
 function parseOneSpecifier(arg: string): KitSpecifier {
   const colonIndex = arg.indexOf(':');
@@ -36,3 +37,4 @@ function parseOneSpecifier(arg: string): KitSpecifier {
 
   return { kitName, checklists };
 }
+// endregion | Helpers

@@ -44,6 +44,10 @@ export function detectStack(
 }
 
 // region | Helpers
+/** Reports whether a value is a non-array object. */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
 
 /** Reports whether a tracked path matches a glob at the repository root or below any directory. */
 function matchesAtAnyDepth(trackedPath: string, glob: string): boolean {
@@ -67,10 +71,4 @@ function readDependencyNames(trackedPath: string, readManifest: (trackedPath: st
     return isRecord(section) ? Object.keys(section) : [];
   });
 }
-
-/** Reports whether a value is a non-array object. */
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 // endregion | Helpers

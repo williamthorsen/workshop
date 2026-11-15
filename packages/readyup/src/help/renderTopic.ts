@@ -60,7 +60,6 @@ export function renderTopic(markdown: string, options: RenderTopicOptions): stri
 }
 
 // region | Helpers
-
 /**
  * Returns `lines` without the `Rich` column of any table, and without a table that the drop leaves with one column.
  *
@@ -116,14 +115,6 @@ function renderLink(written: string, text: string, destination: string, topicByS
   return topic === undefined ? written : `${text} (rdy help ${topic})`;
 }
 
-/** Replaces each emoji with what plain output prints in its place, taking a following space when that is nothing. */
-function replaceEmoji(line: string): string {
-  return line.replaceAll(EMOJI, (_match, glyph: string, space: string) => {
-    const plain = PLAIN_BY_RICH_GLYPH.get(glyph) ?? '';
-    return plain === '' ? '' : `${plain}${space}`;
-  });
-}
-
 /** Renders the links on one prose line, leaving its code spans as written. */
 function renderLinks(line: string, topicByStem: Readonly<Record<string, string>>): string {
   return line.replaceAll(
@@ -133,4 +124,11 @@ function renderLinks(line: string, topicByStem: Readonly<Record<string, string>>
   );
 }
 
+/** Replaces each emoji with what plain output prints in its place, taking a following space when that is nothing. */
+function replaceEmoji(line: string): string {
+  return line.replaceAll(EMOJI, (_match, glyph: string, space: string) => {
+    const plain = PLAIN_BY_RICH_GLYPH.get(glyph) ?? '';
+    return plain === '' ? '' : `${plain}${space}`;
+  });
+}
 // endregion | Helpers

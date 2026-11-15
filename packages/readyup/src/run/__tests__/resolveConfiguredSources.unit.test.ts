@@ -237,6 +237,30 @@ describe(resolveConfiguredSources, () => {
 });
 
 // region | Helpers
+/**
+ * Names a run entry as the source from which it came and the kit that it runs, which is what an order
+ * assertion reads.
+ */
+function describeEntry({ name, provenance }: ResolvedKitEntry): string {
+  if (provenance?.kind === 'package') return `${provenance.packageName}:${name}`;
+  if (provenance?.kind === 'repository') return `${formatRepositoryLabel(provenance)}:${name}`;
+  return `${provenance?.kind}:${name}`;
+}
+
+/**
+ * Installs a package declaring the named kits in its manifest.
+ *
+ * The kit files themselves are left unwritten: This resolver names where a kit would be read from and
+ * never opens it, so a fixture that wrote them would prove nothing the manifest does not already say.
+ */
+function installPackage(temp: TempTree, name: string, kits: string[], version?: string): void {
+  const root = path.join('node_modules', name);
+  temp.writeJson(path.join(root, 'package.json'), { name, ...(version !== undefined && { version }) });
+  temp.writeJson(path.join(root, '.readyup', 'manifest.json'), {
+    version: 1,
+    kits: kits.map((kit) => ({ name: kit })),
+  });
+}
 
 /** Resolves the requested kits from sources spelled as a config writes them, returning the run entries. */
 async function resolve(
@@ -276,30 +300,4 @@ function serveManifests(manifests: Record<string, string[]>): void {
     }),
   );
 }
-
-/**
- * Names a run entry as the source from which it came and the kit that it runs, which is what an order
- * assertion reads.
- */
-function describeEntry({ name, provenance }: ResolvedKitEntry): string {
-  if (provenance?.kind === 'package') return `${provenance.packageName}:${name}`;
-  if (provenance?.kind === 'repository') return `${formatRepositoryLabel(provenance)}:${name}`;
-  return `${provenance?.kind}:${name}`;
-}
-
-/**
- * Installs a package declaring the named kits in its manifest.
- *
- * The kit files themselves are left unwritten: This resolver names where a kit would be read from and
- * never opens it, so a fixture that wrote them would prove nothing the manifest does not already say.
- */
-function installPackage(temp: TempTree, name: string, kits: string[], version?: string): void {
-  const root = path.join('node_modules', name);
-  temp.writeJson(path.join(root, 'package.json'), { name, ...(version !== undefined && { version }) });
-  temp.writeJson(path.join(root, '.readyup', 'manifest.json'), {
-    version: 1,
-    kits: kits.map((kit) => ({ name: kit })),
-  });
-}
-
 // endregion | Helpers

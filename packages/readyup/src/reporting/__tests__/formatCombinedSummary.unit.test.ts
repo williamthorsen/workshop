@@ -13,28 +13,6 @@ const FAILED_RECOMMEND = richFormatter.tokens.failedRecommend.text;
 /** What a test row varies: the counts that it reports, flattened, alongside its name and duration. */
 type RowOverrides = Partial<SummaryCounts> & { durationMs?: number; name?: string };
 
-function makeRow({ durationMs = 100, name = 'test-checklist', ...counts }: RowOverrides = {}): SummaryRow {
-  return {
-    counts: {
-      passed: 3,
-      errors: 0,
-      warnings: 0,
-      recommendations: 0,
-      blocked: 0,
-      optional: 0,
-      worstSeverity: null,
-      ...counts,
-    },
-    durationMs,
-    segments: [{ role: 'checklist', text: name }],
-  };
-}
-
-/** Returns the table's lines, the leading blank included. */
-function renderLines(rows: SummaryRow[]): string[] {
-  return formatCombinedSummary(rows).split('\n');
-}
-
 describe(formatCombinedSummary, () => {
   // The run's writer separates one block from the next, so a table with its own blank would double the gap.
   it('renders no separation of its own', () => {
@@ -150,3 +128,27 @@ describe(formatCombinedSummary, () => {
     expect(wide[1]?.length).toBeGreaterThan(narrow[1]?.length ?? 0);
   });
 });
+
+// region | Helpers
+function makeRow({ durationMs = 100, name = 'test-checklist', ...counts }: RowOverrides = {}): SummaryRow {
+  return {
+    counts: {
+      passed: 3,
+      errors: 0,
+      warnings: 0,
+      recommendations: 0,
+      blocked: 0,
+      optional: 0,
+      worstSeverity: null,
+      ...counts,
+    },
+    durationMs,
+    segments: [{ role: 'checklist', text: name }],
+  };
+}
+
+/** Returns the table's lines, the leading blank included. */
+function renderLines(rows: SummaryRow[]): string[] {
+  return formatCombinedSummary(rows).split('\n');
+}
+// endregion | Helpers

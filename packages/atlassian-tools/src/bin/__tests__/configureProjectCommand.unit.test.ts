@@ -355,22 +355,6 @@ describe('thor-jira configure-project', () => {
 });
 
 // region | Helpers
-
-/** Builds a harness with a credential in the environment, a conformant spec, and every route of a whole run. */
-function createHarness(options: HarnessOptions = {}): ReturnType<typeof createRunHarness> {
-  return createRunHarness({
-    env: { JIRA_API_TOKEN: 'a-token', JIRA_EMAIL: 'someone@example.com' },
-    files: { [SPEC_PATH]: CONFORMANT_SPEC },
-    ...options,
-    routes: { ...buildRoutes(), ...options.routes },
-  });
-}
-
-/** Runs `configure-project` through the whole command line, so that dispatch is exercised alongside it. */
-async function runSubcommand(harness: ReturnType<typeof createRunHarness>, args: string[]): Promise<number> {
-  return await run(['configure-project', ...args], harness.effects);
-}
-
 /** Builds every route walked by a whole run, against a team-managed project on one workflow. */
 function buildRoutes(): FakeRoutes {
   return {
@@ -426,4 +410,18 @@ function buildWorkflow(): unknown {
   };
 }
 
+/** Builds a harness with a credential in the environment, a conformant spec, and every route of a whole run. */
+function createHarness(options: HarnessOptions = {}): ReturnType<typeof createRunHarness> {
+  return createRunHarness({
+    env: { JIRA_API_TOKEN: 'a-token', JIRA_EMAIL: 'someone@example.com' },
+    files: { [SPEC_PATH]: CONFORMANT_SPEC },
+    ...options,
+    routes: { ...buildRoutes(), ...options.routes },
+  });
+}
+
+/** Runs `configure-project` through the whole command line, so that dispatch is exercised alongside it. */
+async function runSubcommand(harness: ReturnType<typeof createRunHarness>, args: string[]): Promise<number> {
+  return await run(['configure-project', ...args], harness.effects);
+}
 // endregion | Helpers

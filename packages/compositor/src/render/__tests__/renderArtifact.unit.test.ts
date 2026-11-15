@@ -244,15 +244,6 @@ describe(renderArtifact, () => {
 });
 
 // region | Helpers
-
-/** Narrows a render to the shape every content assertion reads, failing the test when it produced none. */
-function requireRendered(result: ArtifactRender): Extract<ArtifactRender, { status: 'rendered' }> {
-  if (result.status !== 'rendered') {
-    throw new Error(`Expected a rendered artifact, got "${result.status}".`);
-  }
-  return result;
-}
-
 /** Renders the review skill out of `dir` for one target, which every case varies. */
 async function render(dir: string, target: RenderTarget): Promise<ArtifactRender> {
   return renderArtifact({
@@ -265,4 +256,11 @@ async function render(dir: string, target: RenderTarget): Promise<ArtifactRender
   });
 }
 
+/** Narrows a render to the shape every content assertion reads, failing the test when it produced none. */
+function requireRendered(result: ArtifactRender): Extract<ArtifactRender, { status: 'rendered' }> {
+  if (result.status !== 'rendered') {
+    throw new Error(`Expected a rendered artifact, got "${result.status}".`);
+  }
+  return result;
+}
 // endregion | Helpers

@@ -129,18 +129,84 @@ export function mergeCounts(target: SummaryCounts, source: SummaryCounts): void 
   target.worstSeverity = worseSeverity(target.worstSeverity, source.worstSeverity);
 }
 
-// -- Helpers --
+// region | Helpers
+/** Returns each failed result's fix paired with the name and severity of its check. */
+function collectFixes(results: RdyResult[]): AttributedFix[] {
+  return results.flatMap((result) =>
+    result.status === 'failed' && result.fix !== null
+      ? { fix: result.fix, name: result.name, severity: result.severity }
+      : [],
+  );
+}
 
 /**
- * Returns the results surviving `reportOn`, then those surviving quiet, each pass keeping ancestors.
+ * Returns a failed result's reasons in reading order: its detail, its error, then its fix.
  *
- * A pass drops out when the invocation asked to be quiet or when the check declared itself quiet. The
- * two are one predicate at two scopes, so a kit whose every check is quiet renders exactly what
- * `--quiet` renders.
+ * Each is present only when the result has it; a result with none yields an empty list.
  */
-function selectReportedResults(results: RdyResult[], reportOn: Severity, quiet: boolean): RdyResult[] {
-  const reported = selectVisibleResults(results, reportOn);
-  return retainWithAncestors(reported, (result) => result.status !== 'passed' || !(quiet || result.quiet));
+function collectReasons(result: FailedResult, shouldIncludeFix: boolean): string[] {
+  const reasons: string[] = [];
+  if (result.detail !== null) reasons.push(result.detail);
+  if (result.error !== null) reasons.push(`Error: ${result.error.message}`);
+  if (shouldIncludeFix && result.fix !== null) reasons.push(getLayout().formatFix(result.fix));
+  return reasons;
+}
+
+/**
+ * Returns a progress value as a percentage or a passed-of-total fraction, or, for an empty fraction with a known
+ * examined count, as the number of files examined, which is what such a pass rests on.
+ */
+function formatProgress(progress: Progress, examinedCount: number | null): string {
+  if (isPercentProgress(progress)) {
+    return `${progress.percent}%`;
+  }
+  if (progress.count === 0 && examinedCount !== null) {
+    return `${pluralizeWithCount(examinedCount, 'file')} examined`;
+  }
+  return `${progress.passedCount} of ${progress.count}`;
+}
+
+/**
+ * Returns each fix as its failed check re-rendered, the fix standing where the reason would.
+ *
+ * Because a recapped fix and an inline one are then one shape, the fix token marks fix text under either
+ * `fixLocation` rather than marking the check's name in the recap and the fix itself inline.
+ */
+function renderFixRecap(fixes: AttributedFix[]): string[] {
+  return fixes.flatMap((entry) => [
+    getLayout().formatCheckLine({ token: resolveWorstToken(entry.severity), name: entry.name }),
+    ...getLayout().formatReasonBlock([getLayout().formatFix(entry.fix)]),
+  ]);
+}
+
+/** Returns a result's check line, followed by its reason block when the result failed. */
+function renderResult(result: RdyResult, fixLocation: FixLocation): string[] {
+  const isFailed = result.status === 'failed';
+  const checkLine = getLayout().formatCheckLine({
+    token: resolveResultToken(result),
+    name: result.name,
+    depth: result.depth,
+    durationMs: result.durationMs,
+    // A failed check's detail is its reason, which the block beneath renders.
+    ...(!isFailed && result.detail !== null && { detail: result.detail }),
+    // Only a failure gives the reader a pragma to write, because only a failure names findings.
+    ...(isFailed && result.id !== null && { checkId: result.id }),
+    ...(result.progress !== null && { progress: formatProgress(result.progress, result.examinedCount) }),
+  });
+
+  if (!isFailed) return [checkLine];
+
+  return [checkLine, ...getLayout().formatReasonBlock(collectReasons(result, fixLocation === 'inline'), result.depth)];
+}
+
+/** Returns the token for a result, chosen by its status and then by its severity or skip reason. */
+function resolveResultToken(result: RdyResult): TokenName {
+  if (result.status === 'passed') return 'passed';
+  if (result.status === 'skipped') {
+    return result.skipReason === 'precondition' ? 'blockedPrecondition' : 'skippedOptional';
+  }
+  // Resolve a failed check's token from its severity, by the same rule as a tail line's worst severity.
+  return resolveWorstToken(result.severity);
 }
 
 /**
@@ -164,83 +230,16 @@ function retainWithAncestors(results: RdyResult[], isVisible: (result: RdyResult
   return visible.toReversed();
 }
 
-/** Returns a result's check line, followed by its reason block when the result failed. */
-function renderResult(result: RdyResult, fixLocation: FixLocation): string[] {
-  const isFailed = result.status === 'failed';
-  const checkLine = getLayout().formatCheckLine({
-    token: resolveResultToken(result),
-    name: result.name,
-    depth: result.depth,
-    durationMs: result.durationMs,
-    // A failed check's detail is its reason, which the block beneath renders.
-    ...(!isFailed && result.detail !== null && { detail: result.detail }),
-    // Only a failure gives the reader a pragma to write, because only a failure names findings.
-    ...(isFailed && result.id !== null && { checkId: result.id }),
-    ...(result.progress !== null && { progress: formatProgress(result.progress, result.examinedCount) }),
-  });
-
-  if (!isFailed) return [checkLine];
-
-  return [checkLine, ...getLayout().formatReasonBlock(collectReasons(result, fixLocation === 'inline'), result.depth)];
-}
-
 /**
- * Returns a failed result's reasons in reading order: its detail, its error, then its fix.
+ * Returns the results surviving `reportOn`, then those surviving quiet, each pass keeping ancestors.
  *
- * Each is present only when the result has it; a result with none yields an empty list.
+ * A pass drops out when the invocation asked to be quiet or when the check declared itself quiet. The
+ * two are one predicate at two scopes, so a kit whose every check is quiet renders exactly what
+ * `--quiet` renders.
  */
-function collectReasons(result: FailedResult, shouldIncludeFix: boolean): string[] {
-  const reasons: string[] = [];
-  if (result.detail !== null) reasons.push(result.detail);
-  if (result.error !== null) reasons.push(`Error: ${result.error.message}`);
-  if (shouldIncludeFix && result.fix !== null) reasons.push(getLayout().formatFix(result.fix));
-  return reasons;
-}
-
-/** Returns each failed result's fix paired with the name and severity of its check. */
-function collectFixes(results: RdyResult[]): AttributedFix[] {
-  return results.flatMap((result) =>
-    result.status === 'failed' && result.fix !== null
-      ? { fix: result.fix, name: result.name, severity: result.severity }
-      : [],
-  );
-}
-
-/**
- * Returns each fix as its failed check re-rendered, the fix standing where the reason would.
- *
- * Because a recapped fix and an inline one are then one shape, the fix token marks fix text under either
- * `fixLocation` rather than marking the check's name in the recap and the fix itself inline.
- */
-function renderFixRecap(fixes: AttributedFix[]): string[] {
-  return fixes.flatMap((entry) => [
-    getLayout().formatCheckLine({ token: resolveWorstToken(entry.severity), name: entry.name }),
-    ...getLayout().formatReasonBlock([getLayout().formatFix(entry.fix)]),
-  ]);
-}
-
-/** Returns the token for a result, chosen by its status and then by its severity or skip reason. */
-function resolveResultToken(result: RdyResult): TokenName {
-  if (result.status === 'passed') return 'passed';
-  if (result.status === 'skipped') {
-    return result.skipReason === 'precondition' ? 'blockedPrecondition' : 'skippedOptional';
-  }
-  // Resolve a failed check's token from its severity, by the same rule as a tail line's worst severity.
-  return resolveWorstToken(result.severity);
-}
-
-/**
- * Returns a progress value as a percentage or a passed-of-total fraction, or, for an empty fraction with a known
- * examined count, as the number of files examined, which is what such a pass rests on.
- */
-function formatProgress(progress: Progress, examinedCount: number | null): string {
-  if (isPercentProgress(progress)) {
-    return `${progress.percent}%`;
-  }
-  if (progress.count === 0 && examinedCount !== null) {
-    return `${pluralizeWithCount(examinedCount, 'file')} examined`;
-  }
-  return `${progress.passedCount} of ${progress.count}`;
+function selectReportedResults(results: RdyResult[], reportOn: Severity, quiet: boolean): RdyResult[] {
+  const reported = selectVisibleResults(results, reportOn);
+  return retainWithAncestors(reported, (result) => result.status !== 'passed' || !(quiet || result.quiet));
 }
 
 /**
@@ -264,3 +263,4 @@ function tallyResult(counts: SummaryCounts, result: RdyResult): void {
   if (result.skipReason === 'precondition') counts.blocked++;
   else counts.optional++;
 }
+// endregion | Helpers
