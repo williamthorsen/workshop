@@ -78,6 +78,17 @@ export function planRegionFile(context: TargetPlanContext, deployment: RegionKin
 }
 
 // region | Helpers
+/** Every contributor's body, or the reason one of them has none. */
+type ContributionRead =
+  | { readonly status: 'read'; readonly contributions: ReadonlyArray<RenderedContribution> }
+  | { readonly status: 'unrenderable'; readonly reason: string };
+
+/** One contributor's rendered body, with everything whose text reached it. */
+interface RenderedContribution {
+  readonly artifact: ClosureArtifact;
+  readonly content: string;
+  readonly contributors: FileContributors;
+}
 
 /**
  * Assembles the host's entry from what a region transform produced, blocking where it refused.
@@ -121,11 +132,6 @@ function collect(entry: FileEntry | undefined): Array<FileEntry> {
   return entry === undefined ? [] : [entry];
 }
 
-/** Every contributor's body, or the reason one of them has none. */
-type ContributionRead =
-  | { readonly status: 'read'; readonly contributions: ReadonlyArray<RenderedContribution> }
-  | { readonly status: 'unrenderable'; readonly reason: string };
-
 /** Judges each contributor against the block the host records for it now. */
 function judgeContributions(
   deployment: RegionKindDeployment,
@@ -146,9 +152,12 @@ function judgeContributions(
   });
 }
 
-/** Renders the markers one contributor's block is delimited by. */
-function renderMarkers(deployment: RegionKindDeployment, artifact: ClosureArtifact): RegionMarkers {
-  return renderContributionMarkers(deployment.contributionMarkers, artifact.id);
+/** Locates the destination a region deployment writes, which is the host itself. */
+function locateHost(
+  context: TargetPlanContext,
+  deployment: RegionKindDeployment,
+): { targetId: TargetId; path: string } {
+  return { targetId: context.targetId, path: deployment.host };
 }
 
 /**
@@ -184,19 +193,6 @@ function nameContributors(
   return { artifacts: artifacts.values().toArray(), partials: [...namedPartialIds].toSorted(compareStrings) };
 }
 
-/** Locates the destination a region deployment writes, which is the host itself. */
-function locateHost(
-  context: TargetPlanContext,
-  deployment: RegionKindDeployment,
-): { targetId: TargetId; path: string } {
-  return { targetId: context.targetId, path: deployment.host };
-}
-
-/** Registers the body a host holds now, or `undefined` where it holds none. */
-function readHostSide(context: TargetPlanContext, hostContent: string | undefined): FileSide | undefined {
-  return hostContent === undefined ? undefined : context.blobs.addUtf8(hostContent);
-}
-
 /** Reads every contributor's rendered body, stopping at the first whose render produced none. */
 function readContributions(context: TargetPlanContext, routed: ReadonlyArray<ClosureArtifact>): ContributionRead {
   const contributions: Array<RenderedContribution> = [];
@@ -220,11 +216,13 @@ function readContributions(context: TargetPlanContext, routed: ReadonlyArray<Clo
   return { status: 'read', contributions };
 }
 
-/** One contributor's rendered body, with everything whose text reached it. */
-interface RenderedContribution {
-  readonly artifact: ClosureArtifact;
-  readonly content: string;
-  readonly contributors: FileContributors;
+/** Registers the body a host holds now, or `undefined` where it holds none. */
+function readHostSide(context: TargetPlanContext, hostContent: string | undefined): FileSide | undefined {
+  return hostContent === undefined ? undefined : context.blobs.addUtf8(hostContent);
 }
 
+/** Renders the markers one contributor's block is delimited by. */
+function renderMarkers(deployment: RegionKindDeployment, artifact: ClosureArtifact): RegionMarkers {
+  return renderContributionMarkers(deployment.contributionMarkers, artifact.id);
+}
 // endregion | Helpers

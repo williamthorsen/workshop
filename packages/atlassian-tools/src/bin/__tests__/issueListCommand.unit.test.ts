@@ -220,17 +220,6 @@ describe('thor-jira issue', () => {
 });
 
 // region | Helpers
-
-/** Builds a harness with a credential in the environment, a spec naming a project, and a search route. */
-function createHarness(options: HarnessOptions = {}): ReturnType<typeof createRunHarness> {
-  return createRunHarness({
-    env: { JIRA_API_TOKEN: 'a-token', JIRA_EMAIL: 'someone@example.com' },
-    files: { [SPEC_PATH]: SPEC_WITH_KEY },
-    ...options,
-    routes: { ...buildRoutes(), ...options.routes },
-  });
-}
-
 /** Builds the search route, which returns two work items in the order in which the search lists them. */
 function buildRoutes(): FakeRoutes {
   return {
@@ -245,6 +234,16 @@ function buildRoutes(): FakeRoutes {
   };
 }
 
+/** Builds a harness with a credential in the environment, a spec naming a project, and a search route. */
+function createHarness(options: HarnessOptions = {}): ReturnType<typeof createRunHarness> {
+  return createRunHarness({
+    env: { JIRA_API_TOKEN: 'a-token', JIRA_EMAIL: 'someone@example.com' },
+    files: { [SPEC_PATH]: SPEC_WITH_KEY },
+    ...options,
+    routes: { ...buildRoutes(), ...options.routes },
+  });
+}
+
 /** Reads the JQL of the first search that the run issued. */
 function readJql(harness: ReturnType<typeof createRunHarness>): unknown {
   const body = harness.calls[0]?.body;
@@ -256,5 +255,4 @@ function readJql(harness: ReturnType<typeof createRunHarness>): unknown {
 async function runSubcommand(harness: ReturnType<typeof createRunHarness>, args: string[]): Promise<number> {
   return await run(['issue', 'list', ...args], harness.effects);
 }
-
 // endregion | Helpers

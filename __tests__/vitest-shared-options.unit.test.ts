@@ -37,6 +37,10 @@ describe('every Vitest config', () => {
 });
 
 // region | Helpers
+/** Reports whether a value is a plain object, so a config's shape can be read without an assertion. */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
 
 /** Imports a config and returns the object to which it resolves. */
 async function loadConfig(relativePath: string): Promise<Record<string, unknown>> {
@@ -44,11 +48,6 @@ async function loadConfig(relativePath: string): Promise<Record<string, unknown>
   const resolved = isRecord(imported) ? imported['default'] : undefined;
   if (!isRecord(resolved)) throw new Error(`${relativePath} exports no config object`);
   return resolved;
-}
-
-/** Reports whether a value is a plain object, so a config's shape can be read without an assertion. */
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
 }
 
 /** Returns the specifiers that a config aliases, sorted. */
@@ -79,5 +78,4 @@ function readUnstubEnvsFlags(config: Record<string, unknown>): unknown[] {
     return isRecord(projectTest) ? projectTest['unstubEnvs'] : undefined;
   });
 }
-
 // endregion | Helpers

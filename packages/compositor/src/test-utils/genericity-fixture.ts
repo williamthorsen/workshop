@@ -35,77 +35,6 @@ import { captureSnapshot, type CompositionSnapshot } from '../snapshot/captureSn
 import { extractTokenEdges } from '../tokens/extractTokenEdges.ts';
 import { buildConfig } from './buildConfig.ts';
 
-/** Builds the source tree the fixture composes over. */
-function buildGenericitySourceFiles(): Record<string, string | Uint8Array> {
-  return {
-    'clauses/governing-law.adoc': '= Governing law\n\nThe laws of the stated jurisdiction govern this agreement.\n',
-    'clauses/indemnity.adoc': [
-      '= Indemnity',
-      '',
-      '// include: ../partials/notice.adoc /',
-      '',
-      'The <<party:Vendor>> shall indemnify the Customer.',
-      '',
-      'See xref:../exhibits/schedule-of-fees/EXHIBIT.adoc[the fee schedule].',
-      '',
-      '// inlay: standard-terms',
-      '',
-    ].join('\n'),
-    'clauses/standard-terms.adoc': '= Standard terms\n\nThe stated schedule of fees applies.\n',
-    'definitions/affiliate.adoc':
-      'Affiliate: any entity controlling the <<party:Vendor>>, as qualified by <<clause:governing-law>>.\n',
-    'exhibits/schedule-of-fees/EXHIBIT.adoc': '= Schedule of fees\n\nFees are stated in the attached rates table.\n',
-    'exhibits/schedule-of-fees/rates.pdf': RATES_PDF_BYTES,
-    'partials/notice.adoc': 'NOTE: This clause is a standard-form provision.\n',
-  };
-}
-
-/**
- * Builds the jurisdiction the fixture deploys into: clauses as named files, definitions aggregated into one region.
- *
- * The clause deployment is rooted at `articles` while the source roots the kind at `clauses`, so a layout read from the
- * source rather than from the target's own declaration lands the file in the wrong tree.
- */
-function buildJurisdictionTarget(targetRoot: string): RenderTarget {
-  return {
-    id: 'de',
-    label: 'Germany',
-    root: targetRoot,
-    tokenMappings: [
-      { kindId: 'clause-reference', entries: [], sigil: '§' },
-      { kindId: 'party', entries: [{ from: 'Vendor', to: 'Supplier' }] },
-    ],
-    deployments: [
-      {
-        form: 'tree',
-        kindId: 'clause',
-        layout: { form: 'file', root: 'articles', extension: '.adoc' },
-        nameTemplate: 'clause-{slug}',
-      },
-      {
-        form: 'region',
-        kindId: 'definition',
-        host: CONTRACT_HOST_PATH,
-        markers: REGION_MARKERS,
-        contributionMarkers: CONTRIBUTION_MARKERS,
-      },
-      { form: 'tree', kindId: 'exhibit', layout: { form: 'directory', root: 'exhibits', entryFile: 'EXHIBIT.adoc' } },
-    ],
-    stages: [
-      { kind: 'transclusion', syntax: { open: '//', close: '' } },
-      { kind: 'tokens' },
-      { kind: 'links', pattern: String.raw`xref:([^\[]+)\[` },
-      {
-        kind: 'inlay',
-        syntax: { open: '//', close: '' },
-        markers: INLAY_MARKERS,
-        contributionMarkers: FILL_MARKERS,
-        reshape: { pattern: String.raw`^(={1,5})(?=\s)`, replacement: '$1=' },
-      },
-    ],
-  };
-}
-
 /**
  * Captures a composition over a temporary source tree and destination root, both removed when the test ends.
  *
@@ -231,6 +160,76 @@ export const REGION_MARKERS: MarkerPair = {
 };
 
 // region | Helpers
+/** Builds the source tree the fixture composes over. */
+function buildGenericitySourceFiles(): Record<string, string | Uint8Array> {
+  return {
+    'clauses/governing-law.adoc': '= Governing law\n\nThe laws of the stated jurisdiction govern this agreement.\n',
+    'clauses/indemnity.adoc': [
+      '= Indemnity',
+      '',
+      '// include: ../partials/notice.adoc /',
+      '',
+      'The <<party:Vendor>> shall indemnify the Customer.',
+      '',
+      'See xref:../exhibits/schedule-of-fees/EXHIBIT.adoc[the fee schedule].',
+      '',
+      '// inlay: standard-terms',
+      '',
+    ].join('\n'),
+    'clauses/standard-terms.adoc': '= Standard terms\n\nThe stated schedule of fees applies.\n',
+    'definitions/affiliate.adoc':
+      'Affiliate: any entity controlling the <<party:Vendor>>, as qualified by <<clause:governing-law>>.\n',
+    'exhibits/schedule-of-fees/EXHIBIT.adoc': '= Schedule of fees\n\nFees are stated in the attached rates table.\n',
+    'exhibits/schedule-of-fees/rates.pdf': RATES_PDF_BYTES,
+    'partials/notice.adoc': 'NOTE: This clause is a standard-form provision.\n',
+  };
+}
+
+/**
+ * Builds the jurisdiction the fixture deploys into: clauses as named files, definitions aggregated into one region.
+ *
+ * The clause deployment is rooted at `articles` while the source roots the kind at `clauses`, so a layout read from the
+ * source rather than from the target's own declaration lands the file in the wrong tree.
+ */
+function buildJurisdictionTarget(targetRoot: string): RenderTarget {
+  return {
+    id: 'de',
+    label: 'Germany',
+    root: targetRoot,
+    tokenMappings: [
+      { kindId: 'clause-reference', entries: [], sigil: '§' },
+      { kindId: 'party', entries: [{ from: 'Vendor', to: 'Supplier' }] },
+    ],
+    deployments: [
+      {
+        form: 'tree',
+        kindId: 'clause',
+        layout: { form: 'file', root: 'articles', extension: '.adoc' },
+        nameTemplate: 'clause-{slug}',
+      },
+      {
+        form: 'region',
+        kindId: 'definition',
+        host: CONTRACT_HOST_PATH,
+        markers: REGION_MARKERS,
+        contributionMarkers: CONTRIBUTION_MARKERS,
+      },
+      { form: 'tree', kindId: 'exhibit', layout: { form: 'directory', root: 'exhibits', entryFile: 'EXHIBIT.adoc' } },
+    ],
+    stages: [
+      { kind: 'transclusion', syntax: { open: '//', close: '' } },
+      { kind: 'tokens' },
+      { kind: 'links', pattern: String.raw`xref:([^\[]+)\[` },
+      {
+        kind: 'inlay',
+        syntax: { open: '//', close: '' },
+        markers: INLAY_MARKERS,
+        contributionMarkers: FILL_MARKERS,
+        reshape: { pattern: String.raw`^(={1,5})(?=\s)`, replacement: '$1=' },
+      },
+    ],
+  };
+}
 
 /**
  * Contributes the closure edges an artifact's own body declares through its referent tokens.
@@ -241,5 +240,4 @@ export const REGION_MARKERS: MarkerPair = {
 function contributeTokenEdges(read: ArtifactRead): EdgeContribution {
   return { edges: extractTokenEdges([{ lines: read.content.split('\n') }], GENERICITY_TOKEN_KINDS), partials: [] };
 }
-
 // endregion | Helpers
