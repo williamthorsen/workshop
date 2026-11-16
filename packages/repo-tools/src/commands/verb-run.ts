@@ -130,8 +130,8 @@ export interface VerbRun {
   github: GitHubReader;
   /** The home directory, or `''` when `HOME` is unset or empty. */
   home: string;
-  /** The directory that holds Claude Code's session directories. */
-  sessionsDir: string;
+  /** The directory that holds Claude Code's session directories, or `undefined` when it cannot be located. */
+  sessionsDir: string | undefined;
   stderr: (line: string) => void;
   stdout: (line: string) => void;
 }

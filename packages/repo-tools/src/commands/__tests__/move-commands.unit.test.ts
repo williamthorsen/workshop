@@ -72,6 +72,9 @@ describe('move without HOME', () => {
       registry: ABSOLUTE,
     });
     expect(result.stdout).toContain(`${FAKE_HOME}/repos/alpha -> ${FAKE_HOME}/repos/kit`);
+    expect(result.stderr).toContain(
+      'thor-repo: session directories not renamed: CLAUDE_CONFIG_DIR is unset, and HOME is unset or empty',
+    );
     expect(result.status).toBe(0);
   });
 });

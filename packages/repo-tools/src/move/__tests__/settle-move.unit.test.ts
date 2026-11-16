@@ -125,6 +125,46 @@ describe(settleMove, () => {
     expect(fs.existsSync(`${root}/old/.DS_Store`)).toBe(true);
     expect(fs.existsSync(`${root}/sessions/${encodeSessionDirectoryName(`${root}/old/app`)}`)).toBe(true);
   });
+
+  it('renames the session directory without a home directory', () => {
+    using tree = createTempTree({}, { prefix: 'repo-tools-' });
+    const root = fs.realpathSync(tree.dir);
+    const move = { from: `${root}/app`, to: `${root}/kit` };
+    writeFiles(root, [`sessions/${encodeSessionDirectoryName(move.from)}/a.jsonl`]);
+
+    const lines = settleMove([move], [], {
+      adapters: buildAdapters({}),
+      home: '',
+      isDryRun: false,
+      sessionsDir: `${root}/sessions`,
+    });
+
+    expect(lines).toStrictEqual([
+      {
+        stream: 'stdout',
+        text: `${root}/sessions/${encodeSessionDirectoryName(move.from)} -> ${root}/sessions/${encodeSessionDirectoryName(move.to)}`,
+      },
+    ]);
+  });
+
+  it.each([false, true])('reports once that it cannot locate the sessions directory, dry run %s', (isDryRun) => {
+    const moves = [
+      { from: '/srv/app', to: '/srv/kit' },
+      { from: '/srv/app.live', to: '/srv/kit.live' },
+    ];
+    const lines = settleMove(moves, [], {
+      adapters: buildAdapters({}),
+      home: '',
+      isDryRun,
+      sessionsDir: undefined,
+    });
+    expect(lines).toStrictEqual([
+      {
+        stream: 'stderr',
+        text: 'session directories not renamed: CLAUDE_CONFIG_DIR is unset, and HOME is unset or empty',
+      },
+    ]);
+  });
 });
 
 // region | Helpers

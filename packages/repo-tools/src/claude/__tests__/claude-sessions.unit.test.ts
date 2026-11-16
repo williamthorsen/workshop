@@ -16,4 +16,12 @@ describe(readSessionsDir, () => {
   ])('reads %j', (env, expected) => {
     expect(readSessionsDir(env, '/home/spec')).toBe(expected);
   });
+
+  it('reads CLAUDE_CONFIG_DIR without a home directory', () => {
+    expect(readSessionsDir({ CLAUDE_CONFIG_DIR: '/opt/claude' }, '')).toBe('/opt/claude/projects');
+  });
+
+  it('returns undefined when neither CLAUDE_CONFIG_DIR nor the home directory is known', () => {
+    expect(readSessionsDir({}, '')).toBeUndefined();
+  });
 });
