@@ -1,7 +1,6 @@
 import process from 'node:process';
 
-import { defineCommand, defineGroup, runCli, UsageError } from '@williamthorsen/toolbelt.cli/candidate';
-import { describeError } from '@williamthorsen/toolbelt.errors';
+import { defineCommand, defineGroup, runCli } from '@williamthorsen/toolbelt.cli/candidate';
 
 import { OverlayError } from '../errors/OverlayError.ts';
 import type { OverlayMode } from '../modes/types.ts';
@@ -66,7 +65,7 @@ without overwriting them.`,
 export async function run(argv: readonly string[], effects: RunEffects): Promise<number> {
   return runCli(argv, ROOT, {
     name: 'overlay',
-    version: () => resolveVersion(effects),
+    version: () => effects.resolveVersion(),
     stdout: process.stdout,
     stderr: process.stderr,
   });
@@ -104,15 +103,6 @@ function defineModeCommand(mode: OverlayMode, summary: string, description: stri
       }
     },
   });
-}
-
-/** Resolves the installed version, reporting a failure as a usage error, which exits 2. */
-function resolveVersion(effects: RunEffects): string {
-  try {
-    return effects.resolveVersion();
-  } catch (error) {
-    throw new UsageError(describeError(error), { cause: error });
-  }
 }
 
 // endregion | Helpers

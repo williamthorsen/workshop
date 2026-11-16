@@ -94,19 +94,16 @@ describe(run, () => {
       expect(stdout).toContain('--key');
     });
 
-    it('reports a failure to resolve the version as a usage error', async () => {
+    it('leaves a failure to resolve the version to the crash handler', async () => {
+      const failure = new Error('The manifest declares no version.');
       const failing: RunEffects = {
         ...EFFECTS,
         resolveVersion: () => {
-          throw new Error('The manifest declares no version.');
+          throw failure;
         },
       };
 
-      await expect(run(['--version'], failing)).resolves.toStrictEqual({
-        exitCode: 2,
-        stderr: "thor-git: The manifest declares no version.\nTry 'thor-git --help'.\n",
-        stdout: '',
-      });
+      await expect(run(['--version'], failing)).rejects.toBe(failure);
     });
 
     it.each([['--version'], ['-V']])('prints the resolved version on %o', async (flag) => {

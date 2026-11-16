@@ -117,7 +117,7 @@ export async function run(args: readonly string[], effects: RunEffects): Promise
   const exitCode = await runCli(args, ROOT, {
     name: 'thor-secret',
     context: effects,
-    version: () => resolveVersion(effects),
+    version: () => effects.resolveVersion(),
     stdout,
     stderr,
   });
@@ -169,15 +169,6 @@ async function reportFailures(stderr: Writer, body: () => number | Promise<numbe
     }
 
     throw error;
-  }
-}
-
-/** Resolves the installed version, reporting a failure as a usage error, which exits 2. */
-function resolveVersion(effects: { readonly resolveVersion: () => string }): string {
-  try {
-    return effects.resolveVersion();
-  } catch (error) {
-    throw new UsageError(describeError(error), { cause: error });
   }
 }
 

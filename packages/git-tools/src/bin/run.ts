@@ -87,7 +87,7 @@ export async function run(args: readonly string[], effects: RunEffects): Promise
   const exitCode = await runCli(args.length === 0 ? ['--help'] : args, ROOT, {
     name: 'thor-git',
     context: effects,
-    version: () => resolveVersion(effects),
+    version: () => effects.resolveVersion(),
     stdout,
     stderr,
   });
@@ -130,15 +130,6 @@ function reportInvalidOptions<T>(derive: () => T): T {
   } catch (error) {
     if (!(error instanceof RangeError)) throw error;
 
-    throw new UsageError(describeError(error), { cause: error });
-  }
-}
-
-/** Resolves the installed version, reporting a failure as a usage error, which exits 2. */
-function resolveVersion(effects: RunEffects): string {
-  try {
-    return effects.resolveVersion();
-  } catch (error) {
     throw new UsageError(describeError(error), { cause: error });
   }
 }
