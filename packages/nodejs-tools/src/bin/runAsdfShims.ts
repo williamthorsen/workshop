@@ -13,6 +13,28 @@ import {
   RESHIM,
 } from './thor-node-result.ts';
 
+/** The asdf install of the running node. */
+export interface AsdfInstallRecord {
+  readonly dataDir: string;
+  readonly plugin: string;
+  readonly version: string;
+}
+
+/** What `asdf-shims` found: the stranded shims under an asdf install, or why the check does not apply. */
+export type AsdfShimsResult =
+  | {
+      readonly install: AsdfInstallRecord;
+      readonly outcome: 'clean' | 'stranded';
+      readonly reason: null;
+      readonly shims: readonly StrandedShimRecord[];
+    }
+  | {
+      readonly install: null;
+      readonly outcome: 'not-applicable';
+      readonly reason: string;
+      readonly shims: readonly [];
+    };
+
 /** Renders an `asdf-shims` result as the report on stdout, or the reason on stderr when the check does not apply. */
 export function renderAsdfShimsText(result: AsdfShimsResult): RenderedText {
   if (result.outcome === 'not-applicable') return { stderr: `${result.reason}\n`, stdout: '' };
@@ -66,28 +88,6 @@ export function runAsdfShims(effects: ThorNodeEffects): AsdfShimsResult {
     shims: shims.map((shim) => describeShim(shim, installRecord, lacksCorepack)),
   };
 }
-
-/** The asdf install of the running node. */
-export interface AsdfInstallRecord {
-  readonly dataDir: string;
-  readonly plugin: string;
-  readonly version: string;
-}
-
-/** What `asdf-shims` found: the stranded shims under an asdf install, or why the check does not apply. */
-export type AsdfShimsResult =
-  | {
-      readonly install: AsdfInstallRecord;
-      readonly outcome: 'clean' | 'stranded';
-      readonly reason: null;
-      readonly shims: readonly StrandedShimRecord[];
-    }
-  | {
-      readonly install: null;
-      readonly outcome: 'not-applicable';
-      readonly reason: string;
-      readonly shims: readonly [];
-    };
 
 /** A stranded shim, with the commands that put its command under the active version or remove it. */
 export interface StrandedShimRecord {

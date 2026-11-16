@@ -5,28 +5,6 @@ import { UsageError } from '@williamthorsen/toolbelt.cli/candidate';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
 /**
- * Reads a protect-list file. A missing file yields no entries when it is the default path and is a usage error when
- * the caller named it, since a mistyped path would otherwise remove every protection.
- *
- * @internal
- */
-export function readProtectList(options: ReadProtectListOptions): ProtectList {
-  const { explicit, filePath, homeDir } = options;
-
-  let text: string;
-  try {
-    text = fs.readFileSync(filePath, 'utf8');
-  } catch (error) {
-    if (isNotFoundError(error) && !explicit) return { entries: [], found: false };
-    if (isNotFoundError(error)) throw new UsageError(`Protect-list not found: ${filePath}`, { cause: error });
-
-    throw new UsageError(`Cannot read protect-list ${filePath}: ${describeError(error)}`, { cause: error });
-  }
-
-  return { entries: parseProtectList(text, homeDir), found: true };
-}
-
-/**
  * Parses protect-list text into its patterns, skipping blank lines and `#` comments. A pattern must be absolute or
  * start with `~`, which expands to `homeDir`.
  *
@@ -60,6 +38,28 @@ export interface ProtectList {
   readonly entries: readonly ProtectEntry[];
   /** Whether the file exists. */
   readonly found: boolean;
+}
+
+/**
+ * Reads a protect-list file. A missing file yields no entries when it is the default path and is a usage error when
+ * the caller named it, since a mistyped path would otherwise remove every protection.
+ *
+ * @internal
+ */
+export function readProtectList(options: ReadProtectListOptions): ProtectList {
+  const { explicit, filePath, homeDir } = options;
+
+  let text: string;
+  try {
+    text = fs.readFileSync(filePath, 'utf8');
+  } catch (error) {
+    if (isNotFoundError(error) && !explicit) return { entries: [], found: false };
+    if (isNotFoundError(error)) throw new UsageError(`Protect-list not found: ${filePath}`, { cause: error });
+
+    throw new UsageError(`Cannot read protect-list ${filePath}: ${describeError(error)}`, { cause: error });
+  }
+
+  return { entries: parseProtectList(text, homeDir), found: true };
 }
 
 export interface ReadProtectListOptions {
