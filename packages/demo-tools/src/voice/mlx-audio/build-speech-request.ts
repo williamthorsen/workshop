@@ -1,5 +1,8 @@
+/** A sampling field of mlx-audio's speech request. */
+export type SamplingField = (typeof SAMPLING_FIELDS)[number];
+
 /** The body of a request to clone a voice through mlx-audio's speech endpoint. */
-export interface SpeechRequestBody {
+export interface SpeechRequestBody extends SpeechSampling {
   readonly input: string;
   /** The model's local directory, which keeps the server from resolving a Hugging Face ID. */
   readonly model: string;
@@ -8,13 +11,23 @@ export interface SpeechRequestBody {
   readonly response_format: 'mp3';
 }
 
-/** What a speech request takes: the text to speak, the model's directory, and the voice profile's reference. */
+/** What a speech request takes: the text to speak, the model's directory, the profile's reference, and the sampling. */
 export interface SpeechRequestInput {
   readonly input: string;
   readonly modelDir: string;
   readonly referenceAudio: string;
   readonly referenceText: string;
+  readonly sampling: SpeechSampling;
 }
+
+/**
+ * Sampling values for a speech request. mlx-audio resolves a field that is absent from the model's config, then from
+ * its own default.
+ */
+export type SpeechSampling = Readonly<Partial<Record<SamplingField, number>>>;
+
+/** The sampling fields of mlx-audio's speech request, as of `MLX_AUDIO_VERSION`. */
+export const SAMPLING_FIELDS = ['repetition_penalty', 'temperature', 'top_k', 'top_p'] as const;
 
 /** The content type of a successful response, which the server derives from `response_format`. */
 export const SPEECH_CONTENT_TYPE = 'audio/mp3';
@@ -31,6 +44,14 @@ export function buildSpeechRequest({
   modelDir,
   referenceAudio,
   referenceText,
+  sampling,
 }: SpeechRequestInput): SpeechRequestBody {
-  return { input, model: modelDir, ref_audio: referenceAudio, ref_text: referenceText, response_format: 'mp3' };
+  return {
+    input,
+    model: modelDir,
+    ref_audio: referenceAudio,
+    ref_text: referenceText,
+    response_format: 'mp3',
+    ...sampling,
+  };
 }

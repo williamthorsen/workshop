@@ -5,6 +5,7 @@ import { describeError } from '@williamthorsen/toolbelt.errors';
 import { isRecord } from '@williamthorsen/toolbelt.objects';
 import { parse } from 'yaml';
 
+import { SAMPLING_FIELDS, type SamplingField, type SpeechSampling } from '../voice/mlx-audio/build-speech-request.ts';
 import { expandValue } from './expand-value.ts';
 import { findUnknownKey } from './find-unknown-key.ts';
 
@@ -31,14 +32,8 @@ export interface VoiceConfig {
   readonly referenceAudio: string;
   readonly referenceTranscript: string;
   /** The sampling values to send with every speech request; a key that is absent is left to mlx-audio. */
-  readonly sampling: VoiceSampling;
+  readonly sampling: SpeechSampling;
 }
-
-/** mlx-audio's sampling fields, named as its speech request names them. */
-export type VoiceSampling = Readonly<Partial<Record<SamplingKey, number>>>;
-
-/** A sampling field of mlx-audio's speech request. */
-export type SamplingKey = (typeof SAMPLING_KEYS)[number];
 
 /** What reading the machine configuration takes from its caller's environment. */
 export interface MachineConfigInput {
@@ -51,9 +46,6 @@ export const DEFAULT_VOICE_HOME = '.local/share/thor-demo/voice';
 
 /** The voice-clone model when the configuration does not set one. */
 export const DEFAULT_VOICE_MODEL = 'mlx-community/higgs-audio-v2-3B-mlx-q8';
-
-/** The sampling fields of mlx-audio's speech request, as of `MLX_AUDIO_VERSION`. */
-export const SAMPLING_KEYS = ['repetition_penalty', 'temperature', 'top_k', 'top_p'] as const;
 
 /** The machine configuration file, relative to the home directory. */
 export const MACHINE_CONFIG_PATH = '.config/thor-demo/config.yaml';
@@ -139,11 +131,11 @@ function readRequiredPath(key: string, raw: unknown, paths: MachineConfigInput):
 }
 
 /** Reads the `sampling` section, keeping each key that is set. */
-function readSamplingSection(section: unknown): SectionResult<{ sampling: VoiceSampling }> {
+function readSamplingSection(section: unknown): SectionResult<{ sampling: SpeechSampling }> {
   if (section === undefined || section === null) return { ok: true, sampling: {} };
   if (!isRecord(section)) return { ok: false, problem: 'voice.sampling must be a mapping' };
 
-  const unknownKey = findUnknownKey(section, SAMPLING_KEYS);
+  const unknownKey = findUnknownKey(section, SAMPLING_FIELDS);
   if (unknownKey !== undefined) {
     return {
       ok: false,
@@ -151,14 +143,14 @@ function readSamplingSection(section: unknown): SectionResult<{ sampling: VoiceS
     };
   }
 
-  const sampling: Partial<Record<SamplingKey, number>> = {};
-  for (const key of SAMPLING_KEYS) {
+  const sampling: Partial<Record<SamplingField, number>> = {};
+  for (const key of SAMPLING_FIELDS) {
     const value = section[key];
     if (value === undefined || value === null) continue;
     if (typeof value !== 'number' || !Number.isFinite(value)) {
       return { ok: false, problem: `voice.sampling.${key} must be a finite number` };
     }
-    if (key === 'top_k' && !Number.isInteger(value)) {
+    if (key === 'top_k' && !Number.isSafeInteger(value)) {
       return { ok: false, problem: 'voice.sampling.top_k must be an integer' };
     }
     sampling[key] = value;

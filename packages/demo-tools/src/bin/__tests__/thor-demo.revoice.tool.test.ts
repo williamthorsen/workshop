@@ -8,7 +8,11 @@ import { describe, expect, it } from 'vitest';
 
 import { hashContent } from '../../test-utils/hash-content.ts';
 import { createDemoRepo, type DemoRepo } from '../test-utils/create-demo-repo.ts';
-import { createFakeVoiceTools, type FakeVoiceMachine } from '../test-utils/create-fake-voice-tools.ts';
+import {
+  createFakeVoiceTools,
+  type FakeVoiceMachine,
+  type VoiceConfigOptions,
+} from '../test-utils/create-fake-voice-tools.ts';
 import { runThorDemo } from '../test-utils/run-thor-demo.ts';
 import { waitFor } from '../test-utils/wait-for.ts';
 
@@ -20,7 +24,7 @@ const OUTPUT_FILES = { 'final-demo.mp4': 'video bytes', 'final-demo.srt': 'srt',
 
 describe('thor-demo revoice', () => {
   it('re-voices through the proxy, captions offline, composes, and archives the take as cloned', () => {
-    using machine = createInstalledMachine();
+    using machine = createInstalledMachine({ sampling: { temperature: 0.5, top_k: 40 } });
     using repo = createDemoRepo({ aidemoVersion: '0.20.3', outputFiles: OUTPUT_FILES, recorded: true });
     using archive = createTempTree({ '.keep': '' });
 
@@ -51,6 +55,8 @@ describe('thor-demo revoice', () => {
           ref_audio: `${home}/profile/reference.wav`,
           ref_text: 'Hello there.',
           response_format: 'mp3',
+          temperature: 0.5,
+          top_k: 40,
         },
         host: '127.0.0.1',
       },
@@ -120,8 +126,8 @@ describe('thor-demo revoice', () => {
 // region | Helpers
 
 /** Creates a fake voice machine on which `thor-demo voice setup` has run. */
-function createInstalledMachine(): FakeVoiceMachine {
-  const machine = createFakeVoiceTools();
+function createInstalledMachine(options: VoiceConfigOptions = {}): FakeVoiceMachine {
+  const machine = createFakeVoiceTools(options);
   const setup = runThorDemo(['voice', 'setup'], machine.tree.dir, machine.env);
   if (setup.status !== 0) throw new Error(`voice setup failed: ${setup.stderr}`);
   return machine;
