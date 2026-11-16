@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { grepTrackedFiles } from '../git/git-clone.ts';
-import { expandTilde, formatDisplayPath } from '../portable/paths.ts';
+import { expandTilde, formatDisplayPath, isTildePath } from '../portable/paths.ts';
 
 /** A place that still names an old path: a line of a file, or a symlink whose target is under the old path. */
 export interface Reference {
@@ -46,7 +46,8 @@ export function containsPath(text: string, target: string): boolean {
 
 /**
  * Finds the references to any of the absolute `oldPaths`, in their absolute and `~` forms, in the tracked files of
- * each clone, and in the text files and the symlink targets under each search path.
+ * each clone, and in the text files and the symlink targets under each search path. Without a home directory, finds
+ * only the absolute forms and reports that as a problem.
  */
 export function findReferences(
   oldPaths: readonly string[],
@@ -56,6 +57,9 @@ export function findReferences(
 ): ReferenceReport {
   const needles = [...new Set(oldPaths.flatMap((oldPath) => [oldPath, formatDisplayPath(oldPath, home)]))];
   const report: ReferenceReport = { problems: [], references: [] };
+  if (home === '' && oldPaths.length > 0) {
+    report.problems.push('~ forms of the old paths not searched: HOME is unset or empty');
+  }
   for (const clone of clones) {
     const matches = grepTrackedFiles(clone.dir, needles);
     if (typeof matches === 'string') {
@@ -119,7 +123,9 @@ function scanLink(link: string, location: string, relative: string, state: WalkS
   } catch {
     return;
   }
-  const resolved = path.resolve(path.dirname(link), expandTilde(target, state.home));
+  // A `~` target resolves literally without a home directory, so that file content cannot fail the scan.
+  const expanded = isTildePath(target) && state.home === '' ? target : expandTilde(target, state.home);
+  const resolved = path.resolve(path.dirname(link), expanded);
   if (state.oldPaths.some((oldPath) => resolved.startsWith(oldPath) && !extendsName(resolved.charAt(oldPath.length)))) {
     state.report.references.push({ file: relative, line: undefined, location, text: `-> ${target}` });
   }

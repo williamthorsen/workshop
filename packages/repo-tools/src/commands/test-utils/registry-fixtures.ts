@@ -1,5 +1,5 @@
 import type { GitHubFacts } from '../../github/github-repo.ts';
-import { buildClone } from './fake-clones.ts';
+import { buildClone, FAKE_HOME } from './fake-clones.ts';
 
 /** The fixture registry against which the `list`, `scan`, and `add` tests run. */
 export const REGISTRY = `# Header comment.
@@ -28,6 +28,9 @@ export const PREFIXED_REGISTRY = REGISTRY.replace(
   '    repo: owner/alpha\n',
   '    repo: owner/alpha\n    prefix: A\n',
 ).replace('    repo: owner/gamma\n', '    repo: owner/gamma\n    prefix: G\n');
+
+/** `REGISTRY` with each path written in absolute form, so that a run reads it without a home directory. */
+export const ABSOLUTE_REGISTRY = REGISTRY.replaceAll('path: ~/', () => `path: ${FAKE_HOME}/`);
 
 /** Clones whose files signal exactly the stack that `REGISTRY` declares. */
 export const CURRENT_CLONES = {

@@ -5,11 +5,14 @@ export function readHome(env: Readonly<Record<string, string | undefined>>): str
   return (env['HOME'] ?? '').replace(/\/+$/, '');
 }
 
-/** Expands a leading `~` or `~/` to the home directory, returning any other value unchanged. */
+/**
+ * Expands a leading `~` or `~/` to the home directory, returning any other value unchanged. Throws for a `~` path when
+ * the home directory is unknown, which a caller prevents by checking its paths with `isTildePath` first.
+ */
 export function expandTilde(value: string, home: string): string {
-  if (value === '~') return home;
-  if (value.startsWith('~/')) return `${home}/${value.slice(2)}`;
-  return value;
+  if (!isTildePath(value)) return value;
+  if (home === '') throw new Error(`cannot expand ${value}: the home directory is unknown`);
+  return value === '~' ? home : `${home}/${value.slice(2)}`;
 }
 
 /** Abbreviates a path inside the home directory to its `~` form, returning any other path unchanged. */
@@ -18,6 +21,11 @@ export function formatDisplayPath(value: string, home: string): string {
   if (value === home) return '~';
   if (value.startsWith(`${home}/`)) return `~/${value.slice(home.length + 1)}`;
   return value;
+}
+
+/** Reports whether a path starts with the `~` or `~/` that `expandTilde` expands. */
+export function isTildePath(value: string): boolean {
+  return value === '~' || value.startsWith('~/');
 }
 
 /**

@@ -22,7 +22,7 @@ export interface SettleContext {
   adapters: SettleAdapters;
   home: string;
   isDryRun: boolean;
-  sessionsDir: string;
+  sessionsDir: string | undefined;
 }
 
 /**
@@ -108,9 +108,17 @@ function removeEmptiedParents(moves: readonly Move[], context: SettleContext): R
   return lines;
 }
 
-/** Renames each moved worktree's session directory to the name of its new path, leaving it when that name is taken. */
+/**
+ * Renames each moved worktree's session directory to the name of its new path, leaving it when that name is taken.
+ * Reports instead that none is renamed when the sessions directory cannot be located.
+ */
 function renameSessionDirectories(relocatedWorktrees: readonly Move[], context: SettleContext): ReportLine[] {
   const { adapters, home, isDryRun, sessionsDir } = context;
+  if (sessionsDir === undefined) {
+    return relocatedWorktrees.length === 0
+      ? []
+      : [report('stderr', 'session directories not renamed: CLAUDE_CONFIG_DIR is unset, and HOME is unset or empty')];
+  }
   const lines: ReportLine[] = [];
   for (const tree of relocatedWorktrees) {
     const from = path.join(sessionsDir, encodeSessionDirectoryName(tree.from));

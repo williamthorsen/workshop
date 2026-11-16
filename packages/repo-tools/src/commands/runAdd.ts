@@ -11,7 +11,14 @@ import {
   serializeRegistry,
 } from '../registry/registry.ts';
 import { scanClone } from './runScan.ts';
-import { formatEntryName, parseRemoteUrl, PROG, reportFailure, type VerbRun } from './verb-run.ts';
+import {
+  findUnexpandablePath,
+  formatEntryName,
+  parseRemoteUrl,
+  PROG,
+  reportFailure,
+  type VerbRun,
+} from './verb-run.ts';
 
 /** The host whose origins `add` registers with a `repo` and reads from GitHub. */
 const GITHUB_HOST = 'github.com';
@@ -20,6 +27,8 @@ const GITHUB_HOST = 'github.com';
 export function runAdd(run: VerbRun, target: string, isWrite: boolean): number {
   const registry = readRegistry(run.file);
   if (typeof registry === 'string') return reportFailure(run, registry);
+  const unexpandable = findUnexpandablePath(run, registry.entries, [target]);
+  if (unexpandable !== undefined) return reportFailure(run, unexpandable);
   const cloneDir = run.adapters.readCloneRoot(path.resolve(run.cwd, expandTilde(target, run.home)));
   if (cloneDir === undefined) return reportFailure(run, `${target} is not in a git clone`);
   const origin = run.adapters.readOriginUrl(cloneDir);

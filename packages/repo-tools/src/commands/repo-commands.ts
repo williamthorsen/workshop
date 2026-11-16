@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 
-import { createCli } from '@williamthorsen/toolbelt.cli/candidate';
+import { createCli, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { allowDirenv, isDirenvInstalled } from '../direnv/direnv.ts';
@@ -18,7 +18,7 @@ import { runApplyMoves } from './runApplyMoves.ts';
 import { CLONE_STATES, runList } from './runList.ts';
 import { runMove } from './runMove.ts';
 import { runScan } from './runScan.ts';
-import { buildVerbRun, type CloneAdapters, PROG, type RepoContext } from './verb-run.ts';
+import { buildVerbRun, type CloneAdapters, PROG, type RepoContext, type VerbRun } from './verb-run.ts';
 
 export const GIT_ADAPTERS: CloneAdapters = {
   allowDirenv,
@@ -71,7 +71,7 @@ const add = defineCommand({
   operands: [{ name: 'path', description: 'A directory in the clone to register' }],
   flags: { file: FILE_FLAG, write: WRITE_FLAG },
   run: ({ context, flags, operands, stderr, stdout }) =>
-    runAdd(buildVerbRun(context, flags.file, stdout, stderr), operands.path, flags.write),
+    runVerb(context, flags.file, stdout, stderr, (run) => runAdd(run, operands.path, flags.write)),
 });
 
 const DRY_RUN_FLAG = {
@@ -93,10 +93,9 @@ const applyMoves = defineCommand({
     "Moves, with its worktrees, each clone that is at one of its entry's formerPaths while the entry's path is absent from this machine, as move does, follow-ups included, and does not write the registry. A former path counts only when it is a clone's root and, for an entry with a repo, its origin is that repo. Skips and reports an entry whose path and a former path both exist, whose former paths hold more than one clone, or whose path another entry also names. Then prints each remaining reference to the old paths, as move does. Run it on each machine after a move elsewhere; it does nothing when no clone needs moving.",
   flags: { dryRun: DRY_RUN_FLAG, file: FILE_FLAG, search: SEARCH_FLAG },
   run: ({ context, flags, stderr, stdout }) =>
-    runApplyMoves(buildVerbRun(context, flags.file, stdout, stderr), {
-      isDryRun: flags.dryRun,
-      searchPaths: flags.search,
-    }),
+    runVerb(context, flags.file, stdout, stderr, (run) =>
+      runApplyMoves(run, { isDryRun: flags.dryRun, searchPaths: flags.search }),
+    ),
 });
 
 const list = defineCommand({
@@ -138,30 +137,31 @@ const list = defineCommand({
     },
   },
   run: ({ context, flags, stderr, stdout }) =>
-    runList(buildVerbRun(context, flags.file, stdout, stderr), {
-      clone: flags.clone,
-      isJson: flags.json,
-      runner: flags.runner,
-      stack: flags.stack,
-      tag: flags.tag,
-      visibility: flags.visibility,
-    }),
+    runVerb(context, flags.file, stdout, stderr, (run) =>
+      runList(run, {
+        clone: flags.clone,
+        isJson: flags.json,
+        runner: flags.runner,
+        stack: flags.stack,
+        tag: flags.tag,
+        visibility: flags.visibility,
+      }),
+    ),
 });
 
 const move = defineCommand({
   summary: 'Move a registered clone with its worktrees, and record the move in the registry',
   description:
-    "Moves the clone of the entry named <name> to <path>, with each linked worktree beside it, whose name keeps its suffix under the new name (app.live becomes kit.live), repairs every worktree's link, sets the entry's path, and appends the former path to its formerPaths. A worktree elsewhere stays where it is and is repaired. Then, for each moved worktree, including one inside the clone, runs direnv allow when the worktree has an .envrc and direnv is installed, and renames its Claude Code session directory, under $CLAUDE_CONFIG_DIR/projects or else ~/.claude/projects, to the name of its new path; and removes each former parent directory that the move leaves empty apart from a .DS_Store. Reports a failure of these follow-ups, or a session directory whose new name exists, on stderr without changing the exit status. Refuses, before moving anything, a destination that exists or is on another filesystem, a path that another entry names, and a registry that resolves into a live worktree. Then prints each remaining reference to the old paths in the tracked files of the registered clones on this machine, and under each --search path.",
+    "Moves the clone of the entry named <name> to <path>, with each linked worktree beside it, whose name keeps its suffix under the new name (app.live becomes kit.live), repairs every worktree's link, sets the entry's path, and appends the former path to its formerPaths. A worktree elsewhere stays where it is and is repaired. Then, for each moved worktree, including one inside the clone, runs direnv allow when the worktree has an .envrc and direnv is installed, and renames its Claude Code session directory, under $CLAUDE_CONFIG_DIR/projects or else ~/.claude/projects, to the name of its new path, skipping the renames when neither CLAUDE_CONFIG_DIR nor HOME is set; and removes each former parent directory that the move leaves empty apart from a .DS_Store. Reports a failure of these follow-ups, or a session directory whose new name exists, on stderr without changing the exit status. Refuses, before moving anything, a destination that exists or is on another filesystem, a path that another entry names, and a registry that resolves into a live worktree. Then prints each remaining reference to the old paths in the tracked files of the registered clones on this machine, and under each --search path.",
   operands: [
     { name: 'name', description: 'The name of the registry entry to move' },
     { name: 'path', description: 'The new location of the clone' },
   ],
   flags: { dryRun: DRY_RUN_FLAG, file: FILE_FLAG, search: SEARCH_FLAG },
   run: ({ context, flags, operands, stderr, stdout }) =>
-    runMove(buildVerbRun(context, flags.file, stdout, stderr), operands.name, operands.path, {
-      isDryRun: flags.dryRun,
-      searchPaths: flags.search,
-    }),
+    runVerb(context, flags.file, stdout, stderr, (run) =>
+      runMove(run, operands.name, operands.path, { isDryRun: flags.dryRun, searchPaths: flags.search }),
+    ),
 });
 
 const scan = defineCommand({
@@ -170,7 +170,8 @@ const scan = defineCommand({
   description:
     "Reports, per repo, the stack names that its tracked files signal and its entry lacks (+) and those that its entry declares and its files no longer signal (-), then visibility=<value> and runner=<label> for values that differ from GitHub, and -runner when the repo's CI_RUNS_ON variable is unset. An entry whose clone is absent, or whose tracked files git cannot list, keeps its stack, and one whose GitHub read fails keeps its visibility and runner. Warns about a public repo whose runner is set.",
   flags: { file: FILE_FLAG, write: WRITE_FLAG },
-  run: ({ context, flags, stderr, stdout }) => runScan(buildVerbRun(context, flags.file, stdout, stderr), flags.write),
+  run: ({ context, flags, stderr, stdout }) =>
+    runVerb(context, flags.file, stdout, stderr, (run) => runScan(run, flags.write)),
 });
 
 /** The `thor-repo` command tree. */
@@ -204,6 +205,22 @@ function describeFsFailure(operation: () => unknown): string | undefined {
   } catch (error) {
     return describeError(error);
   }
+}
+
+/** Builds a command's run and passes it to `verb`, or reports why it cannot be built and returns the failure status. */
+function runVerb(
+  context: RepoContext,
+  file: string | undefined,
+  stdout: Writer,
+  stderr: Writer,
+  verb: (run: VerbRun) => number,
+): number {
+  const run = buildVerbRun(context, file, stdout, stderr);
+  if (typeof run === 'string') {
+    stderr.write(`${PROG}: ${run}\n`);
+    return 1;
+  }
+  return verb(run);
 }
 
 // endregion | Helpers

@@ -1,13 +1,40 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildFakeAdapters, FAKE_HOME } from '../test-utils/fake-clones.ts';
-import { CURRENT_CLONES, CURRENT_GITHUB, PREFIXED_REGISTRY, REGISTRY } from '../test-utils/registry-fixtures.ts';
+import {
+  ABSOLUTE_REGISTRY,
+  CURRENT_CLONES,
+  CURRENT_GITHUB,
+  PREFIXED_REGISTRY,
+  REGISTRY,
+} from '../test-utils/registry-fixtures.ts';
 import { buildRegistryRunner } from '../test-utils/registry-runner.ts';
 import { runCaptured } from '../test-utils/run-captured.ts';
 
 const run = buildRegistryRunner({ clones: CURRENT_CLONES, github: CURRENT_GITHUB, registry: REGISTRY });
 
 describe('list', () => {
+  it('lists a registry of absolute paths without HOME', async () => {
+    const { result } = await run(['list'], { env: {}, registry: ABSOLUTE_REGISTRY });
+    expect(result.stdout).toBe(`${FAKE_HOME}/repos/alpha\n${FAKE_HOME}/repos/beta\n${FAKE_HOME}/repos/gamma`);
+    expect(result.status).toBe(0);
+  });
+
+  it('refuses a ~ path without HOME', async () => {
+    const { result } = await run(['list'], { env: {} });
+    expect(result.stderr).toBe('thor-repo: cannot expand ~/repos/alpha: HOME is unset or empty');
+    expect(result.stdout).toBe('');
+    expect(result.status).toBe(1);
+  });
+
+  it('refuses the default registry without HOME, pointing to --file', async () => {
+    const result = await runCaptured(['list'], { env: {} });
+    expect(result.stderr).toBe(
+      'thor-repo: cannot find the default registry ~/.config/repos.yaml: HOME is unset or empty; pass --file',
+    );
+    expect(result.status).toBe(1);
+  });
+
   it('prints every path with ~ expanded', async () => {
     const { result } = await run(['list']);
     expect(result.stdout).toBe(`${FAKE_HOME}/repos/alpha\n${FAKE_HOME}/repos/beta\n${FAKE_HOME}/repos/gamma`);

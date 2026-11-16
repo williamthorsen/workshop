@@ -21,6 +21,20 @@ describe(containsPath, () => {
 });
 
 describe(findReferences, () => {
+  it('finds only the absolute forms without a home directory, and says so', () => {
+    using tree = createTempTree({ 'config/zshrc': 'cd ~/repos/app\n' }, { prefix: 'repo-tools-' });
+    const root = fs.realpathSync(tree.dir);
+    fs.appendFileSync(`${root}/config/zshrc`, `cd ${root}/repos/app\n`);
+    tree.symlink('config/tilde', '~/repos/app');
+
+    const report = findReferences([`${root}/repos/app`], [], [`${root}/config`], '');
+
+    expect(report.problems).toStrictEqual(['~ forms of the old paths not searched: HOME is unset or empty']);
+    expect(report.references).toStrictEqual([
+      { file: 'zshrc', line: 2, location: `${root}/config`, text: `cd ${root}/repos/app` },
+    ]);
+  });
+
   it('reports text lines and symlinks under a search path, in ~ and absolute forms, skipping binary files', () => {
     using home = createTempTree(
       {
