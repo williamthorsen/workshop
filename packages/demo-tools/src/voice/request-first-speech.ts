@@ -55,7 +55,9 @@ export async function requestFirstSpeech(
 
   let response: HttpResponse;
   try {
-    response = await postJson(`${baseUrl}${SPEECH_PATH}`, body, aborter.signal, () => {
+    response = await postJson(`${baseUrl}${SPEECH_PATH}`, body, aborter.signal, (status) => {
+      // A failed load also answers with headers, carrying its error status.
+      if (status !== 200) return;
       loadedAt = Date.now();
       report(`loaded ${model} in ${formatSeconds(loadedAt - startedAt)} s; synthesizing speech`);
       clearTimeout(timer);

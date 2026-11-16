@@ -62,19 +62,26 @@ describe(requestFirstSpeech, () => {
     });
   });
 
-  it("fails with the server's status and the start of its answer when it does not answer 200", async () => {
+  it("fails with the server's status and the start of its answer, without reporting a load, when it does not answer 200", async () => {
     using modelDir = createTempTree({ 'model.safetensors': 'weights' });
     const baseUrl = await startServer((_request, response) => {
       response.writeHead(500, { 'content-type': 'application/json' });
       response.end('{"detail":"boom"}');
     });
 
-    const outcome = await speak(baseUrl, modelDir);
+    const lines: string[] = [];
+
+    const outcome = await speak(baseUrl, modelDir, {
+      report: (line) => {
+        lines.push(line);
+      },
+    });
 
     expect(outcome).toStrictEqual({
       ok: false,
       message: 'the voice-clone server answered 500 ({"detail":"boom"}); see /logs/server.log',
     });
+    expect(lines).toStrictEqual(['loading org/model']);
   });
 
   it('fails when the answer is not audio', async () => {
@@ -106,12 +113,12 @@ describe(requestFirstSpeech, () => {
 });
 
 describe(computeLoadLimitMs, () => {
-  it('grows with the size of the model', () => {
-    expect(computeLoadLimitMs(68e9)).toBeGreaterThan(computeLoadLimitMs(6e9));
+  it('allows 10 minutes to a model of any size', () => {
+    expect(computeLoadLimitMs(0)).toBe(600_000);
   });
 
-  it('allows a base time to a model of any size', () => {
-    expect(computeLoadLimitMs(0)).toBeGreaterThan(0);
+  it("adds the time to read the model's size at 200 MB/s", () => {
+    expect(computeLoadLimitMs(73e9)).toBe(965_000);
   });
 });
 

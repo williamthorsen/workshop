@@ -8,15 +8,15 @@ export interface HttpResponse {
 }
 
 /**
- * POSTs `body` as JSON to an `http:` URL and reads the whole response, calling `onHeaders` once the headers arrive
- * and failing when `signal` aborts. It uses `node:http`, which has no default header timeout, because a server may
- * take minutes before it answers.
+ * POSTs `body` as JSON to an `http:` URL and reads the whole response, calling `onHeaders` with the status once the
+ * headers arrive and failing when `signal` aborts. It uses `node:http`, which has no default header timeout, because a
+ * server may take minutes before it answers.
  */
 export async function postJson(
   url: string,
   body: unknown,
   signal: AbortSignal,
-  onHeaders?: () => void,
+  onHeaders?: (status: number) => void,
 ): Promise<HttpResponse> {
   const payload = JSON.stringify(body);
 
@@ -29,7 +29,7 @@ export async function postJson(
         signal,
       },
       (response) => {
-        onHeaders?.();
+        onHeaders?.(response.statusCode ?? 0);
         const chunks: Buffer[] = [];
         response.on('data', (chunk: Buffer) => {
           chunks.push(chunk);
