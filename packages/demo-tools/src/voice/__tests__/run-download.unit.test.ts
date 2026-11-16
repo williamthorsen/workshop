@@ -81,7 +81,23 @@ describe(runDownload, () => {
     expect(stopTimes).toStrictEqual([]);
   });
 
-  it('counts a measurement that throws as progress', async () => {
+  it('stops an attempt whose measurement always throws at the stall limit', async () => {
+    const { outcome, stopTimes } = await download([hang, hang, hang], {
+      measure: () => {
+        throw new Error('EACCES');
+      },
+    });
+
+    expect(stopTimes).toStrictEqual([
+      LIMITS.stallLimitMs,
+      2 * LIMITS.stallLimitMs + LIMITS.retryPauseMs,
+      3 * LIMITS.stallLimitMs + 2 * LIMITS.retryPauseMs,
+    ]);
+    expect(outcome).toMatchObject({ ok: false, message: expect.stringContaining('stalled: no data for 5 seconds') });
+  });
+
+  it('does not stop an attempt whose files keep changing between occasional failed measurements', async () => {
+    let polls = 0;
     const slow: Attempt = async () => {
       await vi.advanceTimersByTimeAsync(20 * LIMITS.stallLimitMs);
       return { ok: true };
@@ -89,7 +105,9 @@ describe(runDownload, () => {
 
     const { outcome, stopTimes } = await download([slow], {
       measure: () => {
-        throw new Error('ENOENT');
+        polls++;
+        if (polls % 3 === 0) throw new Error('ENOENT');
+        return polls;
       },
     });
 

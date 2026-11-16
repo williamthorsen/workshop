@@ -18,7 +18,7 @@ export interface DownloadEffects {
 /** Where a download writes, and the limits that it runs under. */
 export interface DownloadOptions {
   readonly attempts?: number;
-  /** Returns the bytes on disk under the watched directories; a throw counts as progress. */
+  /** Returns the bytes on disk under the watched directories; a throw counts as no change. */
   readonly measure?: (dirs: readonly string[]) => number;
   readonly pollIntervalMs?: number;
   readonly retryPauseMs?: number;
@@ -80,6 +80,15 @@ function measureDirs(dirs: readonly string[]): number {
   return dirs.reduce((bytes, dir) => bytes + (existsSync(dir) ? measureDirSize(dir) : 0), 0);
 }
 
+/** Returns the measured size, or `undefined` when the measurement throws. */
+function measureOrSkip(measure: (dirs: readonly string[]) => number, dirs: readonly string[]): number | undefined {
+  try {
+    return measure(dirs);
+  } catch {
+    return undefined;
+  }
+}
+
 /** Resolves after `ms`. */
 async function pause(ms: number): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, ms));
@@ -97,18 +106,11 @@ async function runWatched(
   }: Required<Pick<DownloadOptions, 'measure' | 'pollIntervalMs' | 'stallLimitMs' | 'watchedDirs'>>,
 ): Promise<InvocationOutcome> {
   const aborter = new AbortController();
-  let lastSize = NaN;
+  let lastSize: number | undefined;
   let lastChange = Date.now();
   const poll = setInterval(() => {
-    let size: number;
-    try {
-      size = measure(watchedDirs);
-    } catch {
-      // A file that moves during the walk is progress.
-      lastChange = Date.now();
-      return;
-    }
-    if (size !== lastSize) {
+    const size = measureOrSkip(measure, watchedDirs);
+    if (size !== undefined && size !== lastSize) {
       lastSize = size;
       lastChange = Date.now();
     } else if (Date.now() - lastChange >= stallLimitMs) {

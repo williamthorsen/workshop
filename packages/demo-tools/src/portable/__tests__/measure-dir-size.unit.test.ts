@@ -19,6 +19,13 @@ describe(measureDirSize, () => {
     expect(measureDirSize(tree.dir)).toBe(8);
   });
 
+  it('counts a dangling symlink as empty', () => {
+    using tree = createTempTree({ 'config.json': '{}' });
+    symlinkSync(tree.resolve('blobs/removed'), tree.resolve('model.safetensors'));
+
+    expect(measureDirSize(tree.dir)).toBe(2);
+  });
+
   it('throws when the directory is missing', () => {
     using tree = createTempTree({});
 
