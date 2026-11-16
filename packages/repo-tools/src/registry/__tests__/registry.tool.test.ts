@@ -1,10 +1,10 @@
-import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 
 import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { readCurrentBranch } from '../../git/git-clone.ts';
+import { git } from '../../test-utils/git-fixture.ts';
 import { assertWritable } from '../registry.ts';
 
 const FIXTURE = 'repos:\n  - name: alpha\n    path: ~/repos/alpha\n';
@@ -18,7 +18,7 @@ describe(assertWritable, () => {
   it('allows a file in a checkout on another branch', () => {
     using tree = createTempTree({}, { prefix: 'repo-tools-' });
     const { dir } = tree;
-    execFileSync('git', ['-C', dir, 'init', '--quiet', '--initial-branch', 'main']);
+    git(dir, 'init', '--quiet', '--initial-branch', 'main');
     expect(assertWritable(tree.write('repos.yaml', FIXTURE), readCurrentBranch)).toBeUndefined();
   });
 
@@ -26,7 +26,7 @@ describe(assertWritable, () => {
     using tree = createTempTree({}, { prefix: 'repo-tools-' });
     const { dir } = tree;
     const target = tree.write('live/repos.yaml', FIXTURE);
-    execFileSync('git', ['-C', `${dir}/live`, 'init', '--quiet', '--initial-branch', 'live']);
+    git(`${dir}/live`, 'init', '--quiet', '--initial-branch', 'live');
     const link = `${dir}/repos.yaml`;
     fs.symlinkSync(target, link);
     const message = assertWritable(link, readCurrentBranch);

@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
-import { git, initWithCommit } from '../../test-utils/git-fixture.ts';
+import { commitStaged, git, initWithCommit, initWithIndex } from '../../test-utils/git-fixture.ts';
 import { buildLargeListingTree } from '../../test-utils/large-listing.ts';
 import { runCaptured } from '../test-utils/run-captured.ts';
 
@@ -28,8 +28,7 @@ describe('REPO_COMMANDS with git', () => {
       { prefix: 'repo-tools-' },
     );
     const cloneDir = home.resolve('repos/app');
-    git(cloneDir, 'init', '--quiet');
-    git(cloneDir, 'add', '.');
+    initWithIndex(cloneDir);
 
     const result = await runCaptured(['scan', '--write', '--file', home.resolve('registry/repos.yaml')], {
       env: { HOME: home.dir },
@@ -49,8 +48,7 @@ describe('REPO_COMMANDS with git', () => {
       { prefix: 'repo-tools-' },
     );
     const cloneDir = home.resolve('repos/big');
-    git(cloneDir, 'init', '--quiet');
-    git(cloneDir, 'add', '.');
+    initWithIndex(cloneDir);
 
     const result = await runCaptured(['scan', '--file', home.resolve('registry/repos.yaml')], {
       env: { HOME: home.dir },
@@ -77,8 +75,7 @@ describe('REPO_COMMANDS with git', () => {
       { prefix: 'repo-tools-' },
     );
     const cloneDir = home.resolve('repos/delta');
-    git(cloneDir, 'init', '--quiet');
-    git(cloneDir, 'add', '.');
+    initWithIndex(cloneDir);
     git(cloneDir, 'remote', 'add', 'origin', 'git@github.com:owner/delta.git');
 
     const result = await runCaptured(['add', '.', '--write', '--file', home.resolve('registry/repos.yaml')], {
@@ -97,20 +94,8 @@ describe('REPO_COMMANDS with git', () => {
       { prefix: 'repo-tools-' },
     );
     const cloneDir = home.resolve('repos/delta');
-    git(cloneDir, 'init', '--quiet');
-    git(cloneDir, 'add', '.');
-    git(
-      cloneDir,
-      '-c',
-      'user.name=Test',
-      '-c',
-      'user.email=test@example.com',
-      'commit',
-      '--quiet',
-      '--no-gpg-sign',
-      '--message',
-      'Seed',
-    );
+    initWithIndex(cloneDir);
+    commitStaged(cloneDir);
     git(cloneDir, 'remote', 'add', 'origin', 'git@github.com:owner/delta.git');
     git(cloneDir, 'worktree', 'add', '--quiet', '-b', 'feature', home.resolve('repos/delta.feature'));
 
