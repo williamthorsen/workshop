@@ -191,6 +191,62 @@ describe(run, () => {
       },
     );
 
+    describe('under --json', () => {
+      it('writes a clean install as one document and exits 0', async () => {
+        const { exitCode, stderr, stdout } = await runWithBuffers(['asdf-shims', '--json'], buildEffects([], []));
+
+        expect({ exitCode, stderr }).toStrictEqual({ exitCode: 0, stderr: '' });
+        expect(JSON.parse(stdout)).toStrictEqual({
+          install: { dataDir: DATA_DIR, plugin: 'nodejs', version: '24.20.0' },
+          outcome: 'clean',
+          reason: null,
+          shims: [],
+        });
+      });
+
+      it('writes each stranded shim with its providers and commands, and exits 1', async () => {
+        const { exitCode, stdout } = await runWithBuffers(
+          ['asdf-shims', '--json'],
+          buildEffects([NO_PROVIDER, ORPHAN], []),
+        );
+
+        expect(exitCode).toBe(1);
+        expect(JSON.parse(stdout)).toMatchObject({
+          outcome: 'stranded',
+          shims: [
+            {
+              backingPackage: 'pnpm',
+              name: 'pn',
+              otherProvider: null,
+              provideCommands: ['npm install --global pnpm', 'asdf reshim nodejs'],
+              providingVersions: ['24.18.1'],
+              removeCommands: ['ASDF_NODEJS_VERSION=24.18.1 npm uninstall --global pnpm', 'asdf reshim nodejs'],
+            },
+            {
+              backingPackage: 'foo-cli',
+              name: 'foo',
+              otherProvider: '/opt/homebrew/bin/foo',
+              provideCommands: [],
+              providingVersions: ['22.14.0'],
+              removeCommands: ['ASDF_NODEJS_VERSION=22.14.0 npm uninstall --global foo-cli', 'asdf reshim nodejs'],
+            },
+          ],
+        });
+      });
+
+      it('writes a document with the reason, keeps the reason on stderr, and exits 3 outside asdf', async () => {
+        const execPath = '/usr/local/bin/node';
+        const reason = `node at ${execPath} is not an asdf nodejs install; nothing to check.`;
+        const { exitCode, stderr, stdout } = await runWithBuffers(['asdf-shims', '--json'], {
+          ...buildEffects([], []),
+          execPath,
+        });
+
+        expect({ exitCode, stderr }).toStrictEqual({ exitCode: 3, stderr: `${reason}\n` });
+        expect(JSON.parse(stdout)).toStrictEqual({ install: null, outcome: 'not-applicable', reason, shims: [] });
+      });
+    });
+
     it('rejects a positional and an unknown option with exit 2', async () => {
       expect((await runWithBuffers(['asdf-shims', 'extra'], buildEffects([], []))).exitCode).toBe(2);
       await expect(runWithBuffers(['asdf-shims', '--all'], buildEffects([], []))).resolves.toMatchObject({
@@ -370,6 +426,80 @@ describe(run, () => {
       expect(received).toStrictEqual(['/repo/packages/lib', '/repo']);
     });
 
+    describe('under --json', () => {
+      const corepackProvider = { kind: 'corepack', nodeVersion: '24.20.0', path: SHIM_PATH };
+      const pin = { dir: '/repo', manifestPath: '/repo/package.json', version: '12.4.0' };
+
+      it('writes a match without repairs and exits 0', async () => {
+        const { exitCode, stderr, stdout } = await runPnpmJson({});
+
+        expect({ exitCode, stderr }).toStrictEqual({ exitCode: 0, stderr: '' });
+        expect(JSON.parse(stdout)).toStrictEqual({
+          failure: null,
+          outcome: 'match',
+          pin,
+          provider: corepackProvider,
+          reason: null,
+          repairs: [],
+          version: '12.4.0',
+        });
+      });
+
+      it('writes a mismatch with its repairs and exits 1', async () => {
+        const { exitCode, stdout } = await runPnpmJson({ result: { version: '11.24.0' } });
+
+        expect(exitCode).toBe(1);
+        expect(JSON.parse(stdout)).toMatchObject({
+          outcome: 'mismatch',
+          repairs: ['corepack install'],
+          version: '11.24.0',
+        });
+      });
+
+      it('writes an absent pnpm and exits 1', async () => {
+        const { exitCode, stdout } = await runPnpmJson({ provider: { kind: 'absent' } });
+
+        expect(exitCode).toBe(1);
+        expect(JSON.parse(stdout)).toMatchObject({
+          outcome: 'absent',
+          provider: { kind: 'absent' },
+          repairs: ['npm install --global pnpm@12.4.0', 'asdf reshim nodejs'],
+          version: null,
+        });
+      });
+
+      it('writes the failure when pnpm reports no version, and exits 1', async () => {
+        const { exitCode, stdout } = await runPnpmJson({ result: { failure: 'exit 1: boom' } });
+
+        expect(exitCode).toBe(1);
+        expect(JSON.parse(stdout)).toMatchObject({ failure: 'exit 1: boom', outcome: 'no-version', version: null });
+      });
+
+      it('writes absent optional provider fields as null', async () => {
+        const { stdout } = await runPnpmJson({ provider: { ...PLUGIN_PROVIDER, toolVersions: undefined } });
+
+        expect(JSON.parse(stdout)).toMatchObject({
+          provider: { kind: 'asdf-plugin', path: SHIM_PATH, toolVersions: null, versions: ['9.0.0'] },
+        });
+      });
+
+      it('writes a document with the reason, keeps the reason on stderr, and exits 3 when no pin is in reach', async () => {
+        const reason = 'No package.json declaring packageManager at or above /repo/packages/lib; nothing to check.';
+        const { exitCode, stderr, stdout } = await runPnpmJson({ pin: undefined });
+
+        expect({ exitCode, stderr }).toStrictEqual({ exitCode: 3, stderr: `${reason}\n` });
+        expect(JSON.parse(stdout)).toStrictEqual({
+          failure: null,
+          outcome: 'not-applicable',
+          pin: null,
+          provider: corepackProvider,
+          reason,
+          repairs: [],
+          version: null,
+        });
+      });
+    });
+
     it('rejects a positional and an unknown option with exit 2', async () => {
       expect((await runWithBuffers(['pnpm', 'extra'], buildPnpmEffects({}))).exitCode).toBe(2);
       await expect(runWithBuffers(['pnpm', '--all'], buildPnpmEffects({}))).resolves.toMatchObject({
@@ -527,6 +657,11 @@ function runAsdfShims(shims: StrandedAsdfShim[], pathDirs: string[]) {
 /** Runs `pnpm` under the scenario's effects. */
 function runPnpm(options: PnpmScenario) {
   return runWithBuffers(['pnpm'], buildPnpmEffects(options));
+}
+
+/** Runs `pnpm --json` under the scenario's effects. */
+function runPnpmJson(options: PnpmScenario) {
+  return runWithBuffers(['pnpm', '--json'], buildPnpmEffects(options));
 }
 
 /** Throws the shared unanticipated error, standing in for a bug in a command. */

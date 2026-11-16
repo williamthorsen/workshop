@@ -1,10 +1,13 @@
+import type { ReadoutData } from '@williamthorsen/readout';
 import { createCli, runCli, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
 
-import { runAsdfShims } from './runAsdfShims.ts';
-import { runPnpm } from './runPnpm.ts';
+import { renderAsdfShimsText, resolveAsdfShimsExitCode, runAsdfShims } from './runAsdfShims.ts';
+import { renderPnpmText, resolvePnpmExitCode, runPnpm } from './runPnpm.ts';
 import { DEFAULT_PROTECT_LIST, DEFAULT_ROOT, parseActiveDays, runPruneModules } from './runPruneModules.ts';
 import type { ThorNodeEffects } from './thor-node-effects.ts';
-import { PNPM, type ThorNodeResult } from './thor-node-result.ts';
+import { PNPM, type RenderedText, serializeResult } from './thor-node-result.ts';
+
+const JSON_FLAG = { type: 'boolean', description: 'Print the result as one JSON document on stdout' } as const;
 
 const { defineCommand, defineGroup } = createCli<ThorNodeEffects>();
 
@@ -77,13 +80,29 @@ const ROOT = defineGroup({
       summary: 'Report asdf node shims that the active nodejs version does not provide',
       description: ASDF_SHIMS_DESCRIPTION,
       epilog: ASDF_SHIMS_EPILOG,
-      run: ({ context, stderr, stdout }) => writeResult(runAsdfShims(context), stdout, stderr),
+      flags: { json: JSON_FLAG },
+      run: ({ context, flags, stderr, stdout }) => {
+        const result = runAsdfShims(context);
+        const text = renderAsdfShimsText(result);
+
+        return writeResult(
+          { exitCode: resolveAsdfShimsExitCode(result), json: flags.json, result, text },
+          stdout,
+          stderr,
+        );
+      },
     }),
     [PNPM]: defineCommand({
       summary: 'Check the pnpm that runs here against the nearest packageManager pin',
       description: PNPM_DESCRIPTION,
       epilog: PNPM_EPILOG,
-      run: ({ context, stderr, stdout }) => writeResult(runPnpm(context), stdout, stderr),
+      flags: { json: JSON_FLAG },
+      run: ({ context, flags, stderr, stdout }) => {
+        const result = runPnpm(context);
+        const text = renderPnpmText(result, context.execPath);
+
+        return writeResult({ exitCode: resolvePnpmExitCode(result), json: flags.json, result, text }, stdout, stderr);
+      },
     }),
     'prune-modules': defineCommand({
       summary: 'Delete the node_modules directories that the protect-list and the active guard do not keep',
@@ -137,12 +156,24 @@ export interface ThorNodeStreams {
 
 // region | Helpers
 
-/** Writes a check's result to the streams and returns its exit code. */
-function writeResult(result: ThorNodeResult, stdout: Writer, stderr: Writer): number {
-  if (result.stdout !== '') stdout.write(result.stdout);
-  if (result.stderr !== '') stderr.write(result.stderr);
+/**
+ * Writes a check's result to the streams, its text or under `json` its JSON document, and returns its exit code. The
+ * text's stderr is written either way, since it contains only reasons and warnings.
+ */
+function writeResult(output: ResultOutput, stdout: Writer, stderr: Writer): number {
+  const stdoutText = output.json ? serializeResult(output.result) : output.text.stdout;
+  if (stdoutText !== '') stdout.write(stdoutText);
+  if (output.text.stderr !== '') stderr.write(output.text.stderr);
 
-  return result.exitCode;
+  return output.exitCode;
+}
+
+/** A check's result, with its rendering, its exit code, and whether to write it as JSON. */
+interface ResultOutput {
+  readonly exitCode: number;
+  readonly json: boolean;
+  readonly result: ReadoutData;
+  readonly text: RenderedText;
 }
 
 // endregion | Helpers
