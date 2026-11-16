@@ -6,9 +6,6 @@ import type { GitHubReader } from '../github/github-repo.ts';
 import { isTildePath, readHome } from '../portable/paths.ts';
 import type { RegistryEntry } from '../registry/registry.ts';
 
-/** The name under which the CLI reports usage and messages. */
-export const PROG = 'thor-repo';
-
 /**
  * Builds the state of a command's run, resolving the registry file to its default when `--file` is absent, or returns
  * the failure when that default needs a home directory that the environment lacks.
@@ -33,45 +30,6 @@ export function buildVerbRun(
     stderr: (line) => stderr.write(`${line}\n`),
     stdout: (line) => stdout.write(`${line}\n`),
   };
-}
-
-/**
- * Returns the failure for the first `~` path that a run without a home directory cannot expand, taking the entries'
- * paths and former paths in registry order and then `paths`, or `undefined` when the run can expand them all.
- */
-export function findUnexpandablePath(
-  run: VerbRun,
-  entries: readonly RegistryEntry[],
-  paths: readonly string[] = [],
-): string | undefined {
-  if (run.home !== '') return undefined;
-  const unexpandable = [
-    ...entries.flatMap((entry) => [...(entry.path === undefined ? [] : [entry.path]), ...entry.formerPaths]),
-    ...paths,
-  ].find((value) => isTildePath(value));
-  return unexpandable === undefined ? undefined : `cannot expand ${unexpandable}: HOME is unset or empty`;
-}
-
-/** Returns the name under which an entry is reported: its name, else its path. */
-export function formatEntryName(entry: RegistryEntry): string {
-  return entry.name ?? entry.path ?? '(unnamed)';
-}
-
-/**
- * Returns the host and the `owner/name` path of a remote URL in scp-like SSH, `ssh://`, or HTTP(S) form, or
- * `undefined`. The host is lowercased and excludes any user and port; the path is the URL's last two segments.
- */
-export function parseRemoteUrl(url: string): RemoteUrl | undefined {
-  const match =
-    /^(?:[a-z][a-z\d+.-]*:\/\/)?(?:[^@/]+@)?([^:/]+)(?::\d+)?[:/](?:.*\/)?([^/:]+)\/([^/]+?)(?:\.git)?\/?$/i.exec(url);
-  if (match?.[1] === undefined || match[2] === undefined || match[3] === undefined) return undefined;
-  return { host: match[1].toLowerCase(), path: `${match[2]}/${match[3]}` };
-}
-
-/** Reports a failure under the program's name and returns the failure status. */
-export function reportFailure(run: VerbRun, message: string): number {
-  run.stderr(`${PROG}: ${message}`);
-  return 1;
 }
 
 /**
@@ -108,6 +66,42 @@ export interface CloneAdapters {
   repairWorktrees: (primary: string, worktreePaths: readonly string[]) => string | undefined;
 }
 
+/**
+ * Returns the failure for the first `~` path that a run without a home directory cannot expand, taking the entries'
+ * paths and former paths in registry order and then `paths`, or `undefined` when the run can expand them all.
+ */
+export function findUnexpandablePath(
+  run: VerbRun,
+  entries: readonly RegistryEntry[],
+  paths: readonly string[] = [],
+): string | undefined {
+  if (run.home !== '') return undefined;
+  const unexpandable = [
+    ...entries.flatMap((entry) => [...(entry.path === undefined ? [] : [entry.path]), ...entry.formerPaths]),
+    ...paths,
+  ].find((value) => isTildePath(value));
+  return unexpandable === undefined ? undefined : `cannot expand ${unexpandable}: HOME is unset or empty`;
+}
+
+/** Returns the name under which an entry is reported: its name, else its path. */
+export function formatEntryName(entry: RegistryEntry): string {
+  return entry.name ?? entry.path ?? '(unnamed)';
+}
+
+/**
+ * Returns the host and the `owner/name` path of a remote URL in scp-like SSH, `ssh://`, or HTTP(S) form, or
+ * `undefined`. The host is lowercased and excludes any user and port; the path is the URL's last two segments.
+ */
+export function parseRemoteUrl(url: string): RemoteUrl | undefined {
+  const match =
+    /^(?:[a-z][a-z\d+.-]*:\/\/)?(?:[^@/]+@)?([^:/]+)(?::\d+)?[:/](?:.*\/)?([^/:]+)\/([^/]+?)(?:\.git)?\/?$/i.exec(url);
+  if (match?.[1] === undefined || match[2] === undefined || match[3] === undefined) return undefined;
+  return { host: match[1].toLowerCase(), path: `${match[2]}/${match[3]}` };
+}
+
+/** The name under which the CLI reports usage and messages. */
+export const PROG = 'thor-repo';
+
 /** The parts of a remote URL that `add` reads. */
 export interface RemoteUrl {
   host: string;
@@ -120,6 +114,12 @@ export interface RepoContext {
   cwd: string;
   env: Readonly<Record<string, string | undefined>>;
   github: GitHubReader;
+}
+
+/** Reports a failure under the program's name and returns the failure status. */
+export function reportFailure(run: VerbRun, message: string): number {
+  run.stderr(`${PROG}: ${message}`);
+  return 1;
 }
 
 /** The state shared by a command's run. */

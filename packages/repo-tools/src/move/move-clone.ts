@@ -3,17 +3,6 @@ import path from 'node:path';
 import type { CloneAdapters } from '../commands/verb-run.ts';
 import type { Move, MovePlan } from './move-plan.ts';
 
-/**
- * What `executeMove` did: the renames that completed, those that it did not attempt, and the first failure, with the
- * worktrees that moved: each completed rename's, and each one inside the primary once the primary has moved.
- */
-export interface MoveOutcome {
-  completedMoves: Move[];
-  failure: string | undefined;
-  relocatedWorktrees: Move[];
-  remainingMoves: Move[];
-}
-
 /** The operations with which `executeMove` changes the filesystem and git. */
 export type ExecuteAdapters = Pick<CloneAdapters, 'makeDirectory' | 'renamePath' | 'repairWorktrees'>;
 
@@ -56,4 +45,15 @@ export function executeMove(plan: MovePlan, adapters: ExecuteAdapters): MoveOutc
     relocatedWorktrees,
     remainingMoves,
   };
+}
+
+/**
+ * What `executeMove` did: the renames that completed, those that it did not attempt, and the first failure, with the
+ * worktrees that moved: each completed rename's, and each one inside the primary once the primary has moved.
+ */
+export interface MoveOutcome {
+  completedMoves: Move[];
+  failure: string | undefined;
+  relocatedWorktrees: Move[];
+  remainingMoves: Move[];
 }

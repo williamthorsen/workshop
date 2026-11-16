@@ -1,9 +1,6 @@
 import { spawnSync, type SpawnSyncReturns } from 'node:child_process';
 import path from 'node:path';
 
-/** The parts of a git run that decide whether it failed and why. */
-export type GitRun = Pick<SpawnSyncReturns<string>, 'error' | 'signal' | 'status' | 'stderr'>;
-
 /**
  * Returns the reason that a git run failed, or `undefined` when it succeeded. A run that git did not complete, such
  * as one whose output overflowed the buffer, is described by its error before its signal, because such a run reports
@@ -15,6 +12,16 @@ export function describeGitFailure(args: readonly string[], run: GitRun): string
   if (run.signal !== null) return `git ${subcommand} was killed by ${run.signal}`;
   if (run.status === 0) return undefined;
   return run.stderr.trim().split('\n', 1)[0] || `git ${subcommand} exited ${run.status ?? 'without a status'}`;
+}
+
+/** The parts of a git run that decide whether it failed and why. */
+export type GitRun = Pick<SpawnSyncReturns<string>, 'error' | 'signal' | 'status' | 'stderr'>;
+
+/** A line of a tracked file that `grepTrackedFiles` matched. */
+export interface GrepMatch {
+  file: string;
+  line: number;
+  text: string;
 }
 
 /**
@@ -47,6 +54,12 @@ export function grepTrackedFiles(cloneDir: string, needles: readonly string[]): 
       if (file === undefined || lineNumber === undefined) return [];
       return [{ file, line: Number(lineNumber), text: rest.join('\0') }];
     });
+}
+
+/** A linked worktree of a clone, as `git worktree list` reports it. */
+export interface LinkedWorktree {
+  isPrunable: boolean;
+  path: string;
 }
 
 /** Lists the paths that git tracks in a clone, relative to its root, or returns the reason that git cannot. */
@@ -115,19 +128,6 @@ export function readOriginUrl(cloneDir: string): string | undefined {
 export function repairWorktrees(primary: string, worktreePaths: readonly string[]): string | undefined {
   const outcome = runGitForOutcome(primary, ['worktree', 'repair', ...worktreePaths]);
   return 'failure' in outcome ? outcome.failure : undefined;
-}
-
-/** A line of a tracked file that `grepTrackedFiles` matched. */
-export interface GrepMatch {
-  file: string;
-  line: number;
-  text: string;
-}
-
-/** A linked worktree of a clone, as `git worktree list` reports it. */
-export interface LinkedWorktree {
-  isPrunable: boolean;
-  path: string;
 }
 
 // region | Helpers
