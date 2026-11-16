@@ -207,7 +207,7 @@ function describeFsFailure(operation: () => unknown): string | undefined {
   }
 }
 
-/** Builds a command's run and passes it to `verb`, or reports the failure to build it and returns the failure status. */
+/** Builds a command's run and passes it to `verb`, or reports why it cannot be built and returns the failure status. */
 function runVerb(
   context: RepoContext,
   file: string | undefined,
