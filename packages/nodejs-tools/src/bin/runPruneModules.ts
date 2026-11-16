@@ -146,19 +146,19 @@ interface Finding {
   readonly reason: string | undefined;
 }
 
-/** Decides whether a `node_modules` directory is kept and why, measuring it only when it is a candidate. */
+/**
+ * Decides whether a `node_modules` directory is kept and why, measuring it only when it is a candidate. A project that
+ * cannot be read is reported and kept.
+ */
 function classify(dir: string, context: ClassifyContext): Finding {
   const projectDir = path.dirname(dir);
 
-  // A pattern may name the project through a symlink, as the root was given, or by its real path.
-  const protecting =
-    findProtectingPattern(projectDir, context.entries) ??
-    findProtectingPattern(fs.realpathSync(projectDir), context.entries);
-  if (protecting !== undefined) return { bytes: 0, dir, reason: `protected by ${protecting.pattern}` };
-
-  if (context.activeWindowMs !== undefined) {
-    const ageMs = context.now - findLastActivity(projectDir).time;
-    if (ageMs < context.activeWindowMs) return { bytes: 0, dir, reason: `active ${describeAge(ageMs)}` };
+  try {
+    const reason = findKeepReason(projectDir, context);
+    if (reason !== undefined) return { bytes: 0, dir, reason };
+  } catch (error) {
+    context.warnUnreadable(projectDir, error);
+    return { bytes: 0, dir, reason: 'unreadable' };
   }
 
   return {
@@ -190,6 +190,22 @@ function describeAge(ageMs: number): string {
 /** Renders a directory count and its total size. */
 function describeTotal(count: number, bytes: number): string {
   return `${count} ${count === 1 ? 'directory' : 'directories'} totaling ${formatBytes(bytes)}`;
+}
+
+/** Finds why a project's `node_modules` is kept, protection or recent activity, or undefined when it is not kept. */
+function findKeepReason(projectDir: string, context: ClassifyContext): string | undefined {
+  // A pattern may name the project through a symlink, as the root was given, or by its real path.
+  const protecting =
+    findProtectingPattern(projectDir, context.entries) ??
+    findProtectingPattern(fs.realpathSync(projectDir), context.entries);
+  if (protecting !== undefined) return `protected by ${protecting.pattern}`;
+
+  if (context.activeWindowMs !== undefined) {
+    const ageMs = context.now - findLastActivity(projectDir).time;
+    if (ageMs < context.activeWindowMs) return `active ${describeAge(ageMs)}`;
+  }
+
+  return undefined;
 }
 
 /** Renders a byte count in decimal units with one decimal place. */

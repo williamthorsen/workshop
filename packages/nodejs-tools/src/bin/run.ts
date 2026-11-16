@@ -59,6 +59,8 @@ Active guard: a node_modules is kept when the git index of its enclosing work tr
 parent directory, was modified within the last --active-days days (30 by default). A linked worktree is judged by
 its own index.
 
+A node_modules whose project cannot be read is kept, with a warning on stderr.
+
 Sizes are allocated disk space, as du reports it. A pnpm project shares files with the pnpm store, so deleting its
 node_modules frees less until \`pnpm store prune\` runs.
 

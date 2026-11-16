@@ -203,6 +203,26 @@ describe(runPruneModules, () => {
     expect(stdout).toMatch(/\n1 directory totaling .* deleted; 2 skipped\n$/);
     expect(tree.exists('repos/stale/node_modules')).toBe(false);
   });
+
+  it('keeps a project that it cannot read, warns, and continues with the rest', async () => {
+    using tree = createProjects();
+    tree.write('repos/broken/.git', 'gitdir: elsewhere\n');
+    tree.write('repos/broken/node_modules/pkg/index.js', 'x');
+    fs.chmodSync(tree.resolve('repos/broken/.git'), 0o000);
+
+    const { exitCode, stderr, stdout } = await runWithBuffers(
+      ['prune-modules', '--apply', '--no-confirm'],
+      buildEffects(tree),
+    );
+
+    expect(exitCode).toBe(0);
+    expect(stderr).toContain(`warning: cannot read ${tree.resolve('repos/broken')}: `);
+    expect(stdout).toMatch(
+      new RegExp(String.raw`\n\s*skipped  ${tree.resolve('repos/broken/node_modules')} \(unreadable\)\n`),
+    );
+    expect(stdout).toMatch(/\n1 directory totaling .* deleted; 3 skipped\n$/);
+    expect(listRemaining(tree)).toStrictEqual(['active', 'broken', 'keep.live']);
+  });
 });
 
 describe(parseActiveDays, () => {
