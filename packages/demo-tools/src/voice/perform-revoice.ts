@@ -8,6 +8,7 @@ import { formatModelDir } from './mlx-audio/format-model-dir.ts';
 import { VERIFY_PHRASE } from './perform-voice-setup.ts';
 import type { requestFirstSpeech } from './request-first-speech.ts';
 import type { RevoiceRequest } from './revoice-request.ts';
+import { shiftGapIntoManifest } from './shift-gap-into-manifest.ts';
 import { REQUEST_BUDGET_MS, type SpeechFailure, startSpeechProxy } from './speech-proxy.ts';
 import type { ServerProcess, StartVoiceServerResult } from './voice-server.ts';
 
@@ -36,7 +37,8 @@ export type RevoiceOutcome = { ok: true } | { ok: false; exitCode: number; messa
 /**
  * Starts the voice-clone server, loads the model with a first speech request, starts the speech proxy in front of the
  * server, runs the aidemo stages in order with aidemo's speech requests sent to the proxy, and stops both, whether the
- * stages succeed, fail, or throw.
+ * stages succeed, fail, or throw. After the `voice` stage, it moves the silence that the proxy padded onto each clip
+ * into the voice manifest's gap.
  */
 export async function performRevoice(request: RevoiceRequest, effects: RevoiceEffects): Promise<RevoiceOutcome> {
   const { report, runStage, startServer } = effects;
@@ -83,6 +85,12 @@ export async function performRevoice(request: RevoiceRequest, effects: RevoiceEf
     if (exitCode !== 0) {
       const cause = describeStageFailure(proxy.readFailure(), args[0] ?? '', exitCode);
       return { ok: false, exitCode, message: `${cause}; the voice-clone server's log is ${launch.logPath}` };
+    }
+    if (args[0] !== 'voice' || request.extraGapMs === 0) continue;
+
+    const shift = shiftGapIntoManifest(request.demoDir, request.extraGapMs);
+    if (!shift.ok) {
+      return { ok: false, exitCode: 1, message: `${shift.message}; the voice-clone server's log is ${launch.logPath}` };
     }
   }
 

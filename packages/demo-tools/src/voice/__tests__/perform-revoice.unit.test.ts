@@ -12,6 +12,15 @@ const STAGES = [
   ['compose', '/demo'],
 ] as const;
 
+/** A voice manifest of one scene, as aidemo writes it. */
+const MANIFEST = {
+  gapMs: 300,
+  scenes: [{ id: 'scene-1', file: '/demo/audio/scene-1.mp3', durationMs: 3000, hash: 'abc', provider: 'openai' }],
+};
+
+/** A request without a gap, whose stages need not write a voice manifest. */
+const NO_GAP = { demoDir: '/demo', extraGapMs: 0 };
+
 describe(performRevoice, () => {
   it('runs the stages in order with the proxy URL in the environment, then stops the server and the proxy', async () => {
     using home = createVoiceHome();
@@ -97,6 +106,49 @@ describe(performRevoice, () => {
     expect(harness.stopCount()).toBe(1);
   });
 
+  it('moves the gap into the voice manifest after the voice stage, before the captions run', async () => {
+    using home = createVoiceHome();
+    using demo = createTempTree({ 'audio/voice.json': JSON.stringify(MANIFEST) });
+    let manifestAtCaptions: unknown;
+    const harness = createHarness({
+      exitCodes: [0, 0, 0],
+      onStage: ({ args }) => {
+        if (args[0] === 'captions') manifestAtCaptions = JSON.parse(demo.read('audio/voice.json'));
+      },
+    });
+
+    const outcome = await performRevoice(buildRequest(home, { demoDir: demo.dir, extraGapMs: 700 }), harness.effects);
+
+    expect(outcome).toStrictEqual({ ok: true });
+    expect(manifestAtCaptions).toMatchObject({ gapMs: 1000, scenes: [{ durationMs: 2300 }] });
+  });
+
+  it('leaves the voice manifest alone when the gap is 0', async () => {
+    using home = createVoiceHome();
+    using demo = createTempTree({ 'audio/voice.json': JSON.stringify(MANIFEST) });
+    const harness = createHarness({ exitCodes: [0, 0, 0] });
+
+    await performRevoice(buildRequest(home, { demoDir: demo.dir, extraGapMs: 0 }), harness.effects);
+
+    expect(demo.read('audio/voice.json')).toBe(JSON.stringify(MANIFEST));
+  });
+
+  it('stops before the captions when the voice manifest cannot be shifted, naming the file and the log', async () => {
+    using home = createVoiceHome();
+    using demo = createTempTree({});
+    const harness = createHarness({ exitCodes: [0, 0, 0] });
+
+    const outcome = await performRevoice(buildRequest(home, { demoDir: demo.dir, extraGapMs: 700 }), harness.effects);
+
+    expect(outcome).toStrictEqual({
+      ok: false,
+      exitCode: 1,
+      message: `${demo.resolve('audio/voice.json')} not found; the voice-clone server's log is ${home.resolve('logs/server.log')}`,
+    });
+    expect(harness.stages.map(({ args }) => args[0])).toStrictEqual(['voice']);
+    expect(harness.stopCount()).toBe(1);
+  });
+
   it('stops the server and the proxy when a stage throws', async () => {
     using home = createVoiceHome();
     const harness = createHarness({ exitCodes: [new Error('spawn failed')] });
@@ -128,18 +180,20 @@ interface Harness {
 interface HarnessOptions {
   readonly exitCodes: readonly (Error | number)[];
   readonly firstSpeech?: FirstSpeechOutcome;
+  /** Runs when a stage starts, before it exits. */
+  readonly onStage?: (stage: AidemoStage) => void;
   /** Text that the first stage asks the proxy to speak before it exits. */
   readonly speak?: string;
   readonly startResult?: StartVoiceServerResult;
 }
 
 /** Returns the request of a revoice of the three stages, with the voice installed under `home`. */
-function buildRequest(home: TempTree): RevoiceRequest {
+function buildRequest(home: TempTree, gap: { demoDir: string; extraGapMs: number } = NO_GAP): RevoiceRequest {
   return {
     bin: '/repo/aidemo.mjs',
     cwd: '/repo',
+    ...gap,
     env: { PATH: '/bin' },
-    extraGapMs: 0,
     stages: STAGES,
     take: { kind: 'notice', message: 'not archived' },
     voice: {
@@ -156,7 +210,7 @@ function buildRequest(home: TempTree): RevoiceRequest {
  * Creates fake effects. The fake server answers at the launch's own URL, on which nothing listens, so that the proxy
  * refuses every speech request without measuring a clip.
  */
-function createHarness({ exitCodes, firstSpeech, speak, startResult }: HarnessOptions): Harness {
+function createHarness({ exitCodes, firstSpeech, onStage, speak, startResult }: HarnessOptions): Harness {
   const events: string[] = [];
   const firstSpeeches: FirstSpeechRequest[] = [];
   const launches: ServerProcess[] = [];
@@ -178,6 +232,7 @@ function createHarness({ exitCodes, firstSpeech, speak, startResult }: HarnessOp
       runStage: async (stage) => {
         events.push('stage');
         stages.push(stage);
+        onStage?.(stage);
         if (speak !== undefined && stages.length === 1) await postSpeech(stage, speak);
         const exitCode = exitCodes[stages.length - 1];
         if (exitCode === undefined) throw new Error(`no exit code scripted for stage ${stages.length}`);

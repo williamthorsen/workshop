@@ -68,6 +68,10 @@ describe('thor-demo revoice', () => {
     expect(server?.args).toStrictEqual(expect.arrayContaining(['--host', '127.0.0.1']));
     expect(server?.env).toMatchObject({ HF_HUB_OFFLINE: '1', TRANSFORMERS_OFFLINE: '1' });
     expect(isServerRunning(machine)).toBe(false);
+    expect(repo.tree.readJson('demos/quickstart/audio/voice.json')).toMatchObject({
+      gapMs: 700,
+      scenes: [{ durationMs: 300 }],
+    });
 
     const provenance = readProvenance(archive.dir);
     expect(provenance).toMatchObject({

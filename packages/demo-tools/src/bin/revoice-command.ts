@@ -150,6 +150,7 @@ function runRevoice(context: CommandContext, demoArgument: string, stderr: Write
     revoice: {
       bin: aidemo.aidemo.bin,
       cwd: root,
+      demoDir: demo.demoDir,
       env,
       extraGapMs: revoice.extraGapMs,
       stages: [
