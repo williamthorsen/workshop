@@ -3,8 +3,9 @@ import fs from 'node:fs';
 import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
-import { buildClone, buildFakeAdapters, FAKE_HOME, type FakeClone } from '../test-utils/fake-clones.ts';
-import { type CapturedRun, runCaptured } from '../test-utils/run-captured.ts';
+import { buildClone, buildFakeAdapters, FAKE_HOME } from '../test-utils/fake-clones.ts';
+import { buildRegistryRunner } from '../test-utils/registry-runner.ts';
+import { runCaptured } from '../test-utils/run-captured.ts';
 import type { CloneAdapters } from '../verb-run.ts';
 
 const REGISTRY = `repos:
@@ -17,6 +18,8 @@ const REGISTRY = `repos:
 `;
 
 const CLONES = { alpha: buildClone({}), beta: buildClone({}) };
+
+const run = buildRegistryRunner({ clones: CLONES, registry: REGISTRY });
 
 describe('move', () => {
   it.each([
@@ -162,27 +165,3 @@ describe('apply-moves', () => {
     expect(registryText).toBe(MOVED);
   });
 });
-
-// region | Helpers
-
-/** Runs a verb against a fixture registry, returning the captured run and the registry's text afterward. */
-async function run(
-  args: string[],
-  setup: {
-    branch?: string;
-    clones?: Record<string, FakeClone>;
-    origins?: Record<string, string>;
-    registry?: string;
-  } = {},
-): Promise<{ registryText: string; result: CapturedRun }> {
-  using tree = createTempTree({ 'repos.yaml': setup.registry ?? REGISTRY }, { prefix: 'repo-tools-' });
-  const file = tree.resolve('repos.yaml');
-  const adapters = buildFakeAdapters(setup.clones ?? CLONES, setup.origins, setup.branch);
-  const result = await runCaptured([...args.slice(0, 1), '--file', file, ...args.slice(1)], {
-    adapters,
-    env: { HOME: FAKE_HOME },
-  });
-  return { registryText: fs.readFileSync(file, 'utf8'), result };
-}
-
-// endregion | Helpers
