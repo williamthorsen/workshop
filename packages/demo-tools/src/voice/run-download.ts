@@ -52,22 +52,20 @@ export async function runDownload(
     watchedDirs,
   }: DownloadOptions,
 ): Promise<InvocationOutcome> {
-  let reason = '';
-  for (let attempt = 1; attempt <= attempts; attempt++) {
+  for (let attempt = 1; ; attempt++) {
     const outcome = await runWatched(invocation, run, { measure, pollIntervalMs, stallLimitMs, watchedDirs });
     if (outcome.ok || outcome.started === false) return outcome;
-    reason = outcome.message;
-    if (attempt < attempts) {
-      report(
-        `${repo}: ${reason}; trying again in ${formatSeconds(retryPauseMs)} (attempt ${attempt + 1} of ${attempts})`,
-      );
-      await pause(retryPauseMs);
+    if (attempt >= attempts) {
+      return {
+        ok: false,
+        message: `could not download ${repo} after ${attempts} attempts: ${outcome.message}; rerun thor-demo voice setup to resume the download`,
+      };
     }
+    report(
+      `${repo}: ${outcome.message}; trying again in ${formatSeconds(retryPauseMs)} (attempt ${attempt + 1} of ${attempts})`,
+    );
+    await pause(retryPauseMs);
   }
-  return {
-    ok: false,
-    message: `could not download ${repo} after ${attempts} attempts: ${reason}; rerun thor-demo voice setup to resume the download`,
-  };
 }
 
 // region | Helpers
@@ -99,7 +97,7 @@ async function runWatched(
   }: Required<Pick<DownloadOptions, 'measure' | 'pollIntervalMs' | 'stallLimitMs' | 'watchedDirs'>>,
 ): Promise<InvocationOutcome> {
   const aborter = new AbortController();
-  let lastSize = Number.NaN;
+  let lastSize = NaN;
   let lastChange = Date.now();
   const poll = setInterval(() => {
     let size: number;

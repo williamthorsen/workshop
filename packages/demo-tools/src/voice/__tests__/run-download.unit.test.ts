@@ -70,7 +70,7 @@ describe(runDownload, () => {
   it('does not stop an attempt whose files keep changing, however long it runs', async () => {
     let size = 0;
     const slow: Attempt = async () => {
-      await new Promise((resolve) => setTimeout(resolve, 20 * LIMITS.stallLimitMs));
+      await vi.advanceTimersByTimeAsync(20 * LIMITS.stallLimitMs);
       return { ok: true };
     };
 
@@ -83,7 +83,7 @@ describe(runDownload, () => {
 
   it('counts a measurement that throws as progress', async () => {
     const slow: Attempt = async () => {
-      await new Promise((resolve) => setTimeout(resolve, 20 * LIMITS.stallLimitMs));
+      await vi.advanceTimersByTimeAsync(20 * LIMITS.stallLimitMs);
       return { ok: true };
     };
 
@@ -112,13 +112,24 @@ async function download(attempts: readonly Attempt[], options: Partial<DownloadO
   const run: RunInvocation = (_invocation, { signal } = {}) => {
     const attempt = attempts[runs++];
     if (attempt === undefined || signal === undefined) throw new Error('unexpected run');
-    signal.addEventListener('abort', () => stopTimes.push(Date.now() - start), { once: true });
+    signal.addEventListener(
+      'abort',
+      () => {
+        stopTimes.push(Date.now() - start);
+      },
+      { once: true },
+    );
     return attempt(signal);
   };
 
   const pending = runDownload(
     { invocation: INVOCATION, repo: 'org/model' },
-    { report: (line) => lines.push(line), run },
+    {
+      report: (line) => {
+        lines.push(line);
+      },
+      run,
+    },
     { measure: () => 0, watchedDirs: ['/voice'], ...LIMITS, ...options },
   );
   await vi.runAllTimersAsync();
@@ -126,8 +137,8 @@ async function download(attempts: readonly Attempt[], options: Partial<DownloadO
 }
 
 /** Fails at once, as a program that exits non-zero does. */
-async function fail(): Promise<InvocationOutcome> {
-  return { ok: false, message: 'hf exited with code 1' };
+function fail(): Promise<InvocationOutcome> {
+  return Promise.resolve({ ok: false, message: 'hf exited with code 1' });
 }
 
 /** Runs until it is stopped, as a stalled download does. */
@@ -140,8 +151,8 @@ async function hang(signal: AbortSignal): Promise<InvocationOutcome> {
 }
 
 /** Succeeds at once. */
-async function succeed(): Promise<InvocationOutcome> {
-  return { ok: true };
+function succeed(): Promise<InvocationOutcome> {
+  return Promise.resolve({ ok: true });
 }
 
 // endregion | Helpers
