@@ -46,7 +46,8 @@ export function containsPath(text: string, target: string): boolean {
 
 /**
  * Finds the references to any of the absolute `oldPaths`, in their absolute and `~` forms, in the tracked files of
- * each clone, and in the text files and the symlink targets under each search path.
+ * each clone, and in the text files and the symlink targets under each search path. Without a home directory, finds
+ * only the absolute forms and reports that as a problem.
  */
 export function findReferences(
   oldPaths: readonly string[],
@@ -56,6 +57,9 @@ export function findReferences(
 ): ReferenceReport {
   const needles = [...new Set(oldPaths.flatMap((oldPath) => [oldPath, formatDisplayPath(oldPath, home)]))];
   const report: ReferenceReport = { problems: [], references: [] };
+  if (home === '' && oldPaths.length > 0) {
+    report.problems.push('~ forms of the old paths not searched: HOME is unset or empty');
+  }
   for (const clone of clones) {
     const matches = grepTrackedFiles(clone.dir, needles);
     if (typeof matches === 'string') {
