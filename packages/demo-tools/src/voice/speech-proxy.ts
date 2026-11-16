@@ -11,10 +11,14 @@ import { buildSpeechRequest, SPEECH_PATH, type SpeechSampling } from './mlx-audi
 import { padClip as padClipWithFfmpeg } from './pad-clip.ts';
 
 /**
- * How long a speech request may take upstream, once the model is loaded. The slowest good clip measured on Higgs
- * Audio v2 q8 took 170 s, and the budget stays under the 10-minute timeout of aidemo's OpenAI client.
+ * How long a speech request may take upstream, every take of it together, once the model is loaded. The slowest good
+ * clip measured on Higgs Audio v2 q8 took 170 s, and the budget stays under the 10-minute timeout of aidemo's OpenAI
+ * client.
  */
 export const REQUEST_BUDGET_MS = 540_000;
+
+/** How many takes of one request the proxy synthesizes before it gives up on a clip that the inspector refuses. */
+const MAX_TAKES = 3;
 
 /** Where the proxy forwards speech, the voice profile that it clones, and how it judges each answer. */
 export interface SpeechProxyOptions {
@@ -28,6 +32,8 @@ export interface SpeechProxyOptions {
   readonly referenceAudio: string;
   /** The transcript file of the reference recording. */
   readonly referenceTranscript: string;
+  /** Reports a refused take that the proxy synthesizes again. */
+  readonly report: (line: string) => void;
   readonly requestBudgetMs?: number;
   readonly sampling: SpeechSampling;
   /** The base URL of the voice-clone server. */
@@ -51,15 +57,17 @@ export interface SpeechProxy extends AsyncDisposable {
 /**
  * Starts a loopback-only HTTP server that accepts OpenAI-shaped speech requests and forwards each as a request that
  * clones the profile's voice with the configured sampling, keeping only the text to speak. It passes on a clip that
- * the inspector accepts, with the configured silence appended, and a 4xx answer, and answers 502 to a rejected clip, a
- * clip that cannot be padded, a 5xx answer, a failed connection, a request over budget, or a fault of its own. A
- * request that the client abandons is dropped, a request from a web page is answered 403, and every other request 404.
+ * the inspector accepts, with the configured silence appended, and a 4xx answer. It synthesizes a clip that the
+ * inspector rejects again, up to 3 takes in all, and answers 502 to the last rejected take, a clip that cannot be
+ * measured or padded, a 5xx answer, a failed connection, a request over budget, or a fault of its own. A request that
+ * the client abandons is dropped, a request from a web page is answered 403, and every other request 404.
  */
 export async function startSpeechProxy(options: SpeechProxyOptions): Promise<SpeechProxy> {
   const {
     extraGapMs,
     inspectClip = inspectClipWithFfmpeg,
     padClip = padClipWithFfmpeg,
+    report,
     requestBudgetMs = REQUEST_BUDGET_MS,
   } = options;
   const referenceText = readFileSync(options.referenceTranscript, 'utf8').trim();
@@ -127,15 +135,49 @@ export async function startSpeechProxy(options: SpeechProxyOptions): Promise<Spe
     sendFailure(response, `the voice clone could not speak the text: ${outcome.reason}`);
   }
 
-  /** What a forwarded request came to. */
+  /** What a forwarded request came to, or what one take of it came to when the inspector rejected the clip. */
   type SpeechOutcome =
     | { readonly kind: 'answer'; readonly answer: HttpResponse }
     | { readonly kind: 'client-gone' }
-    | { readonly kind: 'refused'; readonly reason: string };
+    | { readonly kind: 'refused'; readonly reason: string }
+    | { readonly kind: 'rejected'; readonly reason: string };
 
-  /** Sends a request upstream within the budget and judges its answer. */
-  async function requestSpeech(body: unknown, input: string, clientSignal: AbortSignal): Promise<SpeechOutcome> {
+  /**
+   * Sends a request upstream and judges its answer, synthesizing a rejected clip again until a take passes or the takes
+   * run out, all within the budget.
+   */
+  async function requestSpeech(
+    body: unknown,
+    input: string,
+    clientSignal: AbortSignal,
+  ): Promise<Exclude<SpeechOutcome, { kind: 'rejected' }>> {
     const signal = AbortSignal.any([clientSignal, AbortSignal.timeout(requestBudgetMs)]);
+    let lastRejection: string | undefined;
+    for (let take = 1; take <= MAX_TAKES; take++) {
+      const outcome = await requestTake(body, input, clientSignal, signal);
+      if (outcome.kind === 'rejected') {
+        lastRejection = outcome.reason;
+        if (take < MAX_TAKES) {
+          const next = `take ${take + 1} of ${MAX_TAKES}`;
+          report(`the voice clone's take of "${input}" was refused (${outcome.reason}); synthesizing again (${next})`);
+        }
+        continue;
+      }
+      if (outcome.kind === 'refused' && lastRejection !== undefined) {
+        return { kind: 'refused', reason: `${outcome.reason}, after ${describeTakes(take - 1, lastRejection)}` };
+      }
+      return outcome;
+    }
+    return { kind: 'refused', reason: describeTakes(MAX_TAKES, lastRejection ?? '') };
+  }
+
+  /** Sends one take of a request upstream within the request's signal and judges its answer. */
+  async function requestTake(
+    body: unknown,
+    input: string,
+    clientSignal: AbortSignal,
+    signal: AbortSignal,
+  ): Promise<SpeechOutcome> {
     let answer: HttpResponse;
     try {
       answer = await postJson(upstream, body, signal);
@@ -154,7 +196,7 @@ export async function startSpeechProxy(options: SpeechProxyOptions): Promise<Spe
     } catch (error) {
       return { kind: 'refused', reason: `ffmpeg cannot measure the clip: ${describeError(error)}` };
     }
-    if (!verdict.ok) return { kind: 'refused', reason: verdict.reason };
+    if (!verdict.ok) return { kind: 'rejected', reason: verdict.reason };
     if (extraGapMs === 0) return { kind: 'answer', answer };
 
     try {
@@ -194,6 +236,11 @@ export async function startSpeechProxy(options: SpeechProxyOptions): Promise<Spe
 }
 
 // region | Helpers
+
+/** Describes how many takes the inspector rejected and why it rejected the last. */
+function describeTakes(count: number, lastReason: string): string {
+  return count === 1 ? `1 refused take, for ${lastReason}` : `${count} refused takes, the last for ${lastReason}`;
+}
 
 /** Measures a clip with ffmpeg and judges it. */
 async function inspectClipWithFfmpeg(audio: Buffer, text: string): Promise<ClipVerdict> {

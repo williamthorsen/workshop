@@ -74,6 +74,7 @@ export async function performRevoice(request: RevoiceRequest, effects: RevoiceEf
     modelDir,
     referenceAudio: profile.referenceAudio,
     referenceTranscript: profile.transcript,
+    report,
     sampling,
     upstreamUrl: server.baseUrl,
   });
