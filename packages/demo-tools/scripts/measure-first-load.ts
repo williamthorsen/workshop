@@ -1,7 +1,7 @@
 // Measures a voice model's first load with the file cache cleared, or verifies that `voice setup` and `revoice`
 // survive one. Run from `packages/demo-tools` after `nmr build`:
 //
-//   node scripts/measure-first-load.ts measure
+//   node scripts/measure-first-load.ts measure [--model <id>]
 //   node scripts/measure-first-load.ts verify <demo>
 //
 // Each run clears the file cache with `sudo purge`, which asks for a password, and writes its result as JSON under
@@ -9,16 +9,17 @@
 
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
+import { parseArgs } from 'node:util';
 
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { readMachineConfig, type VoiceConfig } from '../src/config/read-machine-config.ts';
 import { findFreePort } from '../src/portable/find-free-port.ts';
 import { measureDirSize } from '../src/portable/measure-dir-size.ts';
-import { postJson } from '../src/portable/post-json.ts';
 import { resolveVoiceProfilePaths } from '../src/voice/build-voice-profile.ts';
 import { buildServerLaunch, SERVER_HOST } from '../src/voice/mlx-audio/build-server-launch.ts';
 import { buildSpeechRequest, SPEECH_PATH } from '../src/voice/mlx-audio/build-speech-request.ts';
@@ -28,12 +29,34 @@ import { startVoiceServer } from '../src/voice/voice-server.ts';
 
 const PACKAGE_DIR = path.resolve(import.meta.dirname, '..');
 
+/** One phase of a request: how long it took, and the pages swapped and paged out meanwhile. */
+interface PhaseTiming extends SwapCounters {
+  readonly durationMs: number;
+}
+
+/** A speech request's timing: each phase's, or how far it got before it failed. */
+type SpeechTiming =
+  | {
+      readonly body: PhaseTiming;
+      readonly bytes: number;
+      readonly headers: PhaseTiming;
+      readonly status: number | undefined;
+    }
+  | { readonly error: string; readonly headers: PhaseTiming | undefined; readonly total: PhaseTiming };
+
+/** The swap and page-out counters that `vm_stat` reports. */
+interface SwapCounters {
+  readonly pageouts: number;
+  readonly swapouts: number;
+}
+
 /** How long either measured request may take; long enough that only a hung server reaches it. */
 const MEASURE_LIMIT_MS = 60 * 60 * 1000;
 
-const [subcommand, demo] = process.argv.slice(2);
+const { positionals, values } = parseArgs({ allowPositionals: true, options: { model: { type: 'string' } } });
+const [subcommand, demo] = positionals;
 const voice = readVoice();
-const result = subcommand === 'measure' ? await measure(voice) : verify(voice, demo);
+const result = subcommand === 'measure' ? await measure(voice, values.model ?? voice.model) : verify(voice, demo);
 
 const resultPath = path.join(voice.home, 'logs', `first-load-${subcommand}-${formatTimestamp(new Date())}.json`);
 mkdirSync(path.dirname(resultPath), { recursive: true });
@@ -58,9 +81,13 @@ function formatTimestamp(date: Date): string {
     .replace('T', '-');
 }
 
-/** Clears the file cache, then times the model's load and one synthesis, with the swap activity of each. */
-async function measure(voice: VoiceConfig): Promise<Record<string, unknown>> {
-  const modelDir = formatModelDir(voice.home, voice.model);
+/**
+ * Clears the file cache, then sends two speech requests, timing each one's headers and body with the swap activity
+ * of each phase. mlx-audio loads the model before it sends the headers, so the first request's headers mark the
+ * load's end and the second request's body is a warm synthesis.
+ */
+async function measure(voice: VoiceConfig, model: string): Promise<Record<string, unknown>> {
+  const modelDir = formatModelDir(voice.home, model);
   const modelBytes = measureDirSize(modelDir);
   purgeFileCache();
 
@@ -69,25 +96,23 @@ async function measure(voice: VoiceConfig): Promise<Record<string, unknown>> {
   if (!started.ok) fail(started.message);
   await using server = started.server;
 
-  const load = await timeRequest(`${server.baseUrl}/v1/models?model_name=${encodeURIComponent(modelDir)}`, {});
   const profile = resolveVoiceProfilePaths(voice.home);
-  const synthesis = await timeRequest(
-    `${server.baseUrl}${SPEECH_PATH}`,
-    buildSpeechRequest({
-      input: VERIFY_PHRASE,
-      modelDir,
-      referenceAudio: profile.referenceAudio,
-      referenceText: readFileSync(profile.transcript, 'utf8').trim(),
-      sampling: voice.sampling,
-    }),
-  );
+  const body = buildSpeechRequest({
+    input: VERIFY_PHRASE,
+    modelDir,
+    referenceAudio: profile.referenceAudio,
+    referenceText: readFileSync(profile.transcript, 'utf8').trim(),
+    sampling: voice.sampling,
+  });
+  const cold = await timeSpeech(`${server.baseUrl}${SPEECH_PATH}`, body);
+  const warm = await timeSpeech(`${server.baseUrl}${SPEECH_PATH}`, body);
 
   return {
-    model: voice.model,
+    model,
     modelBytes,
-    load,
-    loadBytesPerMs: load.status === 200 ? Math.round(modelBytes / load.durationMs) : undefined,
-    synthesis,
+    cold,
+    loadBytesPerMs: cold.headers === undefined ? undefined : Math.round(modelBytes / cold.headers.durationMs),
+    warm,
     serverLog: launch.logPath,
   };
 }
@@ -100,7 +125,7 @@ function purgeFileCache(): void {
 }
 
 /** Reads the swap and page-out counters that `vm_stat` reports. */
-function readSwapCounters(): { pageouts: number; swapouts: number } {
+function readSwapCounters(): SwapCounters {
   const output = spawnSync('vm_stat', { encoding: 'utf8' }).stdout;
   function readCounter(label: string): number {
     const match = new RegExp(String.raw`^${label}:\s+(\d+)`, 'm').exec(output);
@@ -111,7 +136,8 @@ function readSwapCounters(): { pageouts: number; swapouts: number } {
 
 /** Reads the configured voice section, exiting when it is missing or invalid. */
 function readVoice(): VoiceConfig {
-  if (subcommand !== 'measure' && subcommand !== 'verify') fail('usage: measure-first-load.ts measure | verify <demo>');
+  if (subcommand !== 'measure' && subcommand !== 'verify')
+    fail('usage: measure-first-load.ts measure [--model <id>] | verify <demo>');
 
   const config = readMachineConfig({ env: process.env, homeDir: os.homedir() });
   if (!config.ok) fail(config.message);
@@ -120,27 +146,60 @@ function readVoice(): VoiceConfig {
   return config.voice.voice;
 }
 
-/** POSTs `body` to `url`, returning the answer's status, the duration, and the swap activity during the request. */
-async function timeRequest(
-  url: string,
-  body: unknown,
-): Promise<{ durationMs: number; pageouts: number; status: number | string; swapouts: number }> {
-  const before = readSwapCounters();
+/**
+ * POSTs `body` to `url`, returning the answer's status and, for the wait for the headers and for the body that
+ * follows them, each one's duration and swap activity.
+ */
+async function timeSpeech(url: string, body: unknown): Promise<SpeechTiming> {
+  const payload = JSON.stringify(body);
+  const startCounters = readSwapCounters();
   const startedAt = Date.now();
-  let status: number | string;
-  try {
-    status = (await postJson(url, body, AbortSignal.timeout(MEASURE_LIMIT_MS))).status;
-  } catch (error) {
-    status = describeError(error);
+  let headers: PhaseTiming | undefined;
+
+  function measurePhase(since: number, counters: SwapCounters): PhaseTiming {
+    const now = readSwapCounters();
+    return {
+      durationMs: Date.now() - since,
+      pageouts: now.pageouts - counters.pageouts,
+      swapouts: now.swapouts - counters.swapouts,
+    };
   }
-  const durationMs = Date.now() - startedAt;
-  const after = readSwapCounters();
-  return {
-    durationMs,
-    pageouts: after.pageouts - before.pageouts,
-    status,
-    swapouts: after.swapouts - before.swapouts,
-  };
+
+  try {
+    return await new Promise<SpeechTiming>((resolve, reject) => {
+      const request = http.request(
+        url,
+        {
+          headers: { 'content-length': Buffer.byteLength(payload), 'content-type': 'application/json' },
+          method: 'POST',
+          signal: AbortSignal.timeout(MEASURE_LIMIT_MS),
+        },
+        (response) => {
+          const headersTiming = measurePhase(startedAt, startCounters);
+          headers = headersTiming;
+          const bodyStartedAt = Date.now();
+          const bodyCounters = readSwapCounters();
+          let bytes = 0;
+          response.on('data', (chunk: Buffer) => {
+            bytes += chunk.length;
+          });
+          response.once('error', reject);
+          response.once('end', () => {
+            resolve({
+              body: measurePhase(bodyStartedAt, bodyCounters),
+              bytes,
+              headers: headersTiming,
+              status: response.statusCode,
+            });
+          });
+        },
+      );
+      request.once('error', reject);
+      request.end(payload);
+    });
+  } catch (error) {
+    return { error: describeError(error), headers, total: measurePhase(startedAt, startCounters) };
+  }
 }
 
 /** Clears the file cache before each of `voice setup` and `revoice <demo>`, recording each one's outcome. */
