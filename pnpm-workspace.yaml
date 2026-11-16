@@ -16,7 +16,7 @@ catalog:
   '@williamthorsen/readout': 0.2.0
   '@williamthorsen/toolbelt.arrays': 6.5.4
   '@williamthorsen/toolbelt.atlassian': 0.9.1
-  '@williamthorsen/toolbelt.cli': 0.11.0
+  '@williamthorsen/toolbelt.cli': 0.12.0
   '@williamthorsen/toolbelt.errors': 0.11.1
   '@williamthorsen/toolbelt.filesystem': 0.11.2
   '@williamthorsen/toolbelt.git': 0.7.8
