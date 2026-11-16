@@ -65,6 +65,20 @@ interface Resolution {
   visited: Set<string>;
 }
 
+/** Builds the chain entry for a parsed config, deriving `compilerOptions` from it. */
+export function buildTsconfigChainEntry(
+  config: Record<string, unknown>,
+  path: string,
+  specifier: string | undefined,
+): TsconfigChainEntry {
+  return {
+    compilerOptions: isRecord(config['compilerOptions']) ? config['compilerOptions'] : {},
+    config,
+    path,
+    specifier,
+  };
+}
+
 /**
  * Reads a tsconfig's `extends` chain, resolving it as TypeScript does, and reports what each config that it reaches
  * declares in its own right. Returns `undefined` if the entry file is missing or unparseable; unresolvable parents
@@ -252,12 +266,7 @@ function visitConfig(
   specifier: string | undefined,
   resolution: Resolution,
 ): void {
-  resolution.entries.push({
-    compilerOptions: isRecord(config['compilerOptions']) ? config['compilerOptions'] : {},
-    config,
-    path: toCwdRelative(resolution.cwd, configPath),
-    specifier,
-  });
+  resolution.entries.push(buildTsconfigChainEntry(config, toCwdRelative(resolution.cwd, configPath), specifier));
 
   const parentSpecifiers = readExtends(config['extends']).toReversed();
   for (const parentSpecifier of parentSpecifiers) {
