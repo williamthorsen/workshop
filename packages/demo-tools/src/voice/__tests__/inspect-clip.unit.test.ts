@@ -64,7 +64,38 @@ describe(judgeClip, () => {
   it('rejects a clip that ends in a long silence', () => {
     const measures = { durationSeconds: 40, silences: [{ endSeconds: 40, startSeconds: 5.8 }] };
 
-    expect(judgeClip(measures, text)).toStrictEqual({ ok: false, reason: '34.2 s of trailing silence' });
+    expect(judgeClip(measures, text)).toStrictEqual({ ok: false, reason: '34.2 s of silence at the end' });
+  });
+
+  it('rejects a clip that opens with a long silence', () => {
+    const measures = { durationSeconds: 28.2, silences: [{ endSeconds: 4.7, startSeconds: 0 }] };
+
+    expect(judgeClip(measures, text)).toStrictEqual({ ok: false, reason: '4.7 s of silence at the start' });
+  });
+
+  it('rejects a clip with a long silence inside it, naming where it starts', () => {
+    const measures = { durationSeconds: 20, silences: [{ endSeconds: 14.3, startSeconds: 8.3 }] };
+
+    expect(judgeClip(measures, text)).toStrictEqual({ ok: false, reason: '6.0 s of silence 8.3 s into the clip' });
+  });
+
+  it('names the longest of several long silences', () => {
+    const measures = {
+      durationSeconds: 30,
+      silences: [
+        { endSeconds: 3.5, startSeconds: 0 },
+        { endSeconds: 16, startSeconds: 10 },
+        { endSeconds: 30, startSeconds: 26 },
+      ],
+    };
+
+    expect(judgeClip(measures, text)).toStrictEqual({ ok: false, reason: '6.0 s of silence 10.0 s into the clip' });
+  });
+
+  it('accepts a silence of exactly the limit', () => {
+    const measures = { durationSeconds: 10, silences: [{ endSeconds: 6, startSeconds: 3 }] };
+
+    expect(judgeClip(measures, text)).toStrictEqual({ ok: true });
   });
 
   it('rejects a clip whose speech is far shorter than its text requires', () => {

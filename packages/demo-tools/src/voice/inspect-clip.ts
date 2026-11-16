@@ -29,10 +29,10 @@ const MIN_SILENCE_SECONDS = 0.5;
 const MIN_SPEECH_SECONDS = 0.3;
 
 /**
- * The longest trailing silence of a good clip: good clips measured on Higgs Audio v2 q8 end in at most 1 s and pause up
- * to 1.7 s.
+ * The longest silence of a good clip, wherever it falls: good clips measured on Higgs Audio v2 are silent for at most
+ * 2.2 s at a time, and a defective take opened with 4.7 s of silence.
  */
-const MAX_TRAILING_SILENCE_SECONDS = 3;
+const MAX_SILENCE_SECONDS = 3;
 
 /**
  * The fewest seconds of speech per character of text: half the 0.067 s that good clips measured on Higgs Audio v2 q8.
@@ -44,17 +44,19 @@ const MIN_CHARACTERS_FOR_SPEECH_CHECK = 40;
 
 const execFileAsync = promisify(execFile);
 
-/** Judges a clip of `text`: silent throughout, ending in a long silence, or too short for its text is rejected. */
+/**
+ * Judges a clip of `text`: silent throughout, containing a long silence anywhere, or too short for its text is
+ * rejected. A rejection for a long silence names the longest one and where it falls.
+ */
 export function judgeClip({ durationSeconds, silences }: ClipMeasures, text: string): ClipVerdict {
   const silentSeconds = silences.reduce((total, { endSeconds, startSeconds }) => total + endSeconds - startSeconds, 0);
   const speechSeconds = Math.max(0, durationSeconds - silentSeconds);
   if (speechSeconds < MIN_SPEECH_SECONDS) return { ok: false, reason: 'silent throughout' };
 
-  const last = silences.at(-1);
-  const trailingSeconds =
-    last !== undefined && last.endSeconds >= durationSeconds ? last.endSeconds - last.startSeconds : 0;
-  if (trailingSeconds > MAX_TRAILING_SILENCE_SECONDS) {
-    return { ok: false, reason: `${formatSeconds(trailingSeconds)} of trailing silence` };
+  const longest = findLongestSilence(silences);
+  if (longest !== undefined && longest.endSeconds - longest.startSeconds > MAX_SILENCE_SECONDS) {
+    const length = formatSeconds(longest.endSeconds - longest.startSeconds);
+    return { ok: false, reason: `${length} of silence ${describePosition(longest, durationSeconds)}` };
   }
 
   const characters = text.trim().length;
@@ -118,6 +120,27 @@ export function parseSilenceReport(report: string): ClipMeasures | undefined {
 }
 
 // region | Helpers
+
+/** Describes where a silence falls in a clip: at its start, at its end, or how far into it. */
+function describePosition({ endSeconds, startSeconds }: Silence, durationSeconds: number): string {
+  if (startSeconds === 0) return 'at the start';
+  if (endSeconds >= durationSeconds) return 'at the end';
+  return `${formatSeconds(startSeconds)} into the clip`;
+}
+
+/** Returns the longest of the silences, or `undefined` when there are none. */
+function findLongestSilence(silences: readonly Silence[]): Silence | undefined {
+  let longest: Silence | undefined;
+  for (const silence of silences) {
+    if (
+      longest === undefined ||
+      silence.endSeconds - silence.startSeconds > longest.endSeconds - longest.startSeconds
+    ) {
+      longest = silence;
+    }
+  }
+  return longest;
+}
 
 /** Formats seconds to one decimal place, for a reason that a person reads. */
 function formatSeconds(seconds: number): string {
