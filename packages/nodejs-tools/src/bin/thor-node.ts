@@ -5,7 +5,7 @@ import path from 'node:path';
 import process from 'node:process';
 import readline from 'node:readline/promises';
 
-import { installCrashHandler } from '@williamthorsen/toolbelt.cli/candidate';
+import { ignoreBrokenPipes, installCrashHandler } from '@williamthorsen/toolbelt.cli/candidate';
 import { findPackageManagerPin, listStrandedAsdfShims } from '@williamthorsen/toolbelt.nodejs/candidate';
 import { resolveSelfVersion } from '@williamthorsen/toolbelt.packaging/candidate';
 
@@ -15,13 +15,7 @@ import { runPnpmVersion } from './runPnpmVersion.ts';
 
 installCrashHandler('thor-node');
 
-// A reader that exits first closes the pipe, which node emits as an error event rather than the quiet
-// termination that SIGPIPE would give.
-for (const stream of [process.stdout, process.stderr]) {
-  stream.on('error', (error: NodeJS.ErrnoException) => {
-    if (error.code !== 'EPIPE') throw error;
-  });
-}
+ignoreBrokenPipes();
 
 process.exitCode = await run(
   process.argv.slice(2),
