@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { PnpmProvider } from '../resolvePnpmProvider.ts';
 import { run } from '../run.ts';
+import { buildThorNodeEffects } from '../test-utils/buildThorNodeEffects.ts';
 import { runWithBuffers } from '../test-utils/runWithBuffers.ts';
 import type { PnpmVersionResult, ThorNodeEffects } from '../thor-node-effects.ts';
 
@@ -162,7 +163,7 @@ describe(run, () => {
 
     it('passes the install and PATH through to the detection', async () => {
       let received: unknown;
-      const effects = buildEffects([], ['/usr/bin', '/opt/homebrew/bin']);
+      const effects = buildAsdfEffects([], ['/usr/bin', '/opt/homebrew/bin']);
 
       await runWithBuffers(['asdf-shims'], {
         ...effects,
@@ -183,7 +184,7 @@ describe(run, () => {
     it.each(['/opt/homebrew/bin/node', `${DATA_DIR}/installs/python/3.13.1/bin/node`])(
       'exits 3 with the reason on stderr when node is not an asdf nodejs install: %s',
       async (execPath) => {
-        await expect(runWithBuffers(['asdf-shims'], { ...buildEffects([], []), execPath })).resolves.toStrictEqual({
+        await expect(runWithBuffers(['asdf-shims'], { ...buildAsdfEffects(), execPath })).resolves.toStrictEqual({
           exitCode: 3,
           stderr: `node at ${execPath} is not an asdf nodejs install; nothing to check.\n`,
           stdout: '',
@@ -193,7 +194,7 @@ describe(run, () => {
 
     describe('under --json', () => {
       it('writes a clean install as one document and exits 0', async () => {
-        const { exitCode, stderr, stdout } = await runWithBuffers(['asdf-shims', '--json'], buildEffects([], []));
+        const { exitCode, stderr, stdout } = await runWithBuffers(['asdf-shims', '--json'], buildAsdfEffects());
 
         expect({ exitCode, stderr }).toStrictEqual({ exitCode: 0, stderr: '' });
         expect(JSON.parse(stdout)).toStrictEqual({
@@ -207,7 +208,7 @@ describe(run, () => {
       it('writes each stranded shim with its providers and commands, and exits 1', async () => {
         const { exitCode, stdout } = await runWithBuffers(
           ['asdf-shims', '--json'],
-          buildEffects([NO_PROVIDER, ORPHAN], []),
+          buildAsdfEffects([NO_PROVIDER, ORPHAN]),
         );
 
         expect(exitCode).toBe(1);
@@ -238,7 +239,7 @@ describe(run, () => {
         const execPath = '/usr/local/bin/node';
         const reason = `node at ${execPath} is not an asdf nodejs install; nothing to check.`;
         const { exitCode, stderr, stdout } = await runWithBuffers(['asdf-shims', '--json'], {
-          ...buildEffects([], []),
+          ...buildAsdfEffects(),
           execPath,
         });
 
@@ -248,8 +249,8 @@ describe(run, () => {
     });
 
     it('rejects a positional and an unknown option with exit 2', async () => {
-      expect((await runWithBuffers(['asdf-shims', 'extra'], buildEffects([], []))).exitCode).toBe(2);
-      await expect(runWithBuffers(['asdf-shims', '--all'], buildEffects([], []))).resolves.toMatchObject({
+      expect((await runWithBuffers(['asdf-shims', 'extra'], buildAsdfEffects())).exitCode).toBe(2);
+      await expect(runWithBuffers(['asdf-shims', '--all'], buildAsdfEffects())).resolves.toMatchObject({
         exitCode: 2,
         stderr: expect.stringContaining("Try 'thor-node asdf-shims --help'."),
       });
@@ -511,7 +512,7 @@ describe(run, () => {
 
   describe('help and version', () => {
     it.each([['--help'], ['-h']])('prints the root help on %o', async (flag) => {
-      const { exitCode, stdout } = await runWithBuffers([flag], buildEffects([], []));
+      const { exitCode, stdout } = await runWithBuffers([flag], buildThorNodeEffects());
 
       expect(exitCode).toBe(0);
       expect(stdout).toContain('Usage: thor-node [options] <command>');
@@ -522,7 +523,7 @@ describe(run, () => {
     });
 
     it('prints the prune-modules help with its flags, protect-list, and exit codes', async () => {
-      const { exitCode, stdout } = await runWithBuffers(['prune-modules', '--help'], buildEffects([], []));
+      const { exitCode, stdout } = await runWithBuffers(['prune-modules', '--help'], buildThorNodeEffects());
 
       expect(exitCode).toBe(0);
       expect(stdout).toContain('Usage: thor-node prune-modules');
@@ -541,7 +542,7 @@ describe(run, () => {
     });
 
     it.each([['--help'], ['-h']])('prints the pnpm help on %o', async (flag) => {
-      const { exitCode, stdout } = await runWithBuffers(['pnpm', flag], buildEffects([], []));
+      const { exitCode, stdout } = await runWithBuffers(['pnpm', flag], buildThorNodeEffects());
 
       expect(exitCode).toBe(0);
       expect(stdout).toContain('Usage: thor-node pnpm');
@@ -549,7 +550,7 @@ describe(run, () => {
     });
 
     it.each([['--help'], ['-h']])('prints the subcommand help on %o', async (flag) => {
-      const { exitCode, stdout } = await runWithBuffers(['asdf-shims', flag], buildEffects([], []));
+      const { exitCode, stdout } = await runWithBuffers(['asdf-shims', flag], buildThorNodeEffects());
 
       expect(exitCode).toBe(0);
       expect(stdout).toContain('Usage: thor-node asdf-shims');
@@ -560,7 +561,7 @@ describe(run, () => {
     it.each([['asdf-shims'], ['pnpm'], ['prune-modules']])(
       'documents --json and its fields in the %s help',
       async (command) => {
-        const { stdout } = await runWithBuffers([command, '--help'], buildEffects([], []));
+        const { stdout } = await runWithBuffers([command, '--help'], buildThorNodeEffects());
 
         expect(stdout).toContain('--json');
         expect(stdout).toContain('--json prints one document with outcome');
@@ -568,7 +569,9 @@ describe(run, () => {
     );
 
     it.each([['--version'], ['-V']])('prints the version on %o', async (flag) => {
-      await expect(runWithBuffers([flag], buildEffects([], []))).resolves.toStrictEqual({
+      await expect(
+        runWithBuffers([flag], buildThorNodeEffects({ resolveVersion: () => VERSION })),
+      ).resolves.toStrictEqual({
         exitCode: 0,
         stderr: '',
         stdout: `${VERSION}\n`,
@@ -578,7 +581,7 @@ describe(run, () => {
     it('leaves a failure to resolve the version to the crash handler', async () => {
       const failure = new Error('The manifest declares no version.');
       const effects: ThorNodeEffects = {
-        ...buildEffects([], []),
+        ...buildThorNodeEffects(),
         resolveVersion: () => {
           throw failure;
         },
@@ -590,7 +593,7 @@ describe(run, () => {
 
   describe('usage errors', () => {
     it('suggests the closest command for a near miss', async () => {
-      expect((await runWithBuffers(['pnmp'], buildEffects([], []))).stderr).toContain("Did you mean 'pnpm'?");
+      expect((await runWithBuffers(['pnmp'], buildThorNodeEffects())).stderr).toContain("Did you mean 'pnpm'?");
     });
 
     it.each([
@@ -598,7 +601,7 @@ describe(run, () => {
       [['frobnicate'], 'thor-node: Unknown command: frobnicate'],
       [['--frobnicate'], 'thor-node: Unknown option: --frobnicate'],
     ])('exits 2 pointing at the root help: %o', async (args, message) => {
-      await expect(runWithBuffers(args, buildEffects([], []))).resolves.toStrictEqual({
+      await expect(runWithBuffers(args, buildThorNodeEffects())).resolves.toStrictEqual({
         exitCode: 2,
         stderr: `${message}\nTry 'thor-node --help'.\n`,
         stdout: '',
@@ -612,7 +615,7 @@ describe(run, () => {
       [['pnpm'], { findPin: throwBug }],
       [['prune-modules', '--apply'], { isStdinTty: throwBug }],
     ])('lets it propagate from %o', async (args, override) => {
-      const effects: ThorNodeEffects = { ...buildEffects([], []), ...override };
+      const effects: ThorNodeEffects = { ...buildAsdfEffects(), ...override };
 
       await expect(runWithBuffers(args, effects)).rejects.toBe(BUG);
     });
@@ -622,21 +625,18 @@ describe(run, () => {
 // region | Helpers
 
 /** Builds effects under an asdf-managed node 24.20.0 whose detection returns the given shims. */
-function buildEffects(shims: StrandedAsdfShim[], pathDirs: string[]): ThorNodeEffects {
-  return {
+function buildAsdfEffects(shims: StrandedAsdfShim[] = [], pathDirs: string[] = []): ThorNodeEffects {
+  return buildThorNodeEffects({
     cwd: '/repo/packages/lib',
     execPath: EXEC_PATH,
     findPin: () => PIN,
     homeDir: '/Users/me',
-    isStdinTty: () => false,
     listStrandedShims: () => shims,
-    now: () => 0,
     pathDirs,
-    readAnswer: () => Promise.resolve(undefined),
     resolvePnpmProvider: () => COREPACK_PROVIDER,
     resolveVersion: () => VERSION,
     runPnpmVersion: () => ({ version: '12.4.0' }),
-  };
+  });
 }
 
 /** Builds effects for `pnpm` that report the pin, the provider, and the run given, defaulting to a corepack match. */
@@ -644,7 +644,7 @@ function buildPnpmEffects(options: PnpmScenario): ThorNodeEffects {
   const pin = 'pin' in options ? options.pin : PIN;
 
   return {
-    ...buildEffects([], []),
+    ...buildAsdfEffects(),
     execPath: options.execPath ?? EXEC_PATH,
     findPin: () => pin,
     resolvePnpmProvider: () => options.provider ?? COREPACK_PROVIDER,
@@ -661,7 +661,7 @@ interface PnpmScenario {
 
 /** Runs `asdf-shims` under effects whose detection returns the given shims. */
 function runAsdfShims(shims: StrandedAsdfShim[], pathDirs: string[]) {
-  return runWithBuffers(['asdf-shims'], buildEffects(shims, pathDirs));
+  return runWithBuffers(['asdf-shims'], buildAsdfEffects(shims, pathDirs));
 }
 
 /** Runs `pnpm` under the scenario's effects. */

@@ -4,6 +4,7 @@ import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/
 import { describe, expect, it } from 'vitest';
 
 import { parseActiveDays, runPruneModules } from '../runPruneModules.ts';
+import { buildThorNodeEffects } from '../test-utils/buildThorNodeEffects.ts';
 import { runWithBuffers } from '../test-utils/runWithBuffers.ts';
 import type { ThorNodeEffects } from '../thor-node-effects.ts';
 
@@ -361,23 +362,9 @@ describe(parseActiveDays, () => {
 });
 
 // region | Helpers
-/** Builds effects whose home directory is the tree, with no terminal on stdin and the clock at `NOW`. */
+/** Builds effects whose working and home directories are the tree, with the clock at `NOW`. */
 function buildEffects(tree: TempTree, overrides: Partial<ThorNodeEffects> = {}): ThorNodeEffects {
-  return {
-    cwd: tree.dir,
-    execPath: '/usr/local/bin/node',
-    findPin: () => undefined,
-    homeDir: tree.dir,
-    isStdinTty: () => false,
-    listStrandedShims: () => [],
-    now: () => NOW,
-    pathDirs: [],
-    readAnswer: () => Promise.resolve(undefined),
-    resolvePnpmProvider: () => ({ kind: 'absent' }),
-    resolveVersion: () => '0.0.0',
-    runPnpmVersion: () => ({ failure: 'not run' }),
-    ...overrides,
-  };
+  return buildThorNodeEffects({ cwd: tree.dir, homeDir: tree.dir, now: () => NOW, ...overrides });
 }
 
 /**
