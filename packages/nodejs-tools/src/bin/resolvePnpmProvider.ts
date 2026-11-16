@@ -17,6 +17,35 @@ const HEADER_BYTES = 4096;
 const NODE_PLUGIN = 'nodejs';
 const PNPM_PLUGIN = 'pnpm';
 
+/** What provides the `pnpm` on PATH. */
+export type PnpmProvider =
+  | { readonly kind: 'absent' }
+  | {
+      readonly kind: 'asdf-plugin';
+      readonly path: string;
+      /** The `.tool-versions` entry selecting the plugin's version from the working directory, if one is in reach. */
+      readonly toolVersions: ToolVersionsEntry | undefined;
+      /** The plugin versions that the shim's header names. */
+      readonly versions: readonly string[];
+    }
+  | {
+      readonly kind: 'corepack' | 'npm-global';
+      /** The asdf nodejs version under which the bin was found, or `undefined` for a node outside asdf. */
+      readonly nodeVersion: string | undefined;
+      readonly path: string;
+    }
+  | {
+      /** A pnpm matching no other kind, named by its path alone. */
+      readonly kind: 'path';
+      readonly path: string;
+    }
+  | {
+      readonly kind: 'stranded-shim';
+      readonly path: string;
+      /** The nodejs versions that the shim's header names, none of them the running one. */
+      readonly providingVersions: readonly string[];
+    };
+
 /**
  * Classifies the `pnpm` on PATH by what provides it, reading files and spawning nothing. An asdf shim is classified
  * by the providers that its header names, and the `pnpm` plugin takes precedence over `nodejs`. A file that is not
@@ -54,35 +83,6 @@ export function resolvePnpmProvider(options: ResolvePnpmProviderOptions): PnpmPr
 
   return classifyBin(pnpmPath, resolveNpmPackageOfBin(binPath), install.version);
 }
-
-/** What provides the `pnpm` on PATH. */
-export type PnpmProvider =
-  | { readonly kind: 'absent' }
-  | {
-      readonly kind: 'asdf-plugin';
-      readonly path: string;
-      /** The `.tool-versions` entry selecting the plugin's version from the working directory, if one is in reach. */
-      readonly toolVersions: ToolVersionsEntry | undefined;
-      /** The plugin versions that the shim's header names. */
-      readonly versions: readonly string[];
-    }
-  | {
-      readonly kind: 'corepack' | 'npm-global';
-      /** The asdf nodejs version under which the bin was found, or `undefined` for a node outside asdf. */
-      readonly nodeVersion: string | undefined;
-      readonly path: string;
-    }
-  | {
-      /** A pnpm matching no other kind, named by its path alone. */
-      readonly kind: 'path';
-      readonly path: string;
-    }
-  | {
-      readonly kind: 'stranded-shim';
-      readonly path: string;
-      /** The nodejs versions that the shim's header names, none of them the running one. */
-      readonly providingVersions: readonly string[];
-    };
 
 export interface ResolvePnpmProviderOptions {
   /** The directory from which a `.tool-versions` lookup ascends. */

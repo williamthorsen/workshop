@@ -35,48 +35,6 @@ export function parseActiveDays(raw: string): number {
 }
 
 /**
- * Runs `prune-modules`: reports every `node_modules` directory under the root that is neither protected nor recently
- * active, and under `apply` deletes them after confirmation, writing the text or under `json` the JSON document.
- * Resolves to the exit code; a usage problem is thrown as a `UsageError`.
- *
- * @internal
- */
-export async function runPruneModules(
-  options: PruneModulesOptions,
-  effects: PruneModulesEffects,
-  streams: { readonly stderr: Writer; readonly stdout: Writer },
-): Promise<number> {
-  const { stderr, stdout } = streams;
-
-  if (options.noActiveGuard && options.activeDays !== undefined) {
-    throw new UsageError('--active-days cannot be combined with --no-active-guard.');
-  }
-  if (options.json && options.apply && !options.noConfirm) {
-    throw new UsageError(
-      '--json --apply cannot ask for confirmation; pass --no-confirm to delete without asking, or drop --json to review the list before confirming.',
-    );
-  }
-  if (options.apply && !options.noConfirm && !effects.isStdinTty()) {
-    throw new UsageError('Confirming --apply needs a terminal on stdin; pass --no-confirm to delete without asking.');
-  }
-
-  const now = effects.now();
-  const plan = planPruneModules(options, effects, now);
-  for (const warning of plan.warnings) stderr.write(`warning: cannot read ${warning.path}: ${warning.message}\n`);
-
-  // The listing precedes the confirmation, which needs it in view.
-  if (plan.outcome !== 'not-applicable' && !options.json) stdout.write(renderPruneListing(plan, now));
-  const result = plan.outcome === 'not-applicable' ? plan : await settlePrunePlan(plan, options, effects);
-
-  const summary = renderPruneSummary(result);
-  const stdoutText = options.json ? serializeResult(result) : summary.stdout;
-  if (stdoutText !== '') stdout.write(stdoutText);
-  if (summary.stderr !== '') stderr.write(summary.stderr);
-
-  return resolvePruneModulesExitCode(result);
-}
-
-/**
  * A `node_modules` directory that the scan found, with whether it is kept and why. A kept directory is not measured,
  * so its `bytes` is null.
  */
@@ -166,6 +124,48 @@ export interface PruneWarning {
   readonly path: string;
 }
 
+/**
+ * Runs `prune-modules`: reports every `node_modules` directory under the root that is neither protected nor recently
+ * active, and under `apply` deletes them after confirmation, writing the text or under `json` the JSON document.
+ * Resolves to the exit code; a usage problem is thrown as a `UsageError`.
+ *
+ * @internal
+ */
+export async function runPruneModules(
+  options: PruneModulesOptions,
+  effects: PruneModulesEffects,
+  streams: { readonly stderr: Writer; readonly stdout: Writer },
+): Promise<number> {
+  const { stderr, stdout } = streams;
+
+  if (options.noActiveGuard && options.activeDays !== undefined) {
+    throw new UsageError('--active-days cannot be combined with --no-active-guard.');
+  }
+  if (options.json && options.apply && !options.noConfirm) {
+    throw new UsageError(
+      '--json --apply cannot ask for confirmation; pass --no-confirm to delete without asking, or drop --json to review the list before confirming.',
+    );
+  }
+  if (options.apply && !options.noConfirm && !effects.isStdinTty()) {
+    throw new UsageError('Confirming --apply needs a terminal on stdin; pass --no-confirm to delete without asking.');
+  }
+
+  const now = effects.now();
+  const plan = planPruneModules(options, effects, now);
+  for (const warning of plan.warnings) stderr.write(`warning: cannot read ${warning.path}: ${warning.message}\n`);
+
+  // The listing precedes the confirmation, which needs it in view.
+  if (plan.outcome !== 'not-applicable' && !options.json) stdout.write(renderPruneListing(plan, now));
+  const result = plan.outcome === 'not-applicable' ? plan : await settlePrunePlan(plan, options, effects);
+
+  const summary = renderPruneSummary(result);
+  const stdoutText = options.json ? serializeResult(result) : summary.stdout;
+  if (stdoutText !== '') stdout.write(stdoutText);
+  if (summary.stderr !== '') stderr.write(summary.stderr);
+
+  return resolvePruneModulesExitCode(result);
+}
+
 /** What `prune-modules` found under a root that exists, and what it did with it. */
 export interface ScannedPrune {
   /** The active window in days, or null under `--no-active-guard`. */
@@ -179,20 +179,6 @@ export interface ScannedPrune {
 }
 
 // region | Helpers
-
-interface ClassifyContext {
-  /** The span within which activity keeps a directory, or undefined when the guard is off. */
-  readonly activeWindowMs: number | undefined;
-  readonly entries: Parameters<typeof findProtectingPattern>[1];
-  readonly now: number;
-  readonly seenInodes: Set<string>;
-  readonly warnUnreadable: (entry: string, error: unknown) => void;
-}
-
-/** Why a project's `node_modules` is kept. */
-type KeepReason =
-  | { readonly lastActivityAt: string; readonly status: 'active' }
-  | { readonly pattern: string; readonly status: 'protected' };
 
 /** Deletes the planned candidates, recording each one as deleted or failed with the reason that it failed. */
 function applyPrunePlan(plan: ScannedPrune): ScannedPrune {
@@ -233,6 +219,15 @@ function classify(dir: string, context: ClassifyContext): PruneDirectory {
   };
 }
 
+interface ClassifyContext {
+  /** The span within which activity keeps a directory, or undefined when the guard is off. */
+  readonly activeWindowMs: number | undefined;
+  readonly entries: Parameters<typeof findProtectingPattern>[1];
+  readonly now: number;
+  readonly seenInodes: Set<string>;
+  readonly warnUnreadable: (entry: string, error: unknown) => void;
+}
+
 /** Finds why a project's `node_modules` is kept, protection or recent activity, or undefined when it is not kept. */
 function findKeepReason(projectDir: string, context: ClassifyContext): KeepReason | undefined {
   // A pattern may name the project through a symlink, as the root was given, or by its real path.
@@ -255,6 +250,11 @@ function findKeepReason(projectDir: string, context: ClassifyContext): KeepReaso
 function isAffirmative(answer: string | undefined): boolean {
   return answer !== undefined && /^y(?:es)?$/i.test(answer.trim());
 }
+
+/** Why a project's `node_modules` is kept. */
+type KeepReason =
+  | { readonly lastActivityAt: string; readonly status: 'active' }
+  | { readonly pattern: string; readonly status: 'protected' };
 
 /**
  * Finds every `node_modules` directory under the root and decides whether each is kept, and why, or is a candidate for

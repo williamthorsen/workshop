@@ -15,6 +15,69 @@ import {
   RESHIM,
 } from './thor-node-result.ts';
 
+/** The `packageManager` pin that names pnpm, with the version that it pins. */
+export interface PnpmPinRecord {
+  /** The directory of the manifest, in which pnpm runs. */
+  readonly dir: string;
+  readonly manifestPath: string;
+  readonly version: string;
+}
+
+/** What provides the `pnpm` on PATH, with every optional field present as null. */
+export type PnpmProviderRecord =
+  | { readonly kind: 'absent' }
+  | {
+      readonly kind: 'asdf-plugin';
+      readonly path: string;
+      readonly toolVersions: { readonly filePath: string; readonly version: string } | null;
+      readonly versions: readonly string[];
+    }
+  | { readonly kind: 'corepack' | 'npm-global'; readonly nodeVersion: string | null; readonly path: string }
+  | { readonly kind: 'path'; readonly path: string }
+  | { readonly kind: 'stranded-shim'; readonly path: string; readonly providingVersions: readonly string[] };
+
+/** What `pnpm` found: how the pnpm that runs compares with the pin, or why the check does not apply. */
+export type PnpmResult =
+  | {
+      readonly failure: null;
+      readonly outcome: 'not-applicable';
+      readonly pin: null;
+      readonly provider: PnpmProviderRecord;
+      readonly reason: string;
+      readonly repairs: readonly [];
+      readonly version: null;
+    }
+  | {
+      readonly failure: null;
+      readonly outcome: 'absent';
+      readonly pin: PnpmPinRecord;
+      readonly provider: PnpmProviderRecord;
+      readonly reason: null;
+      readonly repairs: readonly string[];
+      readonly version: null;
+    }
+  | {
+      /** Why pnpm reported no version: it could not be spawned, or it exited non-zero. */
+      readonly failure: string;
+      readonly outcome: 'no-version';
+      readonly pin: PnpmPinRecord;
+      readonly provider: PnpmProviderRecord;
+      readonly reason: null;
+      readonly repairs: readonly string[];
+      readonly version: null;
+    }
+  | {
+      readonly failure: null;
+      readonly outcome: 'match' | 'mismatch';
+      readonly pin: PnpmPinRecord;
+      readonly provider: PnpmProviderRecord;
+      readonly reason: null;
+      /** Empty on a match. */
+      readonly repairs: readonly string[];
+      /** The version that `pnpm --version` printed in the pinned directory. */
+      readonly version: string;
+    };
+
 /**
  * Renders a `pnpm` result as the report on stdout, with the reason on stderr when the check does not apply. The
  * running node's path decides how a stranded shim is described.
@@ -107,69 +170,6 @@ export function runPnpm(effects: ThorNodeEffects): PnpmResult {
 
   return { ...checked, failure: null, outcome: 'mismatch', version: result.version };
 }
-
-/** The `packageManager` pin that names pnpm, with the version that it pins. */
-export interface PnpmPinRecord {
-  /** The directory of the manifest, in which pnpm runs. */
-  readonly dir: string;
-  readonly manifestPath: string;
-  readonly version: string;
-}
-
-/** What provides the `pnpm` on PATH, with every optional field present as null. */
-export type PnpmProviderRecord =
-  | { readonly kind: 'absent' }
-  | {
-      readonly kind: 'asdf-plugin';
-      readonly path: string;
-      readonly toolVersions: { readonly filePath: string; readonly version: string } | null;
-      readonly versions: readonly string[];
-    }
-  | { readonly kind: 'corepack' | 'npm-global'; readonly nodeVersion: string | null; readonly path: string }
-  | { readonly kind: 'path'; readonly path: string }
-  | { readonly kind: 'stranded-shim'; readonly path: string; readonly providingVersions: readonly string[] };
-
-/** What `pnpm` found: how the pnpm that runs compares with the pin, or why the check does not apply. */
-export type PnpmResult =
-  | {
-      readonly failure: null;
-      readonly outcome: 'not-applicable';
-      readonly pin: null;
-      readonly provider: PnpmProviderRecord;
-      readonly reason: string;
-      readonly repairs: readonly [];
-      readonly version: null;
-    }
-  | {
-      readonly failure: null;
-      readonly outcome: 'absent';
-      readonly pin: PnpmPinRecord;
-      readonly provider: PnpmProviderRecord;
-      readonly reason: null;
-      readonly repairs: readonly string[];
-      readonly version: null;
-    }
-  | {
-      /** Why pnpm reported no version: it could not be spawned, or it exited non-zero. */
-      readonly failure: string;
-      readonly outcome: 'no-version';
-      readonly pin: PnpmPinRecord;
-      readonly provider: PnpmProviderRecord;
-      readonly reason: null;
-      readonly repairs: readonly string[];
-      readonly version: null;
-    }
-  | {
-      readonly failure: null;
-      readonly outcome: 'match' | 'mismatch';
-      readonly pin: PnpmPinRecord;
-      readonly provider: PnpmProviderRecord;
-      readonly reason: null;
-      /** Empty on a match. */
-      readonly repairs: readonly string[];
-      /** The version that `pnpm --version` printed in the pinned directory. */
-      readonly version: string;
-    };
 
 // region | Helpers
 

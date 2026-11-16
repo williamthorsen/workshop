@@ -174,6 +174,14 @@ export interface ThorNodeStreams {
 
 // region | Helpers
 
+/** A check's result, with its rendering, its exit code, and whether to write it as JSON. */
+interface ResultOutput {
+  readonly exitCode: number;
+  readonly json: boolean;
+  readonly result: ReadoutData;
+  readonly text: RenderedText;
+}
+
 /**
  * Writes a check's result to the streams, its text or under `json` its JSON document, and returns its exit code. The
  * text's stderr is written either way, since it contains only reasons and warnings.
@@ -184,14 +192,6 @@ function writeResult(output: ResultOutput, stdout: Writer, stderr: Writer): numb
   if (output.text.stderr !== '') stderr.write(output.text.stderr);
 
   return output.exitCode;
-}
-
-/** A check's result, with its rendering, its exit code, and whether to write it as JSON. */
-interface ResultOutput {
-  readonly exitCode: number;
-  readonly json: boolean;
-  readonly result: ReadoutData;
-  readonly text: RenderedText;
 }
 
 // endregion | Helpers
