@@ -75,6 +75,7 @@ describe('move without HOME', () => {
     expect(result.stderr).toContain(
       'thor-repo: session directories not renamed: CLAUDE_CONFIG_DIR is unset, and HOME is unset or empty',
     );
+    expect(result.stderr).toContain('thor-repo: ~ forms of the old paths not searched: HOME is unset or empty');
     expect(result.status).toBe(0);
   });
 });
