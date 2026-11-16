@@ -13,10 +13,10 @@ describe(settleMove, () => {
     const root = fs.realpathSync(tree.dir);
     const move = { from: `${root}/old/app`, to: `${root}/new/kit` };
     writeFiles(root, ['old/.DS_Store', 'new/kit/.envrc', `sessions/${encodeSessionDirectoryName(move.from)}/a.jsonl`]);
-    const allowed: string[] = [];
+    const allowedDirs: string[] = [];
 
     const lines = settleMove([move], [move], {
-      adapters: buildAdapters({ allowDirenv: (dir) => void allowed.push(dir) }),
+      adapters: buildAdapters({ allowDirenv: (dir) => void allowedDirs.push(dir) }),
       home: root,
       isDryRun: false,
       sessionsDir: `${root}/sessions`,
@@ -30,7 +30,7 @@ describe(settleMove, () => {
       },
       { stream: 'stdout', text: 'removed ~/old' },
     ]);
-    expect(allowed).toStrictEqual([move.to]);
+    expect(allowedDirs).toStrictEqual([move.to]);
     expect(fs.existsSync(`${root}/sessions/${encodeSessionDirectoryName(move.to)}/a.jsonl`)).toBe(true);
     expect(fs.existsSync(`${root}/old`)).toBe(false);
   });

@@ -108,12 +108,12 @@ describe(executeMove, () => {
 // region | Helpers
 
 /** Returns probes over a set of existing directories, each on device 1 unless `devices` names a root's device. */
-function fakePlanAdapters(existing: readonly string[], devices: Record<string, number> = {}): PlanAdapters {
-  const present = new Set([...existing, ...Object.keys(devices), '/']);
+function fakePlanAdapters(existingPaths: readonly string[], devices: Record<string, number> = {}): PlanAdapters {
+  const presentPaths = new Set([...existingPaths, ...Object.keys(devices), '/']);
   return {
-    isDirectory: (dir) => present.has(dir),
-    pathExists: (target) => present.has(target),
-    readDeviceId: (target) => (present.has(target) ? (devices[target] ?? 1) : undefined),
+    isDirectory: (dir) => presentPaths.has(dir),
+    pathExists: (target) => presentPaths.has(target),
+    readDeviceId: (target) => (presentPaths.has(target) ? (devices[target] ?? 1) : undefined),
   };
 }
 
