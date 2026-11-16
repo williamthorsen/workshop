@@ -7,51 +7,6 @@ import { type Document, isMap, isScalar, isSeq, parseDocument, type YAMLMap } fr
 
 import { normalizePath } from '../portable/paths.ts';
 
-/** One entry of the registry, with the YAML node from which it was read. */
-export interface RegistryEntry {
-  formerPaths: string[];
-  name: string | undefined;
-  node: YAMLMap;
-  path: string | undefined;
-  prefix: string | undefined;
-  repo: string | undefined;
-  runner: string | undefined;
-  stack: string[];
-  tags: string[];
-  visibility: string | undefined;
-}
-
-/** A parsed registry: its document, kept for writing back, and its entries in file order. */
-export interface Registry {
-  document: Document;
-  entries: RegistryEntry[];
-}
-
-/** The fields of an entry that `appendEntry` writes. */
-export interface NewEntry extends Partial<GitHubFields> {
-  name: string;
-  path: string;
-  repo: string | undefined;
-  stack: readonly string[];
-}
-
-/** The fields of an entry that are derived from GitHub. */
-export interface GitHubFields {
-  runner: string | undefined;
-  visibility: string | undefined;
-}
-
-/**
- * Narrows the entries to those whose `tags` contains `tag`, whose `stack` contains `stack`, and whose `runner` and
- * `visibility` equal the given values, each when given.
- */
-export interface EntrySelection {
-  runner?: string | undefined;
-  stack?: string | undefined;
-  tag?: string | undefined;
-  visibility?: string | undefined;
-}
-
 /** Adds an entry under `repos`, writing `repo`, `visibility`, `runner`, and `stack` only when each has a value. */
 export function appendEntry(registry: Registry, entry: NewEntry): void {
   const fields: Record<string, unknown> = { name: entry.name, path: entry.path };
@@ -95,6 +50,17 @@ export function assertWritable(
   return `${file} resolves to ${resolved}, which is in a worktree on the live branch; pass --file <branch worktree copy> to write the registry in a branch worktree`;
 }
 
+/**
+ * Narrows the entries to those whose `tags` contains `tag`, whose `stack` contains `stack`, and whose `runner` and
+ * `visibility` equal the given values, each when given.
+ */
+export interface EntrySelection {
+  runner?: string | undefined;
+  stack?: string | undefined;
+  tag?: string | undefined;
+  visibility?: string | undefined;
+}
+
 /** Returns the first entry other than `entry` whose path, once normalized, is `target`, an already normalized path. */
 export function findPathClaimant(
   entries: readonly RegistryEntry[],
@@ -105,6 +71,20 @@ export function findPathClaimant(
   return entries.find(
     (other) => other !== entry && other.path !== undefined && normalizePath(other.path, home) === target,
   );
+}
+
+/** The fields of an entry that are derived from GitHub. */
+export interface GitHubFields {
+  runner: string | undefined;
+  visibility: string | undefined;
+}
+
+/** The fields of an entry that `appendEntry` writes. */
+export interface NewEntry extends Partial<GitHubFields> {
+  name: string;
+  path: string;
+  repo: string | undefined;
+  stack: readonly string[];
 }
 
 /**
@@ -162,6 +142,26 @@ export function recordMove(registry: Registry, entry: RegistryEntry, newPath: st
     moveKeyAfter(entry.node, 'formerPaths', 'path');
   }
   entry.formerPaths = formerPaths;
+}
+
+/** A parsed registry: its document, kept for writing back, and its entries in file order. */
+export interface Registry {
+  document: Document;
+  entries: RegistryEntry[];
+}
+
+/** One entry of the registry, with the YAML node from which it was read. */
+export interface RegistryEntry {
+  formerPaths: string[];
+  name: string | undefined;
+  node: YAMLMap;
+  path: string | undefined;
+  prefix: string | undefined;
+  repo: string | undefined;
+  runner: string | undefined;
+  stack: string[];
+  tags: string[];
+  visibility: string | undefined;
 }
 
 /** Writes the registry beside its file and renames it into place, in the form that `serializeRegistry` returns. */

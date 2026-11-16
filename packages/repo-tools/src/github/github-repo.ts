@@ -1,18 +1,5 @@
 import { spawnSync } from 'node:child_process';
 
-/**
- * What GitHub reports about a repo. `runnerProblem` names a `CI_RUNS_ON` value that does not select a single label, in
- * which case `runner` is `undefined` and is not to be written.
- */
-export interface GitHubFacts {
-  runner: string | undefined;
-  runnerProblem: string | undefined;
-  visibility: 'public' | 'private';
-}
-
-/** Reads a repo's facts by its `owner/name` path, or returns the reason that they cannot be read. */
-export type GitHubReader = (repo: string) => GitHubFacts | string;
-
 /** Builds a reader that queries GitHub through `gh api`, running `gh` under the given environment. */
 export function createGhReader(env: Readonly<Record<string, string | undefined>>): GitHubReader {
   return (repo) => {
@@ -36,6 +23,19 @@ export function createGhReader(env: Readonly<Record<string, string | undefined>>
       : { runner: undefined, runnerProblem: runner.problem, visibility };
   };
 }
+
+/**
+ * What GitHub reports about a repo. `runnerProblem` names a `CI_RUNS_ON` value that does not select a single label, in
+ * which case `runner` is `undefined` and is not to be written.
+ */
+export interface GitHubFacts {
+  runner: string | undefined;
+  runnerProblem: string | undefined;
+  visibility: 'public' | 'private';
+}
+
+/** Reads a repo's facts by its `owner/name` path, or returns the reason that they cannot be read. */
+export type GitHubReader = (repo: string) => GitHubFacts | string;
 
 /**
  * Returns the runner label that a `CI_RUNS_ON` value selects, read as the workflows' `runs-on` expression reads it: A

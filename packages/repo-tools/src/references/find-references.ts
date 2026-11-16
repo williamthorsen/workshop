@@ -4,26 +4,6 @@ import path from 'node:path';
 import { grepTrackedFiles } from '../git/git-clone.ts';
 import { expandTilde, formatDisplayPath, isTildePath } from '../portable/paths.ts';
 
-/** A place that still names an old path: a line of a file, or a symlink whose target is under the old path. */
-export interface Reference {
-  file: string;
-  line: number | undefined;
-  location: string;
-  text: string;
-}
-
-/** The references found, and the repos or paths that could not be searched, each with its reason. */
-export interface ReferenceReport {
-  problems: string[];
-  references: Reference[];
-}
-
-/** A registered clone to search, under the label by which its references are reported. */
-export interface SearchedClone {
-  dir: string;
-  label: string;
-}
-
 /** The largest file, in bytes, that the walk of a search path reads. */
 const MAX_FILE_BYTES = 1024 * 1024;
 
@@ -78,6 +58,26 @@ export function findReferences(
   return report;
 }
 
+/** A place that still names an old path: a line of a file, or a symlink whose target is under the old path. */
+export interface Reference {
+  file: string;
+  line: number | undefined;
+  location: string;
+  text: string;
+}
+
+/** The references found, and the repos or paths that could not be searched, each with its reason. */
+export interface ReferenceReport {
+  problems: string[];
+  references: Reference[];
+}
+
+/** A registered clone to search, under the label by which its references are reported. */
+export interface SearchedClone {
+  dir: string;
+  label: string;
+}
+
 // region | Helpers
 
 /** Returns the `code` of a filesystem error, such as `ENOENT`, or `unreadable`. */
@@ -88,14 +88,6 @@ function describeCode(error: unknown): string {
 /** Reports whether a character could continue a path segment's name, so that a match ending before it is partial. */
 function extendsName(character: string): boolean {
   return /[\w-]/.test(character);
-}
-
-/** The state of a walk of one search path. */
-interface WalkState {
-  home: string;
-  needles: readonly string[];
-  oldPaths: readonly string[];
-  report: ReferenceReport;
 }
 
 /** Reports the lines of a text file that name an old path. Skips a file that is too large or binary. */
@@ -156,6 +148,14 @@ function walkSearchPath(searchPath: string, state: WalkState): void {
       }
     }
   }
+}
+
+/** The state of a walk of one search path. */
+interface WalkState {
+  home: string;
+  needles: readonly string[];
+  oldPaths: readonly string[];
+  report: ReferenceReport;
 }
 
 // endregion | Helpers

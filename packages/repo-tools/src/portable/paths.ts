@@ -1,10 +1,5 @@
 import path from 'node:path';
 
-/** Returns `HOME` from an environment, without trailing slashes, or an empty string when it is unset. */
-export function readHome(env: Readonly<Record<string, string | undefined>>): string {
-  return (env['HOME'] ?? '').replace(/\/+$/, '');
-}
-
 /**
  * Expands a leading `~` or `~/` to the home directory, returning any other value unchanged. Throws for a `~` path when
  * the home directory is unknown, which a caller prevents by checking its paths with `isTildePath` first.
@@ -34,4 +29,9 @@ export function isTildePath(value: string): boolean {
  */
 export function normalizePath(value: string, home: string): string {
   return path.resolve(expandTilde(value, home));
+}
+
+/** Returns `HOME` from an environment, without trailing slashes, or an empty string when it is unset. */
+export function readHome(env: Readonly<Record<string, string | undefined>>): string {
+  return (env['HOME'] ?? '').replace(/\/+$/, '');
 }

@@ -4,12 +4,6 @@ import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { STACK_DETECTORS, type StackDetector } from './stack-detectors.ts';
 
-/** The stack names that a repository's tracked files signal, and the manifests that could not be read. */
-export interface StackDetection {
-  problems: string[];
-  stack: string[];
-}
-
 /**
  * Returns the sorted stack names whose detector matches the tracked paths, or the dependencies declared by any tracked
  * `package.json`. `readManifest` returns a manifest's text by its tracked path and may throw; a manifest that cannot
@@ -41,6 +35,12 @@ export function detectStack(
     .map(([name]) => name)
     .toSorted();
   return { problems, stack };
+}
+
+/** The stack names that a repository's tracked files signal, and the manifests that could not be read. */
+export interface StackDetection {
+  problems: string[];
+  stack: string[];
 }
 
 // region | Helpers
