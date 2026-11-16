@@ -18,23 +18,23 @@ export interface ListOptions {
 export function runList(run: VerbRun, options: ListOptions): number {
   const registry = readRegistry(run.file);
   if (typeof registry === 'string') return reportFailure(run, registry);
-  const matched = selectEntries(registry.entries, options);
+  const matchedEntries = selectEntries(registry.entries, options);
   // The drift sweep reads a missing path as a repo without a clone here, so a pathless entry is refused instead.
-  if (matched.some((entry) => entry.path === undefined)) {
+  if (matchedEntries.some((entry) => entry.path === undefined)) {
     return reportFailure(run, `registry entry has no path: ${run.file}`);
   }
-  const selected =
+  const selectedEntries =
     options.clone === 'all'
-      ? matched
-      : matched.filter(
+      ? matchedEntries
+      : matchedEntries.filter(
           (entry) =>
             run.adapters.isDirectory(expandTilde(entry.path ?? '', run.home)) === (options.clone === 'present'),
         );
 
   if (options.isJson) {
-    run.stdout(JSON.stringify({ repos: selected.map((entry): unknown => entry.node.toJSON()) }, null, 2));
+    run.stdout(JSON.stringify({ repos: selectedEntries.map((entry): unknown => entry.node.toJSON()) }, null, 2));
     return 0;
   }
-  for (const entry of selected) run.stdout(expandTilde(entry.path ?? '', run.home));
+  for (const entry of selectedEntries) run.stdout(expandTilde(entry.path ?? '', run.home));
   return 0;
 }

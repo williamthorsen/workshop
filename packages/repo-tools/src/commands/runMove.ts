@@ -96,9 +96,10 @@ export function runMove(run: VerbRun, name: string, target: string, options: Mov
 
 /** Returns the one entry named `name`, when it has a path, or a message naming why there is not exactly one. */
 function findEntry(run: VerbRun, entries: readonly RegistryEntry[], name: string): RegistryEntry | string {
-  const matched = entries.filter((entry) => entry.name === name);
-  if (matched.length > 1) return `${matched.length} entries in ${run.file} are named ${name}; give each a unique name`;
-  const [entry] = matched;
+  const matchedEntries = entries.filter((entry) => entry.name === name);
+  if (matchedEntries.length > 1)
+    return `${matchedEntries.length} entries in ${run.file} are named ${name}; give each a unique name`;
+  const [entry] = matchedEntries;
   if (entry === undefined) return `no entry in ${run.file} is named ${name}`;
   return entry.path === undefined ? `the entry ${name} has no path` : entry;
 }
