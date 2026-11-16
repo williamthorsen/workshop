@@ -69,11 +69,11 @@ export function printReferences(
  */
 export function printSettlement(
   run: VerbRun,
-  relocated: readonly Move[],
+  relocatedWorktrees: readonly Move[],
   moves: readonly Move[],
   isDryRun: boolean,
 ): void {
-  const lines = settleMove(relocated, moves, {
+  const lines = settleMove(relocatedWorktrees, moves, {
     adapters: run.adapters,
     home: run.home,
     isDryRun,
@@ -86,8 +86,8 @@ export function printSettlement(
 }
 
 /** Reports on stderr each worktree that git lists but that is missing from disk, and that the move skips. */
-export function reportSkippedWorktrees(run: VerbRun, skipped: readonly string[]): void {
-  for (const worktree of skipped) {
+export function reportSkippedWorktrees(run: VerbRun, skippedWorktrees: readonly string[]): void {
+  for (const worktree of skippedWorktrees) {
     run.stderr(`${PROG}: ${formatDisplayPath(worktree, run.home)} is missing; run git worktree prune to drop it`);
   }
 }

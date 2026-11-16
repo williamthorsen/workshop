@@ -56,27 +56,27 @@ export function runMove(run: VerbRun, name: string, target: string, options: Mov
   if (refusal !== undefined) return reportFailure(run, refusal);
   const registryFile = relocateFile(fs.realpathSync(run.file), plan);
 
-  reportSkippedWorktrees(run, plan.skipped);
+  reportSkippedWorktrees(run, plan.skippedWorktrees);
   const oldPaths = plan.moves.map((move) => move.from);
   if (options.isDryRun) {
     for (const move of plan.moves) printMove(run, move, true);
-    printSettlement(run, plan.relocated, plan.moves, true);
+    printSettlement(run, plan.relocatedWorktrees, plan.moves, true);
     printReferences(run, oldPaths, registry.entries, options.searchPaths);
     run.stderr(`${PROG}: nothing moved; run without --dry-run to move ${name}`);
     return 0;
   }
 
   const outcome = executeMove(plan, run.adapters);
-  for (const move of outcome.completed) printMove(run, move, false);
+  for (const move of outcome.completedMoves) printMove(run, move, false);
   if (outcome.failure !== undefined) {
-    for (const move of outcome.remaining) {
+    for (const move of outcome.remainingMoves) {
       run.stderr(`${PROG}: not moved: ${formatDisplayPath(move.from, run.home)}`);
     }
     run.stderr(`${PROG}: ${outcome.failure}`);
   }
-  printSettlement(run, outcome.relocated, outcome.completed, false);
+  printSettlement(run, outcome.relocatedWorktrees, outcome.completedMoves, false);
   const newPath = formatDisplayPath(to, run.home);
-  if (outcome.completed.length > 0) {
+  if (outcome.completedMoves.length > 0) {
     recordMove(registry, entry, newPath);
     try {
       saveRegistry(registry, registryFile);
@@ -96,9 +96,10 @@ export function runMove(run: VerbRun, name: string, target: string, options: Mov
 
 /** Returns the one entry named `name`, when it has a path, or a message naming why there is not exactly one. */
 function findEntry(run: VerbRun, entries: readonly RegistryEntry[], name: string): RegistryEntry | string {
-  const matched = entries.filter((entry) => entry.name === name);
-  if (matched.length > 1) return `${matched.length} entries in ${run.file} are named ${name}; give each a unique name`;
-  const [entry] = matched;
+  const matchedEntries = entries.filter((entry) => entry.name === name);
+  if (matchedEntries.length > 1)
+    return `${matchedEntries.length} entries in ${run.file} are named ${name}; give each a unique name`;
+  const [entry] = matchedEntries;
   if (entry === undefined) return `no entry in ${run.file} is named ${name}`;
   return entry.path === undefined ? `the entry ${name} has no path` : entry;
 }

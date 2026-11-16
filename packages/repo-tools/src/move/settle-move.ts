@@ -31,19 +31,25 @@ export interface SettleContext {
  * removes each former parent that the renames leave empty but for a `.DS_Store`. Under a dry run, reports the actions
  * against the state before the move and performs none. A failure is reported and does not stop the other actions.
  */
-export function settleMove(relocated: readonly Move[], moves: readonly Move[], context: SettleContext): ReportLine[] {
+export function settleMove(
+  relocatedWorktrees: readonly Move[],
+  moves: readonly Move[],
+  context: SettleContext,
+): ReportLine[] {
   return [
-    ...allowMovedEnvrcs(relocated, context),
-    ...renameSessionDirectories(relocated, context),
+    ...allowMovedEnvrcs(relocatedWorktrees, context),
+    ...renameSessionDirectories(relocatedWorktrees, context),
     ...removeEmptiedParents(moves, context),
   ];
 }
 
 // region | Helpers
 /** Allows direnv in each moved worktree that has an `.envrc` at its root, silently when direnv is not installed. */
-function allowMovedEnvrcs(relocated: readonly Move[], context: SettleContext): ReportLine[] {
+function allowMovedEnvrcs(relocatedWorktrees: readonly Move[], context: SettleContext): ReportLine[] {
   const { adapters, home, isDryRun } = context;
-  const trees = relocated.filter((tree) => adapters.pathExists(path.join(isDryRun ? tree.from : tree.to, '.envrc')));
+  const trees = relocatedWorktrees.filter((tree) =>
+    adapters.pathExists(path.join(isDryRun ? tree.from : tree.to, '.envrc')),
+  );
   if (trees.length === 0) return [];
   if (isDryRun) {
     if (!adapters.isDirenvInstalled()) return [];
@@ -82,10 +88,10 @@ function removeEmptiedParents(moves: readonly Move[], context: SettleContext): R
       continue;
     }
     // Until the renames run, the trees that leave the parent are still among its entries.
-    const leaving = isDryRun
+    const leavingNames = isDryRun
       ? moves.filter((move) => path.dirname(move.from) === parent).map((move) => path.basename(move.from))
       : [];
-    if (entries.some((entry) => entry !== '.DS_Store' && !leaving.includes(entry))) continue;
+    if (entries.some((entry) => entry !== '.DS_Store' && !leavingNames.includes(entry))) continue;
     if (isDryRun) {
       lines.push(report('stdout', `would remove ${shown}`));
       continue;
@@ -103,10 +109,10 @@ function removeEmptiedParents(moves: readonly Move[], context: SettleContext): R
 }
 
 /** Renames each moved worktree's session directory to the name of its new path, leaving it when that name is taken. */
-function renameSessionDirectories(relocated: readonly Move[], context: SettleContext): ReportLine[] {
+function renameSessionDirectories(relocatedWorktrees: readonly Move[], context: SettleContext): ReportLine[] {
   const { adapters, home, isDryRun, sessionsDir } = context;
   const lines: ReportLine[] = [];
-  for (const tree of relocated) {
+  for (const tree of relocatedWorktrees) {
     const from = path.join(sessionsDir, encodeSessionDirectoryName(tree.from));
     if (!adapters.pathExists(from)) continue;
     const to = path.join(sessionsDir, encodeSessionDirectoryName(tree.to));

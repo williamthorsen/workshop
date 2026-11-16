@@ -129,8 +129,8 @@ function scanLink(link: string, location: string, relative: string, state: WalkS
 function walkSearchPath(searchPath: string, state: WalkState): void {
   const root = path.resolve(expandTilde(searchPath, state.home));
   const location = formatDisplayPath(root, state.home);
-  const pending = [root];
-  for (let dir = pending.pop(); dir !== undefined; dir = pending.pop()) {
+  const pendingDirs = [root];
+  for (let dir = pendingDirs.pop(); dir !== undefined; dir = pendingDirs.pop()) {
     let entries: fs.Dirent[];
     try {
       entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -144,7 +144,7 @@ function walkSearchPath(searchPath: string, state: WalkState): void {
       if (entry.isSymbolicLink()) {
         scanLink(full, location, relative, state);
       } else if (entry.isDirectory()) {
-        if (!SKIPPED_DIRECTORIES.has(entry.name)) pending.push(full);
+        if (!SKIPPED_DIRECTORIES.has(entry.name)) pendingDirs.push(full);
       } else if (entry.isFile()) {
         scanFile(full, location, relative, state);
       }

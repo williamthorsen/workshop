@@ -28,25 +28,25 @@ export function runScan(run: VerbRun, isWrite: boolean): number {
   }
 
   let isChanged = false;
-  const cloneless: string[] = [];
+  const clonelessLabels: string[] = [];
   for (const entry of registry.entries) {
     const label = formatEntryName(entry);
     const changes: string[] = [];
     const cloneDir = expandTilde(entry.path ?? '', run.home);
-    const detected = run.adapters.isDirectory(cloneDir) ? scanClone(run, cloneDir, label) : undefined;
-    if (detected === undefined) {
-      cloneless.push(label);
-    } else if (typeof detected === 'string') {
-      run.stderr(`${PROG}: ${label}: cannot list the tracked files: ${detected}; the stack is kept`);
+    const detectedStack = run.adapters.isDirectory(cloneDir) ? scanClone(run, cloneDir, label) : undefined;
+    if (detectedStack === undefined) {
+      clonelessLabels.push(label);
+    } else if (typeof detectedStack === 'string') {
+      run.stderr(`${PROG}: ${label}: cannot list the tracked files: ${detectedStack}; the stack is kept`);
     } else {
       changes.push(
-        ...detected.filter((name) => !entry.stack.includes(name)).map((name) => `+${name}`),
+        ...detectedStack.filter((name) => !entry.stack.includes(name)).map((name) => `+${name}`),
         ...entry.stack
           .toSorted()
-          .filter((name) => !detected.includes(name))
+          .filter((name) => !detectedStack.includes(name))
           .map((name) => `-${name}`),
       );
-      writeStack(registry, entry, detected);
+      writeStack(registry, entry, detectedStack);
     }
     changes.push(...scanGitHub(run, entry, label));
     if (entry.visibility === 'public' && entry.runner !== undefined) {
@@ -58,8 +58,8 @@ export function runScan(run: VerbRun, isWrite: boolean): number {
     run.stdout(`${label}: ${changes.join(' ')}`);
     isChanged = true;
   }
-  if (cloneless.length > 0) {
-    run.stderr(`${PROG}: no clone on this machine, so the stack is kept, for: ${cloneless.join(', ')}`);
+  if (clonelessLabels.length > 0) {
+    run.stderr(`${PROG}: no clone on this machine, so the stack is kept, for: ${clonelessLabels.join(', ')}`);
   }
 
   if (isWrite && isChanged) saveRegistry(registry, run.file);

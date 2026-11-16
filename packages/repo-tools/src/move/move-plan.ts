@@ -17,9 +17,9 @@ export interface MovePlan {
   moves: Move[];
   primary: Move;
   /** Every worktree whose path changes, the primary first: each renamed one and each one inside the primary. */
-  relocated: Move[];
-  repaired: string[];
-  skipped: string[];
+  relocatedWorktrees: Move[];
+  repairedWorktrees: string[];
+  skippedWorktrees: string[];
 }
 
 /** The probes with which `planMove` checks the filesystem. */
@@ -37,33 +37,33 @@ export function planMove(
   adapters: PlanAdapters,
 ): MovePlan | string[] {
   const moves: Move[] = [primary];
-  const relocated: Move[] = [primary];
-  const repaired: string[] = [];
-  const skipped: string[] = [];
+  const relocatedWorktrees: Move[] = [primary];
+  const repairedWorktrees: string[] = [];
+  const skippedWorktrees: string[] = [];
   for (const worktree of worktrees) {
     if (worktree.isPrunable) {
-      skipped.push(worktree.path);
+      skippedWorktrees.push(worktree.path);
       continue;
     }
     if (worktree.path.startsWith(`${primary.from}/`)) {
       const to = `${primary.to}${worktree.path.slice(primary.from.length)}`;
-      relocated.push({ from: worktree.path, to });
-      repaired.push(to);
+      relocatedWorktrees.push({ from: worktree.path, to });
+      repairedWorktrees.push(to);
       continue;
     }
     const suffix = readSiblingSuffix(primary.from, worktree.path);
     if (suffix === undefined) {
-      repaired.push(worktree.path);
+      repairedWorktrees.push(worktree.path);
       continue;
     }
     const move = { from: worktree.path, to: `${primary.to}${suffix}` };
     moves.push(move);
-    relocated.push(move);
-    repaired.push(move.to);
+    relocatedWorktrees.push(move);
+    repairedWorktrees.push(move.to);
   }
 
   const refusals = checkMoves(moves, adapters);
-  return refusals.length > 0 ? refusals : { moves, primary, relocated, repaired, skipped };
+  return refusals.length > 0 ? refusals : { moves, primary, relocatedWorktrees, repairedWorktrees, skippedWorktrees };
 }
 
 // region | Helpers
