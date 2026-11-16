@@ -1,11 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { UsageError, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
+import { isAffirmative, UsageError, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
 
 import type { NpmClient } from '../npm/createNpmClient.ts';
 import { assertValidName } from './assertValidName.ts';
-import { isAffirmative } from './isAffirmative.ts';
 
 const EXIT_FAILED = 1;
 const EXIT_NPM_MISSING = 127;
