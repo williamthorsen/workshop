@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest';
 import {
   appendEntry,
   assertWritable,
+  findPathClaimant,
   parseRegistry,
   readRegistry,
   recordMove,
@@ -313,6 +314,30 @@ describe(assertWritable, () => {
   it('allows a file for which no branch is reported', () => {
     using tree = createTempTree({}, { prefix: 'repo-tools-' });
     expect(assertWritable(tree.write('repos.yaml', FIXTURE), () => ({ branch: undefined }))).toBeUndefined();
+  });
+});
+
+describe(findPathClaimant, () => {
+  const home = '/home/user';
+  const registry = parse(`repos:
+  - name: alpha
+    path: ~/repos/alpha
+  - name: unplaced
+  - name: beta
+    path: /home/user/repos/beta/
+`);
+  const alpha = entry(registry, 'alpha');
+
+  it('returns the other entry whose path names the target in another spelling', () => {
+    expect(findPathClaimant(registry.entries, alpha, '/home/user/repos/beta', home)?.name).toBe('beta');
+  });
+
+  it('does not return the entry itself', () => {
+    expect(findPathClaimant(registry.entries, alpha, '/home/user/repos/alpha', home)).toBeUndefined();
+  });
+
+  it('returns undefined for a target that no entry with a path names', () => {
+    expect(findPathClaimant(registry.entries, alpha, '/home/user/repos/unplaced', home)).toBeUndefined();
   });
 });
 
