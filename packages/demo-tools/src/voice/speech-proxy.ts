@@ -8,6 +8,7 @@ import { type HttpResponse, postJson } from '../portable/post-json.ts';
 import { type ClipVerdict, judgeClip, measureClip } from './inspect-clip.ts';
 import { SERVER_HOST } from './mlx-audio/build-server-launch.ts';
 import { buildSpeechRequest, SPEECH_PATH, type SpeechSampling } from './mlx-audio/build-speech-request.ts';
+import { padClip as padClipWithFfmpeg } from './pad-clip.ts';
 
 /**
  * How long a speech request may take upstream, once the model is loaded. The slowest good clip measured on Higgs
@@ -17,9 +18,13 @@ export const REQUEST_BUDGET_MS = 540_000;
 
 /** Where the proxy forwards speech, the voice profile that it clones, and how it judges each answer. */
 export interface SpeechProxyOptions {
+  /** The silence, in milliseconds, to append to each accepted clip; 0 passes the clip on unchanged. */
+  readonly extraGapMs: number;
   /** Judges a clip of `text`, rejecting when the clip cannot be measured. */
   readonly inspectClip?: (audio: Buffer, text: string) => Promise<ClipVerdict>;
   readonly modelDir: string;
+  /** Appends silence to an accepted clip, rejecting when the clip cannot be padded. */
+  readonly padClip?: (audio: Buffer, silenceMs: number) => Promise<Buffer>;
   readonly referenceAudio: string;
   /** The transcript file of the reference recording. */
   readonly referenceTranscript: string;
@@ -46,12 +51,17 @@ export interface SpeechProxy extends AsyncDisposable {
 /**
  * Starts a loopback-only HTTP server that accepts OpenAI-shaped speech requests and forwards each as a request that
  * clones the profile's voice with the configured sampling, keeping only the text to speak. It passes on a clip that
- * the inspector accepts and a 4xx answer, and answers 502 to a rejected clip, a 5xx answer, a failed connection, a
- * request over budget, or a fault of its own. A request that the client abandons is dropped, a request from a web page
- * is answered 403, and every other request 404.
+ * the inspector accepts, with the configured silence appended, and a 4xx answer, and answers 502 to a rejected clip, a
+ * clip that cannot be padded, a 5xx answer, a failed connection, a request over budget, or a fault of its own. A
+ * request that the client abandons is dropped, a request from a web page is answered 403, and every other request 404.
  */
 export async function startSpeechProxy(options: SpeechProxyOptions): Promise<SpeechProxy> {
-  const { inspectClip = inspectClipWithFfmpeg, requestBudgetMs = REQUEST_BUDGET_MS } = options;
+  const {
+    extraGapMs,
+    inspectClip = inspectClipWithFfmpeg,
+    padClip = padClipWithFfmpeg,
+    requestBudgetMs = REQUEST_BUDGET_MS,
+  } = options;
   const referenceText = readFileSync(options.referenceTranscript, 'utf8').trim();
   const upstream = `${options.upstreamUrl}${SPEECH_PATH}`;
   let failure: SpeechFailure | undefined;
@@ -144,7 +154,14 @@ export async function startSpeechProxy(options: SpeechProxyOptions): Promise<Spe
     } catch (error) {
       return { kind: 'refused', reason: `ffmpeg cannot measure the clip: ${describeError(error)}` };
     }
-    return verdict.ok ? { kind: 'answer', answer } : { kind: 'refused', reason: verdict.reason };
+    if (!verdict.ok) return { kind: 'refused', reason: verdict.reason };
+    if (extraGapMs === 0) return { kind: 'answer', answer };
+
+    try {
+      return { kind: 'answer', answer: { ...answer, body: await padClip(answer.body, extraGapMs) } };
+    } catch (error) {
+      return { kind: 'refused', reason: `ffmpeg cannot pad the clip: ${describeError(error)}` };
+    }
   }
 
   await new Promise<void>((resolve, reject) => {

@@ -17,8 +17,15 @@ export interface Provenance {
   readonly renderedAt: string;
   readonly source: { readonly commit: string | null; readonly dirty: boolean | null };
   readonly engine: { readonly package: '@tandryukha/aidemo'; readonly version: string };
-  /** Each scene's voice, and for a cloned voice the sampling values that every speech request set, when any did. */
-  readonly voice: { readonly scenes: readonly SceneVoice[]; readonly sampling?: SpeechSampling };
+  /**
+   * Each scene's voice, and for a cloned voice the silence added after each scene and the sampling values that every
+   * speech request set, when any did.
+   */
+  readonly voice: {
+    readonly extraGapMs?: number;
+    readonly scenes: readonly SceneVoice[];
+    readonly sampling?: SpeechSampling;
+  };
   /** The checksum of the reference recording that a cloned voice copies; absent for any other voice. */
   readonly reference?: { readonly sha256: string };
   /** The arguments given to aidemo after the demo directory. */
@@ -32,6 +39,8 @@ export interface Provenance {
 export interface ProvenanceInput {
   readonly aidemoVersion: string;
   readonly demo: string;
+  /** The silence, in milliseconds, added after each scene's narration of a cloned voice. */
+  readonly extraGapMs?: number;
   readonly files: Readonly<Record<string, FileDigest>>;
   readonly label: string;
   readonly params: readonly string[];
@@ -58,6 +67,7 @@ export function buildProvenance(input: ProvenanceInput): Provenance {
     source: { commit: input.source?.commit ?? null, dirty: input.source?.dirty ?? null },
     engine: { package: '@tandryukha/aidemo', version: input.aidemoVersion },
     voice: {
+      ...(input.extraGapMs !== undefined && { extraGapMs: input.extraGapMs }),
       scenes: input.voices.map(({ id, provider, voiceId }) => ({ id, provider, voiceId })),
       ...(sampling.length > 0 && { sampling: Object.fromEntries(sampling) }),
     },

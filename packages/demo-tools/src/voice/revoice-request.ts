@@ -6,8 +6,12 @@ export interface RevoiceRequest {
   /** The aidemo bin, which the entry point runs with the node that runs `thor-demo`. */
   readonly bin: string;
   readonly cwd: string;
+  /** The demo's directory, whose voice manifest the performer adjusts after the `voice` stage. */
+  readonly demoDir: string;
   /** aidemo's environment, to which the performer adds the proxy's base URL. */
   readonly env: NodeJS.ProcessEnv;
+  /** The silence, in milliseconds, that the proxy appends to each scene's clip. */
+  readonly extraGapMs: number;
   /** The arguments of each aidemo stage, run in order. */
   readonly stages: readonly (readonly string[])[];
   readonly take: TakeDisposition;

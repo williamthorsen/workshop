@@ -39,6 +39,8 @@ describe('run revoice', () => {
     expect(selectRevoice(result.request)).toMatchObject({
       bin: repo.tree.resolve('node_modules/@tandryukha/aidemo/bin/aidemo.mjs'),
       cwd: repo.tree.dir,
+      demoDir,
+      extraGapMs: 700,
       stages: [
         ['voice', demoDir, '--force'],
         ['captions', demoDir, '--offline'],
@@ -51,6 +53,7 @@ describe('run revoice', () => {
           aidemoVersion: '0.20.3',
           archiveRoot,
           demo: 'quickstart',
+          extraGapMs: 700,
           params: [],
           reference: { sha256: readProfileSources(readVoiceConfig(home)).referenceSha256 },
           source,

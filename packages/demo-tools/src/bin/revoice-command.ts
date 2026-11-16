@@ -35,7 +35,7 @@ const { defineCommand } = createCli<CommandContext>();
 /** The `revoice` command, which narrates a recorded demo again in the cloned voice. */
 export const REVOICE: Command<CommandContext> = defineCommand({
   summary: "Narrate a recorded demo again in the presenter's cloned voice",
-  description: `Start the voice-clone server that voice setup installed, offline on 127.0.0.1, and run aidemo voice --force, captions --offline, and compose on one recorded demo, with aidemo's speech requests sent to a proxy on 127.0.0.1 that adds the voice profile and the configured sampling. The narration and the recording stay on the machine. Then stop the server and archive the take as render does, with a provenance.json that records the mlx-audio provider, the model, the sampling values that the configuration sets, and the reference recording's checksum. The footage is the demo's last recording; every scene is re-voiced.`,
+  description: `Start the voice-clone server that voice setup installed, offline on 127.0.0.1, and run aidemo voice --force, captions --offline, and compose on one recorded demo, with aidemo's speech requests sent to a proxy on 127.0.0.1 that adds the voice profile and the configured sampling, and that appends revoice.extraGapMs of silence after each scene's narration. The narration and the recording stay on the machine. Then stop the server and archive the take as render does, with a provenance.json that records the mlx-audio provider, the model, the sampling values that the configuration sets, the added gap, and the reference recording's checksum. The footage is the demo's last recording; every scene is re-voiced.`,
   operands: [{ name: 'demo', description: "The demo's name, or its path under demosDir" }],
   epilog: `Requires:
   Apple Silicon, and a voice clone installed by thor-demo voice setup from the
@@ -54,13 +54,14 @@ Example:
 // region | Helpers
 
 /**
- * Records the cloned voice as the voice of every scene in a take, and adds its sampling and the reference recording's
- * checksum.
+ * Records the cloned voice as the voice of every scene in a take, and adds its sampling, the reference recording's
+ * checksum, and the silence added after each scene.
  */
 function describeClonedTake(
   take: TakeDisposition,
   { model, sampling }: VoiceConfig,
   referenceSha256: string,
+  extraGapMs: number,
 ): TakeDisposition {
   if (take.kind === 'notice') return take;
 
@@ -68,6 +69,7 @@ function describeClonedTake(
     kind: 'archive',
     plan: {
       ...take.plan,
+      extraGapMs,
       reference: { sha256: referenceSha256 },
       sampling,
       voiceOverride: { provider: CLONED_VOICE_PROVIDER, voiceId: model },
@@ -92,7 +94,7 @@ function runRevoice(context: CommandContext, demoArgument: string, stderr: Write
 
   const repo = readRepoConfig(effects);
   if (!repo.ok) return fail(stderr, repo.message);
-  const { aidemoEnv, archiveLabel, demosDir, root } = repo.config;
+  const { aidemoEnv, archiveLabel, demosDir, revoice, root } = repo.config;
 
   const demo = resolveDemoDir(root, demosDir, demoArgument);
   if (!demo.found) {
@@ -150,13 +152,15 @@ function runRevoice(context: CommandContext, demoArgument: string, stderr: Write
     revoice: {
       bin: aidemo.aidemo.bin,
       cwd: root,
+      demoDir: demo.demoDir,
       env,
+      extraGapMs: revoice.extraGapMs,
       stages: [
         ['voice', demo.demoDir, '--force'],
         ['captions', demo.demoDir, '--offline'],
         ['compose', demo.demoDir],
       ],
-      take: describeClonedTake(take, voice.voice, install.referenceSha256),
+      take: describeClonedTake(take, voice.voice, install.referenceSha256, revoice.extraGapMs),
       voice: voice.voice,
     },
   });

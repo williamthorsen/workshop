@@ -18,7 +18,15 @@ export interface RepoConfig {
   readonly configPath: string;
   /** The demos directory, relative to `root`, normalized and `/`-separated. */
   readonly demosDir: string;
+  /** The settings of `revoice`. */
+  readonly revoice: RevoiceSettings;
   readonly root: string;
+}
+
+/** The settings of `revoice` that the configuration declares, with defaults applied. */
+export interface RevoiceSettings {
+  /** The silence, in milliseconds, that `revoice` adds after each scene's narration, beyond aidemo's own gap. */
+  readonly extraGapMs: number;
 }
 
 /** The outcome of reading the repository configuration: the settings, or a message naming what is wrong. */
@@ -26,6 +34,9 @@ export type RepoConfigResult = { ok: true; config: RepoConfig } | { ok: false; m
 
 /** The demos directory when the configuration does not set one. */
 const DEFAULT_DEMOS_DIR = 'demos';
+
+/** The silence that `revoice` adds after each scene when the configuration does not set one. */
+const DEFAULT_EXTRA_GAP_MS = 700;
 
 /** What reading the configuration takes from its caller's environment. */
 export interface RepoConfigInput {
@@ -60,9 +71,9 @@ export function readRepoConfig({ cwd, env, homeDir }: RepoConfigInput): RepoConf
   const document = parsed ?? {};
   if (!isRecord(document)) return fail('must be a mapping');
 
-  const unknownKey = findUnknownKey(document, ['aidemo', 'archive', 'demosDir']);
+  const unknownKey = findUnknownKey(document, ['aidemo', 'archive', 'demosDir', 'revoice']);
   if (unknownKey !== undefined) {
-    return fail(`unknown key "${unknownKey}"; the keys are aidemo, archive, and demosDir`);
+    return fail(`unknown key "${unknownKey}"; the keys are aidemo, archive, demosDir, and revoice`);
   }
 
   const demosDir = readDemosDir(document['demosDir']);
@@ -74,6 +85,9 @@ export function readRepoConfig({ cwd, env, homeDir }: RepoConfigInput): RepoConf
   const archiveLabel = readArchiveLabel(document['archive'], root);
   if (!archiveLabel.ok) return fail(archiveLabel.problem);
 
+  const revoice = readRevoiceSettings(document['revoice']);
+  if (!revoice.ok) return fail(revoice.problem);
+
   return {
     ok: true,
     config: {
@@ -81,6 +95,7 @@ export function readRepoConfig({ cwd, env, homeDir }: RepoConfigInput): RepoConf
       archiveLabel: archiveLabel.value,
       configPath,
       demosDir: demosDir.value,
+      revoice: revoice.value,
       root,
     },
   };
@@ -153,6 +168,26 @@ function readDemosDir(raw: unknown): { ok: true; value: string } | { ok: false; 
   }
 
   return { ok: true, value: normalized };
+}
+
+/** Validates the `revoice` section, whose one key is `extraGapMs`, a non-negative integer of milliseconds. */
+function readRevoiceSettings(section: unknown): { ok: true; value: RevoiceSettings } | { ok: false; problem: string } {
+  const defaults: { ok: true; value: RevoiceSettings } = { ok: true, value: { extraGapMs: DEFAULT_EXTRA_GAP_MS } };
+  if (section === undefined || section === null) return defaults;
+  if (!isRecord(section)) return { ok: false, problem: 'revoice must be a mapping' };
+
+  const unknownKey = findUnknownKey(section, ['extraGapMs']);
+  if (unknownKey !== undefined) {
+    return { ok: false, problem: `unknown key "revoice.${unknownKey}"; the key is extraGapMs` };
+  }
+
+  const raw = section['extraGapMs'];
+  if (raw === undefined || raw === null) return defaults;
+  if (typeof raw !== 'number' || !Number.isSafeInteger(raw) || raw < 0) {
+    return { ok: false, problem: 'revoice.extraGapMs must be a non-negative integer of milliseconds' };
+  }
+
+  return { ok: true, value: { extraGapMs: raw } };
 }
 
 // endregion | Helpers
