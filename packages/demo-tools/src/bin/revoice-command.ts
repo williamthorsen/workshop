@@ -54,13 +54,14 @@ Example:
 // region | Helpers
 
 /**
- * Records the cloned voice as the voice of every scene in a take, and adds its sampling and the reference recording's
- * checksum.
+ * Records the cloned voice as the voice of every scene in a take, and adds its sampling, the reference recording's
+ * checksum, and the silence added after each scene.
  */
 function describeClonedTake(
   take: TakeDisposition,
   { model, sampling }: VoiceConfig,
   referenceSha256: string,
+  extraGapMs: number,
 ): TakeDisposition {
   if (take.kind === 'notice') return take;
 
@@ -68,6 +69,7 @@ function describeClonedTake(
     kind: 'archive',
     plan: {
       ...take.plan,
+      extraGapMs,
       reference: { sha256: referenceSha256 },
       sampling,
       voiceOverride: { provider: CLONED_VOICE_PROVIDER, voiceId: model },
@@ -158,7 +160,7 @@ function runRevoice(context: CommandContext, demoArgument: string, stderr: Write
         ['captions', demo.demoDir, '--offline'],
         ['compose', demo.demoDir],
       ],
-      take: describeClonedTake(take, voice.voice, install.referenceSha256),
+      take: describeClonedTake(take, voice.voice, install.referenceSha256, revoice.extraGapMs),
       voice: voice.voice,
     },
   });

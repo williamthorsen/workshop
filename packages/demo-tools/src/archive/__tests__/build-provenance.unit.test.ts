@@ -57,6 +57,14 @@ describe(buildProvenance, () => {
     expect(Object.keys(provenance).indexOf('reference')).toBe(Object.keys(provenance).indexOf('voice') + 1);
   });
 
+  it.each([0, 700])('records an added gap of %o ms in the voice', (extraGapMs) => {
+    expect(buildProvenance({ ...INPUT, extraGapMs }).voice.extraGapMs).toBe(extraGapMs);
+  });
+
+  it('omits the added gap of a take that does not record one', () => {
+    expect(buildProvenance(INPUT).voice).not.toHaveProperty('extraGapMs');
+  });
+
   it('records the sampling of a cloned voice in the voice, ordered by name', () => {
     const provenance = buildProvenance({ ...INPUT, sampling: { top_p: 0.8, temperature: 0.5 } });
 

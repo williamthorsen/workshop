@@ -53,6 +53,7 @@ describe('run revoice', () => {
           aidemoVersion: '0.20.3',
           archiveRoot,
           demo: 'quickstart',
+          extraGapMs: 700,
           params: [],
           reference: { sha256: readProfileSources(readVoiceConfig(home)).referenceSha256 },
           source,

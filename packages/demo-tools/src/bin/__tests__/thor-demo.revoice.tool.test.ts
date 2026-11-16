@@ -80,6 +80,7 @@ describe('thor-demo revoice', () => {
       params: [],
       reference: { sha256: hashContent(readFileSync(machine.tree.resolve('home/reference.m4a'))) },
       voice: {
+        extraGapMs: 700,
         scenes: [{ id: 'scene-1', provider: 'mlx-audio', voiceId: MODEL }],
         sampling: { temperature: 0.5, top_k: 40 },
       },

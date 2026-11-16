@@ -19,6 +19,8 @@ export interface TakeArchivePlan {
   readonly demo: string;
   /** The demo's absolute directory, whose `output/` holds the rendered take. */
   readonly demoDir: string;
+  /** The silence added after each scene's narration, for a take narrated in a cloned voice. */
+  readonly extraGapMs?: number;
   readonly label: string;
   readonly params: readonly string[];
   /** The checksum of the reference recording, for a take narrated in a cloned voice. */
