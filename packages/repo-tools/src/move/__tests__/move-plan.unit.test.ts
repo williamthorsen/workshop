@@ -21,13 +21,13 @@ describe(planMove, () => {
     expect(plan).toStrictEqual({
       moves: [PRIMARY, { from: '/r/oss/app.live', to: '/r/tools/kit.live' }],
       primary: PRIMARY,
-      relocated: [
+      relocatedWorktrees: [
         PRIMARY,
         { from: '/r/oss/app.live', to: '/r/tools/kit.live' },
         { from: '/r/oss/app/.worktrees/spike', to: '/r/tools/kit/.worktrees/spike' },
       ],
-      repaired: ['/r/tools/kit.live', '/r/tools/kit/.worktrees/spike', '/tmp/scratch', '/r/oss/application'],
-      skipped: ['/r/oss/app.gone'],
+      repairedWorktrees: ['/r/tools/kit.live', '/r/tools/kit/.worktrees/spike', '/tmp/scratch', '/r/oss/application'],
+      skippedWorktrees: ['/r/oss/app.gone'],
     });
   });
 
@@ -62,14 +62,20 @@ describe(executeMove, () => {
       },
     };
     const outcome = executeMove(
-      { moves, primary: PRIMARY, relocated: [...moves, nested], repaired: ['/r/tools/kit.live'], skipped: [] },
+      {
+        moves,
+        primary: PRIMARY,
+        relocatedWorktrees: [...moves, nested],
+        repairedWorktrees: ['/r/tools/kit.live'],
+        skippedWorktrees: [],
+      },
       adapters,
     );
     expect(outcome).toStrictEqual({
-      completed: [PRIMARY],
+      completedMoves: [PRIMARY],
       failure: 'cannot move /r/oss/app.live to /r/tools/kit.live: EACCES',
-      relocated: [PRIMARY, nested],
-      remaining: [moves[1]],
+      relocatedWorktrees: [PRIMARY, nested],
+      remainingMoves: [moves[1]],
     });
     expect(repairs).toStrictEqual([['/r/oss/app.live']]);
   });
@@ -81,14 +87,20 @@ describe(executeMove, () => {
       repairWorktrees: () => 'fatal: bad path',
     };
     const outcome = executeMove(
-      { moves: [PRIMARY], primary: PRIMARY, relocated: [PRIMARY], repaired: ['/tmp/x'], skipped: [] },
+      {
+        moves: [PRIMARY],
+        primary: PRIMARY,
+        relocatedWorktrees: [PRIMARY],
+        repairedWorktrees: ['/tmp/x'],
+        skippedWorktrees: [],
+      },
       adapters,
     );
     expect(outcome).toStrictEqual({
-      completed: [PRIMARY],
+      completedMoves: [PRIMARY],
       failure: 'cannot repair the worktrees of /r/tools/kit: fatal: bad path',
-      relocated: [PRIMARY],
-      remaining: [],
+      relocatedWorktrees: [PRIMARY],
+      remainingMoves: [],
     });
   });
 });

@@ -8,10 +8,10 @@ import type { Move, MovePlan } from './move-plan.ts';
  * worktrees that moved: each completed rename's, and each one inside the primary once the primary has moved.
  */
 export interface MoveOutcome {
-  completed: Move[];
+  completedMoves: Move[];
   failure: string | undefined;
-  relocated: Move[];
-  remaining: Move[];
+  relocatedWorktrees: Move[];
+  remainingMoves: Move[];
 }
 
 /** The operations with which `executeMove` changes the filesystem and git. */
@@ -23,30 +23,37 @@ export type ExecuteAdapters = Pick<CloneAdapters, 'makeDirectory' | 'renamePath'
  * the links, naming each worktree where it actually is.
  */
 export function executeMove(plan: MovePlan, adapters: ExecuteAdapters): MoveOutcome {
-  const completed: Move[] = [];
+  const completedMoves: Move[] = [];
   let renameFailure: string | undefined;
-  let remaining: Move[] = [];
+  let remainingMoves: Move[] = [];
   for (const [index, move] of plan.moves.entries()) {
     const failure = adapters.makeDirectory(path.dirname(move.to)) ?? adapters.renamePath(move.from, move.to);
     if (failure !== undefined) {
       renameFailure = `cannot move ${move.from} to ${move.to}: ${failure}`;
-      remaining = plan.moves.slice(index);
+      remainingMoves = plan.moves.slice(index);
       break;
     }
-    completed.push(move);
+    completedMoves.push(move);
   }
-  const relocated = plan.relocated.filter((tree) =>
-    completed.includes(plan.moves.includes(tree) ? tree : plan.primary),
+  const relocatedWorktrees = plan.relocatedWorktrees.filter((tree) =>
+    completedMoves.includes(plan.moves.includes(tree) ? tree : plan.primary),
   );
-  if (completed.length === 0 || plan.repaired.length === 0) {
-    return { completed, failure: renameFailure, relocated, remaining };
+  if (completedMoves.length === 0 || plan.repairedWorktrees.length === 0) {
+    return { completedMoves, failure: renameFailure, relocatedWorktrees, remainingMoves };
   }
 
-  const located = plan.repaired.map((planned) => remaining.find((move) => move.to === planned)?.from ?? planned);
-  const repairFailure = adapters.repairWorktrees(plan.primary.to, located);
+  const locatedWorktrees = plan.repairedWorktrees.map(
+    (planned) => remainingMoves.find((move) => move.to === planned)?.from ?? planned,
+  );
+  const repairFailure = adapters.repairWorktrees(plan.primary.to, locatedWorktrees);
   const failures = [
     renameFailure,
     repairFailure === undefined ? undefined : `cannot repair the worktrees of ${plan.primary.to}: ${repairFailure}`,
   ].filter((failure) => failure !== undefined);
-  return { completed, failure: failures.length === 0 ? undefined : failures.join('; '), relocated, remaining };
+  return {
+    completedMoves,
+    failure: failures.length === 0 ? undefined : failures.join('; '),
+    relocatedWorktrees,
+    remainingMoves,
+  };
 }

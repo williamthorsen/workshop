@@ -49,7 +49,7 @@ describe(executeMove, () => {
     const plan = planMove({ from: primary, to: `${root}/tools/kit` }, worktrees, GIT_ADAPTERS);
     assert.ok(!Array.isArray(plan), 'the move is refused');
     const outcome = executeMove(plan, GIT_ADAPTERS);
-    const lines = settleMove(outcome.relocated, outcome.completed, {
+    const lines = settleMove(outcome.relocatedWorktrees, outcome.completedMoves, {
       adapters: { ...GIT_ADAPTERS, allowDirenv: () => 'absent' },
       home: root,
       isDryRun: false,

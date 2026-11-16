@@ -38,34 +38,34 @@ export function runApplyMoves(run: VerbRun, options: MoveOptions): number {
   }
 
   const oldPaths: string[] = [];
-  const relocated: Move[] = [];
-  const moved: Move[] = [];
+  const relocatedWorktrees: Move[] = [];
+  const moves: Move[] = [];
   for (const plan of plans.values()) {
-    reportSkippedWorktrees(run, plan.skipped);
+    reportSkippedWorktrees(run, plan.skippedWorktrees);
     if (options.isDryRun) {
       for (const move of plan.moves) printMove(run, move, true);
       oldPaths.push(...plan.moves.map((move) => move.from));
-      relocated.push(...plan.relocated);
-      moved.push(...plan.moves);
+      relocatedWorktrees.push(...plan.relocatedWorktrees);
+      moves.push(...plan.moves);
       continue;
     }
     const outcome = executeMove(plan, run.adapters);
-    for (const move of outcome.completed) printMove(run, move, false);
-    oldPaths.push(...outcome.completed.map((move) => move.from));
-    relocated.push(...outcome.relocated);
-    moved.push(...outcome.completed);
+    for (const move of outcome.completedMoves) printMove(run, move, false);
+    oldPaths.push(...outcome.completedMoves.map((move) => move.from));
+    relocatedWorktrees.push(...outcome.relocatedWorktrees);
+    moves.push(...outcome.completedMoves);
     if (outcome.failure === undefined) {
       continue;
     }
 
-    for (const move of outcome.remaining) {
+    for (const move of outcome.remainingMoves) {
       run.stderr(`${PROG}: not moved: ${formatDisplayPath(move.from, run.home)}`);
     }
     run.stderr(`${PROG}: ${outcome.failure}`);
     isClean = false;
   }
   // Settle once over every plan, so that clones leaving one parent leave it empty in a dry run's report too.
-  printSettlement(run, relocated, moved, options.isDryRun);
+  printSettlement(run, relocatedWorktrees, moves, options.isDryRun);
   // Until the moves run, each moved entry's clone is still at the source of its plan.
   const locations = options.isDryRun
     ? new Map([...plans].map(([entry, plan]) => [entry, plan.primary.from]))
@@ -102,15 +102,17 @@ function planEntry(
 ): MovePlan | string | undefined {
   if (entry.path === undefined || entry.formerPaths.length === 0) return undefined;
   const to = normalizePath(entry.path, run.home);
-  const present = entry.formerPaths
+  const presentFormerPaths = entry.formerPaths
     .map((formerPath) => normalizePath(formerPath, run.home))
     .filter((formerPath) => run.adapters.isDirectory(formerPath))
     .map((formerPath) => run.adapters.resolvePath(formerPath));
   if (run.adapters.pathExists(to)) {
-    return present.length === 0 ? undefined : `both ${entry.path} and a former path, ${display(run, present)}, exist`;
+    return presentFormerPaths.length === 0
+      ? undefined
+      : `both ${entry.path} and a former path, ${display(run, presentFormerPaths)}, exist`;
   }
 
-  const candidates = present.filter((formerPath) => {
+  const candidates = presentFormerPaths.filter((formerPath) => {
     const isClone = isCloneOf(run, formerPath, entry.repo);
     if (!isClone) {
       run.stderr(`${PROG}: ${formatEntryName(entry)}: ignored ${display(run, [formerPath])}, which is not its clone`);
