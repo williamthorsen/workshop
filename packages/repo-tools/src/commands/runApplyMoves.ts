@@ -10,7 +10,14 @@ import {
   printSettlement,
   reportSkippedWorktrees,
 } from './move-report.ts';
-import { formatEntryName, parseRemoteUrl, PROG, reportFailure, type VerbRun } from './verb-run.ts';
+import {
+  findUnexpandablePath,
+  formatEntryName,
+  parseRemoteUrl,
+  PROG,
+  reportFailure,
+  type VerbRun,
+} from './verb-run.ts';
 
 /**
  * Runs `apply-moves`: moves each clone found at one of its entry's `formerPaths`, while the entry's `path` is absent,
@@ -20,6 +27,8 @@ import { formatEntryName, parseRemoteUrl, PROG, reportFailure, type VerbRun } fr
 export function runApplyMoves(run: VerbRun, options: MoveOptions): number {
   const registry = readRegistry(run.file);
   if (typeof registry === 'string') return reportFailure(run, registry);
+  const unexpandable = findUnexpandablePath(run, registry.entries, options.searchPaths);
+  if (unexpandable !== undefined) return reportFailure(run, unexpandable);
 
   const plans = new Map<RegistryEntry, MovePlan>();
   let isClean = true;

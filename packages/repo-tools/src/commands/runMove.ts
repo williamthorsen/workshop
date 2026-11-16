@@ -22,7 +22,7 @@ import {
   printSettlement,
   reportSkippedWorktrees,
 } from './move-report.ts';
-import { PROG, reportFailure, type VerbRun } from './verb-run.ts';
+import { findUnexpandablePath, PROG, reportFailure, type VerbRun } from './verb-run.ts';
 
 /**
  * Runs `move`: moves the clone of the entry named `name` to `target` with its worktrees, rewrites the entry, and
@@ -32,6 +32,8 @@ import { PROG, reportFailure, type VerbRun } from './verb-run.ts';
 export function runMove(run: VerbRun, name: string, target: string, options: MoveOptions): number {
   const registry = readRegistry(run.file);
   if (typeof registry === 'string') return reportFailure(run, registry);
+  const unexpandable = findUnexpandablePath(run, registry.entries, [target, ...options.searchPaths]);
+  if (unexpandable !== undefined) return reportFailure(run, unexpandable);
   const entry = findEntry(run, registry.entries, name);
   if (typeof entry === 'string') return reportFailure(run, entry);
   const oldPath = entry.path ?? '';

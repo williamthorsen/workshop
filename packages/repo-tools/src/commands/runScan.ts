@@ -10,7 +10,7 @@ import {
   writeStack,
 } from '../registry/registry.ts';
 import { detectStack } from '../stacks/stack-detection.ts';
-import { formatEntryName, PROG, reportFailure, type VerbRun } from './verb-run.ts';
+import { findUnexpandablePath, formatEntryName, PROG, reportFailure, type VerbRun } from './verb-run.ts';
 
 /**
  * Runs `scan`: reports each entry whose stack, visibility, or runner differs from its clone and GitHub, and rewrites
@@ -19,6 +19,8 @@ import { formatEntryName, PROG, reportFailure, type VerbRun } from './verb-run.t
 export function runScan(run: VerbRun, isWrite: boolean): number {
   const registry = readRegistry(run.file);
   if (typeof registry === 'string') return reportFailure(run, registry);
+  const unexpandable = findUnexpandablePath(run, registry.entries);
+  if (unexpandable !== undefined) return reportFailure(run, unexpandable);
   if (registry.entries.some((entry) => entry.path === undefined)) {
     return reportFailure(run, `registry entry has no path: ${run.file}`);
   }

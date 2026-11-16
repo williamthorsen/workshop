@@ -52,6 +52,30 @@ describe('move', () => {
   });
 });
 
+describe('move without HOME', () => {
+  const ABSOLUTE = REGISTRY.replaceAll('path: ~/', () => `path: ${FAKE_HOME}/`);
+
+  it.each([
+    [['move', 'alpha', `${FAKE_HOME}/repos/kit`], REGISTRY, '~/repos/alpha'],
+    [['move', 'alpha', '~/repos/kit'], ABSOLUTE, '~/repos/kit'],
+    [['move', 'alpha', `${FAKE_HOME}/repos/kit`, '--search', '~/.config'], ABSOLUTE, '~/.config'],
+  ] as const)('refuses %j, naming the path that needs HOME', async (args, registry, unexpandable) => {
+    const { registryText, result } = await run([...args], { env: {}, registry });
+    expect(result.stderr).toBe(`thor-repo: cannot expand ${unexpandable}: HOME is unset or empty`);
+    expect(result.status).toBe(1);
+    expect(registryText).toBe(registry);
+  });
+
+  it('plans a move between absolute paths', async () => {
+    const { result } = await run(['move', 'alpha', `${FAKE_HOME}/repos/kit`, '--dry-run'], {
+      env: {},
+      registry: ABSOLUTE,
+    });
+    expect(result.stdout).toContain(`${FAKE_HOME}/repos/alpha -> ${FAKE_HOME}/repos/kit`);
+    expect(result.status).toBe(0);
+  });
+});
+
 describe('move after a partial failure', () => {
   it('reports the moves that did not complete when the registry cannot be written either', async () => {
     using tree = createTempTree({ 'registry/repos.yaml': REGISTRY }, { prefix: 'repo-tools-' });
@@ -149,6 +173,13 @@ describe('apply-moves', () => {
     expect(result.stderr).toBe(
       'thor-repo: alpha: its path, ~/repos/kit, is also the path of kit; skipped\nthor-repo: nothing to move',
     );
+    expect(result.status).toBe(1);
+  });
+
+  it('refuses a ~ former path without HOME', async () => {
+    const registry = MOVED.replace('path: ~/repos/kit', () => `path: ${FAKE_HOME}/repos/kit`);
+    const { result } = await run(['apply-moves'], { clones: { alpha: buildClone({}) }, env: {}, registry });
+    expect(result.stderr).toBe('thor-repo: cannot expand ~/repos/alpha: HOME is unset or empty');
     expect(result.status).toBe(1);
   });
 

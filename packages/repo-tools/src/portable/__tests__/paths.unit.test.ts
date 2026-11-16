@@ -11,6 +11,11 @@ describe(expandTilde, () => {
   ])('expands %s to %s', (value, expected) => {
     expect(expandTilde(value, '/home/ada')).toBe(expected);
   });
+
+  it('throws for a ~ path when the home directory is unknown', () => {
+    expect(() => expandTilde('~/repos/alpha', '')).toThrow('cannot expand ~/repos/alpha');
+    expect(expandTilde('/srv/alpha', '')).toBe('/srv/alpha');
+  });
 });
 
 describe(formatDisplayPath, () => {

@@ -23,7 +23,7 @@ export function buildRegistryRunner(defaults: {
     const github = setup.github ?? defaults.github;
     const result = await runCaptured([...args.slice(0, 1), '--file', file, ...args.slice(1)], {
       adapters,
-      env: { HOME: FAKE_HOME },
+      env: setup.env ?? { HOME: FAKE_HOME },
       ...(github !== undefined && { github: fakeGitHub(github) }),
     });
     return { registryText: fs.readFileSync(file, 'utf8'), result };
@@ -40,6 +40,8 @@ export interface RegistryRun {
 export interface RegistrySetup {
   branch?: string;
   clones?: Record<string, FakeClone>;
+  /** The environment of the run, replacing the default that sets only `HOME`. */
+  env?: Record<string, string>;
   github?: Record<string, GitHubFacts>;
   origins?: Record<string, string>;
   registry?: string;

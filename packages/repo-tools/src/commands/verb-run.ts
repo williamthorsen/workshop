@@ -3,15 +3,26 @@ import type { Writer } from '@williamthorsen/toolbelt.cli/candidate';
 import { readSessionsDir } from '../claude/claude-sessions.ts';
 import type { LinkedWorktree } from '../git/git-clone.ts';
 import type { GitHubReader } from '../github/github-repo.ts';
-import { readHome } from '../portable/paths.ts';
+import { isTildePath, readHome } from '../portable/paths.ts';
 import type { RegistryEntry } from '../registry/registry.ts';
 
 /** The name under which the CLI reports usage and messages. */
 export const PROG = 'thor-repo';
 
-/** Builds the state of a command's run, resolving the registry file to its default when `--file` is absent. */
-export function buildVerbRun(context: RepoContext, file: string | undefined, stdout: Writer, stderr: Writer): VerbRun {
+/**
+ * Builds the state of a command's run, resolving the registry file to its default when `--file` is absent, or returns
+ * the failure when that default needs a home directory that the environment lacks.
+ */
+export function buildVerbRun(
+  context: RepoContext,
+  file: string | undefined,
+  stdout: Writer,
+  stderr: Writer,
+): VerbRun | string {
   const home = readHome(context.env);
+  if (file === undefined && home === '') {
+    return 'cannot find the default registry ~/.config/repos.yaml: HOME is unset or empty; pass --file';
+  }
   return {
     adapters: context.adapters,
     cwd: context.cwd,
@@ -22,6 +33,23 @@ export function buildVerbRun(context: RepoContext, file: string | undefined, std
     stderr: (line) => stderr.write(`${line}\n`),
     stdout: (line) => stdout.write(`${line}\n`),
   };
+}
+
+/**
+ * Returns the failure for the first `~` path that a run without a home directory cannot expand, taking the entries'
+ * paths and former paths in registry order and then `paths`, or `undefined` when the run can expand them all.
+ */
+export function findUnexpandablePath(
+  run: VerbRun,
+  entries: readonly RegistryEntry[],
+  paths: readonly string[] = [],
+): string | undefined {
+  if (run.home !== '') return undefined;
+  const unexpandable = [
+    ...entries.flatMap((entry) => [...(entry.path === undefined ? [] : [entry.path]), ...entry.formerPaths]),
+    ...paths,
+  ].find((value) => isTildePath(value));
+  return unexpandable === undefined ? undefined : `cannot expand ${unexpandable}: HOME is unset or empty`;
 }
 
 /** Returns the name under which an entry is reported: its name, else its path. */
@@ -100,6 +128,7 @@ export interface VerbRun {
   cwd: string;
   file: string;
   github: GitHubReader;
+  /** The home directory, or `''` when `HOME` is unset or empty. */
   home: string;
   /** The directory that holds Claude Code's session directories. */
   sessionsDir: string;

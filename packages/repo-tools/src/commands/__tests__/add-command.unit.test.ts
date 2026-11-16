@@ -1,12 +1,35 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildClone, FAKE_HOME } from '../test-utils/fake-clones.ts';
-import { CURRENT_CLONES, CURRENT_GITHUB, facts, REGISTRY } from '../test-utils/registry-fixtures.ts';
+import { ABSOLUTE_REGISTRY, CURRENT_CLONES, CURRENT_GITHUB, facts, REGISTRY } from '../test-utils/registry-fixtures.ts';
 import { buildRegistryRunner } from '../test-utils/registry-runner.ts';
 
 const run = buildRegistryRunner({ clones: CURRENT_CLONES, github: CURRENT_GITHUB, registry: REGISTRY });
 
 describe('add', () => {
+  it('writes the absolute path of a clone without HOME', async () => {
+    const { registryText, result } = await run(['add', `${FAKE_HOME}/repos/delta`, '--write'], {
+      clones: { delta: buildClone({}) },
+      env: {},
+      github: { 'owner/delta': facts('private') },
+      origins: { delta: 'git@github.com:owner/delta.git' },
+      registry: ABSOLUTE_REGISTRY,
+    });
+    expect(result.status).toBe(0);
+    expect(registryText).toContain(`  - name: delta\n    path: ${FAKE_HOME}/repos/delta\n`);
+  });
+
+  it('refuses a ~ target without HOME, writing nothing', async () => {
+    const { registryText, result } = await run(['add', '~/repos/delta', '--write'], {
+      clones: { delta: buildClone({}) },
+      env: {},
+      registry: ABSOLUTE_REGISTRY,
+    });
+    expect(result.stderr).toBe('thor-repo: cannot expand ~/repos/delta: HOME is unset or empty');
+    expect(result.status).toBe(1);
+    expect(registryText).toBe(ABSOLUTE_REGISTRY);
+  });
+
   it('prints the entry for a clone that the registry lacks, without writing it', async () => {
     const clones = { delta: buildClone({ 'package.json': { vue: '3' } }) };
     const { registryText, result } = await run(['add', '~/repos/delta'], {

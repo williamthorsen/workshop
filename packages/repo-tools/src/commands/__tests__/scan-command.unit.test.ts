@@ -1,12 +1,31 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildClone } from '../test-utils/fake-clones.ts';
-import { CURRENT_CLONES, CURRENT_GITHUB, facts, PREFIXED_REGISTRY, REGISTRY } from '../test-utils/registry-fixtures.ts';
+import {
+  ABSOLUTE_REGISTRY,
+  CURRENT_CLONES,
+  CURRENT_GITHUB,
+  facts,
+  PREFIXED_REGISTRY,
+  REGISTRY,
+} from '../test-utils/registry-fixtures.ts';
 import { buildRegistryRunner } from '../test-utils/registry-runner.ts';
 
 const run = buildRegistryRunner({ clones: CURRENT_CLONES, github: CURRENT_GITHUB, registry: REGISTRY });
 
 describe('scan', () => {
+  it('scans a registry of absolute paths without HOME', async () => {
+    const { result } = await run(['scan'], { env: {}, registry: ABSOLUTE_REGISTRY });
+    expect(result.stderr).toBe('');
+    expect(result.status).toBe(0);
+  });
+
+  it('refuses a ~ path without HOME', async () => {
+    const { result } = await run(['scan'], { env: {} });
+    expect(result.stderr).toBe('thor-repo: cannot expand ~/repos/alpha: HOME is unset or empty');
+    expect(result.status).toBe(1);
+  });
+
   it('prints nothing and exits 0 when every stack is current', async () => {
     const { result } = await run(['scan'], { clones: CURRENT_CLONES });
     expect(result.stdout).toBe('');

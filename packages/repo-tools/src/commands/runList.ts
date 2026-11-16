@@ -1,6 +1,6 @@
 import { expandTilde } from '../portable/paths.ts';
 import { readRegistry, selectEntries } from '../registry/registry.ts';
-import { reportFailure, type VerbRun } from './verb-run.ts';
+import { findUnexpandablePath, reportFailure, type VerbRun } from './verb-run.ts';
 
 export const CLONE_STATES = ['present', 'absent', 'all'] as const;
 
@@ -18,6 +18,8 @@ export interface ListOptions {
 export function runList(run: VerbRun, options: ListOptions): number {
   const registry = readRegistry(run.file);
   if (typeof registry === 'string') return reportFailure(run, registry);
+  const unexpandable = findUnexpandablePath(run, registry.entries);
+  if (unexpandable !== undefined) return reportFailure(run, unexpandable);
   const matchedEntries = selectEntries(registry.entries, options);
   // The drift sweep reads a missing path as a repo without a clone here, so a pathless entry is refused instead.
   if (matchedEntries.some((entry) => entry.path === undefined)) {

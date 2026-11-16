@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { grepTrackedFiles } from '../git/git-clone.ts';
-import { expandTilde, formatDisplayPath } from '../portable/paths.ts';
+import { expandTilde, formatDisplayPath, isTildePath } from '../portable/paths.ts';
 
 /** A place that still names an old path: a line of a file, or a symlink whose target is under the old path. */
 export interface Reference {
@@ -119,7 +119,9 @@ function scanLink(link: string, location: string, relative: string, state: WalkS
   } catch {
     return;
   }
-  const resolved = path.resolve(path.dirname(link), expandTilde(target, state.home));
+  // A `~` target resolves literally without a home directory, so that file content cannot fail the scan.
+  const expanded = isTildePath(target) && state.home === '' ? target : expandTilde(target, state.home);
+  const resolved = path.resolve(path.dirname(link), expanded);
   if (state.oldPaths.some((oldPath) => resolved.startsWith(oldPath) && !extendsName(resolved.charAt(oldPath.length)))) {
     state.report.references.push({ file: relative, line: undefined, location, text: `-> ${target}` });
   }
