@@ -1,5 +1,5 @@
 import type { ReadoutData } from '@williamthorsen/readout';
-import { createCli, runCli, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
+import { createCli, type FlagDefinition, runCli, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
 
 import { renderAsdfShimsText, resolveAsdfShimsExitCode, runAsdfShims } from './runAsdfShims.ts';
 import { renderPnpmText, resolvePnpmExitCode, runPnpm } from './runPnpm.ts';
@@ -7,7 +7,10 @@ import { DEFAULT_PROTECT_LIST, DEFAULT_ROOT, parseActiveDays, runPruneModules } 
 import type { ThorNodeEffects } from './thor-node-effects.ts';
 import { PNPM, type RenderedText, serializeResult } from './thor-node-result.ts';
 
-const JSON_FLAG = { type: 'boolean', description: 'Print the result as one JSON document on stdout' } as const;
+const JSON_FLAG = {
+  type: 'boolean',
+  description: 'Print the result as one JSON document on stdout',
+} satisfies FlagDefinition;
 
 const { defineCommand, defineGroup } = createCli<ThorNodeEffects>();
 
