@@ -67,9 +67,7 @@ export async function runPruneModules(
   for (const warning of plan.warnings) stderr.write(`warning: cannot read ${warning.path}: ${warning.message}\n`);
 
   // The listing precedes the confirmation, which needs it in view.
-  if (plan.protectList !== null && !options.json) {
-    stdout.write(renderPruneListing(plan.directories, plan.protectList, now));
-  }
+  if (plan.outcome !== 'not-applicable' && !options.json) stdout.write(renderPruneListing(plan, now));
   const result = plan.outcome === 'not-applicable' ? plan : await settlePrunePlan(plan, options, effects);
 
   const summary = renderPruneSummary(result);
@@ -80,19 +78,54 @@ export async function runPruneModules(
   return resolvePruneModulesExitCode(result);
 }
 
-/** A `node_modules` directory that the scan found, with whether it is kept and why. */
-export interface PruneDirectory {
-  /** The allocated size of a candidate, deleted, or failed directory; null for a kept one, which is not measured. */
-  readonly bytes: number | null;
-  /** When the project of an `active` directory was last active, as ISO 8601. */
-  readonly lastActivityAt: string | null;
-  /** Why the deletion of a `failed` directory failed. */
-  readonly message: string | null;
-  readonly path: string;
-  /** The protect-list pattern that keeps a `protected` directory. */
-  readonly pattern: string | null;
-  readonly status: 'active' | 'candidate' | 'deleted' | 'failed' | 'protected' | 'unreadable';
-}
+/**
+ * A `node_modules` directory that the scan found, with whether it is kept and why. A kept directory is not measured,
+ * so its `bytes` is null.
+ */
+export type PruneDirectory =
+  | {
+      readonly bytes: number;
+      readonly lastActivityAt: null;
+      readonly message: null;
+      readonly path: string;
+      readonly pattern: null;
+      readonly status: 'candidate' | 'deleted';
+    }
+  | {
+      readonly bytes: number;
+      readonly lastActivityAt: null;
+      /** Why the deletion failed. */
+      readonly message: string;
+      readonly path: string;
+      readonly pattern: null;
+      readonly status: 'failed';
+    }
+  | {
+      readonly bytes: null;
+      /** When the project was last active, as ISO 8601. */
+      readonly lastActivityAt: string;
+      readonly message: null;
+      readonly path: string;
+      readonly pattern: null;
+      readonly status: 'active';
+    }
+  | {
+      readonly bytes: null;
+      readonly lastActivityAt: null;
+      readonly message: null;
+      readonly path: string;
+      /** The protect-list pattern that keeps the directory. */
+      readonly pattern: string;
+      readonly status: 'protected';
+    }
+  | {
+      readonly bytes: null;
+      readonly lastActivityAt: null;
+      readonly message: null;
+      readonly path: string;
+      readonly pattern: null;
+      readonly status: 'unreadable';
+    };
 
 /** The effects that pruning needs beyond the filesystem. */
 export interface PruneModulesEffects {
@@ -117,22 +150,34 @@ export interface PruneModulesOptions {
 }
 
 /** What `prune-modules` found and did, or why it does not apply. */
-export interface PruneModulesResult {
-  /** The active window in days, or null under `--no-active-guard`. */
-  readonly activeDays: number | null;
-  readonly directories: readonly PruneDirectory[];
-  readonly outcome: 'applied' | 'declined' | 'not-applicable' | 'planned';
-  /** The protect-list read, or null when the command does not apply and reads none. */
-  readonly protectList: { readonly found: boolean; readonly path: string } | null;
-  readonly reason: string | null;
-  readonly root: string;
-  readonly warnings: readonly PruneWarning[];
-}
+export type PruneModulesResult =
+  | ScannedPrune
+  | {
+      readonly activeDays: number | null;
+      readonly directories: readonly [];
+      readonly outcome: 'not-applicable';
+      readonly protectList: null;
+      readonly reason: string;
+      readonly root: string;
+      readonly warnings: readonly [];
+    };
 
 /** An entry that the scan could not read. */
 export interface PruneWarning {
   readonly message: string;
   readonly path: string;
+}
+
+/** What `prune-modules` found under a root that exists, and what it did with it. */
+export interface ScannedPrune {
+  /** The active window in days, or null under `--no-active-guard`. */
+  readonly activeDays: number | null;
+  readonly directories: readonly PruneDirectory[];
+  readonly outcome: 'applied' | 'declined' | 'planned';
+  readonly protectList: { readonly found: boolean; readonly path: string };
+  readonly reason: null;
+  readonly root: string;
+  readonly warnings: readonly PruneWarning[];
 }
 
 // region | Helpers
@@ -151,10 +196,8 @@ type KeepReason =
   | { readonly lastActivityAt: string; readonly status: 'active' }
   | { readonly pattern: string; readonly status: 'protected' };
 
-/**
- * Deletes the planned candidates, recording each one as deleted or failed with the reason that it failed.
- */
-function applyPrunePlan(plan: PruneModulesResult): PruneModulesResult {
+/** Deletes the planned candidates, recording each one as deleted or failed with the reason that it failed. */
+function applyPrunePlan(plan: ScannedPrune): ScannedPrune {
   const directories = plan.directories.map((directory): PruneDirectory => {
     if (directory.status !== 'candidate') return directory;
 
@@ -204,9 +247,9 @@ function describeAge(ageMs: number): string {
 function describeKeepReason(directory: PruneDirectory, now: number): string {
   switch (directory.status) {
     case 'active':
-      return ` (active ${describeAge(now - Date.parse(directory.lastActivityAt ?? ''))})`;
+      return ` (active ${describeAge(now - Date.parse(directory.lastActivityAt))})`;
     case 'protected':
-      return ` (protected by ${directory.pattern ?? ''})`;
+      return ` (protected by ${directory.pattern})`;
     case 'unreadable':
       return ' (unreadable)';
     case 'candidate':
@@ -313,11 +356,8 @@ function planPruneModules(options: PruneModulesOptions, effects: PruneModulesEff
  * Renders the protect-list in use and one line per directory: a candidate's size, or `skipped`, right-aligned, then
  * the path and any reason that keeps it. A blank line separates the listing from the summary.
  */
-function renderPruneListing(
-  directories: readonly PruneDirectory[],
-  protectList: NonNullable<PruneModulesResult['protectList']>,
-  now: number,
-): string {
+function renderPruneListing(plan: ScannedPrune, now: number): string {
+  const { directories, protectList } = plan;
   const header = `protect-list: ${protectList.path}${protectList.found ? '' : ' (not found; nothing protected)'}`;
   const labels = directories.map((directory) => (directory.bytes === null ? SKIPPED : formatBytes(directory.bytes)));
   const width = Math.max(0, ...labels.map((label) => label.length));
@@ -341,7 +381,7 @@ function renderPruneSummary(result: PruneModulesResult): RenderedText {
       const deleted = result.directories.filter((directory) => directory.status === 'deleted');
       const failures = result.directories
         .filter((directory) => directory.status === 'failed')
-        .map((directory) => `failed to delete ${directory.path}: ${directory.message ?? ''}\n`);
+        .map((directory) => `failed to delete ${directory.path}: ${directory.message}\n`);
 
       return {
         stderr: failures.join(''),
@@ -351,7 +391,7 @@ function renderPruneSummary(result: PruneModulesResult): RenderedText {
     case 'declined':
       return { stderr: 'Nothing deleted.\n', stdout: '' };
     case 'not-applicable':
-      return { stderr: `${result.reason ?? ''}\n`, stdout: '' };
+      return { stderr: `${result.reason}\n`, stdout: '' };
     case 'planned': {
       const candidates = result.directories.filter((directory) => directory.status === 'candidate');
       const total = describeTotal(candidates.length, sumBytes(candidates));
@@ -377,10 +417,10 @@ function resolvePruneModulesExitCode(result: PruneModulesResult): number {
 
 /** Settles a plan: leaves it as planned without `apply`, records a declined confirmation, or deletes. */
 async function settlePrunePlan(
-  plan: PruneModulesResult,
+  plan: ScannedPrune,
   options: PruneModulesOptions,
   effects: PruneModulesEffects,
-): Promise<PruneModulesResult> {
+): Promise<ScannedPrune> {
   if (!options.apply) return plan;
 
   const candidates = plan.directories.filter((directory) => directory.status === 'candidate');
