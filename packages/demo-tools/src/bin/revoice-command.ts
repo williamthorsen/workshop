@@ -6,7 +6,7 @@ import { buildAidemoEnv, resolveDefaultProfileDir } from '../aidemo/build-aidemo
 import { findEnvFileOverrides } from '../aidemo/find-env-file-overrides.ts';
 import { MIN_AIDEMO_VERSION, resolveAidemo } from '../aidemo/resolve-aidemo.ts';
 import { planTake, type TakeDisposition } from '../archive/plan-take.ts';
-import { MACHINE_CONFIG_PATH } from '../config/read-machine-config.ts';
+import { MACHINE_CONFIG_PATH, type VoiceConfig } from '../config/read-machine-config.ts';
 import { readRepoConfig } from '../config/read-repo-config.ts';
 import { resolveArchiveRoot } from '../config/resolve-archive-root.ts';
 import { isDemoRecorded } from '../demos/is-demo-recorded.ts';
@@ -35,7 +35,7 @@ const { defineCommand } = createCli<CommandContext>();
 /** The `revoice` command, which narrates a recorded demo again in the cloned voice. */
 export const REVOICE: Command<CommandContext> = defineCommand({
   summary: "Narrate a recorded demo again in the presenter's cloned voice",
-  description: `Start the voice-clone server that voice setup installed, offline on 127.0.0.1, and run aidemo voice --force, captions --offline, and compose on one recorded demo, with aidemo's speech requests sent to a proxy on 127.0.0.1 that adds the voice profile. The narration and the recording stay on the machine. Then stop the server and archive the take as render does, with a provenance.json that records the mlx-audio provider, the model, and the reference recording's checksum. The footage is the demo's last recording; every scene is re-voiced.`,
+  description: `Start the voice-clone server that voice setup installed, offline on 127.0.0.1, and run aidemo voice --force, captions --offline, and compose on one recorded demo, with aidemo's speech requests sent to a proxy on 127.0.0.1 that adds the voice profile and the configured sampling. The narration and the recording stay on the machine. Then stop the server and archive the take as render does, with a provenance.json that records the mlx-audio provider, the model, the sampling values that the configuration sets, and the reference recording's checksum. The footage is the demo's last recording; every scene is re-voiced.`,
   operands: [{ name: 'demo', description: "The demo's name, or its path under demosDir" }],
   epilog: `Requires:
   Apple Silicon, and a voice clone installed by thor-demo voice setup from the
@@ -53,8 +53,15 @@ Example:
 
 // region | Helpers
 
-/** Records the cloned voice as the voice of every scene in a take, and adds the reference recording's checksum. */
-function describeClonedTake(take: TakeDisposition, model: string, referenceSha256: string): TakeDisposition {
+/**
+ * Records the cloned voice as the voice of every scene in a take, and adds its sampling and the reference recording's
+ * checksum.
+ */
+function describeClonedTake(
+  take: TakeDisposition,
+  { model, sampling }: VoiceConfig,
+  referenceSha256: string,
+): TakeDisposition {
   if (take.kind === 'notice') return take;
 
   return {
@@ -62,6 +69,7 @@ function describeClonedTake(take: TakeDisposition, model: string, referenceSha25
     plan: {
       ...take.plan,
       reference: { sha256: referenceSha256 },
+      sampling,
       voiceOverride: { provider: CLONED_VOICE_PROVIDER, voiceId: model },
     },
   };
@@ -148,7 +156,7 @@ function runRevoice(context: CommandContext, demoArgument: string, stderr: Write
         ['captions', demo.demoDir, '--offline'],
         ['compose', demo.demoDir],
       ],
-      take: describeClonedTake(take, model, install.referenceSha256),
+      take: describeClonedTake(take, voice.voice, install.referenceSha256),
       voice: voice.voice,
     },
   });

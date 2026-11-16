@@ -48,8 +48,28 @@ describe(readMachineConfig, () => {
         model: DEFAULT_VOICE_MODEL,
         referenceAudio: home.resolve('voice/reference.m4a'),
         referenceTranscript: home.resolve('voice/reference.txt'),
+        sampling: {},
       },
     });
+  });
+
+  it('reads every voice.sampling key that is set, skipping a null one', () => {
+    using home = createTempTree({
+      [MACHINE_CONFIG_PATH]: `voice:\n${REFERENCE}  sampling:\n    temperature: 0.5\n    top_p: 0.8\n    top_k: 40\n    repetition_penalty:\n`,
+      ...REFERENCE_FILES,
+    });
+
+    const voice = readVoice(readMachineConfig({ env: {}, homeDir: home.dir }));
+
+    expect(voice.ok && voice.voice?.sampling).toStrictEqual({ temperature: 0.5, top_k: 40, top_p: 0.8 });
+  });
+
+  it('reads an empty voice.sampling as setting nothing', () => {
+    using home = createTempTree({ [MACHINE_CONFIG_PATH]: `voice:\n${REFERENCE}  sampling:\n`, ...REFERENCE_FILES });
+
+    const voice = readVoice(readMachineConfig({ env: {}, homeDir: home.dir }));
+
+    expect(voice.ok && voice.voice?.sampling).toStrictEqual({});
   });
 
   it('reads voice.home and voice.model, expanding ${VAR} in the home', () => {
@@ -96,7 +116,11 @@ describe(readMachineConfig, () => {
 
   it.each([
     ['a non-mapping voice section', 'voice: x\n', /voice must be a mapping/],
-    ['an unknown voice key', 'voice:\n  x: 1\n', /unknown key "voice\.x"; the keys are home, model, and reference/],
+    [
+      'an unknown voice key',
+      'voice:\n  x: 1\n',
+      /unknown key "voice\.x"; the keys are home, model, reference, and sampling/,
+    ],
     ['a non-string home', `voice:\n  home: 9\n${REFERENCE}`, /voice\.home must be a non-empty string/],
     ['a relative home', `voice:\n  home: voice\n${REFERENCE}`, /voice\.home must be an absolute path, not "voice"/],
     ['an unset variable in the home', `voice:\n  home: \${UNSET}\n${REFERENCE}`, /voice\.home: UNSET is not set/],
@@ -127,6 +151,32 @@ describe(readMachineConfig, () => {
       'a relative reference audio',
       'voice:\n  reference:\n    audio: reference.m4a\n',
       /voice\.reference\.audio must be an absolute path, not "reference\.m4a"/,
+    ],
+    ['a non-mapping sampling', `voice:\n${REFERENCE}  sampling: 1\n`, /voice\.sampling must be a mapping/],
+    [
+      'an unknown sampling key',
+      `voice:\n${REFERENCE}  sampling:\n    topP: 0.8\n`,
+      /unknown key "voice\.sampling\.topP"; the keys are repetition_penalty, temperature, top_k, and top_p/,
+    ],
+    [
+      'a string sampling value',
+      `voice:\n${REFERENCE}  sampling:\n    temperature: low\n`,
+      /voice\.sampling\.temperature must be a finite number/,
+    ],
+    [
+      'an infinite sampling value',
+      `voice:\n${REFERENCE}  sampling:\n    top_p: .inf\n`,
+      /voice\.sampling\.top_p must be a finite number/,
+    ],
+    [
+      'a NaN sampling value',
+      `voice:\n${REFERENCE}  sampling:\n    repetition_penalty: .nan\n`,
+      /voice\.sampling\.repetition_penalty must be a finite number/,
+    ],
+    [
+      'a fractional top_k',
+      `voice:\n${REFERENCE}  sampling:\n    top_k: 40.5\n`,
+      /voice\.sampling\.top_k must be an integer/,
     ],
   ])('reports %s in the voice section, naming the file', (_label, content, expected) => {
     using home = createTempTree({ [MACHINE_CONFIG_PATH]: content, ...REFERENCE_FILES });

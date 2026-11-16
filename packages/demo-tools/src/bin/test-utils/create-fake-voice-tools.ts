@@ -4,6 +4,8 @@ import path from 'node:path';
 import { isRecord } from '@williamthorsen/toolbelt.objects';
 import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 
+import type { SpeechSampling } from '../../voice/mlx-audio/build-speech-request.ts';
+
 /** What a fake tool observed on one invocation. */
 export interface FakeToolCall {
   readonly args: string[];
@@ -31,6 +33,12 @@ export interface FakeVoiceMachine extends Disposable {
   readonly voiceHome: string;
 }
 
+/** What the fake machine configuration's voice section sets besides its fixed home and reference. */
+export interface VoiceConfigOptions {
+  readonly model?: string;
+  readonly sampling?: SpeechSampling;
+}
+
 /** The variable that sets the fake speech server's response status. */
 export const FAKE_SPEECH_STATUS = 'FAKE_SPEECH_STATUS';
 
@@ -45,10 +53,16 @@ export const FAKE_SPEECH_DELAY_MS = 'FAKE_SPEECH_DELAY_MS';
 
 const PRETEND_APPLE_SILICON = path.join(import.meta.dirname, 'pretend-apple-silicon.ts');
 
-/** Returns a machine configuration whose voice section installs under `~/voice`, with `model` when given. */
-export function buildVoiceConfig(model?: string): string {
+/** Returns a machine configuration whose voice section installs under `~/voice`, with the options that are given. */
+export function buildVoiceConfig({ model, sampling }: VoiceConfigOptions = {}): string {
   const modelLine = model === undefined ? '' : `  model: ${model}\n`;
-  return `voice:\n  home: ~/voice\n${modelLine}  reference:\n    audio: ~/reference.m4a\n    transcript: ~/reference.txt\n`;
+  const samplingLines =
+    sampling === undefined
+      ? ''
+      : `  sampling:\n${Object.entries(sampling)
+          .map(([key, value]) => `    ${key}: ${value}\n`)
+          .join('')}`;
+  return `voice:\n  home: ~/voice\n${modelLine}  reference:\n    audio: ~/reference.m4a\n    transcript: ~/reference.txt\n${samplingLines}`;
 }
 
 /**
@@ -59,15 +73,15 @@ export function buildVoiceConfig(model?: string): string {
  * log. `NODE_OPTIONS` makes `thor-demo` report Apple Silicon whatever the host.
  */
 export function createFakeVoiceTools({
-  model,
   withoutReference = false,
-}: { model?: string; withoutReference?: boolean } = {}): FakeVoiceMachine {
+  ...voiceConfig
+}: VoiceConfigOptions & { withoutReference?: boolean } = {}): FakeVoiceMachine {
   const tree = createTempTree({
     'bin/afplay': buildScript(AFPLAY_SOURCE),
     'bin/ffmpeg': buildScript(FFMPEG_SOURCE),
     'bin/swiftc': buildScript(SWIFTC_SOURCE),
     'bin/uv': buildScript(UV_SOURCE),
-    'home/.config/thor-demo/config.yaml': buildVoiceConfig(model),
+    'home/.config/thor-demo/config.yaml': buildVoiceConfig(voiceConfig),
     ...(!withoutReference && { 'home/reference.m4a': 'audio' }),
     'home/reference.txt': 'Hello there.\n',
   });

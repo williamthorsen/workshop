@@ -108,7 +108,10 @@ export async function performVoiceSetup(
 // region | Helpers
 
 /** Starts the server, synthesizes `VERIFY_PHRASE` in the cloned voice, writes it to `verify.mp3`, and stops the server. */
-async function verifyClone({ home, model }: VoiceConfig, report: (line: string) => void): Promise<VoiceSetupOutcome> {
+async function verifyClone(
+  { home, model, sampling }: VoiceConfig,
+  report: (line: string) => void,
+): Promise<VoiceSetupOutcome> {
   const launch = buildServerLaunch(home, await findFreePort(SERVER_HOST));
   report(`verifying: starting the voice-clone server on ${launch.baseUrl}`);
   const started = await startVoiceServer(launch);
@@ -121,6 +124,7 @@ async function verifyClone({ home, model }: VoiceConfig, report: (line: string) 
     modelDir: formatModelDir(home, model),
     referenceAudio: profilePaths.referenceAudio,
     referenceText: readFileSync(profilePaths.transcript, 'utf8').trim(),
+    sampling,
   });
   report(`verifying: synthesizing "${VERIFY_PHRASE}"; the first request loads the model`);
 

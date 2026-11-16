@@ -7,6 +7,7 @@ import { finished } from 'node:stream/promises';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import type { SourceState } from '../clients/git/read-source-state.ts';
+import type { SpeechSampling } from '../voice/mlx-audio/build-speech-request.ts';
 import { buildProvenance, type FileDigest } from './build-provenance.ts';
 import { formatTakeDirName } from './format-take-dir-name.ts';
 import { readVoiceManifest } from './read-voice-manifest.ts';
@@ -23,6 +24,8 @@ export interface TakeArchivePlan {
   /** The checksum of the reference recording, for a take narrated in a cloned voice. */
   readonly reference?: { readonly sha256: string };
   readonly renderedAt: Date;
+  /** The sampling values that every speech request set, for a take narrated in a cloned voice. */
+  readonly sampling?: SpeechSampling;
   readonly source: SourceState | undefined;
   readonly storyboardSha256: string;
   /** The provider and voice that narrated every scene, when aidemo's voice manifest does not report them. */

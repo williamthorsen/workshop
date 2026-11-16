@@ -106,7 +106,13 @@ function buildRequest(home: TempTree): RevoiceRequest {
     env: { PATH: '/bin' },
     stages: STAGES,
     take: { kind: 'notice', message: 'not archived' },
-    voice: { home: home.dir, model: 'org/model', referenceAudio: '/ref.m4a', referenceTranscript: '/ref.txt' },
+    voice: {
+      home: home.dir,
+      model: 'org/model',
+      referenceAudio: '/ref.m4a',
+      referenceTranscript: '/ref.txt',
+      sampling: {},
+    },
   };
 }
 

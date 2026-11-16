@@ -153,18 +153,18 @@ The timestamp is the UTC time at which the render started, and `<commit>` is the
 
 `provenance.json` records what produced the take:
 
-| Field           | Content                                                                                                                                                                                 |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `schemaVersion` | `2`                                                                                                                                                                                     |
-| `demo`, `label` | The demo's name and `archive.label`                                                                                                                                                     |
-| `renderedAt`    | The render's start, as ISO 8601                                                                                                                                                         |
-| `source`        | The `commit` and `dirty` state before the render, or `null` for each outside git                                                                                                        |
-| `engine`        | The aidemo package and version                                                                                                                                                          |
-| `voice`         | Each scene's `id`, TTS `provider`, and `voiceId` in `scenes`, as aidemo's `audio/voice.json` records them, or `null` where it does not; for a `revoice` take, `mlx-audio` and the model |
-| `reference`     | For a `revoice` take only, the `sha256` of the reference recording that it clones                                                                                                       |
-| `params`        | The options passed to aidemo after the demo                                                                                                                                             |
-| `storyboard`    | The `sha256` of `generated/storyboard.json`                                                                                                                                             |
-| `files`         | Each archived file's `sha256` and size in `bytes`, which match the file in `output/`                                                                                                    |
+| Field           | Content                                                                                                                                                                                                                                                          |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `schemaVersion` | `2`                                                                                                                                                                                                                                                              |
+| `demo`, `label` | The demo's name and `archive.label`                                                                                                                                                                                                                              |
+| `renderedAt`    | The render's start, as ISO 8601                                                                                                                                                                                                                                  |
+| `source`        | The `commit` and `dirty` state before the render, or `null` for each outside git                                                                                                                                                                                 |
+| `engine`        | The aidemo package and version                                                                                                                                                                                                                                   |
+| `voice`         | Each scene's `id`, TTS `provider`, and `voiceId` in `scenes`, as aidemo's `audio/voice.json` records them, or `null` where it does not; for a `revoice` take, `mlx-audio` and the model, and in `sampling` the keys that `voice.sampling` sets, when it sets any |
+| `reference`     | For a `revoice` take only, the `sha256` of the reference recording that it clones                                                                                                                                                                                |
+| `params`        | The options passed to aidemo after the demo                                                                                                                                                                                                                      |
+| `storyboard`    | The `sha256` of `generated/storyboard.json`                                                                                                                                                                                                                      |
+| `files`         | Each archived file's `sha256` and size in `bytes`, which match the file in `output/`                                                                                                                                                                             |
 
 The record contains no environment values. Renders with `--lang`, `--langs`, or `--variants` write files named for each language and are not archived. When archiving fails, as it does when aidemo wrote no `audio/voice.json`, `render` exits 1 and the take remains in the demo's `output/`.
 
@@ -187,9 +187,14 @@ voice:
   reference:
     audio: ~/Voice/reference.m4a # required; absolute after expansion; voice record writes it
     transcript: ~/Voice/reference.txt # required; a file containing exactly what the recording says
+  sampling: # optional; each key is optional
+    temperature: 0.5
+    top_p: 0.8
 ```
 
 Paths expand `${VAR}` and a leading `~`, like `archive.root`. `voice.model` may name any model in [mlx-audio's model list](https://github.com/Blaizzy/mlx-audio#supported-models) that clones from a reference recording and its transcript.
+
+`voice.sampling` sets the values that `thor-demo` sends with every speech request, for setup's verification and for `revoice`. Its keys are `repetition_penalty`, `temperature`, `top_k`, and `top_p`, the sampling fields of [mlx-audio's speech request](https://github.com/Blaizzy/mlx-audio/blob/v0.6.3/mlx_audio/server.py), which defines what each one does. Each value is a number, and `top_k` an integer. A key that is not set is not sent, so mlx-audio takes it from the model's configuration, then from its own default.
 
 ### Recording the reference
 
@@ -212,7 +217,7 @@ thor-demo voice setup
 
 Under `voice.home`, setup creates a Python virtual environment with a pinned mlx-audio, downloads the model into `models/` and any repository that it loads besides its own into the Hugging Face cache in `hf/`, and builds a voice profile in `profile/`: the recording converted to mono WAV and the transcript. It then verifies the install by starting mlx-audio's server on 127.0.0.1 with Hugging Face's offline mode on, synthesizing a phrase in the cloned voice to `verify.mp3`, and stopping the server. It prints that file's path; listen to it to judge the clone.
 
-Installing and downloading are the only steps that use the network. A rerun skips each step whose inputs are unchanged and verifies again; a changed recording or transcript rebuilds the profile, and a changed model downloads it and rebuilds the profile.
+Installing and downloading are the only steps that use the network. A rerun skips each step whose inputs are unchanged and verifies again; a changed recording or transcript rebuilds the profile, a changed model downloads it and rebuilds the profile, and a changed `voice.sampling` changes only the verification.
 
 ### Re-voicing a demo
 
@@ -221,7 +226,7 @@ thor-demo render quickstart
 thor-demo revoice quickstart
 ```
 
-`revoice` keeps the demo's last recording and replaces its narration: It starts the voice-clone server offline on 127.0.0.1, runs aidemo's `voice`, `captions`, and `compose` stages with each speech request sent through a proxy on 127.0.0.1 that adds the voice profile, stops the server, and archives the take as `render` does. Captions are timed from the script, because the clone does not transcribe. Every revoice re-voices every scene.
+`revoice` keeps the demo's last recording and replaces its narration: It starts the voice-clone server offline on 127.0.0.1, runs aidemo's `voice`, `captions`, and `compose` stages with each speech request sent through a proxy on 127.0.0.1 that adds the voice profile and `voice.sampling`, stops the server, and archives the take as `render` does. Captions are timed from the script, because the clone does not transcribe. Every revoice re-voices every scene.
 
 The proxy measures each clip with ffmpeg before aidemo receives it. It refuses a clip that is silent throughout, one that ends in more than 3 s of silence, and one whose speech is far shorter than its text requires, and it abandons a request that the server does not answer within 9 minutes. `revoice` then stops, naming the scene's text, the reason, and the voice-clone server's log; it does not retry. A clip that has normal levels but sounds wrong passes these checks.
 

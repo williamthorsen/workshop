@@ -95,7 +95,7 @@ describe('thor-demo voice setup', () => {
     using machine = createFakeVoiceTools();
     runVoiceSetup(machine);
     const firstCalls = machine.readCalls().length;
-    writeFileSync(machine.tree.resolve('home/.config/thor-demo/config.yaml'), buildVoiceConfig('org/other'));
+    writeFileSync(machine.tree.resolve('home/.config/thor-demo/config.yaml'), buildVoiceConfig({ model: 'org/other' }));
 
     runVoiceSetup(machine);
 
@@ -103,6 +103,15 @@ describe('thor-demo voice setup', () => {
     expect(calls.map(({ tool }) => tool)).toStrictEqual(['hf', 'ffmpeg', 'python']);
     expect(calls[0]?.args.slice(0, 2)).toStrictEqual(['download', 'org/other']);
     expect(machine.readSpeechRequests().at(-1)?.body['model']).toBe(`${machine.voiceHome}/models/org--other`);
+  });
+
+  it('sends the configured sampling with the verify phrase', () => {
+    using machine = createFakeVoiceTools({ sampling: { temperature: 0.5, top_p: 0.8 } });
+
+    const { status } = runVoiceSetup(machine);
+
+    expect(status).toBe(0);
+    expect(machine.readSpeechRequests().at(-1)?.body).toMatchObject({ temperature: 0.5, top_p: 0.8 });
   });
 
   it('exits 1 and stops the server when verification fails', () => {

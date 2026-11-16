@@ -34,7 +34,7 @@ export async function performRevoice(
   request: RevoiceRequest,
   { report, runStage, startServer }: RevoiceEffects,
 ): Promise<RevoiceOutcome> {
-  const { home, model } = request.voice;
+  const { home, model, sampling } = request.voice;
   const launch = buildServerLaunch(home, await findFreePort(SERVER_HOST));
   report(`starting the voice-clone server on ${launch.baseUrl}`);
   const started = await startServer(launch);
@@ -46,6 +46,7 @@ export async function performRevoice(
     modelDir: formatModelDir(home, model),
     referenceAudio: profile.referenceAudio,
     referenceTranscript: profile.transcript,
+    sampling,
     upstreamUrl: server.baseUrl,
   });
   const env = { ...request.env, AIDEMO_OPENAI_BASE_URL: `${proxy.baseUrl}/v1` };

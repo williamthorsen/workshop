@@ -5,6 +5,7 @@ import { describeError } from '@williamthorsen/toolbelt.errors';
 import { isRecord } from '@williamthorsen/toolbelt.objects';
 import { parse } from 'yaml';
 
+import { SAMPLING_FIELDS, type SamplingField, type SpeechSampling } from '../voice/mlx-audio/build-speech-request.ts';
 import { expandValue } from './expand-value.ts';
 import { findUnknownKey } from './find-unknown-key.ts';
 
@@ -30,6 +31,8 @@ export interface VoiceConfig {
   readonly model: string;
   readonly referenceAudio: string;
   readonly referenceTranscript: string;
+  /** The sampling values to send with every speech request; a key that is absent is left to mlx-audio. */
+  readonly sampling: SpeechSampling;
 }
 
 /** What reading the machine configuration takes from its caller's environment. */
@@ -127,6 +130,35 @@ function readRequiredPath(key: string, raw: unknown, paths: MachineConfigInput):
   return readAbsolutePath(key, raw, paths);
 }
 
+/** Reads the `sampling` section, keeping each key that is set. */
+function readSamplingSection(section: unknown): SectionResult<{ sampling: SpeechSampling }> {
+  if (section === undefined || section === null) return { ok: true, sampling: {} };
+  if (!isRecord(section)) return { ok: false, problem: 'voice.sampling must be a mapping' };
+
+  const unknownKey = findUnknownKey(section, SAMPLING_FIELDS);
+  if (unknownKey !== undefined) {
+    return {
+      ok: false,
+      problem: `unknown key "voice.sampling.${unknownKey}"; the keys are repetition_penalty, temperature, top_k, and top_p`,
+    };
+  }
+
+  const sampling: Partial<Record<SamplingField, number>> = {};
+  for (const key of SAMPLING_FIELDS) {
+    const value = section[key];
+    if (value === undefined || value === null) continue;
+    if (typeof value !== 'number' || !Number.isFinite(value)) {
+      return { ok: false, problem: `voice.sampling.${key} must be a finite number` };
+    }
+    if (key === 'top_k' && !Number.isSafeInteger(value)) {
+      return { ok: false, problem: 'voice.sampling.top_k must be an integer' };
+    }
+    sampling[key] = value;
+  }
+
+  return { ok: true, sampling };
+}
+
 /** Reads the `voice` section, applying the defaults for `home` and `model`. */
 function readVoiceSection(
   section: unknown,
@@ -135,9 +167,12 @@ function readVoiceSection(
   if (section === undefined || section === null) return { ok: true, voice: undefined };
   if (!isRecord(section)) return { ok: false, problem: 'voice must be a mapping' };
 
-  const unknownKey = findUnknownKey(section, ['home', 'model', 'reference']);
+  const unknownKey = findUnknownKey(section, ['home', 'model', 'reference', 'sampling']);
   if (unknownKey !== undefined) {
-    return { ok: false, problem: `unknown key "voice.${unknownKey}"; the keys are home, model, and reference` };
+    return {
+      ok: false,
+      problem: `unknown key "voice.${unknownKey}"; the keys are home, model, reference, and sampling`,
+    };
   }
 
   const rawHome = section['home'];
@@ -176,9 +211,18 @@ function readVoiceSection(
   const transcript = readRequiredPath('voice.reference.transcript', reference['transcript'], paths);
   if (!transcript.ok) return transcript;
 
+  const sampling = readSamplingSection(section['sampling']);
+  if (!sampling.ok) return sampling;
+
   return {
     ok: true,
-    voice: { home: home.value, model, referenceAudio: audio.value, referenceTranscript: transcript.value },
+    voice: {
+      home: home.value,
+      model,
+      referenceAudio: audio.value,
+      referenceTranscript: transcript.value,
+      sampling: sampling.sampling,
+    },
   };
 }
 

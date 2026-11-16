@@ -57,6 +57,21 @@ describe(buildProvenance, () => {
     expect(Object.keys(provenance).indexOf('reference')).toBe(Object.keys(provenance).indexOf('voice') + 1);
   });
 
+  it('records the sampling of a cloned voice in the voice, ordered by name', () => {
+    const provenance = buildProvenance({ ...INPUT, sampling: { top_p: 0.8, temperature: 0.5 } });
+
+    expect(JSON.stringify(provenance.voice.sampling)).toBe('{"temperature":0.5,"top_p":0.8}');
+  });
+
+  it.each([
+    ['no sampling', undefined],
+    ['a sampling that sets nothing', {}],
+  ])('omits the sampling for %s', (_label, sampling) => {
+    const provenance = buildProvenance({ ...INPUT, ...(sampling !== undefined && { sampling }) });
+
+    expect(provenance.voice).not.toHaveProperty('sampling');
+  });
+
   it('omits the reference for a voice that is not cloned', () => {
     expect(Object.hasOwn(buildProvenance(INPUT), 'reference')).toBe(false);
   });

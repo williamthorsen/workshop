@@ -7,7 +7,7 @@ import { isRecord } from '@williamthorsen/toolbelt.objects';
 import { type HttpResponse, postJson } from '../portable/post-json.ts';
 import { type ClipVerdict, judgeClip, measureClip } from './inspect-clip.ts';
 import { SERVER_HOST } from './mlx-audio/build-server-launch.ts';
-import { buildSpeechRequest, SPEECH_PATH } from './mlx-audio/build-speech-request.ts';
+import { buildSpeechRequest, SPEECH_PATH, type SpeechSampling } from './mlx-audio/build-speech-request.ts';
 
 /**
  * How long a speech request may take upstream. The slowest good clip measured on Higgs Audio v2 q8 took 170 s, and the
@@ -24,6 +24,7 @@ export interface SpeechProxyOptions {
   /** The transcript file of the reference recording. */
   readonly referenceTranscript: string;
   readonly requestBudgetMs?: number;
+  readonly sampling: SpeechSampling;
   /** The base URL of the voice-clone server. */
   readonly upstreamUrl: string;
 }
@@ -44,10 +45,10 @@ export interface SpeechProxy extends AsyncDisposable {
 
 /**
  * Starts a loopback-only HTTP server that accepts OpenAI-shaped speech requests and forwards each as a request that
- * clones the profile's voice, keeping only the text to speak. It passes on a clip that the inspector accepts and a 4xx
- * answer, and answers 502 to a rejected clip, a 5xx answer, a failed connection, a request over budget, or a fault of
- * its own. A request that the client abandons is dropped, a request from a web page is answered 403, and every other
- * request 404.
+ * clones the profile's voice with the configured sampling, keeping only the text to speak. It passes on a clip that
+ * the inspector accepts and a 4xx answer, and answers 502 to a rejected clip, a 5xx answer, a failed connection, a
+ * request over budget, or a fault of its own. A request that the client abandons is dropped, a request from a web page
+ * is answered 403, and every other request 404.
  */
 export async function startSpeechProxy(options: SpeechProxyOptions): Promise<SpeechProxy> {
   const { inspectClip = inspectClipWithFfmpeg, requestBudgetMs = REQUEST_BUDGET_MS } = options;
@@ -104,6 +105,7 @@ export async function startSpeechProxy(options: SpeechProxyOptions): Promise<Spe
       modelDir: options.modelDir,
       referenceAudio: options.referenceAudio,
       referenceText,
+      sampling: options.sampling,
     });
     const outcome = await requestSpeech(body, input, aborter.signal);
     if (outcome.kind === 'client-gone') return;

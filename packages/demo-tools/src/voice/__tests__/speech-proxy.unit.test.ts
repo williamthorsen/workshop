@@ -19,7 +19,7 @@ const OPENAI_REQUEST = {
 const CLIP: StubAnswer = { body: 'MP3', contentType: 'audio/mp3', status: 200 };
 
 describe(startSpeechProxy, () => {
-  it('forwards the text with the voice profile, and without voice or instructions', async () => {
+  it('forwards the text with the voice profile and the sampling, and without voice or instructions', async () => {
     await using upstream = await startUpstream(CLIP);
     using tree = createTempTree({ 'reference.wav': 'RIFF', 'transcript.txt': '  The reference text.\n' });
     await using proxy = await startSpeechProxy({
@@ -27,6 +27,7 @@ describe(startSpeechProxy, () => {
       modelDir: '/voice/models/model',
       referenceAudio: tree.resolve('reference.wav'),
       referenceTranscript: tree.resolve('transcript.txt'),
+      sampling: { temperature: 0.5, top_k: 40 },
       upstreamUrl: upstream.baseUrl,
     });
 
@@ -42,6 +43,8 @@ describe(startSpeechProxy, () => {
         ref_audio: tree.resolve('reference.wav'),
         ref_text: 'The reference text.',
         response_format: 'mp3',
+        temperature: 0.5,
+        top_k: 40,
       },
     ]);
   });
@@ -237,6 +240,7 @@ function buildOptions(referenceTranscript: string, upstreamUrl: string): SpeechP
     modelDir: '/models/model',
     referenceAudio: '/profile/reference.wav',
     referenceTranscript,
+    sampling: {},
     upstreamUrl,
   };
 }

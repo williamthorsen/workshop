@@ -405,6 +405,7 @@ describe(run, () => {
               model: DEFAULT_VOICE_MODEL,
               referenceAudio: tree.resolve('home/reference.m4a'),
               referenceTranscript: tree.resolve('home/reference.txt'),
+              sampling: {},
             },
           },
         },
@@ -464,7 +465,7 @@ describe(run, () => {
       const { exitCode, stderr } = await run(['voice', 'setup'], buildVoiceEffects(tree));
 
       expect(exitCode).toBe(1);
-      expect(stderr).toContain('unknown key "voice.modle"; the keys are home, model, and reference');
+      expect(stderr).toContain('unknown key "voice.modle"; the keys are home, model, reference, and sampling');
     });
 
     it('is not stopped by a malformed archive section', async () => {
