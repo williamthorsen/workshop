@@ -35,7 +35,7 @@ const { defineCommand } = createCli<CommandContext>();
 /** The `revoice` command, which narrates a recorded demo again in the cloned voice. */
 export const REVOICE: Command<CommandContext> = defineCommand({
   summary: "Narrate a recorded demo again in the presenter's cloned voice",
-  description: `Start the voice-clone server that voice setup installed, offline on 127.0.0.1, and run aidemo voice --force, captions --offline, and compose on one recorded demo, with aidemo's speech requests sent to a proxy on 127.0.0.1 that adds the voice profile. The narration and the recording stay on the machine. Then stop the server and archive the take as render does, with a provenance.json that records the mlx-audio provider, the model, and the reference recording's checksum. The footage is the demo's last recording; every scene is re-voiced.`,
+  description: `Start the voice-clone server that voice setup installed, offline on 127.0.0.1, and run aidemo voice --force, captions --offline, and compose on one recorded demo, with aidemo's speech requests sent to a proxy on 127.0.0.1 that adds the voice profile and the configured sampling. The narration and the recording stay on the machine. Then stop the server and archive the take as render does, with a provenance.json that records the mlx-audio provider, the model, the sampling values that the configuration sets, and the reference recording's checksum. The footage is the demo's last recording; every scene is re-voiced.`,
   operands: [{ name: 'demo', description: "The demo's name, or its path under demosDir" }],
   epilog: `Requires:
   Apple Silicon, and a voice clone installed by thor-demo voice setup from the
