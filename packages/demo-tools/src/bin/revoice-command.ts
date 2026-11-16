@@ -92,7 +92,7 @@ function runRevoice(context: CommandContext, demoArgument: string, stderr: Write
 
   const repo = readRepoConfig(effects);
   if (!repo.ok) return fail(stderr, repo.message);
-  const { aidemoEnv, archiveLabel, demosDir, root } = repo.config;
+  const { aidemoEnv, archiveLabel, demosDir, revoice, root } = repo.config;
 
   const demo = resolveDemoDir(root, demosDir, demoArgument);
   if (!demo.found) {
@@ -151,6 +151,7 @@ function runRevoice(context: CommandContext, demoArgument: string, stderr: Write
       bin: aidemo.aidemo.bin,
       cwd: root,
       env,
+      extraGapMs: revoice.extraGapMs,
       stages: [
         ['voice', demo.demoDir, '--force'],
         ['captions', demo.demoDir, '--offline'],

@@ -8,6 +8,8 @@ export interface RevoiceRequest {
   readonly cwd: string;
   /** aidemo's environment, to which the performer adds the proxy's base URL. */
   readonly env: NodeJS.ProcessEnv;
+  /** The silence, in milliseconds, that the proxy appends to each scene's clip. */
+  readonly extraGapMs: number;
   /** The arguments of each aidemo stage, run in order. */
   readonly stages: readonly (readonly string[])[];
   readonly take: TakeDisposition;

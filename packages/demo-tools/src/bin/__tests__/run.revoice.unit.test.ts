@@ -39,6 +39,7 @@ describe('run revoice', () => {
     expect(selectRevoice(result.request)).toMatchObject({
       bin: repo.tree.resolve('node_modules/@tandryukha/aidemo/bin/aidemo.mjs'),
       cwd: repo.tree.dir,
+      extraGapMs: 700,
       stages: [
         ['voice', demoDir, '--force'],
         ['captions', demoDir, '--offline'],

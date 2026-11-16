@@ -139,6 +139,7 @@ function buildRequest(home: TempTree): RevoiceRequest {
     bin: '/repo/aidemo.mjs',
     cwd: '/repo',
     env: { PATH: '/bin' },
+    extraGapMs: 0,
     stages: STAGES,
     take: { kind: 'notice', message: 'not archived' },
     voice: {

@@ -23,6 +23,7 @@ describe(startSpeechProxy, () => {
     await using upstream = await startUpstream(CLIP);
     using tree = createTempTree({ 'reference.wav': 'RIFF', 'transcript.txt': '  The reference text.\n' });
     await using proxy = await startSpeechProxy({
+      extraGapMs: 0,
       inspectClip: acceptClip,
       modelDir: '/voice/models/model',
       referenceAudio: tree.resolve('reference.wav'),
@@ -87,6 +88,78 @@ describe(startSpeechProxy, () => {
     });
     expect(upstream.requests).toHaveLength(1);
     expect(proxy.readFailure()).toStrictEqual({ input: 'Hello from the demo.', reason: 'silent throughout' });
+  });
+
+  it('appends the configured silence to an accepted clip', async () => {
+    await using upstream = await startUpstream(CLIP);
+    using tree = createTempTree({ 'transcript.txt': 'text' });
+    const paddings: number[] = [];
+    await using proxy = await startSpeechProxy({
+      ...buildOptions(tree.resolve('transcript.txt'), upstream.baseUrl),
+      extraGapMs: 700,
+      padClip: (audio, silenceMs) => {
+        paddings.push(silenceMs);
+        return Promise.resolve(Buffer.concat([audio, Buffer.from('+GAP')]));
+      },
+    });
+
+    const response = await postSpeech(proxy.baseUrl, OPENAI_REQUEST);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-length')).toBe('7');
+    await expect(response.text()).resolves.toBe('MP3+GAP');
+    expect(paddings).toStrictEqual([700]);
+  });
+
+  it('passes an accepted clip on unchanged when the gap is 0', async () => {
+    await using upstream = await startUpstream(CLIP);
+    using tree = createTempTree({ 'transcript.txt': 'text' });
+    await using proxy = await startSpeechProxy({
+      ...buildOptions(tree.resolve('transcript.txt'), upstream.baseUrl),
+      padClip: () => Promise.reject(new Error('padded a clip')),
+    });
+
+    const response = await postSpeech(proxy.baseUrl, OPENAI_REQUEST);
+
+    expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toBe('MP3');
+  });
+
+  it('does not pad a 4xx answer', async () => {
+    await using upstream = await startUpstream({
+      body: '{"detail":"bad"}',
+      contentType: 'application/json',
+      status: 422,
+    });
+    using tree = createTempTree({ 'transcript.txt': 'text' });
+    await using proxy = await startSpeechProxy({
+      ...buildOptions(tree.resolve('transcript.txt'), upstream.baseUrl),
+      extraGapMs: 700,
+      padClip: () => Promise.reject(new Error('padded a 4xx answer')),
+    });
+
+    const response = await postSpeech(proxy.baseUrl, OPENAI_REQUEST);
+
+    expect(response.status).toBe(422);
+    await expect(response.text()).resolves.toBe('{"detail":"bad"}');
+  });
+
+  it('refuses a clip that cannot be padded, recording the text and the reason', async () => {
+    await using upstream = await startUpstream(CLIP);
+    using tree = createTempTree({ 'transcript.txt': 'text' });
+    await using proxy = await startSpeechProxy({
+      ...buildOptions(tree.resolve('transcript.txt'), upstream.baseUrl),
+      extraGapMs: 700,
+      padClip: () => Promise.reject(new Error('spawn ffmpeg ENOENT')),
+    });
+
+    const response = await postSpeech(proxy.baseUrl, OPENAI_REQUEST);
+
+    expect(response.status).toBe(502);
+    expect(proxy.readFailure()).toStrictEqual({
+      input: 'Hello from the demo.',
+      reason: 'ffmpeg cannot pad the clip: spawn ffmpeg ENOENT',
+    });
   });
 
   it('clears the failure when the next request succeeds', async () => {
@@ -236,6 +309,7 @@ function acceptClip(audio: Buffer): Promise<ClipVerdict> {
  */
 function buildOptions(referenceTranscript: string, upstreamUrl: string): SpeechProxyOptions {
   return {
+    extraGapMs: 0,
     inspectClip: acceptClip,
     modelDir: '/models/model',
     referenceAudio: '/profile/reference.wav',

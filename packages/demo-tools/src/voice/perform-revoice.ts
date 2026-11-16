@@ -68,6 +68,7 @@ export async function performRevoice(request: RevoiceRequest, effects: RevoiceEf
   if (!warmUp.ok) return { ok: false, exitCode: 1, message: warmUp.message };
 
   await using proxy = await startSpeechProxy({
+    extraGapMs: request.extraGapMs,
     modelDir,
     referenceAudio: profile.referenceAudio,
     referenceTranscript: profile.transcript,
