@@ -74,20 +74,63 @@ describe(startSpeechProxy, () => {
     expect(proxy.readFailure()).toBeUndefined();
   });
 
-  it('refuses a rejected clip with a 502 that the SDK does not retry, recording the text and the reason', async () => {
+  it('synthesizes a rejected clip again, reporting the retake, and relays the take that passes', async () => {
+    await using upstream = await startUpstream({ ...CLIP, body: 'SILENT' }, CLIP);
+    using tree = createTempTree({ 'transcript.txt': 'text' });
+    const lines: string[] = [];
+    await using proxy = await startSpeechProxy({
+      ...buildOptions(tree.resolve('transcript.txt'), upstream.baseUrl),
+      report: (line) => {
+        lines.push(line);
+      },
+    });
+
+    const response = await postSpeech(proxy.baseUrl, OPENAI_REQUEST);
+
+    expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toBe('MP3');
+    expect(upstream.requests).toHaveLength(2);
+    expect(lines).toStrictEqual([
+      `the voice clone's take of "Hello from the demo." was refused (silent throughout); synthesizing again (take 2 of 3)`,
+    ]);
+    expect(proxy.readFailure()).toBeUndefined();
+  });
+
+  it('refuses a clip rejected on every take with a 502 that the SDK does not retry, naming the takes', async () => {
     await using upstream = await startUpstream({ ...CLIP, body: 'SILENT' });
     using tree = createTempTree({ 'transcript.txt': 'text' });
-    await using proxy = await startSpeechProxy(buildOptions(tree.resolve('transcript.txt'), upstream.baseUrl));
+    const lines: string[] = [];
+    await using proxy = await startSpeechProxy({
+      ...buildOptions(tree.resolve('transcript.txt'), upstream.baseUrl),
+      report: (line) => {
+        lines.push(line);
+      },
+    });
 
     const response = await postSpeech(proxy.baseUrl, OPENAI_REQUEST);
 
     expect(response.status).toBe(502);
     expect(response.headers.get('x-should-retry')).toBe('false');
+    const reason = '3 refused takes, the last for silent throughout';
     await expect(response.json()).resolves.toStrictEqual({
-      error: { message: 'the voice clone could not speak the text: silent throughout' },
+      error: { message: `the voice clone could not speak the text: ${reason}` },
     });
-    expect(upstream.requests).toHaveLength(1);
-    expect(proxy.readFailure()).toStrictEqual({ input: 'Hello from the demo.', reason: 'silent throughout' });
+    expect(upstream.requests).toHaveLength(3);
+    expect(lines).toHaveLength(2);
+    expect(proxy.readFailure()).toStrictEqual({ input: 'Hello from the demo.', reason });
+  });
+
+  it('stops the takes at the budget, naming the rejected ones', async () => {
+    await using upstream = await startUpstream({ ...CLIP, body: 'SILENT', delayMs: 300 });
+    using tree = createTempTree({ 'transcript.txt': 'text' });
+    await using proxy = await startSpeechProxy({
+      ...buildOptions(tree.resolve('transcript.txt'), upstream.baseUrl),
+      requestBudgetMs: 450,
+    });
+
+    expect((await postSpeech(proxy.baseUrl, OPENAI_REQUEST)).status).toBe(502);
+    expect(upstream.requests).toHaveLength(2);
+    expect(proxy.readFailure()?.reason).toBe('no answer within 0.45 s, after 1 refused take, for silent throughout');
   });
 
   it('appends the configured silence to an accepted clip', async () => {
@@ -163,7 +206,8 @@ describe(startSpeechProxy, () => {
   });
 
   it('clears the failure when the next request succeeds', async () => {
-    await using upstream = await startUpstream({ ...CLIP, body: 'SILENT' }, CLIP);
+    const rejected = { ...CLIP, body: 'SILENT' };
+    await using upstream = await startUpstream(rejected, rejected, rejected, CLIP);
     using tree = createTempTree({ 'transcript.txt': 'text' });
     await using proxy = await startSpeechProxy(buildOptions(tree.resolve('transcript.txt'), upstream.baseUrl));
 
@@ -190,6 +234,7 @@ describe(startSpeechProxy, () => {
     await using proxy = await startSpeechProxy(buildOptions(tree.resolve('transcript.txt'), upstream.baseUrl));
 
     expect((await postSpeech(proxy.baseUrl, OPENAI_REQUEST)).status).toBe(502);
+    expect(upstream.requests).toHaveLength(1);
     expect(proxy.readFailure()?.reason).toBe('the voice-clone server answered 500');
   });
 
@@ -213,6 +258,7 @@ describe(startSpeechProxy, () => {
     });
 
     expect((await postSpeech(proxy.baseUrl, OPENAI_REQUEST)).status).toBe(502);
+    expect(upstream.requests).toHaveLength(1);
     expect(proxy.readFailure()?.reason).toBe('ffmpeg cannot measure the clip: spawn ffmpeg ENOENT');
   });
 
