@@ -19,6 +19,7 @@ import { runInvocation } from '../voice/invocation.ts';
 import { performRevoice } from '../voice/perform-revoice.ts';
 import { listMicrophones, performVoiceRecord, type VoiceCommandOutcome } from '../voice/perform-voice-record.ts';
 import { performVoiceSetup } from '../voice/perform-voice-setup.ts';
+import { requestFirstSpeech } from '../voice/request-first-speech.ts';
 import type { RevoiceRequest } from '../voice/revoice-request.ts';
 import type { VoiceRequest } from '../voice/voice-request.ts';
 import { startVoiceServer } from '../voice/voice-server.ts';
@@ -94,6 +95,7 @@ async function completeRevoice(request: RevoiceRequest): Promise<number> {
   const prefix = 'thor-demo revoice';
   const outcome = await performRevoice(request, {
     report: (line) => process.stderr.write(`${prefix}: ${line}\n`),
+    requestFirstSpeech,
     runStage: runLaunch,
     startServer: startVoiceServer,
   });

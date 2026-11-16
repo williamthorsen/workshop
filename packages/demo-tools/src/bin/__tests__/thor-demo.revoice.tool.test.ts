@@ -7,6 +7,7 @@ import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { hashContent } from '../../test-utils/hash-content.ts';
+import { VERIFY_PHRASE } from '../../voice/perform-voice-setup.ts';
 import { createDemoRepo, type DemoRepo } from '../test-utils/create-demo-repo.ts';
 import {
   createFakeVoiceTools,
@@ -34,7 +35,9 @@ describe('thor-demo revoice', () => {
     });
 
     expect(stderr).toContain('thor-demo revoice: archived take to');
+    expect(stderr).toMatch(/thor-demo revoice: loaded \S+ in \d+ s; synthesizing speech\n/);
     expect(status).toBe(0);
+    expect(machine.readSpeechRequests()[0]?.body['input']).toBe(VERIFY_PHRASE);
     const demoDir = repo.tree.resolve('demos/quickstart');
     const calls = repo.readCalls();
     expect(calls.map(({ args }) => args)).toStrictEqual([

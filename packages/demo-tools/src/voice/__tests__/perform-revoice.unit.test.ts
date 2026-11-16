@@ -2,6 +2,7 @@ import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/
 import { describe, expect, it } from 'vitest';
 
 import { type AidemoStage, performRevoice, type RevoiceEffects, type RevoiceOutcome } from '../perform-revoice.ts';
+import type { FirstSpeechOutcome, FirstSpeechRequest } from '../request-first-speech.ts';
 import type { RevoiceRequest } from '../revoice-request.ts';
 import type { ServerProcess, StartVoiceServerResult } from '../voice-server.ts';
 
@@ -27,6 +28,33 @@ describe(performRevoice, () => {
     expect(harness.launches).toHaveLength(1);
     expect(harness.stopCount()).toBe(1);
     await expect(isProxyAnswering(harness)).resolves.toBe(false);
+  });
+
+  it('loads the model with a first speech request to the server before the first stage', async () => {
+    using home = createVoiceHome();
+    const harness = createHarness({ exitCodes: [0, 0, 0] });
+
+    await performRevoice(buildRequest(home), harness.effects);
+
+    expect(harness.firstSpeeches).toHaveLength(1);
+    expect(harness.firstSpeeches[0]).toMatchObject({
+      baseUrl: harness.launches[0]?.baseUrl,
+      body: { model: home.resolve('models/org--model'), ref_text: 'Hello there.' },
+      model: 'org/model',
+      modelDir: home.resolve('models/org--model'),
+    });
+    expect(harness.events.indexOf('first speech')).toBeLessThan(harness.events.indexOf('stage'));
+  });
+
+  it('stops without running a stage when the model does not load, and stops the server', async () => {
+    using home = createVoiceHome();
+    const harness = createHarness({ exitCodes: [], firstSpeech: { ok: false, message: 'did not load within 99 s' } });
+
+    const outcome = await performRevoice(buildRequest(home), harness.effects);
+
+    expect(outcome).toStrictEqual({ ok: false, exitCode: 1, message: 'did not load within 99 s' });
+    expect(harness.stages).toStrictEqual([]);
+    expect(harness.stopCount()).toBe(1);
   });
 
   it('stops without running a stage when the server does not start', async () => {
@@ -85,14 +113,21 @@ describe(performRevoice, () => {
 /** Fake effects for a revoice, with what they were called with. */
 interface Harness {
   readonly effects: RevoiceEffects;
+  /** The order in which the effects ran, as `first speech` and `stage`. */
+  readonly events: string[];
+  readonly firstSpeeches: FirstSpeechRequest[];
   readonly launches: ServerProcess[];
   readonly stages: AidemoStage[];
   readonly stopCount: () => number;
 }
 
-/** What the fake effects answer: each stage's exit code or error, the server's start, and a text to speak first. */
+/**
+ * What the fake effects answer: each stage's exit code or error, the first speech request, the server's start, and a
+ * text to speak first.
+ */
 interface HarnessOptions {
   readonly exitCodes: readonly (Error | number)[];
+  readonly firstSpeech?: FirstSpeechOutcome;
   /** Text that the first stage asks the proxy to speak before it exits. */
   readonly speak?: string;
   readonly startResult?: StartVoiceServerResult;
@@ -120,7 +155,9 @@ function buildRequest(home: TempTree): RevoiceRequest {
  * Creates fake effects. The fake server answers at the launch's own URL, on which nothing listens, so that the proxy
  * refuses every speech request without measuring a clip.
  */
-function createHarness({ exitCodes, speak, startResult }: HarnessOptions): Harness {
+function createHarness({ exitCodes, firstSpeech, speak, startResult }: HarnessOptions): Harness {
+  const events: string[] = [];
+  const firstSpeeches: FirstSpeechRequest[] = [];
   const launches: ServerProcess[] = [];
   const stages: AidemoStage[] = [];
   let stops = 0;
@@ -132,7 +169,13 @@ function createHarness({ exitCodes, speak, startResult }: HarnessOptions): Harne
   return {
     effects: {
       report: () => {},
+      requestFirstSpeech: (request) => {
+        events.push('first speech');
+        firstSpeeches.push(request);
+        return Promise.resolve(firstSpeech ?? { ok: true, audio: Buffer.from('ID3') });
+      },
       runStage: async (stage) => {
+        events.push('stage');
         stages.push(stage);
         if (speak !== undefined && stages.length === 1) await postSpeech(stage, speak);
         const exitCode = exitCodes[stages.length - 1];
@@ -147,6 +190,8 @@ function createHarness({ exitCodes, speak, startResult }: HarnessOptions): Harne
         );
       },
     },
+    events,
+    firstSpeeches,
     launches,
     stages,
     stopCount: () => stops,

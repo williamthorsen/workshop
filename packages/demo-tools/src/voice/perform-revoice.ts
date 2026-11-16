@@ -1,9 +1,14 @@
+import { readFileSync } from 'node:fs';
+
 import { findFreePort } from '../portable/find-free-port.ts';
 import { resolveVoiceProfilePaths } from './build-voice-profile.ts';
 import { buildServerLaunch, SERVER_HOST } from './mlx-audio/build-server-launch.ts';
+import { buildSpeechRequest } from './mlx-audio/build-speech-request.ts';
 import { formatModelDir } from './mlx-audio/format-model-dir.ts';
+import { VERIFY_PHRASE } from './perform-voice-setup.ts';
+import type { requestFirstSpeech } from './request-first-speech.ts';
 import type { RevoiceRequest } from './revoice-request.ts';
-import { type SpeechFailure, startSpeechProxy } from './speech-proxy.ts';
+import { REQUEST_BUDGET_MS, type SpeechFailure, startSpeechProxy } from './speech-proxy.ts';
 import type { ServerProcess, StartVoiceServerResult } from './voice-server.ts';
 
 /** An aidemo stage to run: its arguments, the bin, and where and with what environment to run it. */
@@ -14,9 +19,11 @@ export interface AidemoStage {
   readonly env: NodeJS.ProcessEnv;
 }
 
-/** What a revoice reports through, runs aidemo with, and starts the voice-clone server with. */
+/** What a revoice reports through, runs aidemo with, starts the voice-clone server with, and loads the model with. */
 export interface RevoiceEffects {
   readonly report: (line: string) => void;
+  /** Sends the first speech request, which loads the model. */
+  readonly requestFirstSpeech: typeof requestFirstSpeech;
   /** Runs an aidemo stage to completion, resolving to its exit code. */
   readonly runStage: (stage: AidemoStage) => Promise<number>;
   /** Starts the voice-clone server, resolving once it answers or with why it never did. */
@@ -27,13 +34,12 @@ export interface RevoiceEffects {
 export type RevoiceOutcome = { ok: true } | { ok: false; exitCode: number; message: string };
 
 /**
- * Starts the voice-clone server and the speech proxy in front of it, runs the aidemo stages in order with aidemo's
- * speech requests sent to the proxy, and stops both, whether the stages succeed, fail, or throw.
+ * Starts the voice-clone server, loads the model with a first speech request, starts the speech proxy in front of the
+ * server, runs the aidemo stages in order with aidemo's speech requests sent to the proxy, and stops both, whether the
+ * stages succeed, fail, or throw.
  */
-export async function performRevoice(
-  request: RevoiceRequest,
-  { report, runStage, startServer }: RevoiceEffects,
-): Promise<RevoiceOutcome> {
+export async function performRevoice(request: RevoiceRequest, effects: RevoiceEffects): Promise<RevoiceOutcome> {
+  const { report, runStage, startServer } = effects;
   const { home, model, sampling } = request.voice;
   const launch = buildServerLaunch(home, await findFreePort(SERVER_HOST));
   report(`starting the voice-clone server on ${launch.baseUrl}`);
@@ -41,9 +47,28 @@ export async function performRevoice(
   if (!started.ok) return { ok: false, exitCode: 1, message: started.message };
   await using server = started.server;
 
+  const modelDir = formatModelDir(home, model);
   const profile = resolveVoiceProfilePaths(home);
+  const warmUp = await effects.requestFirstSpeech(
+    {
+      baseUrl: server.baseUrl,
+      body: buildSpeechRequest({
+        input: VERIFY_PHRASE,
+        modelDir,
+        referenceAudio: profile.referenceAudio,
+        referenceText: readFileSync(profile.transcript, 'utf8').trim(),
+        sampling,
+      }),
+      logPath: launch.logPath,
+      model,
+      modelDir,
+    },
+    { report, synthesisLimitMs: REQUEST_BUDGET_MS },
+  );
+  if (!warmUp.ok) return { ok: false, exitCode: 1, message: warmUp.message };
+
   await using proxy = await startSpeechProxy({
-    modelDir: formatModelDir(home, model),
+    modelDir,
     referenceAudio: profile.referenceAudio,
     referenceTranscript: profile.transcript,
     sampling,
