@@ -1,5 +1,4 @@
-import { createCli, runCli, UsageError, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
-import { describeError } from '@williamthorsen/toolbelt.errors';
+import { createCli, runCli, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
 
 import { ManifestReadError } from '../workspace/listWorkspacePackages.ts';
 import { type ListPackagesEffects, runListPackages } from './runListPackages.ts';
@@ -123,7 +122,7 @@ export async function run(args: readonly string[], effects: RunEffects, streams:
   return runCli(args.length === 0 ? ['--help'] : args, ROOT, {
     name: 'thor-npm',
     context: effects,
-    version: () => resolveVersion(effects),
+    version: () => effects.resolveVersion(),
     stdout: streams.stdout,
     stderr: streams.stderr,
   });
@@ -151,15 +150,6 @@ async function reportFailures(stderr: Writer, body: () => Promise<number>): Prom
 
     stderr.write(`thor-npm: ${error.message}\n`);
     return 1;
-  }
-}
-
-/** Resolves the installed version, reporting a failure as a usage error, which exits 2. */
-function resolveVersion(effects: RunEffects): string {
-  try {
-    return effects.resolveVersion();
-  } catch (error) {
-    throw new UsageError(describeError(error), { cause: error });
   }
 }
 

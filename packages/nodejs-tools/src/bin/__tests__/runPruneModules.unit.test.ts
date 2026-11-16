@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import { parseActiveDays, runPruneModules } from '../runPruneModules.ts';
 import { runWithBuffers } from '../test-utils/runWithBuffers.ts';
-import type { ThorNodeEffects } from '../thor-node-result.ts';
+import type { ThorNodeEffects } from '../thor-node-effects.ts';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const NOW = Date.parse('2026-10-06T00:00:00Z');

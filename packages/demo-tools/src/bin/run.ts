@@ -10,7 +10,6 @@ import {
   UsageError,
   type Writer,
 } from '@williamthorsen/toolbelt.cli/candidate';
-import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { CHROME_PROFILE_VARIABLE, DEFAULT_CHROME_PROFILES_DIR } from '../aidemo/build-aidemo-env.ts';
 import { planTake, type TakeDisposition } from '../archive/plan-take.ts';
@@ -109,7 +108,7 @@ export async function run(args: readonly string[], effects: RunEffects): Promise
         request = requested;
       },
     },
-    version: () => resolveVersion(effects),
+    version: () => effects.resolveVersion(),
     stdout,
     stderr,
   });
@@ -176,15 +175,6 @@ print this help unless they follow a literal --.
 
 Example:
   ${example}`;
-}
-
-/** Resolves the installed version, reporting a failure as a usage error, which exits 2. */
-function resolveVersion(effects: RunEffects): string {
-  try {
-    return effects.resolveVersion();
-  } catch (error) {
-    throw new UsageError(describeError(error), { cause: error });
-  }
 }
 
 /**

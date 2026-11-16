@@ -3,6 +3,7 @@ import path from 'node:path';
 import { findAsdfInstall, parsePackageManagerSpec } from '@williamthorsen/toolbelt.nodejs/candidate';
 
 import type { PnpmProvider } from './resolvePnpmProvider.ts';
+import type { ThorNodeEffects } from './thor-node-effects.ts';
 import {
   COREPACK,
   EXIT_FINDINGS,
@@ -12,7 +13,6 @@ import {
   report,
   reportNotApplicable,
   RESHIM,
-  type ThorNodeEffects,
   type ThorNodeResult,
 } from './thor-node-result.ts';
 

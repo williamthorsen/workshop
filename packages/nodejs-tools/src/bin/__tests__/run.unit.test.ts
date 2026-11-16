@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { PnpmProvider } from '../resolvePnpmProvider.ts';
 import { run } from '../run.ts';
 import { runWithBuffers } from '../test-utils/runWithBuffers.ts';
-import type { PnpmVersionResult, ThorNodeEffects } from '../thor-node-result.ts';
+import type { PnpmVersionResult, ThorNodeEffects } from '../thor-node-effects.ts';
 
 const DATA_DIR = '/Users/me/.asdf';
 const EXEC_PATH = `${DATA_DIR}/installs/nodejs/24.20.0/bin/node`;
@@ -434,24 +434,21 @@ describe(run, () => {
         stdout: `${VERSION}\n`,
       });
     });
-  });
 
-  describe('usage errors', () => {
-    it('reports a failure to resolve the version as a usage error', async () => {
+    it('leaves a failure to resolve the version to the crash handler', async () => {
+      const failure = new Error('The manifest declares no version.');
       const effects: ThorNodeEffects = {
         ...buildEffects([], []),
         resolveVersion: () => {
-          throw new Error('The manifest declares no version.');
+          throw failure;
         },
       };
 
-      await expect(runWithBuffers(['--version'], effects)).resolves.toStrictEqual({
-        exitCode: 2,
-        stderr: "thor-node: The manifest declares no version.\nTry 'thor-node --help'.\n",
-        stdout: '',
-      });
+      await expect(runWithBuffers(['--version'], effects)).rejects.toBe(failure);
     });
+  });
 
+  describe('usage errors', () => {
     it('suggests the closest command for a near miss', async () => {
       expect((await runWithBuffers(['pnmp'], buildEffects([], []))).stderr).toContain("Did you mean 'pnpm'?");
     });

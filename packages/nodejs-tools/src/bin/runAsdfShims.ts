@@ -2,6 +2,7 @@ import path from 'node:path';
 
 import { type AsdfInstall, findAsdfInstall, type StrandedAsdfShim } from '@williamthorsen/toolbelt.nodejs/candidate';
 
+import type { ThorNodeEffects } from './thor-node-effects.ts';
 import {
   COREPACK,
   EXIT_FINDINGS,
@@ -9,7 +10,6 @@ import {
   EXIT_OK,
   PLUGIN,
   RESHIM,
-  type ThorNodeEffects,
   type ThorNodeResult,
 } from './thor-node-result.ts';
 

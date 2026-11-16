@@ -1,7 +1,7 @@
 import { createTextBuffer } from '@williamthorsen/toolbelt.cli/candidate';
 
 import { run } from '../run.ts';
-import type { ThorNodeEffects } from '../thor-node-result.ts';
+import type { ThorNodeEffects } from '../thor-node-effects.ts';
 
 /** Runs the `thor-node` command line, collecting what it writes to each stream. */
 export async function runWithBuffers(args: string[], effects: ThorNodeEffects): Promise<BufferedRun> {

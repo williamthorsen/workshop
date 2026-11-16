@@ -43,19 +43,15 @@ describe(run, () => {
       });
     });
 
-    it('reports a failure to resolve the version as a usage error', async () => {
+    it('leaves a failure to resolve the version to the crash handler', async () => {
+      const failure = new Error('The manifest declares no version.');
       const failing = buildRunEffects({
         resolveVersion: () => {
-          throw new Error('The manifest declares no version.');
+          throw failure;
         },
       });
 
-      await expect(run(['--version'], failing)).resolves.toStrictEqual({
-        exitCode: 2,
-        request: undefined,
-        stderr: "thor-demo: The manifest declares no version.\nTry 'thor-demo --help'.\n",
-        stdout: '',
-      });
+      await expect(run(['--version'], failing)).rejects.toBe(failure);
     });
 
     it.each([

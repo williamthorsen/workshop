@@ -25,17 +25,17 @@ describe(run, () => {
       expect(harness.readOutput()).toBe(`${HARNESS_VERSION}\n`);
     });
 
-    it('reports a failure to resolve the version as a usage error', async () => {
+    it('leaves a failure to resolve the version to the crash handler', async () => {
+      const failure = new Error('The manifest declares no version.');
       const harness = createRunHarness();
       const effects = {
         ...harness.effects,
         resolveVersion: () => {
-          throw new Error('The manifest declares no version.');
+          throw failure;
         },
       };
 
-      await expect(run(['--version'], effects)).resolves.toBe(2);
-      expect(harness.readErrors()).toBe("thor-jira: The manifest declares no version.\nTry 'thor-jira --help'.\n");
+      await expect(run(['--version'], effects)).rejects.toBe(failure);
     });
 
     it('reports a missing subcommand as a usage error', async () => {

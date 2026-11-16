@@ -555,9 +555,6 @@ importers:
       '@williamthorsen/toolbelt.cli':
         specifier: 'catalog:'
         version: 0.10.1
-      '@williamthorsen/toolbelt.errors':
-        specifier: 'catalog:'
-        version: 0.11.0
       '@williamthorsen/toolbelt.packaging':
         specifier: 'catalog:'
         version: 0.9.0
