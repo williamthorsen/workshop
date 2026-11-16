@@ -24,7 +24,7 @@ export function buildRegistryRunner(defaults: {
     const result = await runCaptured([...args.slice(0, 1), '--file', file, ...args.slice(1)], {
       adapters,
       env: { HOME: FAKE_HOME },
-      ...(github === undefined ? {} : { github: fakeGitHub(github) }),
+      ...(github !== undefined && { github: fakeGitHub(github) }),
     });
     return { registryText: fs.readFileSync(file, 'utf8'), result };
   };
