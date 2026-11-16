@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { UsageError, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
+import { isAffirmative, UsageError, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 import { safeParseInteger } from '@williamthorsen/toolbelt.numbers/candidate';
 
@@ -244,11 +244,6 @@ function findKeepReason(projectDir: string, context: ClassifyContext): KeepReaso
   }
 
   return undefined;
-}
-
-/** Reports whether an answer confirms: `y` or `yes`, in any case. */
-function isAffirmative(answer: string | undefined): boolean {
-  return answer !== undefined && /^y(?:es)?$/i.test(answer.trim());
 }
 
 /** Why a project's `node_modules` is kept. */

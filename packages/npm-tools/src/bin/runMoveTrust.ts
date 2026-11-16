@@ -1,4 +1,4 @@
-import { UsageError, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
+import { isAffirmative, UsageError, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
 
 import {
   buildGithubTrustArgs,
@@ -9,7 +9,6 @@ import {
 import type { TrustListing } from '../npm/parseTrustListing.ts';
 import { quoteShellArgs } from '../npm/quoteShellArgs.ts';
 import { assertValidName } from './assertValidName.ts';
-import { isAffirmative } from './isAffirmative.ts';
 
 const EXIT_FAILED = 1;
 const EXIT_NPM_MISSING = 127;
