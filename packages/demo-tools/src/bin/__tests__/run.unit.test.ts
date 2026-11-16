@@ -405,6 +405,7 @@ describe(run, () => {
               model: DEFAULT_VOICE_MODEL,
               referenceAudio: tree.resolve('home/reference.m4a'),
               referenceTranscript: tree.resolve('home/reference.txt'),
+              sampling: {},
             },
           },
         },

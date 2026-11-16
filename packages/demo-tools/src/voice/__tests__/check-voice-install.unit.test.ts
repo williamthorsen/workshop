@@ -83,6 +83,7 @@ function buildVoice(tree: TempTree): VoiceConfig {
     model: MODEL,
     referenceAudio: tree.resolve('reference.m4a'),
     referenceTranscript: tree.resolve('reference.txt'),
+    sampling: {},
   };
 }
 
