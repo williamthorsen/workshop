@@ -24,11 +24,11 @@ export interface FirstSpeechOptions {
 /** The outcome of the first speech request: the audio, or what stopped it. */
 export type FirstSpeechOutcome = { ok: true; audio: Buffer } | { ok: false; message: string };
 
-/** The time that every load may take, whatever the model's size. */
-const LOAD_BASE_MS = 60_000;
+/** The time that every load may take, whatever the model's size, for a load slowed by memory pressure. */
+const LOAD_BASE_MS = 10 * 60 * 1000;
 
-/** The slowest rate at which a load is expected to read the model. */
-const LOAD_MIN_BYTES_PER_MS = 50_000;
+/** The slowest rate at which a load is expected to read the model: that of a slow external disk. */
+const LOAD_MIN_BYTES_PER_MS = 200_000;
 
 /**
  * Sends the first speech request, which loads the model, under two limits: one for the load, which scales with the
