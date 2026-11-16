@@ -215,7 +215,7 @@ Aim for 10 to 30 seconds read in a quiet room, in the tone wanted for narration,
 thor-demo voice setup
 ```
 
-Under `voice.home`, setup creates a Python virtual environment with a pinned mlx-audio, downloads the model into `models/` and any repository that it loads besides its own into the Hugging Face cache in `hf/`, and builds a voice profile in `profile/`: the recording converted to mono WAV and the transcript. It then verifies the install by starting mlx-audio's server on 127.0.0.1 with Hugging Face's offline mode on, synthesizing a phrase in the cloned voice to `verify.mp3`, and stopping the server. It prints that file's path; listen to it to judge the clone.
+Under `voice.home`, setup creates a Python virtual environment with a pinned mlx-audio, downloads the model into `models/` and any repository that it loads besides its own into the Hugging Face cache in `hf/`, and builds a voice profile in `profile/`: the recording converted to mono WAV and the transcript. It then verifies the install by starting mlx-audio's server on 127.0.0.1 with Hugging Face's offline mode on, synthesizing a phrase in the cloned voice to `verify.mp3`, and stopping the server. That first request loads the model, under a limit that grows with the model's size, and then has 10 minutes to synthesize the phrase. It prints that file's path; listen to it to judge the clone.
 
 Installing and downloading are the only steps that use the network. A rerun skips each step whose inputs are unchanged and verifies again; a changed recording or transcript rebuilds the profile, a changed model downloads it and rebuilds the profile, and a changed `voice.sampling` changes only the verification.
 
@@ -226,9 +226,9 @@ thor-demo render quickstart
 thor-demo revoice quickstart
 ```
 
-`revoice` keeps the demo's last recording and replaces its narration: It starts the voice-clone server offline on 127.0.0.1, runs aidemo's `voice`, `captions`, and `compose` stages with each speech request sent through a proxy on 127.0.0.1 that adds the voice profile and `voice.sampling`, stops the server, and archives the take as `render` does. Captions are timed from the script, because the clone does not transcribe. Every revoice re-voices every scene.
+`revoice` keeps the demo's last recording and replaces its narration: It starts the voice-clone server offline on 127.0.0.1, loads the model by synthesizing the verification phrase under the same size-scaled limit as setup, runs aidemo's `voice`, `captions`, and `compose` stages with each speech request sent through a proxy on 127.0.0.1 that adds the voice profile and `voice.sampling`, stops the server, and archives the take as `render` does. Captions are timed from the script, because the clone does not transcribe. Every revoice re-voices every scene.
 
-The proxy measures each clip with ffmpeg before aidemo receives it. It refuses a clip that is silent throughout, one that ends in more than 3 s of silence, and one whose speech is far shorter than its text requires, and it abandons a request that the server does not answer within 9 minutes. `revoice` then stops, naming the scene's text, the reason, and the voice-clone server's log; it does not retry. A clip that has normal levels but sounds wrong passes these checks.
+The proxy measures each clip with ffmpeg before aidemo receives it. It refuses a clip that is silent throughout, one that ends in more than 3 s of silence, and one whose speech is far shorter than its text requires, and it abandons a request that the server does not answer within 9 minutes, a limit that excludes the model's load. `revoice` then stops, naming the scene's text, the reason, and the voice-clone server's log; it does not retry. A clip that has normal levels but sounds wrong passes these checks.
 
 It refuses to start when the profile does not match the voice section, when the demo has not been rendered, or when the repository's `.env` sets a variable that would send the narration elsewhere. `thor-demo revoice --help` names each prerequisite.
 
