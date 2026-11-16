@@ -52,4 +52,6 @@ export function planModelDownload(home: string, model: string): readonly Invocat
 const COMPANION_REPOS: readonly { pattern: RegExp; repos: readonly string[] }[] = [
   // mlx-audio's Higgs Audio v2 loads its codec from this repository rather than from the model's.
   { pattern: /higgs-audio-v2/i, repos: ['mlx-community/higgs-audio-v2-tokenizer'] },
+  // mlx-audio's 8B MOSS-TTS loads its audio tokenizer from this repository when the model's config names none.
+  { pattern: /^OpenMOSS-Team\/MOSS-TTS(-v1\.5)?$/i, repos: ['OpenMOSS-Team/MOSS-Audio-Tokenizer'] },
 ];

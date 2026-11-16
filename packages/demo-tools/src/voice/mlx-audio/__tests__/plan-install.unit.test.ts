@@ -35,4 +35,14 @@ describe(planModelDownload, () => {
       },
     ]);
   });
+
+  it('then caches the audio tokenizer that the 8B MOSS-TTS loads from a repository of its own', () => {
+    expect(planModelDownload('/voice', 'OpenMOSS-Team/MOSS-TTS-v1.5').slice(1)).toStrictEqual([
+      {
+        command: '/voice/venv/bin/hf',
+        args: ['download', 'OpenMOSS-Team/MOSS-Audio-Tokenizer'],
+        env: { HF_HOME: '/voice/hf' },
+      },
+    ]);
+  });
 });
