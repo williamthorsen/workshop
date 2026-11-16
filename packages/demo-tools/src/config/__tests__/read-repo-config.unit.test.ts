@@ -19,6 +19,7 @@ describe(readRepoConfig, () => {
         archiveLabel: path.basename(tree.dir),
         configPath: path.join(tree.dir, REPO_CONFIG_PATH),
         demosDir: 'demos',
+        revoice: { extraGapMs: 700 },
         root: tree.dir,
       },
     });
@@ -68,6 +69,14 @@ describe(readRepoConfig, () => {
     expect(result.ok && result.config.archiveLabel).toBe('product-demos');
   });
 
+  it.each([0, 1200])('reads revoice.extraGapMs %o', (extraGapMs) => {
+    using tree = createTempTree({ [REPO_CONFIG_PATH]: `revoice:\n  extraGapMs: ${extraGapMs}\n` });
+
+    const result = readRepoConfig({ cwd: tree.dir, env: {}, homeDir: HOME });
+
+    expect(result.ok && result.config.revoice).toStrictEqual({ extraGapMs });
+  });
+
   it('names the file to create when no root is found', () => {
     using tree = createTempTree({ 'x/.keep': '' });
 
@@ -90,6 +99,11 @@ describe(readRepoConfig, () => {
     ['an empty archive.label', 'archive:\n  label: ""\n', /archive\.label must be a non-empty string/],
     ['an archive.label with a separator', 'archive:\n  label: a/b\n', /archive\.label must be a single directory name/],
     ['an archive.label of ..', 'archive:\n  label: ..\n', /archive\.label must be a single directory name/],
+    ['an unknown revoice key', 'revoice:\n  gapMs: 9\n', /unknown key "revoice\.gapMs"; the key is extraGapMs/],
+    ['a non-mapping revoice section', 'revoice: 700\n', /revoice must be a mapping/],
+    ['a negative extraGapMs', 'revoice:\n  extraGapMs: -1\n', /revoice\.extraGapMs must be a non-negative integer/],
+    ['a fractional extraGapMs', 'revoice:\n  extraGapMs: 0.5\n', /revoice\.extraGapMs must be a non-negative integer/],
+    ['a string extraGapMs', 'revoice:\n  extraGapMs: 700ms\n', /revoice\.extraGapMs must be a non-negative integer/],
     ['an empty demosDir', 'demosDir: ""\n', /demosDir must be a non-empty string/],
     ['an absolute demosDir', 'demosDir: /abs\n', /demosDir must be relative/],
     ['a demosDir naming the root', 'demosDir: .\n', /demosDir must name a directory inside/],
