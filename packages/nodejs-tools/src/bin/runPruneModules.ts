@@ -9,14 +9,12 @@ import { findLastActivity } from './findLastActivity.ts';
 import { findProtectingPattern } from './findProtectingPattern.ts';
 import { listNodeModulesDirs } from './listNodeModulesDirs.ts';
 import { measureDiskUsage } from './measureDiskUsage.ts';
+import { describeDirectoriesTotal, renderPruneListing, renderPruneSummary } from './prune-modules-text.ts';
 import { readProtectList } from './readProtectList.ts';
-import { EXIT_FAILED, EXIT_NOT_APPLICABLE, EXIT_OK, type RenderedText, serializeResult } from './thor-node-result.ts';
+import { EXIT_FAILED, EXIT_NOT_APPLICABLE, EXIT_OK, serializeResult } from './thor-node-result.ts';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-const DECIMAL_UNITS = ['kB', 'MB', 'GB', 'TB'];
 const DEFAULT_ACTIVE_DAYS = 30;
-const KILO = 1000;
-const SKIPPED = 'skipped';
 
 /** The protect-list path under the home directory when `--protect-list` is absent. */
 export const DEFAULT_PROTECT_LIST = '.config/thor-node/protected-node-modules.txt';
@@ -235,35 +233,6 @@ function classify(dir: string, context: ClassifyContext): PruneDirectory {
   };
 }
 
-/** Renders an age in whole days, rounded down. */
-function describeAge(ageMs: number): string {
-  const days = Math.floor(ageMs / DAY_MS);
-  if (days < 1) return 'today';
-
-  return days === 1 ? '1 day ago' : `${days} days ago`;
-}
-
-/** Renders why a directory is kept, or nothing for one that is not. */
-function describeKeepReason(directory: PruneDirectory, now: number): string {
-  switch (directory.status) {
-    case 'active':
-      return ` (active ${describeAge(now - Date.parse(directory.lastActivityAt))})`;
-    case 'protected':
-      return ` (protected by ${directory.pattern})`;
-    case 'unreadable':
-      return ' (unreadable)';
-    case 'candidate':
-    case 'deleted':
-    case 'failed':
-      return '';
-  }
-}
-
-/** Renders a directory count and its total size. */
-function describeTotal(count: number, bytes: number): string {
-  return `${count} ${count === 1 ? 'directory' : 'directories'} totaling ${formatBytes(bytes)}`;
-}
-
 /** Finds why a project's `node_modules` is kept, protection or recent activity, or undefined when it is not kept. */
 function findKeepReason(projectDir: string, context: ClassifyContext): KeepReason | undefined {
   // A pattern may name the project through a symlink, as the root was given, or by its real path.
@@ -280,20 +249,6 @@ function findKeepReason(projectDir: string, context: ClassifyContext): KeepReaso
   }
 
   return undefined;
-}
-
-/** Renders a byte count in decimal units with one decimal place. */
-function formatBytes(bytes: number): string {
-  if (bytes < KILO) return `${bytes} B`;
-
-  let value = bytes / KILO;
-  let unitIndex = 0;
-  while (value >= KILO && unitIndex < DECIMAL_UNITS.length - 1) {
-    value /= KILO;
-    unitIndex += 1;
-  }
-
-  return `${value.toFixed(1)} ${DECIMAL_UNITS[unitIndex]}`;
 }
 
 /** Reports whether an answer confirms: `y` or `yes`, in any case. */
@@ -352,55 +307,6 @@ function planPruneModules(options: PruneModulesOptions, effects: PruneModulesEff
   };
 }
 
-/**
- * Renders the protect-list in use and one line per directory: a candidate's size, or `skipped`, right-aligned, then
- * the path and any reason that keeps it. A blank line separates the listing from the summary.
- */
-function renderPruneListing(plan: ScannedPrune, now: number): string {
-  const { directories, protectList } = plan;
-  const header = `protect-list: ${protectList.path}${protectList.found ? '' : ' (not found; nothing protected)'}`;
-  const labels = directories.map((directory) => (directory.bytes === null ? SKIPPED : formatBytes(directory.bytes)));
-  const width = Math.max(0, ...labels.map((label) => label.length));
-  const lines = directories.map(
-    (directory, index) =>
-      `${(labels[index] ?? '').padStart(width)}  ${directory.path}${describeKeepReason(directory, now)}`,
-  );
-
-  return `${[header, ...lines].join('\n')}\n\n`;
-}
-
-/**
- * Returns the text of a `prune-modules` result that follows the listing: the total on stdout, and on stderr each
- * failed deletion, the declined confirmation, or the reason that the command does not apply.
- */
-function renderPruneSummary(result: PruneModulesResult): RenderedText {
-  const skippedCount = result.directories.filter((directory) => directory.bytes === null).length;
-
-  switch (result.outcome) {
-    case 'applied': {
-      const deleted = result.directories.filter((directory) => directory.status === 'deleted');
-      const failures = result.directories
-        .filter((directory) => directory.status === 'failed')
-        .map((directory) => `failed to delete ${directory.path}: ${directory.message}\n`);
-
-      return {
-        stderr: failures.join(''),
-        stdout: `${describeTotal(deleted.length, sumBytes(deleted))} deleted; ${skippedCount} ${SKIPPED}\n`,
-      };
-    }
-    case 'declined':
-      return { stderr: 'Nothing deleted.\n', stdout: '' };
-    case 'not-applicable':
-      return { stderr: `${result.reason}\n`, stdout: '' };
-    case 'planned': {
-      const candidates = result.directories.filter((directory) => directory.status === 'candidate');
-      const total = describeTotal(candidates.length, sumBytes(candidates));
-
-      return { stderr: '', stdout: `${total} would be deleted; ${skippedCount} ${SKIPPED}\n` };
-    }
-  }
-}
-
 /** Returns the exit code for a `prune-modules` result. */
 function resolvePruneModulesExitCode(result: PruneModulesResult): number {
   switch (result.outcome) {
@@ -425,16 +331,11 @@ async function settlePrunePlan(
 
   const candidates = plan.directories.filter((directory) => directory.status === 'candidate');
   if (candidates.length > 0 && !options.noConfirm) {
-    const answer = await effects.readAnswer(`Delete ${describeTotal(candidates.length, sumBytes(candidates))}? [y/N] `);
+    const answer = await effects.readAnswer(`Delete ${describeDirectoriesTotal(candidates)}? [y/N] `);
     if (!isAffirmative(answer)) return { ...plan, outcome: 'declined' };
   }
 
   return applyPrunePlan(plan);
-}
-
-/** Sums the measured sizes of directories. */
-function sumBytes(directories: readonly PruneDirectory[]): number {
-  return directories.reduce((total, directory) => total + (directory.bytes ?? 0), 0);
 }
 
 // endregion | Helpers
