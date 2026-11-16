@@ -33,7 +33,7 @@ export interface SpeechProxyOptions {
   /** The transcript file of the reference recording. */
   readonly referenceTranscript: string;
   /** Reports a refused take that the proxy synthesizes again. */
-  readonly report?: (line: string) => void;
+  readonly report: (line: string) => void;
   readonly requestBudgetMs?: number;
   readonly sampling: SpeechSampling;
   /** The base URL of the voice-clone server. */
@@ -67,7 +67,7 @@ export async function startSpeechProxy(options: SpeechProxyOptions): Promise<Spe
     extraGapMs,
     inspectClip = inspectClipWithFfmpeg,
     padClip = padClipWithFfmpeg,
-    report = () => {},
+    report,
     requestBudgetMs = REQUEST_BUDGET_MS,
   } = options;
   const referenceText = readFileSync(options.referenceTranscript, 'utf8').trim();

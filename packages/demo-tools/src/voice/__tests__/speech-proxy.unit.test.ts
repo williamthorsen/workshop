@@ -28,6 +28,7 @@ describe(startSpeechProxy, () => {
       modelDir: '/voice/models/model',
       referenceAudio: tree.resolve('reference.wav'),
       referenceTranscript: tree.resolve('transcript.txt'),
+      report: () => {},
       sampling: { temperature: 0.5, top_k: 40 },
       upstreamUrl: upstream.baseUrl,
     });
@@ -121,16 +122,16 @@ describe(startSpeechProxy, () => {
   });
 
   it('stops the takes at the budget, naming the rejected ones', async () => {
-    await using upstream = await startUpstream({ ...CLIP, body: 'SILENT', delayMs: 300 });
+    await using upstream = await startUpstream({ ...CLIP, body: 'SILENT', delayMs: 1000 });
     using tree = createTempTree({ 'transcript.txt': 'text' });
     await using proxy = await startSpeechProxy({
       ...buildOptions(tree.resolve('transcript.txt'), upstream.baseUrl),
-      requestBudgetMs: 450,
+      requestBudgetMs: 1500,
     });
 
     expect((await postSpeech(proxy.baseUrl, OPENAI_REQUEST)).status).toBe(502);
     expect(upstream.requests).toHaveLength(2);
-    expect(proxy.readFailure()?.reason).toBe('no answer within 0.45 s, after 1 refused take, for silent throughout');
+    expect(proxy.readFailure()?.reason).toBe('no answer within 1.5 s, after 1 refused take, for silent throughout');
   });
 
   it('appends the configured silence to an accepted clip', async () => {
@@ -360,6 +361,7 @@ function buildOptions(referenceTranscript: string, upstreamUrl: string): SpeechP
     modelDir: '/models/model',
     referenceAudio: '/profile/reference.wav',
     referenceTranscript,
+    report: () => {},
     sampling: {},
     upstreamUrl,
   };
