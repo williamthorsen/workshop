@@ -28,7 +28,8 @@ describe(listRunnerExports, () => {
     expect(listRunnerExports('readyup/check-utils')).toContain('discoverKitPackages');
   });
 
-  it('reports the testing subpath as exporting its fixture builder', () => {
+  it('reports the testing subpath as exporting its fixture builders', () => {
+    expect(listRunnerExports('readyup/testing')).toContain('makeTsconfigChainEntry');
     expect(listRunnerExports('readyup/testing')).toContain('makeWorkspace');
   });
 
