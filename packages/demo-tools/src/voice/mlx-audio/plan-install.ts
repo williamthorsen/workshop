@@ -1,6 +1,7 @@
 import path from 'node:path';
 
 import type { Invocation } from '../invocation.ts';
+import type { Download } from '../run-download.ts';
 import { formatModelDir } from './format-model-dir.ts';
 
 /** The mlx-audio release whose server contract the request builder targets. */
@@ -10,7 +11,7 @@ export const MLX_AUDIO_VERSION = '0.6.3';
 export const PYTHON_VERSION = '3.12';
 
 /** Returns the environment variables that keep Hugging Face's caches under `home`. */
-export function buildHuggingFaceEnv(home: string): Record<string, string> {
+export function buildHuggingFaceEnv(home: string): { HF_HOME: string } {
   return { HF_HOME: path.join(home, 'hf') };
 }
 
@@ -32,16 +33,19 @@ export function planInstall(home: string): readonly Invocation[] {
 }
 
 /**
- * Returns the commands that download `model` into its directory under `home`, then each repository that the model
- * loads besides its own into the Hugging Face cache, with the virtual environment's `hf`.
+ * Returns the downloads of `model` into its directory under `home`, then of each repository that the model loads
+ * besides its own into the Hugging Face cache, with the virtual environment's `hf`.
  */
-export function planModelDownload(home: string, model: string): readonly Invocation[] {
+export function planModelDownload(home: string, model: string): readonly Download[] {
   const hf = path.join(home, 'venv', 'bin', 'hf');
   const env = buildHuggingFaceEnv(home);
   const companions = COMPANION_REPOS.filter(({ pattern }) => pattern.test(model)).flatMap(({ repos }) => repos);
   return [
-    { command: hf, args: ['download', model, '--local-dir', formatModelDir(home, model)], env },
-    ...companions.map((repo) => ({ command: hf, args: ['download', repo], env })),
+    {
+      repo: model,
+      invocation: { command: hf, args: ['download', model, '--local-dir', formatModelDir(home, model)], env },
+    },
+    ...companions.map((repo) => ({ repo, invocation: { command: hf, args: ['download', repo], env } })),
   ];
 }
 

@@ -8,8 +8,15 @@ import type { RunInvocation } from './invocation.ts';
 import { buildServerLaunch, SERVER_HOST } from './mlx-audio/build-server-launch.ts';
 import { buildSpeechRequest } from './mlx-audio/build-speech-request.ts';
 import { formatModelDir } from './mlx-audio/format-model-dir.ts';
-import { formatVenvPython, MLX_AUDIO_VERSION, planInstall, planModelDownload } from './mlx-audio/plan-install.ts';
+import {
+  buildHuggingFaceEnv,
+  formatVenvPython,
+  MLX_AUDIO_VERSION,
+  planInstall,
+  planModelDownload,
+} from './mlx-audio/plan-install.ts';
 import { requestFirstSpeech } from './request-first-speech.ts';
+import { runDownload } from './run-download.ts';
 import { startVoiceServer } from './voice-server.ts';
 import {
   planSetupSteps,
@@ -79,8 +86,9 @@ export async function performVoiceSetup(
 
   if (steps.download) {
     report(`downloading ${model} into ${modelDir}`);
-    for (const invocation of planModelDownload(home, model)) {
-      const outcome = await run(invocation);
+    const watchedDirs = [modelDir, buildHuggingFaceEnv(home).HF_HOME];
+    for (const download of planModelDownload(home, model)) {
+      const outcome = await runDownload(download, { report, run }, { watchedDirs });
       if (!outcome.ok) return outcome;
     }
     // Drop the profile with the old model, so that an interrupted run rebuilds it.

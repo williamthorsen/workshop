@@ -222,7 +222,7 @@ thor-demo voice setup
 
 Under `voice.home`, setup creates a Python virtual environment with a pinned mlx-audio, downloads the model into `models/` and any repository that it loads besides its own into the Hugging Face cache in `hf/`, and builds a voice profile in `profile/`: the recording converted to mono WAV and the transcript. It then verifies the install by starting mlx-audio's server on 127.0.0.1 with Hugging Face's offline mode on, synthesizing a phrase in the cloned voice to `verify.mp3`, and stopping the server. That first request loads the model, under a limit that grows with the model's size, and then has 10 minutes to synthesize the phrase. It prints that file's path; listen to it to judge the clone.
 
-Installing and downloading are the only steps that use the network. A rerun skips each step whose inputs are unchanged and verifies again; a changed recording or transcript rebuilds the profile, a changed model downloads it and rebuilds the profile, and a changed `voice.sampling` changes only the verification.
+Installing and downloading are the only steps that use the network. Setup stops a download whose files on disk do not change for 5 minutes, and runs a failed or stopped download up to 3 times; when every attempt fails, rerunning setup resumes the download. A rerun skips each step whose inputs are unchanged and verifies again; a changed recording or transcript rebuilds the profile, a changed model downloads it and rebuilds the profile, and a changed `voice.sampling` changes only the verification.
 
 ### Re-voicing a demo
 
