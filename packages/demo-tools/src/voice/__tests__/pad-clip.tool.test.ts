@@ -4,13 +4,16 @@ import { readFileSync } from 'node:fs';
 import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
+import { findOnPath } from '../../portable/find-on-path.ts';
 import { measureClip } from '../inspect-clip.ts';
 import { padClip } from '../pad-clip.ts';
 
 /** One MP3 frame at 44.1 kHz, the precision to which an encoded clip's duration can change. */
 const FRAME_SECONDS = 1152 / 44_100;
 
-describe(padClip, () => {
+const hasFfmpeg = findOnPath('ffmpeg', process.env['PATH']) !== undefined;
+
+describe.skipIf(!hasFfmpeg)(padClip, () => {
   it('appends the requested silence to a clip', async () => {
     using tree = createTempTree({});
     const tone = tree.resolve('tone.mp3');
