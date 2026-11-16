@@ -1,5 +1,38 @@
 [
   {
+    "version": "0.2.3",
+    "date": "2026-11-16",
+    "sections": [
+      {
+        "title": "🐛 Bug fixes",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Fixes the issue that `thor-secret` reported a programming error, such as a `TypeError`, as a usage error that exits 2. (#907)",
+            "hash": "35999534404407a1a7abf7606b2e13d48837eacc",
+            "entry": 2
+          },
+          {
+            "description": "Fixes the issue that `--version` reported a failure to resolve the CLI's own version as a usage error and exited 2, rather than exiting 1, the exit code that the help gives for an internal error. (#943)",
+            "hash": "5348ce1be1ec796b0a5a65fe38205b68a8fed262",
+            "entry": 1
+          }
+        ]
+      },
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Moves each module's unexported functions, unchanged, into a name-sorted `// region | Helpers` block at the end of the module. (#908)",
+            "hash": "30344c20212620cb05e73f9349ca868bbe5372a1",
+            "entry": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.2.2",
     "date": "2026-11-15",
     "sections": [

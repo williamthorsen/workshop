@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.6.2 — 2026-11-16
+
+### 🐛 Bug fixes
+
+- Fixes the issue that `thor-repo add --write`, `scan --write`, and `move` wrote the registry whenever git failed to report its checkout's branch or its path did not resolve, which let them write a registry in a `live` worktree. (#917)
+- Fixes the issue that `thor-repo` read the default registry from `/.config/repos.yaml` and expanded every `~/` path to `/` when `HOME` was unset or empty, and makes `add`, `apply-moves`, `list`, `move`, and `scan` fail with a message that asks for `--file` or names the `~` path that cannot be expanded. (#929)
+- Fixes the issue that `thor-repo move` and `thor-repo apply-moves` renamed each moved worktree's Claude Code session directory under `/.claude/projects` when neither `CLAUDE_CONFIG_DIR` nor `HOME` was set, and makes them skip the renames and report the skip on stderr. (#929)
+- Fixes the issue that the report of remaining references printed after a move left out the `~` forms of the old paths without saying so when `HOME` was unset or empty, and adds a problem to that report stating that those forms were not searched. (#929)
+
+### ♻️ Refactoring
+
+- Moves each module's unexported functions, unchanged, into a name-sorted `// region | Helpers` block at the end of the module. (#908)
+- Declares `MoveOptions` in `move-report.ts` rather than in `runMove.ts`, and extracts the search for another registry entry whose normalized path is the move target into `findPathClaimant` in `registry.ts`, which `runMove` and `runApplyMoves` both call. (#918)
+- Moves `runList`, `ListOptions`, and `CLONE_STATES` from `repo-commands.ts` into a new `runList.ts`, which leaves `repo-commands.ts` with the adapter wiring and the command tree. (#925)
+- Renames the collections in `repo-tools`' move, scan, list, and reference-finding code and their tests so that each name ends with what the collection holds, such as the `MovePlan` field `relocated`, which becomes `relocatedWorktrees`, and the `MoveOutcome` field `completed`, which becomes `completedMoves`. (#927)
+- Orders the exports and helpers in `repo-tools` source modules alphabetically, as the declaration-order rule of the layout conventions requires. (#931)
+
+### 🧪 Tests
+
+- Splits the `list`, `scan`, and `add` tests out of `repo-commands.unit.test.ts` into `list-command.unit.test.ts`, `scan-command.unit.test.ts`, and `add-command.unit.test.ts`, which share the fixtures in `test-utils/registry-fixtures.ts` and the `buildRegistryRunner` factory in `test-utils/registry-runner.ts` with `move-commands.unit.test.ts` in place of the two near-identical run helpers that each file kept before. (#925)
+- Adds `initWithIndex` and `commitStaged` to `src/test-utils/git-fixture.ts` and replaces the hand-written `git init`, `git add`, `git commit`, and `execFileSync('git', ...)` calls in `repo-commands.tool.test.ts`, `git-clone.tool.test.ts`, and `registry.tool.test.ts` with the fixture's helpers. (#928)
+
 ## 0.6.1 — 2026-11-15
 
 ### 🐛 Bug fixes

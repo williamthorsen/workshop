@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.4.0 — 2026-11-16
+
+### 🎉 Features
+
+- Adds a `--json` flag to `thor-node asdf-shims`, `thor-node pnpm`, and `thor-node prune-modules`, which prints the result as one JSON document on stdout with the same exit codes, and lists the document's fields in each subcommand's `--help`. (#944)
+- Makes `thor-node prune-modules` report a usage error for `--json --apply` unless `--no-confirm` is also passed, because a JSON run cannot show the listing and ask for confirmation. (#944)
+
+### 🐛 Bug fixes
+
+- Fixes the issue that `thor-node asdf-shims`, `thor-node pnpm`, and `thor-node prune-modules` reported every error as a usage error, which made a bug exit 2 with a pointer to help rather than reach the crash handler. (#903)
+- Fixes the issue that `thor-node prune-modules` crashed with an internal error when it could not read a project, and makes the command keep that project's `node_modules` as `unreadable`, print a warning on stderr, and continue with the remaining projects. (#942)
+- Fixes the issue that `--version` reported a failure to resolve the CLI's own version as a usage error and exited 2, rather than exiting 1, the exit code that the help gives for an internal error. (#943)
+
+### ♻️ Refactoring
+
+- Moves each module's unexported functions, unchanged, into a name-sorted `// region | Helpers` block at the end of the module. (#908)
+- Moves `ThorNodeEffects` and `PnpmVersionResult` from `thor-node-result.ts` into the new `thor-node-effects.ts`. (#943)
+- Reorders the declarations in eight `nodejs-tools` modules under `src/bin`, including `run.ts`, `runPnpm.ts`, and `thor-node-result.ts`, to alphabetize each exported tier and Helpers region according to the declaration-order rule. (#945)
+
+### 🧪 Tests
+
+- Adds `buildThorNodeEffects` under `src/bin/test-utils/`, which returns `ThorNodeEffects` that find nothing and do nothing, and builds the effects in `run.unit.test.ts` and `runPruneModules.unit.test.ts` on it, so that a field added to `ThorNodeEffects` needs one edit rather than one per test file. (#946)
+- Replaces `installFakePnpm` and `installFakeAsdf`, which differed only in the program's name, with `installFakeProgram` in `src/test-utils/`, which takes the name as an argument. (#946)
+
 ## 0.3.2 — 2026-11-15
 
 ### 🐛 Bug fixes

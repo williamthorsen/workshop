@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.6.3 — 2026-11-16
+
+### ♻️ Refactoring
+
+- Moves each module's unexported functions, unchanged, into a name-sorted `// region | Helpers` block at the end of the module. (#908)
+
 ## 0.6.2 — 2026-11-15
 
 ### ♻️ Refactoring

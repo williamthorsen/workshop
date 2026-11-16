@@ -1,5 +1,84 @@
 [
   {
+    "version": "0.4.0",
+    "date": "2026-11-16",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Adds an optional `voice.sampling` section to the machine config, whose `repetition_penalty`, `temperature`, `top_k`, and `top_p` values `thor-demo voice setup` and `thor-demo revoice` send with each speech request to mlx-audio, which takes any key left unset from the model's configuration and then from its own default. (#926)",
+            "hash": "4bf80bb03c2638599ea51beeed6b6b12c9985992",
+            "entry": 1
+          },
+          {
+            "description": "Adds the configured sampling to the `provenance.json` of a `revoice` take as `voice.sampling`, a field that `thor-demo` omits when the section does not set any key. (#926)",
+            "hash": "4bf80bb03c2638599ea51beeed6b6b12c9985992",
+            "entry": 2
+          },
+          {
+            "description": "Adds the `revoice.extraGapMs` key to `.config/thor-demo.yaml`, which sets the milliseconds of silence that `thor-demo revoice` appends after each scene's narration, defaults to 700, and is kept out of the caption timing. (#932)",
+            "hash": "e4f78f8d8f52b518f00fd2584f9a5b035389f5fd",
+            "entry": 1
+          },
+          {
+            "description": "Records the added silence as `voice.extraGapMs` in the `provenance.json` of a revoiced take. (#932)",
+            "hash": "e4f78f8d8f52b518f00fd2584f9a5b035389f5fd",
+            "entry": 2
+          },
+          {
+            "description": "Makes `thor-demo voice setup` stop a model or companion-repository download whose files on disk have not changed for 5 minutes, and run a stalled or failed download up to 3 times before it reports that rerunning setup resumes the download. (#933)",
+            "hash": "bdf3a15a878f70017d60962baf2421369340cfcb",
+            "entry": 1
+          },
+          {
+            "description": "Makes `thor-demo revoice` synthesize a refused clip again and report each retake, up to 3 takes that share the 9-minute limit of one request, rather than stop the run at the first refused take. (#934)",
+            "hash": "8a53bc165c73dc586ee69a4bbb3de2761e132eec",
+            "entry": 2
+          }
+        ]
+      },
+      {
+        "title": "🐛 Bug fixes",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Fixes the issue that `thor-demo voice setup` did not download `OpenMOSS-Team/MOSS-Audio-Tokenizer`, the audio tokenizer that `OpenMOSS-Team/MOSS-TTS` and `OpenMOSS-Team/MOSS-TTS-v1.5` need in order to load offline. (#920)",
+            "hash": "86678cf9b1f6affdb48d172adc4dfc96bf4657ac",
+            "entry": 1
+          },
+          {
+            "description": "Fixes the issue that `thor-demo voice setup` and `thor-demo revoice` failed when a large voice model's first load ran past the fixed limit on the speech request, by limiting the load to 10 minutes plus the time to read the model at 200 MB/s and limiting the synthesis separately. (#930)",
+            "hash": "c4712ef58b388699811b28d324ef26bd6a1c648e",
+            "entry": 1
+          },
+          {
+            "description": "Fixes the issue that `thor-demo revoice` accepted a cloned clip that opened with, or paused for, more than 3 s of silence, and makes the refusal name the longest silence, its length, and where it falls in the clip. (#934)",
+            "hash": "8a53bc165c73dc586ee69a4bbb3de2761e132eec",
+            "entry": 1
+          },
+          {
+            "description": "Fixes the issue that `--version` reported a failure to resolve the CLI's own version as a usage error and exited 2, rather than exiting 1, the exit code that the help gives for an internal error. (#943)",
+            "hash": "5348ce1be1ec796b0a5a65fe38205b68a8fed262",
+            "entry": 1
+          }
+        ]
+      },
+      {
+        "title": "⚙️ Tooling",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Adds `scripts/measure-first-load.ts`, which times a voice model's first load with the file cache cleared or right after a large write, or checks that `voice setup` and `revoice` succeed after a first load with the cache cleared. (#930)",
+            "hash": "c4712ef58b388699811b28d324ef26bd6a1c648e",
+            "entry": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.3.0",
     "date": "2026-11-15",
     "sections": [

@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.3 — 2026-11-16
+
+### 🐛 Bug fixes
+
+- Fixes the issue that `thor-git` reported every error from a command as a usage error, which made a bug exit 2 with a pointer to help rather than reach the crash handler. (#903)
+- Fixes the issue that `--version` reported a failure to resolve the CLI's own version as a usage error and exited 2, rather than exiting 1, the exit code that the help gives for an internal error. (#943)
+
 ## 0.2.2 — 2026-11-15
 
 ### 🐛 Bug fixes

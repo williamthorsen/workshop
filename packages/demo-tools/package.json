@@ -1,6 +1,6 @@
 {
   "name": "@williamthorsen/demo-tools",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": false,
   "description": "Render and archive aidemo demos",
   "keywords": [

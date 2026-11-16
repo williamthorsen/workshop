@@ -1,6 +1,6 @@
 {
   "name": "@williamthorsen/repo-tools",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "private": false,
   "description": "Act on the repositories indexed by a machine-local repo registry",
   "keywords": [

@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.4.0 — 2026-11-16
+
+### 🎉 Features
+
+- Adds an optional `voice.sampling` section to the machine config, whose `repetition_penalty`, `temperature`, `top_k`, and `top_p` values `thor-demo voice setup` and `thor-demo revoice` send with each speech request to mlx-audio, which takes any key left unset from the model's configuration and then from its own default. (#926)
+- Adds the configured sampling to the `provenance.json` of a `revoice` take as `voice.sampling`, a field that `thor-demo` omits when the section does not set any key. (#926)
+- Adds the `revoice.extraGapMs` key to `.config/thor-demo.yaml`, which sets the milliseconds of silence that `thor-demo revoice` appends after each scene's narration, defaults to 700, and is kept out of the caption timing. (#932)
+- Records the added silence as `voice.extraGapMs` in the `provenance.json` of a revoiced take. (#932)
+- Makes `thor-demo voice setup` stop a model or companion-repository download whose files on disk have not changed for 5 minutes, and run a stalled or failed download up to 3 times before it reports that rerunning setup resumes the download. (#933)
+- Makes `thor-demo revoice` synthesize a refused clip again and report each retake, up to 3 takes that share the 9-minute limit of one request, rather than stop the run at the first refused take. (#934)
+
+### 🐛 Bug fixes
+
+- Fixes the issue that `thor-demo voice setup` did not download `OpenMOSS-Team/MOSS-Audio-Tokenizer`, the audio tokenizer that `OpenMOSS-Team/MOSS-TTS` and `OpenMOSS-Team/MOSS-TTS-v1.5` need in order to load offline. (#920)
+- Fixes the issue that `thor-demo voice setup` and `thor-demo revoice` failed when a large voice model's first load ran past the fixed limit on the speech request, by limiting the load to 10 minutes plus the time to read the model at 200 MB/s and limiting the synthesis separately. (#930)
+- Fixes the issue that `thor-demo revoice` accepted a cloned clip that opened with, or paused for, more than 3 s of silence, and makes the refusal name the longest silence, its length, and where it falls in the clip. (#934)
+- Fixes the issue that `--version` reported a failure to resolve the CLI's own version as a usage error and exited 2, rather than exiting 1, the exit code that the help gives for an internal error. (#943)
+
+### ⚙️ Tooling
+
+- Adds `scripts/measure-first-load.ts`, which times a voice model's first load with the file cache cleared or right after a large write, or checks that `voice setup` and `revoice` succeed after a first load with the cache cleared. (#930)
+
 ## 0.3.0 — 2026-11-15
 
 ### 🎉 Features

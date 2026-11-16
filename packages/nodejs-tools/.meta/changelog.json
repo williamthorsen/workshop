@@ -1,5 +1,85 @@
 [
   {
+    "version": "0.4.0",
+    "date": "2026-11-16",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Adds a `--json` flag to `thor-node asdf-shims`, `thor-node pnpm`, and `thor-node prune-modules`, which prints the result as one JSON document on stdout with the same exit codes, and lists the document's fields in each subcommand's `--help`. (#944)",
+            "hash": "3e1fefb639031684e70e56d2a625f40d721af8c7",
+            "entry": 1
+          },
+          {
+            "description": "Makes `thor-node prune-modules` report a usage error for `--json --apply` unless `--no-confirm` is also passed, because a JSON run cannot show the listing and ask for confirmation. (#944)",
+            "hash": "3e1fefb639031684e70e56d2a625f40d721af8c7",
+            "entry": 2
+          }
+        ]
+      },
+      {
+        "title": "🐛 Bug fixes",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Fixes the issue that `thor-node asdf-shims`, `thor-node pnpm`, and `thor-node prune-modules` reported every error as a usage error, which made a bug exit 2 with a pointer to help rather than reach the crash handler. (#903)",
+            "hash": "54493fefc014e254eefa6c939c4e8176dc928e88",
+            "entry": 2
+          },
+          {
+            "description": "Fixes the issue that `thor-node prune-modules` crashed with an internal error when it could not read a project, and makes the command keep that project's `node_modules` as `unreadable`, print a warning on stderr, and continue with the remaining projects. (#942)",
+            "hash": "5e2dad170cc62656970cebb6f528c08a489962cd",
+            "entry": 1
+          },
+          {
+            "description": "Fixes the issue that `--version` reported a failure to resolve the CLI's own version as a usage error and exited 2, rather than exiting 1, the exit code that the help gives for an internal error. (#943)",
+            "hash": "5348ce1be1ec796b0a5a65fe38205b68a8fed262",
+            "entry": 1
+          }
+        ]
+      },
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Moves each module's unexported functions, unchanged, into a name-sorted `// region | Helpers` block at the end of the module. (#908)",
+            "hash": "30344c20212620cb05e73f9349ca868bbe5372a1",
+            "entry": 2
+          },
+          {
+            "description": "Moves `ThorNodeEffects` and `PnpmVersionResult` from `thor-node-result.ts` into the new `thor-node-effects.ts`. (#943)",
+            "hash": "5348ce1be1ec796b0a5a65fe38205b68a8fed262",
+            "entry": 2
+          },
+          {
+            "description": "Reorders the declarations in eight `nodejs-tools` modules under `src/bin`, including `run.ts`, `runPnpm.ts`, and `thor-node-result.ts`, to alphabetize each exported tier and Helpers region according to the declaration-order rule. (#945)",
+            "hash": "c722151fd6f6f022104b75921973c284ccfee3f5",
+            "entry": 1
+          }
+        ]
+      },
+      {
+        "title": "🧪 Tests",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Adds `buildThorNodeEffects` under `src/bin/test-utils/`, which returns `ThorNodeEffects` that find nothing and do nothing, and builds the effects in `run.unit.test.ts` and `runPruneModules.unit.test.ts` on it, so that a field added to `ThorNodeEffects` needs one edit rather than one per test file. (#946)",
+            "hash": "3928cce1ebba53847e55b1872d92ec3c3fb109db",
+            "entry": 1
+          },
+          {
+            "description": "Replaces `installFakePnpm` and `installFakeAsdf`, which differed only in the program's name, with `installFakeProgram` in `src/test-utils/`, which takes the name as an argument. (#946)",
+            "hash": "3928cce1ebba53847e55b1872d92ec3c3fb109db",
+            "entry": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.3.2",
     "date": "2026-11-15",
     "sections": [

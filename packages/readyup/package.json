@@ -1,6 +1,6 @@
 {
   "name": "readyup",
-  "version": "0.46.3",
+  "version": "0.47.0",
   "private": false,
   "description": "Run pre-deployment checks to verify environment and configuration",
   "keywords": [

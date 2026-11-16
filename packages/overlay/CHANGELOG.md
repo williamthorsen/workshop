@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.5.1 — 2026-11-16
+
+### 🐛 Bug fixes
+
+- Fixes the issue that `--version` reported a failure to resolve the CLI's own version as a usage error and exited 2, rather than exiting 1, the exit code that the help gives for an internal error. (#943)
+
 ## 0.5.0 — 2026-11-15
 
 ### 🎉 Features

@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.4.0 — 2026-11-16
+
+### 🎉 Features
+
+- Add --json to each thor-node subcommand over one result object (#944)
+
+  Adds a `--json` flag to the `thor-node` subcommands `asdf-shims`, `pnpm`, and `prune-modules`, which prints each one's result as one JSON document on stdout and keeps the same exit codes. Makes `thor-node prune-modules` reject `--json --apply` without `--no-confirm`, because a JSON run cannot ask for confirmation.
+
+### ♻️ Refactoring
+
+- Moves each module's unexported functions, unchanged, into a name-sorted `// region | Helpers` block at the end of the module. (#908)
+
 ## 0.3.2 — 2026-11-15
 
 ### 🐛 Bug fixes

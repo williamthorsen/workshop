@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.47.0 — 2026-11-16
+
+### 🎉 Features
+
+- Maps Node 26 to `es2025` in `esYearForNodeMajor`, which previously returned `undefined` for it, because Node 26 does not implement ES2026 in full. (#901)
+- Adds `makeTsconfigChainEntry` to `readyup/testing`, which builds a `TsconfigChainEntry` for a kit test, fills each field left out by the caller, and derives `compilerOptions` from `config` as `readTsconfigChain` does unless the caller overrides it. (#948)
+
+### 🐛 Bug fixes
+
+- Fixes the issue that `rdy compile --json` left out the warning about an existing `.readyup/manifest.json` that could not be read, and that a single-file compile printed that warning twice; `rdy compile` now raises it once, as the `manifest-unreadable` warning that `rdy run` also raises. (#899)
+
+### ♻️ Refactoring
+
+- Moves the writing of `rdy verify` output into `verifyCommand`, which writes the `VerifyEvent`s that `verifyManifest` and `verifyRecursive` now yield, and leaves human output, `--json` output, and exit codes unchanged. (#900)
+- Moves each module's unexported functions, unchanged, into a name-sorted `// region | Helpers` block at the end of the module. (#908)
+
 ## 0.46.3 — 2026-11-15
 
 ### 🐛 Bug fixes

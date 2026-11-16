@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.6.3",
+    "date": "2026-11-16",
+    "sections": [
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Moves each module's unexported functions, unchanged, into a name-sorted `// region | Helpers` block at the end of the module. (#908)",
+            "hash": "30344c20212620cb05e73f9349ca868bbe5372a1",
+            "entry": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.6.2",
     "date": "2026-11-15",
     "sections": [

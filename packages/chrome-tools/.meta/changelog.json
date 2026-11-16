@@ -1,5 +1,33 @@
 [
   {
+    "version": "0.4.0",
+    "date": "2026-11-16",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Add --json to each thor-node subcommand over one result object (#944)",
+            "body": "Adds a `--json` flag to the `thor-node` subcommands `asdf-shims`, `pnpm`, and `prune-modules`, which prints each one's result as one JSON document on stdout and keeps the same exit codes. Makes `thor-node prune-modules` reject `--json --apply` without `--no-confirm`, because a JSON run cannot ask for confirmation.",
+            "hash": "3e1fefb639031684e70e56d2a625f40d721af8c7"
+          }
+        ]
+      },
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Moves each module's unexported functions, unchanged, into a name-sorted `// region | Helpers` block at the end of the module. (#908)",
+            "hash": "30344c20212620cb05e73f9349ca868bbe5372a1",
+            "entry": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.3.2",
     "date": "2026-11-15",
     "sections": [

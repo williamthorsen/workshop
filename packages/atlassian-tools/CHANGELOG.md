@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.3 — 2026-11-16
+
+### 🐛 Bug fixes
+
+- Fixes the issue that `thor-jira` reported an error that it did not recognize, such as a defect in the tool, as a usage error that exits 2 with a pointer to help, instead of passing it to the crash handler. (#907)
+- Fixes the issue that `--version` reported a failure to resolve the CLI's own version as a usage error and exited 2, rather than exiting 1, the exit code that the help gives for an internal error. (#943)
+
+### ♻️ Refactoring
+
+- Moves each module's unexported functions, unchanged, into a name-sorted `// region | Helpers` block at the end of the module. (#908)
+
 ## 0.2.2 — 2026-11-15
 
 ### 🐛 Bug fixes
