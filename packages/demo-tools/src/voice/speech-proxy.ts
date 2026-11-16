@@ -10,10 +10,10 @@ import { SERVER_HOST } from './mlx-audio/build-server-launch.ts';
 import { buildSpeechRequest, SPEECH_PATH, type SpeechSampling } from './mlx-audio/build-speech-request.ts';
 
 /**
- * How long a speech request may take upstream. The slowest good clip measured on Higgs Audio v2 q8 took 170 s, and the
- * budget stays under the 10-minute timeout of aidemo's OpenAI client.
+ * How long a speech request may take upstream, once the model is loaded. The slowest good clip measured on Higgs
+ * Audio v2 q8 took 170 s, and the budget stays under the 10-minute timeout of aidemo's OpenAI client.
  */
-const REQUEST_BUDGET_MS = 540_000;
+export const REQUEST_BUDGET_MS = 540_000;
 
 /** Where the proxy forwards speech, the voice profile that it clones, and how it judges each answer. */
 export interface SpeechProxyOptions {

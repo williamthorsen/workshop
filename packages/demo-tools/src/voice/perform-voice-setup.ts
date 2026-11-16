@@ -1,17 +1,15 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { describeError } from '@williamthorsen/toolbelt.errors';
-
 import type { VoiceConfig } from '../config/read-machine-config.ts';
 import { findFreePort } from '../portable/find-free-port.ts';
-import { postJson } from '../portable/post-json.ts';
 import { buildVoiceProfile, readProfileSources, resolveVoiceProfilePaths } from './build-voice-profile.ts';
 import type { RunInvocation } from './invocation.ts';
 import { buildServerLaunch, SERVER_HOST } from './mlx-audio/build-server-launch.ts';
-import { buildSpeechRequest, SPEECH_CONTENT_TYPE, SPEECH_PATH } from './mlx-audio/build-speech-request.ts';
+import { buildSpeechRequest } from './mlx-audio/build-speech-request.ts';
 import { formatModelDir } from './mlx-audio/format-model-dir.ts';
 import { formatVenvPython, MLX_AUDIO_VERSION, planInstall, planModelDownload } from './mlx-audio/plan-install.ts';
+import { requestFirstSpeech } from './request-first-speech.ts';
 import { startVoiceServer } from './voice-server.ts';
 import {
   planSetupSteps,
@@ -37,7 +35,7 @@ export type VoiceSetupOutcome = { ok: true; verifyPath: string } | { ok: false; 
 /** The phrase that verification synthesizes. */
 export const VERIFY_PHRASE = 'This is a test of the cloned voice.';
 
-/** How long verification waits for speech, which includes loading the model on the first request. */
+/** How long verification waits for speech once the model is loaded. */
 const VERIFY_TIMEOUT_MS = 10 * 60 * 1000;
 
 /**
@@ -118,39 +116,23 @@ async function verifyClone(
   if (!started.ok) return started;
   await using server = started.server;
 
+  const modelDir = formatModelDir(home, model);
   const profilePaths = resolveVoiceProfilePaths(home);
   const body = buildSpeechRequest({
     input: VERIFY_PHRASE,
-    modelDir: formatModelDir(home, model),
+    modelDir,
     referenceAudio: profilePaths.referenceAudio,
     referenceText: readFileSync(profilePaths.transcript, 'utf8').trim(),
     sampling,
   });
-  report(`verifying: synthesizing "${VERIFY_PHRASE}"; the first request loads the model`);
-
-  let response;
-  try {
-    response = await postJson(`${server.baseUrl}${SPEECH_PATH}`, body, AbortSignal.timeout(VERIFY_TIMEOUT_MS));
-  } catch (error) {
-    return { ok: false, message: `the speech request failed (${describeError(error)}); see ${launch.logPath}` };
-  }
-
-  if (response.status !== 200) {
-    const detail = response.body.toString('utf8').slice(0, 500);
-    return {
-      ok: false,
-      message: `the voice-clone server answered ${response.status} (${detail}); see ${launch.logPath}`,
-    };
-  }
-  if (response.contentType?.startsWith(SPEECH_CONTENT_TYPE) !== true || response.body.length === 0) {
-    return {
-      ok: false,
-      message: `the voice-clone server answered without ${SPEECH_CONTENT_TYPE} audio; see ${launch.logPath}`,
-    };
-  }
+  const speech = await requestFirstSpeech(
+    { baseUrl: server.baseUrl, body, logPath: launch.logPath, model, modelDir },
+    { report: (line) => report(`verifying: ${line}`), synthesisLimitMs: VERIFY_TIMEOUT_MS },
+  );
+  if (!speech.ok) return speech;
 
   const verifyPath = path.join(home, 'verify.mp3');
-  writeFileSync(verifyPath, response.body);
+  writeFileSync(verifyPath, speech.audio);
   return { ok: true, verifyPath };
 }
 

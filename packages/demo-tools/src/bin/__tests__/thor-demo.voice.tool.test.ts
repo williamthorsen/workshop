@@ -29,6 +29,7 @@ describe('thor-demo voice setup', () => {
     expect(stdout).toBe(`${home}/verify.mp3\n`);
     expect(readFileSync(`${home}/verify.mp3`, 'utf8')).toBe('ID3fake');
     expect(stderr).toContain('thor-demo voice setup: installing mlx-audio 0.6.3');
+    expect(stderr).toMatch(/voice setup: verifying: loaded \S+ in \d+ s; synthesizing speech\n/);
     expect(machine.readCalls().map(({ args, tool }) => [tool, args[0]])).toStrictEqual([
       ['uv', 'venv'],
       ['uv', 'pip'],
