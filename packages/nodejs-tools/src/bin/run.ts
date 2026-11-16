@@ -1,10 +1,16 @@
-import { createCli, runCli, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
+import type { ReadoutData } from '@williamthorsen/readout';
+import { createCli, type FlagDefinition, runCli, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
 
-import { runAsdfShims } from './runAsdfShims.ts';
-import { runPnpm } from './runPnpm.ts';
+import { renderAsdfShimsText, resolveAsdfShimsExitCode, runAsdfShims } from './runAsdfShims.ts';
+import { renderPnpmText, resolvePnpmExitCode, runPnpm } from './runPnpm.ts';
 import { DEFAULT_PROTECT_LIST, DEFAULT_ROOT, parseActiveDays, runPruneModules } from './runPruneModules.ts';
 import type { ThorNodeEffects } from './thor-node-effects.ts';
-import { PNPM, type ThorNodeResult } from './thor-node-result.ts';
+import { PNPM, type RenderedText, serializeResult } from './thor-node-result.ts';
+
+const JSON_FLAG = {
+  type: 'boolean',
+  description: 'Print the result as one JSON document on stdout',
+} satisfies FlagDefinition;
 
 const { defineCommand, defineGroup } = createCli<ThorNodeEffects>();
 
@@ -25,7 +31,11 @@ and needs no repository. It exits 1 when a shim is stranded, 0 when none is, and
 install.
 
 The printed remedies use \`asdf reshim nodejs\`, which regenerates every shim from the installed versions,
-rather than \`asdf reshim nodejs <version>\`, which merges into an existing shim and keeps stale lines.`;
+rather than \`asdf reshim nodejs <version>\`, which merges into an existing shim and keeps stale lines.
+
+--json prints one document with outcome (clean, stranded, or not-applicable), reason, install (plugin, version,
+dataDir), and shims, each with name, otherProvider, backingPackage, providingVersions, provideCommands, and
+removeCommands. A field that does not apply is null, and the exit codes do not change.`;
 
 const PNPM_DESCRIPTION = `Check the pnpm that runs in the working directory against the packageManager pin of the nearest package.json
 declaring one, from the working directory upward, and name what provides the pnpm on PATH: the asdf pnpm plugin,
@@ -41,7 +51,11 @@ It prints repair commands only when the versions differ, and they install the pi
 pnpm now.
 
 It exits 1 when the versions differ, when pnpm reported no version, or when pnpm is not on PATH; 0 when they
-match; and 3, with the reason on stderr, when no pin is in reach or the pin names another package manager.`;
+match; and 3, with the reason on stderr, when no pin is in reach or the pin names another package manager.
+
+--json prints one document with outcome (match, mismatch, no-version, absent, or not-applicable), provider (its kind
+and path, with the fields of that kind), pin (manifestPath, dir, version), version, failure, reason, and repairs. A
+field that does not apply is null, and the exit codes do not change.`;
 
 const PRUNE_MODULES_DESCRIPTION = `Find every node_modules directory under a root and report, or with --apply delete, each one that the
 protect-list does not match and that is not recently active. The scan follows no symlinks and does not search
@@ -66,7 +80,13 @@ Sizes are allocated disk space, as du reports it. A pnpm project shares files wi
 node_modules frees less until \`pnpm store prune\` runs.
 
 It exits 0 when it completes; 1 when a deletion fails or the confirmation is declined; and 3, with the reason on
-stderr, when the root is not an existing directory.`;
+stderr, when the root is not an existing directory.
+
+--json prints one document with outcome (planned, applied, declined, or not-applicable), reason, root, protectList
+(path, found), activeDays, warnings (path, message), and directories, each with path, status (candidate, deleted,
+failed, protected, active, or unreadable), bytes, pattern, lastActivityAt, and message. A field that does not apply
+is null, and the exit codes do not change. Since the listing is not shown for review, --json --apply requires
+--no-confirm.`;
 
 const ROOT = defineGroup({
   summary:
@@ -77,13 +97,29 @@ const ROOT = defineGroup({
       summary: 'Report asdf node shims that the active nodejs version does not provide',
       description: ASDF_SHIMS_DESCRIPTION,
       epilog: ASDF_SHIMS_EPILOG,
-      run: ({ context, stderr, stdout }) => writeResult(runAsdfShims(context), stdout, stderr),
+      flags: { json: JSON_FLAG },
+      run: ({ context, flags, stderr, stdout }) => {
+        const result = runAsdfShims(context);
+        const text = renderAsdfShimsText(result);
+
+        return writeResult(
+          { exitCode: resolveAsdfShimsExitCode(result), json: flags.json, result, text },
+          stdout,
+          stderr,
+        );
+      },
     }),
     [PNPM]: defineCommand({
       summary: 'Check the pnpm that runs here against the nearest packageManager pin',
       description: PNPM_DESCRIPTION,
       epilog: PNPM_EPILOG,
-      run: ({ context, stderr, stdout }) => writeResult(runPnpm(context), stdout, stderr),
+      flags: { json: JSON_FLAG },
+      run: ({ context, flags, stderr, stdout }) => {
+        const result = runPnpm(context);
+        const text = renderPnpmText(result, context.execPath);
+
+        return writeResult({ exitCode: resolvePnpmExitCode(result), json: flags.json, result, text }, stdout, stderr);
+      },
     }),
     'prune-modules': defineCommand({
       summary: 'Delete the node_modules directories that the protect-list and the active guard do not keep',
@@ -97,6 +133,7 @@ const ROOT = defineGroup({
           parse: parseActiveDays,
         },
         apply: { type: 'boolean', description: 'Delete the directories, after confirmation' },
+        json: JSON_FLAG,
         noActiveGuard: { type: 'boolean', description: 'Do not keep recently active directories' },
         noConfirm: { type: 'boolean', description: 'Delete without asking for confirmation' },
         protectList: {
@@ -137,12 +174,24 @@ export interface ThorNodeStreams {
 
 // region | Helpers
 
-/** Writes a check's result to the streams and returns its exit code. */
-function writeResult(result: ThorNodeResult, stdout: Writer, stderr: Writer): number {
-  if (result.stdout !== '') stdout.write(result.stdout);
-  if (result.stderr !== '') stderr.write(result.stderr);
+/**
+ * Writes a check's result to the streams, its text or under `json` its JSON document, and returns its exit code. The
+ * text's stderr is written either way, since it contains only reasons and warnings.
+ */
+function writeResult(output: ResultOutput, stdout: Writer, stderr: Writer): number {
+  const stdoutText = output.json ? serializeResult(output.result) : output.text.stdout;
+  if (stdoutText !== '') stdout.write(stdoutText);
+  if (output.text.stderr !== '') stderr.write(output.text.stderr);
 
-  return result.exitCode;
+  return output.exitCode;
+}
+
+/** A check's result, with its rendering, its exit code, and whether to write it as JSON. */
+interface ResultOutput {
+  readonly exitCode: number;
+  readonly json: boolean;
+  readonly result: ReadoutData;
+  readonly text: RenderedText;
 }
 
 // endregion | Helpers

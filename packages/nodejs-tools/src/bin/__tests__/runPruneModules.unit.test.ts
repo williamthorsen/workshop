@@ -223,6 +223,131 @@ describe(runPruneModules, () => {
     expect(stdout).toMatch(/\n1 directory totaling .* deleted; 3 skipped\n$/);
     expect(listRemaining(tree)).toStrictEqual(['active', 'broken', 'keep.live']);
   });
+
+  describe('under --json', () => {
+    it('writes the plan as one document, with each directory and why it is kept, and deletes nothing', async () => {
+      using tree = createProjects();
+
+      const { exitCode, stderr, stdout } = await runWithBuffers(['prune-modules', '--json'], buildEffects(tree));
+
+      expect({ exitCode, stderr }).toStrictEqual({ exitCode: 0, stderr: '' });
+      expect(JSON.parse(stdout)).toStrictEqual({
+        activeDays: 30,
+        directories: [
+          {
+            bytes: null,
+            lastActivityAt: new Date(NOW - 3 * DAY_MS).toISOString(),
+            message: null,
+            path: tree.resolve('repos/active/node_modules'),
+            pattern: null,
+            status: 'active',
+          },
+          {
+            bytes: null,
+            lastActivityAt: null,
+            message: null,
+            path: tree.resolve('repos/keep.live/node_modules'),
+            pattern: '~/repos/*.live',
+            status: 'protected',
+          },
+          {
+            bytes: expect.any(Number),
+            lastActivityAt: null,
+            message: null,
+            path: tree.resolve('repos/stale/node_modules'),
+            pattern: null,
+            status: 'candidate',
+          },
+        ],
+        outcome: 'planned',
+        protectList: { found: true, path: tree.resolve(PROTECT_LIST) },
+        reason: null,
+        root: tree.resolve('repos'),
+        warnings: [],
+      });
+      expect(listRemaining(tree)).toStrictEqual(['active', 'keep.live', 'stale']);
+    });
+
+    it('writes each deletion and failure under --apply --no-confirm, keeps failures on stderr, and exits 1', async () => {
+      using tree = createProjects();
+      tree.mkdir('repos/locked/node_modules/pkg');
+      tree.write('repos/locked/.git/index', '');
+      fs.utimesSync(
+        tree.resolve('repos/locked/.git/index'),
+        new Date(NOW - 100 * DAY_MS),
+        new Date(NOW - 100 * DAY_MS),
+      );
+      fs.chmodSync(tree.resolve('repos/locked'), 0o555);
+
+      const { exitCode, stderr, stdout } = await runWithBuffers(
+        ['prune-modules', '--json', '--apply', '--no-confirm'],
+        buildEffects(tree),
+      );
+
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain(`failed to delete ${tree.resolve('repos/locked/node_modules')}: `);
+      expect(JSON.parse(stdout)).toMatchObject({
+        directories: [
+          { status: 'active' },
+          { status: 'protected' },
+          { message: expect.any(String), path: tree.resolve('repos/locked/node_modules'), status: 'failed' },
+          { message: null, path: tree.resolve('repos/stale/node_modules'), status: 'deleted' },
+        ],
+        outcome: 'applied',
+      });
+    });
+
+    it('writes an unreadable project as kept, with its warning in the document and on stderr', async () => {
+      using tree = createProjects();
+      tree.write('repos/broken/.git', 'gitdir: elsewhere\n');
+      tree.write('repos/broken/node_modules/pkg/index.js', 'x');
+      fs.chmodSync(tree.resolve('repos/broken/.git'), 0o000);
+
+      const { stderr, stdout } = await runWithBuffers(['prune-modules', '--json'], buildEffects(tree));
+
+      expect(stderr).toContain(`warning: cannot read ${tree.resolve('repos/broken')}: `);
+      expect(JSON.parse(stdout)).toMatchObject({
+        directories: expect.arrayContaining([
+          expect.objectContaining({ path: tree.resolve('repos/broken/node_modules'), status: 'unreadable' }),
+        ]),
+        warnings: [{ message: expect.any(String), path: tree.resolve('repos/broken') }],
+      });
+    });
+
+    it('writes a document naming the missing root, keeps the reason on stderr, and exits 3', async () => {
+      using tree = createTempTree({});
+      const root = tree.resolve('repos');
+      const reason = `Root ${root} is not an existing directory; nothing to prune.`;
+
+      const { exitCode, stderr, stdout } = await runWithBuffers(['prune-modules', '--json'], buildEffects(tree));
+
+      expect({ exitCode, stderr }).toStrictEqual({ exitCode: 3, stderr: `${reason}\n` });
+      expect(JSON.parse(stdout)).toStrictEqual({
+        activeDays: 30,
+        directories: [],
+        outcome: 'not-applicable',
+        protectList: null,
+        reason,
+        root,
+        warnings: [],
+      });
+    });
+
+    it('refuses --apply without --no-confirm, even with a terminal, and deletes nothing', async () => {
+      using tree = createProjects();
+
+      const { exitCode, stderr, stdout } = await runWithBuffers(
+        ['prune-modules', '--json', '--apply'],
+        buildEffects(tree, { isStdinTty: () => true }),
+      );
+
+      expect({ exitCode, stdout }).toStrictEqual({ exitCode: 2, stdout: '' });
+      expect(stderr).toContain(
+        '--json --apply cannot ask for confirmation; pass --no-confirm to delete without asking, or drop --json',
+      );
+      expect(listRemaining(tree)).toStrictEqual(['active', 'keep.live', 'stale']);
+    });
+  });
 });
 
 describe(parseActiveDays, () => {

@@ -182,6 +182,9 @@ catalogs:
     '@williamthorsen/nmr':
       specifier: 2.2.2
       version: 2.2.2
+    '@williamthorsen/readout':
+      specifier: 0.2.0
+      version: 0.2.0
     '@williamthorsen/toolbelt.arrays':
       specifier: 6.5.3
       version: 6.5.3
@@ -354,7 +357,7 @@ importers:
   packages/chrome-tools:
     dependencies:
       '@williamthorsen/readout':
-        specifier: 0.2.0
+        specifier: 'catalog:'
         version: 0.2.0
       '@williamthorsen/toolbelt.cli':
         specifier: 'catalog:'
@@ -490,6 +493,9 @@ importers:
 
   packages/nodejs-tools:
     dependencies:
+      '@williamthorsen/readout':
+        specifier: 'catalog:'
+        version: 0.2.0
       '@williamthorsen/toolbelt.cli':
         specifier: 'catalog:'
         version: 0.10.1
