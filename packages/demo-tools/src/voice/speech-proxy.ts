@@ -51,9 +51,9 @@ export interface SpeechProxy extends AsyncDisposable {
 /**
  * Starts a loopback-only HTTP server that accepts OpenAI-shaped speech requests and forwards each as a request that
  * clones the profile's voice with the configured sampling, keeping only the text to speak. It passes on a clip that
- * the inspector accepts, with the configured silence appended, and a 4xx answer, and answers 502 to a rejected clip, a 5xx answer, a failed connection, a
- * request over budget, or a fault of its own. A request that the client abandons is dropped, a request from a web page
- * is answered 403, and every other request 404.
+ * the inspector accepts, with the configured silence appended, and a 4xx answer, and answers 502 to a rejected clip, a
+ * clip that cannot be padded, a 5xx answer, a failed connection, a request over budget, or a fault of its own. A
+ * request that the client abandons is dropped, a request from a web page is answered 403, and every other request 404.
  */
 export async function startSpeechProxy(options: SpeechProxyOptions): Promise<SpeechProxy> {
   const {
