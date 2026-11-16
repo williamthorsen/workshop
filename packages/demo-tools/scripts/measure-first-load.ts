@@ -1,18 +1,31 @@
-// Measures a voice model's first load with the file cache cleared, or verifies that `voice setup` and `revoice`
-// survive one. Run from `packages/demo-tools` after `nmr build`:
+// Measures a voice model's first load with the file cache cleared, or right after a copy of the model has been
+// written as a download writes it, or verifies that `voice setup` and `revoice` survive a first load. Run from
+// `packages/demo-tools` after `nmr build`:
 //
 //   node scripts/measure-first-load.ts measure [--model <id>]
+//   node scripts/measure-first-load.ts post-write [--model <id>]
 //   node scripts/measure-first-load.ts verify <demo>
 //
-// Each run clears the file cache with `sudo purge`, which asks for a password, and writes its result as JSON under
-// the voice home's `logs/`.
+// `measure` and `verify` clear the file cache with `sudo purge`, which asks for a password. `post-write` writes its
+// copy under the temporary directory and deletes it afterward. Each run writes its result as JSON under the voice
+// home's `logs/`.
 
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  createReadStream,
+  createWriteStream,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
+import { pipeline } from 'node:stream/promises';
 import { parseArgs } from 'node:util';
 
 import { describeError } from '@williamthorsen/toolbelt.errors';
@@ -56,7 +69,13 @@ const MEASURE_LIMIT_MS = 60 * 60 * 1000;
 const { positionals, values } = parseArgs({ allowPositionals: true, options: { model: { type: 'string' } } });
 const [subcommand, demo] = positionals;
 const voice = readVoice();
-const result = subcommand === 'measure' ? await measure(voice, values.model ?? voice.model) : verify(voice, demo);
+const model = values.model ?? voice.model;
+const result =
+  subcommand === 'measure'
+    ? await measure(voice, model, { purge: true })
+    : subcommand === 'post-write'
+      ? await measureAfterWrite(voice, model)
+      : verify(voice, demo);
 
 const resultPath = path.join(voice.home, 'logs', `first-load-${subcommand}-${formatTimestamp(new Date())}.json`);
 mkdirSync(path.dirname(resultPath), { recursive: true });
@@ -65,6 +84,18 @@ console.log(JSON.stringify(result, undefined, 2));
 console.log(`result: ${resultPath}`);
 
 // region | Helpers
+
+/** Copies every file under `sourceDir` into `targetDir` by reading and writing its bytes. */
+async function copyFilesByStreaming(sourceDir: string, targetDir: string): Promise<void> {
+  const entries = readdirSync(sourceDir, { recursive: true, withFileTypes: true });
+  for (const entry of entries) {
+    if (!entry.isFile()) continue;
+    const source = path.join(entry.parentPath, entry.name);
+    const target = path.join(targetDir, path.relative(sourceDir, source));
+    mkdirSync(path.dirname(target), { recursive: true });
+    await pipeline(createReadStream(source), createWriteStream(target));
+  }
+}
 
 /** Writes `message` to stderr and exits 1. */
 function fail(message: string): never {
@@ -82,14 +113,18 @@ function formatTimestamp(date: Date): string {
 }
 
 /**
- * Clears the file cache, then sends two speech requests, timing each one's headers and body with the swap activity
- * of each phase. mlx-audio loads the model before it sends the headers, so the first request's headers mark the
- * load's end and the second request's body is a warm synthesis.
+ * Optionally clears the file cache, then sends two speech requests, timing each one's headers and body with the swap
+ * activity of each phase. mlx-audio loads the model before it sends the headers, so the first request's headers mark
+ * the load's end and the second request's body is a warm synthesis.
  */
-async function measure(voice: VoiceConfig, model: string): Promise<Record<string, unknown>> {
+async function measure(
+  voice: VoiceConfig,
+  model: string,
+  { purge }: { readonly purge: boolean },
+): Promise<Record<string, unknown>> {
   const modelDir = formatModelDir(voice.home, model);
   const modelBytes = measureDirSize(modelDir);
-  purgeFileCache();
+  if (purge) purgeFileCache();
 
   const launch = buildServerLaunch(voice.home, await findFreePort(SERVER_HOST));
   const started = await startVoiceServer(launch);
@@ -117,6 +152,25 @@ async function measure(voice: VoiceConfig, model: string): Promise<Record<string
   };
 }
 
+/**
+ * Writes a copy of the model's files under the temporary directory, streaming each file so that the file system
+ * cannot clone it, then measures the installed model as `measure` does without clearing the cache, and deletes the
+ * copy. The copy leaves memory as a download of the model leaves it.
+ */
+async function measureAfterWrite(voice: VoiceConfig, model: string): Promise<Record<string, unknown>> {
+  const modelDir = formatModelDir(voice.home, model);
+  const copyDir = mkdtempSync(path.join(os.tmpdir(), 'measure-first-load-'));
+  try {
+    const startedAt = Date.now();
+    await copyFilesByStreaming(modelDir, copyDir);
+    const writeMs = Date.now() - startedAt;
+    console.log(`wrote a copy of ${model} in ${Math.round(writeMs / 1000)} s`);
+    return { writeMs, ...(await measure(voice, model, { purge: false })) };
+  } finally {
+    rmSync(copyDir, { force: true, recursive: true });
+  }
+}
+
 /** Clears the file cache, so that the next read of the model comes from disk. */
 function purgeFileCache(): void {
   console.log('clearing the file cache with sudo purge');
@@ -136,8 +190,9 @@ function readSwapCounters(): SwapCounters {
 
 /** Reads the configured voice section, exiting when it is missing or invalid. */
 function readVoice(): VoiceConfig {
-  if (subcommand !== 'measure' && subcommand !== 'verify')
-    fail('usage: measure-first-load.ts measure [--model <id>] | verify <demo>');
+  if (subcommand !== 'measure' && subcommand !== 'post-write' && subcommand !== 'verify') {
+    fail('usage: measure-first-load.ts measure [--model <id>] | post-write [--model <id>] | verify <demo>');
+  }
 
   const config = readMachineConfig({ env: process.env, homeDir: os.homedir() });
   if (!config.ok) fail(config.message);
