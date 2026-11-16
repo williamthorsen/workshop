@@ -19,9 +19,12 @@ describe(planModelDownload, () => {
   it("downloads the model into its directory with the virtual environment's hf, caching under the install", () => {
     expect(planModelDownload('/voice', 'org/model')).toStrictEqual([
       {
-        command: '/voice/venv/bin/hf',
-        args: ['download', 'org/model', '--local-dir', '/voice/models/org--model'],
-        env: { HF_HOME: '/voice/hf' },
+        repo: 'org/model',
+        invocation: {
+          command: '/voice/venv/bin/hf',
+          args: ['download', 'org/model', '--local-dir', '/voice/models/org--model'],
+          env: { HF_HOME: '/voice/hf' },
+        },
       },
     ]);
   });
@@ -29,9 +32,12 @@ describe(planModelDownload, () => {
   it('then caches the codec that Higgs Audio v2 loads from a repository of its own', () => {
     expect(planModelDownload('/voice', 'mlx-community/higgs-audio-v2-3B-mlx-q8').slice(1)).toStrictEqual([
       {
-        command: '/voice/venv/bin/hf',
-        args: ['download', 'mlx-community/higgs-audio-v2-tokenizer'],
-        env: { HF_HOME: '/voice/hf' },
+        repo: 'mlx-community/higgs-audio-v2-tokenizer',
+        invocation: {
+          command: '/voice/venv/bin/hf',
+          args: ['download', 'mlx-community/higgs-audio-v2-tokenizer'],
+          env: { HF_HOME: '/voice/hf' },
+        },
       },
     ]);
   });
@@ -39,9 +45,12 @@ describe(planModelDownload, () => {
   it('then caches the audio tokenizer that the 8B MOSS-TTS loads from a repository of its own', () => {
     expect(planModelDownload('/voice', 'OpenMOSS-Team/MOSS-TTS-v1.5').slice(1)).toStrictEqual([
       {
-        command: '/voice/venv/bin/hf',
-        args: ['download', 'OpenMOSS-Team/MOSS-Audio-Tokenizer'],
-        env: { HF_HOME: '/voice/hf' },
+        repo: 'OpenMOSS-Team/MOSS-Audio-Tokenizer',
+        invocation: {
+          command: '/voice/venv/bin/hf',
+          args: ['download', 'OpenMOSS-Team/MOSS-Audio-Tokenizer'],
+          env: { HF_HOME: '/voice/hf' },
+        },
       },
     ]);
   });
