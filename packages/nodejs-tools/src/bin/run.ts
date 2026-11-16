@@ -3,7 +3,8 @@ import { createCli, runCli, type Writer } from '@williamthorsen/toolbelt.cli/can
 import { runAsdfShims } from './runAsdfShims.ts';
 import { runPnpm } from './runPnpm.ts';
 import { DEFAULT_PROTECT_LIST, DEFAULT_ROOT, parseActiveDays, runPruneModules } from './runPruneModules.ts';
-import { PNPM, resolveVersion, type ThorNodeEffects, type ThorNodeResult } from './thor-node-result.ts';
+import type { ThorNodeEffects } from './thor-node-effects.ts';
+import { PNPM, type ThorNodeResult } from './thor-node-result.ts';
 
 const { defineCommand, defineGroup } = createCli<ThorNodeEffects>();
 
@@ -122,7 +123,7 @@ export async function run(args: string[], effects: ThorNodeEffects, streams: Tho
     name: 'thor-node',
     baseDir: effects.cwd,
     context: effects,
-    version: () => resolveVersion(effects),
+    version: () => effects.resolveVersion(),
     stdout: streams.stdout,
     stderr: streams.stderr,
   });
