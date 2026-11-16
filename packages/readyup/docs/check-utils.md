@@ -91,6 +91,8 @@ const findings = discoverWorkspaces().flatMap(({ dir, packageJson }) => {
 });
 ```
 
+A kit test that needs a `TsconfigChainEntry` value builds one with `makeTsconfigChainEntry`; see [Testing a kit](authoring-kits.md#testing-a-kit).
+
 ## Git
 
 | Function                                 | Returns                                           |

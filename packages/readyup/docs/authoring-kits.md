@@ -368,6 +368,28 @@ expect(skipIfNotPublishable(makeWorkspace({ packageJson: { name: 'example', priv
 
 The last three are derived by the same code that `discoverWorkspaces` uses, so `makeWorkspace({ dir: '.' })` reports `isRoot: true` although the call does not set it. An explicit override takes precedence over the derivation, which is how a test states a shape that discovery would not produce. The result is frozen, as a discovered workspace is. Because the manifest passed in is copied before freezing, a literal shared between fixtures stays writable.
 
+**A function that takes `TsconfigChainEntry` values**, such as the `entries` of `readTsconfigChain`, also needs values rather than a tree. `readyup/testing` exports a builder for them:
+
+```ts
+import { makeTsconfigChainEntry } from 'readyup/testing';
+
+const entries = [
+  makeTsconfigChainEntry({ path: 'packages/api/tsconfig.json' }),
+  makeTsconfigChainEntry({ config: { include: ['src/'] }, specifier: '../../tsconfig.json' }),
+];
+```
+
+Its defaults are:
+
+| Field             | Default                                                         |
+| ----------------- | --------------------------------------------------------------- |
+| `config`          | `{}`                                                            |
+| `path`            | `'tsconfig.json'`                                               |
+| `specifier`       | `undefined`                                                     |
+| `compilerOptions` | `config.compilerOptions` when that is an object, otherwise `{}` |
+
+`compilerOptions` is derived by the same code that `readTsconfigChain` uses, and an explicit override takes precedence over the derivation. The result is not frozen, because the entries that `readTsconfigChain` returns are not.
+
 ## Inlining JSON at compile time
 
 A compiled kit is self-contained and cannot read a JSON file that is next to its source. `pickJson` works around that limit by copying selected fields into the bundle while it is being built:
