@@ -557,6 +557,16 @@ describe(run, () => {
       expect(stdout).toContain('asdf reshim nodejs');
     });
 
+    it.each([['asdf-shims'], ['pnpm'], ['prune-modules']])(
+      'documents --json and its fields in the %s help',
+      async (command) => {
+        const { stdout } = await runWithBuffers([command, '--help'], buildEffects([], []));
+
+        expect(stdout).toContain('--json');
+        expect(stdout).toContain('--json prints one document with outcome');
+      },
+    );
+
     it.each([['--version'], ['-V']])('prints the version on %o', async (flag) => {
       await expect(runWithBuffers([flag], buildEffects([], []))).resolves.toStrictEqual({
         exitCode: 0,

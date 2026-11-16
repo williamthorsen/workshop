@@ -48,7 +48,13 @@ if [ $? -eq 1 ]; then
 fi
 ```
 
-`thor-node --help` and each subcommand's `--help` list the flags, the protect-list format, and the exit codes.
+Each subcommand also prints its result as one JSON document under `--json`, with the same exit codes:
+
+```bash
+thor-node pnpm --json | jq --raw-output .outcome
+```
+
+`thor-node --help` and each subcommand's `--help` list the flags, the protect-list format, the exit codes, and the fields of the JSON document.
 
 ## Library
 

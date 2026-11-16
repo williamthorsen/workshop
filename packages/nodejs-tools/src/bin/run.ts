@@ -28,7 +28,11 @@ and needs no repository. It exits 1 when a shim is stranded, 0 when none is, and
 install.
 
 The printed remedies use \`asdf reshim nodejs\`, which regenerates every shim from the installed versions,
-rather than \`asdf reshim nodejs <version>\`, which merges into an existing shim and keeps stale lines.`;
+rather than \`asdf reshim nodejs <version>\`, which merges into an existing shim and keeps stale lines.
+
+--json prints one document with outcome (clean, stranded, or not-applicable), reason, install (plugin, version,
+dataDir), and shims, each with name, otherProvider, backingPackage, providingVersions, provideCommands, and
+removeCommands. A field that does not apply is null, and the exit codes do not change.`;
 
 const PNPM_DESCRIPTION = `Check the pnpm that runs in the working directory against the packageManager pin of the nearest package.json
 declaring one, from the working directory upward, and name what provides the pnpm on PATH: the asdf pnpm plugin,
@@ -44,7 +48,11 @@ It prints repair commands only when the versions differ, and they install the pi
 pnpm now.
 
 It exits 1 when the versions differ, when pnpm reported no version, or when pnpm is not on PATH; 0 when they
-match; and 3, with the reason on stderr, when no pin is in reach or the pin names another package manager.`;
+match; and 3, with the reason on stderr, when no pin is in reach or the pin names another package manager.
+
+--json prints one document with outcome (match, mismatch, no-version, absent, or not-applicable), provider (its kind
+and path, with the fields of that kind), pin (manifestPath, dir, version), version, failure, reason, and repairs. A
+field that does not apply is null, and the exit codes do not change.`;
 
 const PRUNE_MODULES_DESCRIPTION = `Find every node_modules directory under a root and report, or with --apply delete, each one that the
 protect-list does not match and that is not recently active. The scan follows no symlinks and does not search
@@ -69,7 +77,13 @@ Sizes are allocated disk space, as du reports it. A pnpm project shares files wi
 node_modules frees less until \`pnpm store prune\` runs.
 
 It exits 0 when it completes; 1 when a deletion fails or the confirmation is declined; and 3, with the reason on
-stderr, when the root is not an existing directory.`;
+stderr, when the root is not an existing directory.
+
+--json prints one document with outcome (planned, applied, declined, or not-applicable), reason, root, protectList
+(path, found), activeDays, warnings (path, message), and directories, each with path, status (candidate, deleted,
+failed, protected, active, or unreadable), bytes, pattern, lastActivityAt, and message. A field that does not apply
+is null, and the exit codes do not change. Since the listing is not shown for review, --json --apply requires
+--no-confirm.`;
 
 const ROOT = defineGroup({
   summary:
