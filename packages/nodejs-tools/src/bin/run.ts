@@ -116,6 +116,7 @@ const ROOT = defineGroup({
           parse: parseActiveDays,
         },
         apply: { type: 'boolean', description: 'Delete the directories, after confirmation' },
+        json: JSON_FLAG,
         noActiveGuard: { type: 'boolean', description: 'Do not keep recently active directories' },
         noConfirm: { type: 'boolean', description: 'Delete without asking for confirmation' },
         protectList: {
