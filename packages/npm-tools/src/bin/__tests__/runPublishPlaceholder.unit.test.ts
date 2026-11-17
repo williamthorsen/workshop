@@ -102,35 +102,47 @@ describe(runPublishPlaceholder, () => {
     it.each([
       {
         case: 'npm is missing',
+        calls: ['whoami'],
         npm: { whoami: { kind: 'missing' } },
         exitCode: 127,
         message: 'npm not found on PATH; install Node.js with npm, then run this again',
       },
       {
         case: 'npm is logged out',
+        calls: ['whoami'],
         npm: { whoami: { kind: 'logged-out', detail: 'need auth' } },
         exitCode: 1,
         message: 'not logged in to npm (need auth); run npm login, then run this again',
       },
       {
+        case: 'the npm session check fails',
+        calls: ['whoami'],
+        npm: { whoami: { kind: 'failed', detail: 'request to https://registry.npmjs.org/-/whoami failed' } },
+        exitCode: 1,
+        message: 'could not check the npm session: request to https://registry.npmjs.org/-/whoami failed',
+      },
+      {
         case: 'the name exists',
+        calls: ['whoami', `view ${NAME}`],
         npm: { findVersion: { kind: 'found' } },
         exitCode: 1,
         message: `'${NAME}' already exists on the registry; a placeholder is only for a new name`,
       },
       {
         case: 'the registry cannot be queried',
+        calls: ['whoami', `view ${NAME}`],
         npm: { findVersion: { kind: 'failed', detail: 'request failed' } },
         exitCode: 1,
         message: `could not query the registry for '${NAME}': request failed`,
       },
-    ] as const)('exits $exitCode when $case', async ({ exitCode, message, npm }) => {
+    ] as const)('exits $exitCode when $case', async ({ calls, exitCode, message, npm }) => {
       using harness = createHarness({ answer: 'y', npm });
 
       const result = await harness.run();
 
       expect(result.exitCode).toBe(exitCode);
       expect(result.stderr).toBe(`thor-npm publish-placeholder: ${message}\n`);
+      expect(harness.npmCalls).toStrictEqual(calls);
       expect(harness.published).toStrictEqual([]);
       expect(harness.leftoverDirs()).toStrictEqual([]);
     });
