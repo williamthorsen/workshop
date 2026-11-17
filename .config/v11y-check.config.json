@@ -6,35 +6,44 @@
       {
         "addedAt": "2026-11-02T06:37:04.553Z",
         "id": "1124066",
-        "path": "packages__demo-tools>kokoro-js>@huggingface/transformers>sharp",
         "reason": "Added by v11y sync at 2026-11-02 06:37:04 UTC",
         "url": "https://github.com/advisories/GHSA-f88m-g3jw-g9cj"
       },
       {
         "addedAt": "2026-11-02T06:37:04.553Z",
         "id": "1193725",
-        "path": "packages__demo-tools>kokoro-js>@huggingface/transformers>sharp",
         "reason": "Added by v11y sync at 2026-11-02 06:37:04 UTC",
         "url": "https://github.com/advisories/GHSA-rgj7-g3m4-5g8c"
       },
       {
         "addedAt": "2026-11-02T06:37:04.553Z",
         "id": "1241331",
-        "path": "packages__demo-tools>kokoro-js>@huggingface/transformers>sharp",
         "reason": "Added by v11y sync at 2026-11-02 06:37:04 UTC",
         "url": "https://github.com/advisories/GHSA-wq5f-xc86-pv6w"
       },
       {
         "addedAt": "2026-11-04T18:55:03.861Z",
         "id": "1244623",
-        "path": ".>@williamthorsen/strict-lint>eslint>minimatch",
         "reason": "Added by v11y sync at 2026-11-04 18:55:03 UTC",
         "url": "https://github.com/advisories/GHSA-g3hv-75wg-m249"
+      },
+      {
+        "addedAt": "2026-11-17T17:41:20.148Z",
+        "id": "1247710",
+        "reason": "Added by v11y sync at 2026-11-17 17:41:20 UTC",
+        "url": "https://github.com/advisories/GHSA-fc5q-39xc-vjpf"
       }
     ]
   },
   "prod": {
     "severityThreshold": "low",
-    "allowlist": []
+    "allowlist": [
+      {
+        "addedAt": "2026-11-17T17:41:20.156Z",
+        "id": "1247710",
+        "reason": "Added by v11y sync at 2026-11-17 17:41:20 UTC",
+        "url": "https://github.com/advisories/GHSA-fc5q-39xc-vjpf"
+      }
+    ]
   }
 }
