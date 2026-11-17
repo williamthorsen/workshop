@@ -209,6 +209,13 @@ describe(createNpmClient, () => {
 
       expect(client.whoami()).toStrictEqual({ kind: 'missing' });
     });
+
+    it('reports a failure when npm on PATH cannot be run', () => {
+      using tree = createTempTree({ 'bin/npm/': '' });
+      const client = createNpmClient({ cwd: tree.dir, env: { PATH: tree.resolve('bin') } });
+
+      expect(client.whoami()).toStrictEqual({ kind: 'failed', detail: 'spawnSync npm EACCES' });
+    });
   });
 });
 
