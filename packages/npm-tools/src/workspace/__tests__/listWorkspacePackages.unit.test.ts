@@ -1,7 +1,7 @@
 import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
-import { listWorkspacePackages, ManifestReadError } from '../listWorkspacePackages.ts';
+import { listWorkspacePackages } from '../listWorkspacePackages.ts';
 
 const WORKSPACE_MANIFEST = "packages:\n  - 'packages/*'\n  - 'tools/*'\n  - '!packages/legacy'\n";
 
@@ -57,20 +57,20 @@ describe(listWorkspacePackages, () => {
   });
 
   it.each([
-    ['does not parse', '{ not json', /could not read .*packages\/broken\/package\.json: /],
-    [
-      'is not a JSON object',
-      '[]',
-      /could not read .*packages\/broken\/package\.json: the manifest is not a JSON object$/,
-    ],
-  ])('throws a ManifestReadError naming a manifest that %s', (_condition, content, message) => {
+    ['does not parse', '{ not json', expect.stringMatching(/\S/)],
+    ['is not a JSON object', '[]', 'the manifest is not a JSON object'],
+  ])('reports a package manifest that %s, naming its path and the reason', (_condition, content, reason) => {
     using tree = createTempTree({
       'pnpm-workspace.yaml': "packages:\n  - 'packages/*'\n",
       'packages/broken/package.json': content,
     });
 
-    expect(() => listWorkspacePackages(tree.dir)).toThrow(message);
-    expect(() => listWorkspacePackages(tree.dir)).toThrow(ManifestReadError);
+    expect(listWorkspacePackages(tree.dir)).toStrictEqual({
+      kind: 'unreadable-package-manifest',
+      root: expect.any(String),
+      manifestPath: tree.resolve('packages/broken/package.json'),
+      reason,
+    });
   });
 });
 
