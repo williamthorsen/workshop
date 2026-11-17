@@ -4,8 +4,8 @@ import { listWorkspacePackages } from '../workspace/listWorkspacePackages.ts';
 import {
   applyMoveTrust,
   type MoveTrustOptions,
-  type PlanMoveTrustEffects,
   planMoveTrust,
+  type PlanMoveTrustEffects,
   restoreTrust,
 } from './moveTrust.ts';
 import {
