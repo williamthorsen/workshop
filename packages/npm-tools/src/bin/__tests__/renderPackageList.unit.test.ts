@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { WorkspacePackage } from '../../workspace/listWorkspacePackages.ts';
-import { renderPackageJson, renderPackageTable } from '../renderPackageList.ts';
+import { renderListPackages, renderPackageJson, renderPackageTable } from '../renderPackageList.ts';
 
 const ALPHA: WorkspacePackage = {
   description: 'Does the alpha things',
@@ -18,6 +18,77 @@ const BETA: WorkspacePackage = {
   private: true,
   version: null,
 };
+
+describe(renderListPackages, () => {
+  const options = { cwd: '/work/repo', json: false };
+
+  it('renders the packages on stdout with exit 0', () => {
+    const output = renderListPackages({ kind: 'packages', packages: [ALPHA], root: '/work/repo' }, options);
+
+    expect(output).toStrictEqual({ exitCode: 0, stderr: '', stdout: renderPackageTable([ALPHA]) });
+  });
+
+  it('renders JSON under json, and cuts table lines to maxWidth otherwise', () => {
+    const listing = { kind: 'packages', packages: [ALPHA, BETA], root: '/work/repo' } as const;
+
+    expect(renderListPackages(listing, { ...options, json: true }).stdout).toBe(renderPackageJson([ALPHA, BETA]));
+    expect(renderListPackages(listing, { ...options, maxWidth: 40 }).stdout).toBe(
+      renderPackageTable([ALPHA, BETA], { maxWidth: 40 }),
+    );
+  });
+
+  it('reports a directory outside any workspace with exit 1', () => {
+    expect(renderListPackages({ kind: 'not-a-workspace' }, options)).toStrictEqual({
+      exitCode: 1,
+      stderr:
+        'thor-npm list-packages: no pnpm-workspace.yaml found in /work/repo or any parent directory; run it from inside a pnpm workspace\n',
+      stdout: '',
+    });
+  });
+
+  it('reports a package manifest that cannot be read with exit 1', () => {
+    const listing = {
+      kind: 'unreadable-package-manifest',
+      manifestPath: '/work/repo/packages/alpha/package.json',
+      reason: 'the manifest is not a JSON object',
+      root: '/work/repo',
+    } as const;
+
+    expect(renderListPackages(listing, options)).toStrictEqual({
+      exitCode: 1,
+      stderr: 'thor-npm: could not read /work/repo/packages/alpha/package.json: the manifest is not a JSON object\n',
+      stdout: '',
+    });
+  });
+
+  it.each([
+    ['all-excluded', "its exclusions remove every package that its patterns 'packages/*' match"],
+    ['no-package', "its patterns 'packages/*' do not match any directory containing a package.json"],
+    ['no-packages-list', 'pnpm-workspace.yaml does not declare a packages list'],
+    ['no-pattern', "its packages list 'packages/*' does not contain a pattern that includes directories"],
+  ] as const)('explains an empty workspace (%s) and renders an empty list with exit 0', (cause, reason) => {
+    const listing = { cause, kind: 'empty', patterns: ['packages/*'], root: '/work/repo' } as const;
+
+    expect(renderListPackages(listing, options)).toStrictEqual({
+      exitCode: 0,
+      stderr: `thor-npm list-packages: the workspace at /work/repo has no packages: ${reason}\n`,
+      stdout: renderPackageTable([]),
+    });
+  });
+
+  it.each([
+    ['unreadable-manifest', '/work/repo/pnpm-workspace.yaml cannot be read or parsed as YAML'],
+    ['unreadable-packages', 'the packages value in /work/repo/pnpm-workspace.yaml is not a list of strings'],
+  ] as const)('reports a broken workspace manifest (%s) with exit 1 and no list', (cause, reason) => {
+    const listing = { cause, kind: 'empty', patterns: [], root: '/work/repo' } as const;
+
+    expect(renderListPackages(listing, options)).toStrictEqual({
+      exitCode: 1,
+      stderr: `thor-npm list-packages: ${reason}; fix it, then run this again\n`,
+      stdout: '',
+    });
+  });
+});
 
 describe(renderPackageTable, () => {
   it('pads each column to its widest value and maps private to the PUBLISH column', () => {
