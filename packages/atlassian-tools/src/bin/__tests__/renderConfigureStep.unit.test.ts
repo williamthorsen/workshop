@@ -7,6 +7,7 @@ import type {
 import { describe, expect, it } from 'vitest';
 
 import { buildProjectConfiguration } from '../../test-utils/projectConfiguration.ts';
+import type { ConfigureStep } from '../reconcileProject.ts';
 import { renderConfigureStep } from '../renderConfigureStep.ts';
 import { renderPlan } from '../renderPlan.ts';
 import { renderVerification } from '../renderVerification.ts';
@@ -103,8 +104,8 @@ function buildStatusUpdate(from: string, to: string): StatusUpdate {
 
 /** Builds a workflow step that wrote nothing, with the given fields replaced. */
 function buildWorkflowStep(
-  overrides: Partial<Omit<Extract<Parameters<typeof renderConfigureStep>[0], { kind: 'workflow' }>, 'kind'>>,
-): Parameters<typeof renderConfigureStep>[0] {
+  overrides: Partial<Omit<Extract<ConfigureStep, { kind: 'workflow' }>, 'kind'>>,
+): ConfigureStep {
   return { amended: 0, correctedStatuses: [], created: 0, kind: 'workflow', written: false, ...overrides };
 }
 
