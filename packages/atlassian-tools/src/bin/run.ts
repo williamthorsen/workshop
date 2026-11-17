@@ -3,7 +3,7 @@ import { createCli, runCli } from '@williamthorsen/toolbelt.cli/candidate';
 import { authCommand } from './authCommand.ts';
 import { configureProjectCommand } from './configureProjectCommand.ts';
 import { issueGroup } from './issueGroup.ts';
-import type { RunEffects } from './subcommand-support.ts';
+import { PROGRAM_NAME, type RunEffects } from './subcommand-support.ts';
 
 const { defineGroup } = createCli<RunEffects>();
 
@@ -39,7 +39,7 @@ Jira Cloud and team-managed projects only.`,
  */
 export async function run(args: string[], effects: RunEffects): Promise<number> {
   return await runCli(args, ROOT, {
-    name: 'thor-jira',
+    name: PROGRAM_NAME,
     context: effects,
     version: () => effects.resolveVersion(),
     stdout: { write: effects.write },

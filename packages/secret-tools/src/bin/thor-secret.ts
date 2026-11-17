@@ -7,9 +7,9 @@ import { resolveSelfVersion } from '@williamthorsen/toolbelt.packaging/candidate
 import { createKeychainStore, promptSecret } from '@williamthorsen/toolbelt.secrets/candidate';
 
 import { readStreamText } from './readStreamText.ts';
-import { run } from './run.ts';
+import { PROGRAM_NAME, run } from './run.ts';
 
-installCrashHandler('thor-secret');
+installCrashHandler(PROGRAM_NAME);
 
 ignoreBrokenPipes();
 

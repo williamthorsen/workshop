@@ -128,6 +128,7 @@ describe(run, () => {
       const result = await run(['set', 'token'], harness.effects);
 
       expect(result.exitCode).toBe(3);
+      expect(result.stderr).toBe('thor-secret: A keychain store needs macOS. This platform is linux.\n');
       expect(harness.state.prompted).toBe(false);
     });
 
@@ -216,7 +217,7 @@ describe(run, () => {
     const result = await run(['get', 'token'], harness.effects);
 
     expect(result.exitCode).toBe(3);
-    expect(result.stderr).toBe('A keychain store needs macOS. This platform is linux.\n');
+    expect(result.stderr).toBe('thor-secret: A keychain store needs macOS. This platform is linux.\n');
   });
 
   describe('unanticipated errors', () => {

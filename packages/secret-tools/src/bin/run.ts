@@ -8,6 +8,9 @@ import {
   type WritableSecretStore,
 } from '@williamthorsen/toolbelt.secrets/candidate';
 
+/** The invocation name, which prefixes every message that the CLI writes to stderr. */
+export const PROGRAM_NAME = 'thor-secret';
+
 const EXIT_OK = 0;
 const EXIT_NO_RESULT = 1;
 const EXIT_KEYSTORE = 3;
@@ -115,7 +118,7 @@ export async function run(args: readonly string[], effects: RunEffects): Promise
   const stdout = createTextBuffer();
   const stderr = createTextBuffer();
   const exitCode = await runCli(args, ROOT, {
-    name: 'thor-secret',
+    name: PROGRAM_NAME,
     context: effects,
     version: () => effects.resolveVersion(),
     stdout,
@@ -161,7 +164,7 @@ async function reportFailures(stderr: Writer, body: () => number | Promise<numbe
     return await body();
   } catch (error) {
     if (error instanceof SecretStoreError) {
-      stderr.write(`${describeError(error)}\n`);
+      stderr.write(`${PROGRAM_NAME}: ${describeError(error)}\n`);
       return EXIT_KEYSTORE;
     }
     if (error instanceof SecretPromptError || error instanceof UnstorableSecretError) {
