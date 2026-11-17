@@ -62,10 +62,10 @@
       ],
       "name": "demo",
       "path": "kits/demo.js",
-      "readyupVersion": "0.47.0",
+      "readyupVersion": "0.47.1",
       "source": "kits/demo.ts",
       "sourceHash": "a574e780",
-      "targetHash": "75c4e2d7"
+      "targetHash": "4b3df10e"
     },
     {
       "checklistChecks": [
@@ -90,10 +90,10 @@
       ],
       "name": "preflight",
       "path": "kits/preflight.js",
-      "readyupVersion": "0.47.0",
+      "readyupVersion": "0.47.1",
       "source": "kits/preflight.ts",
       "sourceHash": "7192fe2f",
-      "targetHash": "e9f44b01"
+      "targetHash": "be078edb"
     }
   ]
 }

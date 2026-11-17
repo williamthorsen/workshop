@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.47.1 — 2026-11-17
+
+### 🐛 Bug fixes
+
+- Fixes the issue that `readTsconfigChain` and `readTsconfigLanguageLevel` in `readyup/check-utils` accepted a tsconfig with syntax errors, such as a truncated file, and returned a chain built from what the parser recovered rather than `undefined`, or judged such a parent as a real config rather than listing it in `unresolvedExtends`. (#959)
+
 ## 0.47.0 — 2026-11-16
 
 ### 🎉 Features

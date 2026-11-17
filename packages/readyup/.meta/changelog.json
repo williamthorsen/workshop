@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.47.1",
+    "date": "2026-11-17",
+    "sections": [
+      {
+        "title": "🐛 Bug fixes",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Fixes the issue that `readTsconfigChain` and `readTsconfigLanguageLevel` in `readyup/check-utils` accepted a tsconfig with syntax errors, such as a truncated file, and returned a chain built from what the parser recovered rather than `undefined`, or judged such a parent as a real config rather than listing it in `unresolvedExtends`. (#959)",
+            "hash": "9a13ad157363da39fa407ca392f492b9b4d01c50",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.47.0",
     "date": "2026-11-16",
     "sections": [

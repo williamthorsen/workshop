@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.4 — 2026-11-17
+
+### 🐛 Bug fixes
+
+- Fixes the issue that `thor-jira configure-project --seed-backlog` sent and printed malformed JQL when the status name contained a double quote or a backslash. (#960)
+- Fixes the issue that `thor-jira` wrote its failure messages for exit codes 3 (keychain unavailable), 4 (request rejected by Jira), and 6 (Jira unreachable) without the `thor-jira:` prefix that its usage errors contain. (#962)
+
+### ♻️ Refactoring
+
+- Replaces the `EPIPE` handler copied into each `thor-*` entry point, and the prompt helpers copied into `thor-node` and `thor-npm`, with `ignoreBrokenPipes`, `readAnswer`, and `isAffirmative` from `@williamthorsen/toolbelt.cli`. (#949)
+- Splits the reconciliation in `configure-project` into `reconcileProject`, which reports each completed step as a typed value and does not write any output, and `renderConfigureStep`, which composes the lines that the command prints for each step. (#961)
+- Replaces the local `readStreamText` modules in `atlassian-tools` and `secret-tools` and their unit tests with the `readStreamText` export of `@williamthorsen/toolbelt.cli/candidate`. (#963)
+- Splits `src/bin/subcommand-support.ts` into one module per concern (`RunEffects.ts`, `reportFailures.ts`, `createDeferredStore.ts`, and `stripOneTrailingNewline.ts`), moves `succeed` into `authCommand.ts`, and stops exporting the exit codes that only `reportFailures.ts` uses. (#964)
+
+### 🧪 Tests
+
+- Moves the `createFakeRequest.ts` and `projectConfiguration.ts` test helpers from `src/test-utils/` into `src/bin/test-utils/`, the nearest common ancestor of every test and helper that imports them. (#965)
+- Builds the `POST /rest/api/3/workflows` response in `buildProjectRoutes` from `buildStatus` and `buildWorkflow` in `projectConfiguration.ts`, and removes the private `buildProjectWorkflow` and the inline status objects that duplicated those builders. (#965)
+- Adds a `renderTestPlan` helper to `renderPlan.unit.test.ts` and routes every test's `renderPlan` call through it, so that each test body states only the plan entries and render options that it varies. (#966)
+
 ## 0.2.3 — 2026-11-16
 
 ### 🐛 Bug fixes

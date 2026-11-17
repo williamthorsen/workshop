@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.2.5",
+    "date": "2026-11-17",
+    "sections": [
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Replaces the `EPIPE` handler copied into each `thor-*` entry point, and the prompt helpers copied into `thor-node` and `thor-npm`, with `ignoreBrokenPipes`, `readAnswer`, and `isAffirmative` from `@williamthorsen/toolbelt.cli`. (#949)",
+            "hash": "c1328d4c47dfdf0f1bafa355fa174247814e6cd7",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.2.4",
     "date": "2026-11-16",
     "sections": [

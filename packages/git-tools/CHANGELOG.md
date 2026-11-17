@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.4 — 2026-11-17
+
+### ♻️ Refactoring
+
+- Replaces the `EPIPE` handler copied into each `thor-*` entry point, and the prompt helpers copied into `thor-node` and `thor-npm`, with `ignoreBrokenPipes`, `readAnswer`, and `isAffirmative` from `@williamthorsen/toolbelt.cli`. (#949)
+
 ## 0.2.3 — 2026-11-16
 
 ### 🐛 Bug fixes

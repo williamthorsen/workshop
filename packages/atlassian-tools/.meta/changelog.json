@@ -1,5 +1,74 @@
 [
   {
+    "version": "0.2.4",
+    "date": "2026-11-17",
+    "sections": [
+      {
+        "title": "🐛 Bug fixes",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Fixes the issue that `thor-jira configure-project --seed-backlog` sent and printed malformed JQL when the status name contained a double quote or a backslash. (#960)",
+            "hash": "a2f55751f3668604e706c0aef521ef9e4ec43735",
+            "entry": 1
+          },
+          {
+            "description": "Fixes the issue that `thor-jira` wrote its failure messages for exit codes 3 (keychain unavailable), 4 (request rejected by Jira), and 6 (Jira unreachable) without the `thor-jira:` prefix that its usage errors contain. (#962)",
+            "hash": "2e09ec438daa32d89160c6b6bed809369a0256ff",
+            "entry": 1
+          }
+        ]
+      },
+      {
+        "title": "♻️ Refactoring",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Replaces the `EPIPE` handler copied into each `thor-*` entry point, and the prompt helpers copied into `thor-node` and `thor-npm`, with `ignoreBrokenPipes`, `readAnswer`, and `isAffirmative` from `@williamthorsen/toolbelt.cli`. (#949)",
+            "hash": "c1328d4c47dfdf0f1bafa355fa174247814e6cd7",
+            "entry": 1
+          },
+          {
+            "description": "Splits the reconciliation in `configure-project` into `reconcileProject`, which reports each completed step as a typed value and does not write any output, and `renderConfigureStep`, which composes the lines that the command prints for each step. (#961)",
+            "hash": "68b12590ac638bd1c9e5ce8b241830030503678e",
+            "entry": 1
+          },
+          {
+            "description": "Replaces the local `readStreamText` modules in `atlassian-tools` and `secret-tools` and their unit tests with the `readStreamText` export of `@williamthorsen/toolbelt.cli/candidate`. (#963)",
+            "hash": "388ece7314087c3b555bf83c9fb6fea8b2d0565b",
+            "entry": 1
+          },
+          {
+            "description": "Splits `src/bin/subcommand-support.ts` into one module per concern (`RunEffects.ts`, `reportFailures.ts`, `createDeferredStore.ts`, and `stripOneTrailingNewline.ts`), moves `succeed` into `authCommand.ts`, and stops exporting the exit codes that only `reportFailures.ts` uses. (#964)",
+            "hash": "3bf2aa0e27f6d52c0e7b298a0ec40d5cf9d2f376",
+            "entry": 1
+          }
+        ]
+      },
+      {
+        "title": "🧪 Tests",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Moves the `createFakeRequest.ts` and `projectConfiguration.ts` test helpers from `src/test-utils/` into `src/bin/test-utils/`, the nearest common ancestor of every test and helper that imports them. (#965)",
+            "hash": "ed85615f1668837fa6fcedae675ba788d3ed55f8",
+            "entry": 1
+          },
+          {
+            "description": "Builds the `POST /rest/api/3/workflows` response in `buildProjectRoutes` from `buildStatus` and `buildWorkflow` in `projectConfiguration.ts`, and removes the private `buildProjectWorkflow` and the inline status objects that duplicated those builders. (#965)",
+            "hash": "ed85615f1668837fa6fcedae675ba788d3ed55f8",
+            "entry": 2
+          },
+          {
+            "description": "Adds a `renderTestPlan` helper to `renderPlan.unit.test.ts` and routes every test's `renderPlan` call through it, so that each test body states only the plan entries and render options that it varies. (#966)",
+            "hash": "da7aee07151ea8316b604580e2c729f7666744fb",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.2.3",
     "date": "2026-11-16",
     "sections": [

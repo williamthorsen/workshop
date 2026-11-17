@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.4 — 2026-11-17
+
+### 🐛 Bug fixes
+
+- Fixes the issue that `thor-secret` wrote its keychain failure message for exit code 3 without the `thor-secret:` prefix that its usage errors contain. (#962)
+
+### ♻️ Refactoring
+
+- Replaces the `EPIPE` handler copied into each `thor-*` entry point, and the prompt helpers copied into `thor-node` and `thor-npm`, with `ignoreBrokenPipes`, `readAnswer`, and `isAffirmative` from `@williamthorsen/toolbelt.cli`. (#949)
+- Replaces the local `readStreamText` modules in `atlassian-tools` and `secret-tools` and their unit tests with the `readStreamText` export of `@williamthorsen/toolbelt.cli/candidate`. (#963)
+
 ## 0.2.3 — 2026-11-16
 
 ### 🐛 Bug fixes
