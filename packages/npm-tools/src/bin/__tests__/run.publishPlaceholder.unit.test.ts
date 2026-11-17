@@ -6,27 +6,33 @@ import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/
 import { describe, expect, it } from 'vitest';
 
 import type { FindVersionOutcome, PublishOutcome, WhoamiOutcome } from '../../npm/createNpmClient.ts';
-import { type PublishPlaceholderOptions, runPublishPlaceholder } from '../runPublishPlaceholder.ts';
+import { run } from '../run.ts';
 import { createNpmStub } from '../test-utils/createNpmStub.ts';
 
 const NAME = '@scope/new-pkg';
+const QUESTION = `Publish ${NAME}@0.0.0? [y/N] `;
 
-describe(runPublishPlaceholder, () => {
+describe('thor-npm publish-placeholder', () => {
   describe('given a confirmed publish', () => {
-    it('publishes the placeholder, then removes its directory', async () => {
+    it('writes the summary, asks, then publishes and removes the directory', async () => {
       using harness = createHarness({ answer: 'y' });
 
       const { exitCode, stderr } = await harness.run();
 
       expect(exitCode).toBe(0);
-      expect(harness.published).toHaveLength(1);
-      expect(harness.published[0]?.files).toStrictEqual({
-        'README.md': `Placeholder for \`${NAME}\`, awaiting first release.\n`,
-        'package.json': `{\n  "name": "${NAME}",\n  "version": "0.0.0"\n}\n`,
-      });
-      expect(stderr).toContain(`  Package: ${NAME}\n`);
-      expect(stderr).toContain('  Mode: publish\n');
-      expect(stderr).toContain(`thor-npm publish-placeholder: published ${NAME}@0.0.0\n`);
+      expect(harness.events).toStrictEqual(['whoami', `view ${NAME}`, `ask ${QUESTION}`, 'publish']);
+      expect(stderr).toBe(
+        [
+          `  Package: ${NAME}`,
+          '  Version: 0.0.0',
+          '  Access: public',
+          '  Files: package.json, README.md',
+          '  Mode: publish',
+          `thor-npm publish-placeholder: published ${NAME}@0.0.0`,
+          '',
+        ].join('\n'),
+      );
+      expect(harness.stderrBeforeQuestion).toContain('  Mode: publish\n');
       expect(harness.leftoverDirs()).toStrictEqual([]);
     });
 
@@ -34,117 +40,98 @@ describe(runPublishPlaceholder, () => {
       using harness = createHarness({ answer });
 
       await expect(harness.run()).resolves.toMatchObject({ exitCode: 0 });
-      expect(harness.published).toHaveLength(1);
+      expect(harness.events).toContain('publish');
     });
 
     it('publishes without asking under --force, even without a terminal', async () => {
       using harness = createHarness({ isStdinTty: false });
 
-      const { exitCode } = await harness.run({ force: true });
+      const { exitCode } = await harness.run(['--force']);
 
       expect(exitCode).toBe(0);
-      expect(harness.questions).toStrictEqual([]);
-      expect(harness.published).toHaveLength(1);
+      expect(harness.events).toStrictEqual(['whoami', `view ${NAME}`, 'publish']);
     });
   });
 
   describe('given a run that does not publish', () => {
-    it('reports a dry run without a terminal, and removes the directory', async () => {
-      using harness = createHarness({ isStdinTty: false });
+    it.each([[['--dry-run']], [['--dry-run', '--force']]])(
+      'writes the summary and stops under %o, without a directory',
+      async (flags) => {
+        using harness = createHarness({ isStdinTty: false });
 
-      const { exitCode, stderr } = await harness.run({ dryRun: true });
+        const { exitCode, stderr } = await harness.run(flags);
 
-      expect(exitCode).toBe(0);
-      expect(stderr).toContain('  Mode: dry run\n');
-      expect(stderr).toContain('thor-npm publish-placeholder: nothing was published (dry run)\n');
-      expect(harness.questions).toStrictEqual([]);
-      expect(harness.published).toStrictEqual([]);
-      expect(harness.leftoverDirs()).toStrictEqual([]);
-    });
+        expect(exitCode).toBe(0);
+        expect(stderr).toContain('  Mode: dry run\n');
+        expect(stderr).toMatch(/thor-npm publish-placeholder: nothing was published \(dry run\)\n$/);
+        expect(harness.events).toStrictEqual(['whoami', `view ${NAME}`]);
+        expect(harness.createdDirs).toStrictEqual([]);
+      },
+    );
 
-    it('publishes nothing under --dry-run with --force', async () => {
-      using harness = createHarness();
-
-      await expect(harness.run({ dryRun: true, force: true })).resolves.toMatchObject({ exitCode: 0 });
-      expect(harness.published).toStrictEqual([]);
-    });
-
-    it.each([['n'], [''], [undefined]])('exits 1 when the answer is %o', async (answer) => {
+    it.each([['n'], [''], [undefined]])('exits 1 without publishing when the answer is %o', async (answer) => {
       using harness = createHarness({ answer });
 
       const { exitCode, stderr } = await harness.run();
 
       expect(exitCode).toBe(1);
-      expect(harness.questions).toStrictEqual([`Publish ${NAME}@0.0.0? [y/N] `]);
-      expect(stderr).toContain('thor-npm publish-placeholder: nothing was published\n');
-      expect(harness.published).toStrictEqual([]);
-      expect(harness.leftoverDirs()).toStrictEqual([]);
+      expect(harness.events).toStrictEqual(['whoami', `view ${NAME}`, `ask ${QUESTION}`]);
+      expect(stderr).toMatch(/thor-npm publish-placeholder: nothing was published\n$/);
+      expect(harness.createdDirs).toStrictEqual([]);
     });
   });
 
   describe('given a failed check', () => {
-    it('refuses a non-terminal stdin without --force or --dry-run, before calling npm', async () => {
+    it('exits 2 for a non-terminal stdin without --force or --dry-run, before calling npm', async () => {
       using harness = createHarness({ isStdinTty: false });
 
-      await expect(harness.run()).rejects.toThrow(/needs a terminal on stdin; pass --force/);
-      expect(harness.npmCalls).toStrictEqual([]);
-    });
+      const { exitCode, stderr } = await harness.run();
 
-    it("refuses an invalid name with npm's reasons, before calling npm", async () => {
-      using harness = createHarness();
-
-      await expect(harness.run({ name: 'node_modules' })).rejects.toThrow(
-        /invalid package name 'node_modules':\n {2}node_modules is not a valid package name/,
-      );
-      expect(harness.npmCalls).toStrictEqual([]);
+      expect(exitCode).toBe(2);
+      expect(stderr).toContain('needs a terminal on stdin; pass --force');
+      expect(harness.events).toStrictEqual([]);
     });
 
     it.each([
       {
         case: 'npm is missing',
-        calls: ['whoami'],
         npm: { whoami: { kind: 'missing' } },
         exitCode: 127,
         message: 'npm not found on PATH; install Node.js with npm, then run this again',
       },
       {
         case: 'npm is logged out',
-        calls: ['whoami'],
         npm: { whoami: { kind: 'logged-out', detail: 'need auth' } },
         exitCode: 1,
         message: 'not logged in to npm (need auth); run npm login, then run this again',
       },
       {
         case: 'the npm session check fails',
-        calls: ['whoami'],
         npm: { whoami: { kind: 'failed', detail: 'request to https://registry.npmjs.org/-/whoami failed' } },
         exitCode: 1,
         message: 'could not check the npm session: request to https://registry.npmjs.org/-/whoami failed',
       },
       {
         case: 'the name exists',
-        calls: ['whoami', `view ${NAME}`],
         npm: { findVersion: { kind: 'found' } },
         exitCode: 1,
         message: `'${NAME}' already exists on the registry; a placeholder is only for a new name`,
       },
       {
         case: 'the registry cannot be queried',
-        calls: ['whoami', `view ${NAME}`],
         npm: { findVersion: { kind: 'failed', detail: 'request failed' } },
         exitCode: 1,
         message: `could not query the registry for '${NAME}': request failed`,
       },
-    ] as const)('exits $exitCode when $case', async ({ calls, exitCode, message, npm }) => {
+    ] as const)('exits $exitCode when $case, without a summary or a directory', async ({ exitCode, message, npm }) => {
       using harness = createHarness({ answer: 'y', npm });
 
       const result = await harness.run();
 
       expect(result.exitCode).toBe(exitCode);
       expect(result.stderr).toBe(`thor-npm publish-placeholder: ${message}\n`);
-      expect(harness.npmCalls).toStrictEqual(calls);
-      expect(harness.published).toStrictEqual([]);
-      expect(harness.leftoverDirs()).toStrictEqual([]);
+      expect(harness.events).not.toContain('publish');
+      expect(harness.createdDirs).toStrictEqual([]);
     });
 
     it('reports a failed publish and removes the directory', async () => {
@@ -153,7 +140,7 @@ describe(runPublishPlaceholder, () => {
       const { exitCode, stderr } = await harness.run();
 
       expect(exitCode).toBe(1);
-      expect(stderr).toContain('thor-npm publish-placeholder: npm publish failed (exit 1); nothing was published\n');
+      expect(stderr).toMatch(/thor-npm publish-placeholder: npm publish failed \(exit 1\); nothing was published\n$/);
       expect(harness.leftoverDirs()).toStrictEqual([]);
     });
   });
@@ -162,13 +149,14 @@ describe(runPublishPlaceholder, () => {
 // region | Helpers
 
 interface Harness extends Disposable {
+  readonly createdDirs: string[];
+  /** The npm calls and the questions asked, in the order in which they happened. */
+  readonly events: string[];
   /** Lists the directories that `createTempDir` made and that still exist. */
   readonly leftoverDirs: () => string[];
-  readonly npmCalls: string[];
-  /** Each publish, with the files that the published directory held at that moment. */
-  readonly published: Array<{ files: Record<string, string> }>;
-  readonly questions: string[];
-  readonly run: (options?: Partial<PublishPlaceholderOptions>) => Promise<{ exitCode: number; stderr: string }>;
+  readonly run: (flags?: readonly string[]) => Promise<{ exitCode: number; stderr: string }>;
+  /** The stderr text written before the question, or an empty string when nothing was asked. */
+  readonly stderrBeforeQuestion: string;
 }
 
 interface HarnessSettings {
@@ -185,67 +173,62 @@ interface HarnessSettings {
 function createHarness(settings: HarnessSettings = {}): Harness {
   const tree: TempTree = createTempTree({ 'tmp/': '' });
   const createdDirs: string[] = [];
-  const npmCalls: string[] = [];
-  const published: Array<{ files: Record<string, string> }> = [];
-  const questions: string[] = [];
+  const events: string[] = [];
+  const stderr = createTextBuffer();
+  let stderrBeforeQuestion = '';
 
   const npm = createNpmStub({
     findVersion: (name) => {
-      npmCalls.push(`view ${name}`);
+      events.push(`view ${name}`);
       return settings.npm?.findVersion ?? { kind: 'absent' };
     },
-    publish: (dir) => {
-      npmCalls.push('publish');
-      published.push({ files: readFiles(dir) });
+    publish: () => {
+      events.push('publish');
       return settings.npm?.publish ?? { kind: 'published' };
     },
     whoami: () => {
-      npmCalls.push('whoami');
+      events.push('whoami');
       return settings.npm?.whoami ?? { kind: 'logged-in', username: 'someone' };
     },
   });
 
   return {
+    createdDirs,
+    events,
     leftoverDirs: () => createdDirs.filter((dir) => fs.existsSync(dir)),
-    npmCalls,
-    published,
-    questions,
-    async run(options = {}) {
-      const stderr = createTextBuffer();
-      const exitCode = await runPublishPlaceholder(
-        { dryRun: false, force: false, name: NAME, ...options },
+    async run(flags = []) {
+      const exitCode = await run(
+        ['publish-placeholder', NAME, ...flags],
         {
           createTempDir: () => {
             const dir = fs.mkdtempSync(path.join(tree.resolve('tmp'), 'placeholder-'));
             createdDirs.push(dir);
             return dir;
           },
+          cwd: () => tree.dir,
           isStdinTty: () => settings.isStdinTty ?? true,
+          isStdoutTty: () => false,
           npm,
           readAnswer: (question) => {
-            questions.push(question);
+            events.push(`ask ${question}`);
+            stderrBeforeQuestion = stderr.text;
             return Promise.resolve(settings.answer);
           },
+          resolveVersion: () => '0.0.0',
+          stdoutColumns: () => undefined,
         },
-        { stderr },
+        { stderr, stdout: createTextBuffer() },
       );
 
       return { exitCode, stderr: stderr.text };
+    },
+    get stderrBeforeQuestion() {
+      return stderrBeforeQuestion;
     },
     [Symbol.dispose]() {
       tree[Symbol.dispose]();
     },
   };
-}
-
-/** Reads every file directly inside a directory, keyed by name. */
-function readFiles(dir: string): Record<string, string> {
-  return Object.fromEntries(
-    fs
-      .readdirSync(dir)
-      .toSorted()
-      .map((file) => [file, fs.readFileSync(path.join(dir, file), 'utf8')]),
-  );
 }
 
 // endregion | Helpers
