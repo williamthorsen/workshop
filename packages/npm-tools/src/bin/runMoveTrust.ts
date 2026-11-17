@@ -68,9 +68,9 @@ export async function runMoveTrust(
     return EXIT_FAILED;
   }
 
-  const old = selection.trust;
-  const next: GithubTrust = { ...old, file: file ?? old.file, repository: to };
-  streams.stderr.write(renderSummary(name, old, next, dryRun));
+  const oldTrust = selection.trust;
+  const newTrust: GithubTrust = { ...oldTrust, file: file ?? oldTrust.file, repository: to };
+  streams.stderr.write(renderSummary(name, oldTrust, newTrust, dryRun));
 
   if (dryRun) {
     report('nothing was changed (dry run)');
@@ -85,27 +85,27 @@ export async function runMoveTrust(
     }
   }
 
-  const revoked = npm.revokeTrust(name, selection.id);
-  if (revoked.kind === 'failed') {
-    report(`npm trust revoke failed (${revoked.detail}); nothing was changed`);
+  const revokeOutcome = npm.revokeTrust(name, selection.id);
+  if (revokeOutcome.kind === 'failed') {
+    report(`npm trust revoke failed (${revokeOutcome.detail}); nothing was changed`);
     return EXIT_FAILED;
   }
 
-  const added = npm.addGithubTrust(name, next);
-  if (added.kind === 'added') {
-    report(`moved the trusted publisher of ${name} from ${old.repository} to ${to}`);
+  const addOutcome = npm.addGithubTrust(name, newTrust);
+  if (addOutcome.kind === 'added') {
+    report(`moved the trusted publisher of ${name} from ${oldTrust.repository} to ${to}`);
     return EXIT_OK;
   }
 
-  report(`npm trust github failed (${added.detail}); restoring the trusted publisher for ${old.repository}`);
-  const restored = npm.addGithubTrust(name, old);
-  if (restored.kind === 'added') {
-    report(`restored the trusted publisher for ${old.repository}; nothing was moved`);
+  report(`npm trust github failed (${addOutcome.detail}); restoring the trusted publisher for ${oldTrust.repository}`);
+  const restoreOutcome = npm.addGithubTrust(name, oldTrust);
+  if (restoreOutcome.kind === 'added') {
+    report(`restored the trusted publisher for ${oldTrust.repository}; nothing was moved`);
     return EXIT_FAILED;
   }
 
   report(
-    `restoring failed (${restored.detail}); ${name} has no trusted publisher. Restore it with:\n  ${quoteShellArgs(['npm', ...buildGithubTrustArgs(name, old)])}`,
+    `restoring failed (${restoreOutcome.detail}); ${name} has no trusted publisher. Restore it with:\n  ${quoteShellArgs(['npm', ...buildGithubTrustArgs(name, oldTrust)])}`,
   );
   return EXIT_FAILED;
 }
@@ -140,14 +140,14 @@ function assertRepository(flag: string, value: string | undefined): asserts valu
 }
 
 /** Renders the summary of the move, or of the move that a dry run would make. */
-function renderSummary(name: string, old: GithubTrust, next: GithubTrust, dryRun: boolean): string {
+function renderSummary(name: string, oldTrust: GithubTrust, newTrust: GithubTrust, dryRun: boolean): string {
   const lines = [
     ['Package', name],
-    ['From', old.repository],
-    ['To', next.repository],
-    ['Workflow', old.file === next.file ? old.file : `${old.file} → ${next.file}`],
-    ['Environment', old.environment ?? 'none'],
-    ['Permissions', old.permissions.map((permission) => PERMISSION_LABELS[permission] ?? permission).join(', ')],
+    ['From', oldTrust.repository],
+    ['To', newTrust.repository],
+    ['Workflow', oldTrust.file === newTrust.file ? oldTrust.file : `${oldTrust.file} → ${newTrust.file}`],
+    ['Environment', oldTrust.environment ?? 'none'],
+    ['Permissions', oldTrust.permissions.map((permission) => PERMISSION_LABELS[permission] ?? permission).join(', ')],
     ['Mode', dryRun ? 'dry run' : 'move'],
   ].map(([label, value]) => `  ${label}: ${value}`);
 
@@ -180,14 +180,14 @@ function selectCurrentTrust(
   }
 
   const { environment, file, permissions, repository } = entry;
-  const unknown = permissions.filter((permission) => TRUST_PERMISSION_FLAGS[permission] === undefined);
+  const unknownPermissions = permissions.filter((permission) => TRUST_PERMISSION_FLAGS[permission] === undefined);
   const lack =
     file === undefined
       ? 'names no workflow file'
       : permissions.length === 0
         ? 'lists no permissions'
-        : unknown.length > 0
-          ? `has a permission that thor-npm cannot grant (${unknown.join(', ')})`
+        : unknownPermissions.length > 0
+          ? `has a permission that thor-npm cannot grant (${unknownPermissions.join(', ')})`
           : undefined;
   if (file === undefined || lack !== undefined) {
     return { kind: 'refused', reason: `the trusted publisher of '${name}' ${lack}, so it could not be restored` };
