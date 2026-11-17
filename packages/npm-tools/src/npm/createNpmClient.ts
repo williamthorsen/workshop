@@ -6,6 +6,9 @@ import path from 'node:path';
 import { parseTrustListing, stripTerminalControls, type TrustEntry } from './parseTrustListing.ts';
 import { quoteShellArgs } from './quoteShellArgs.ts';
 
+// The codes of `npm whoami` that `npm login` repairs: no credentials configured, and a token that the registry rejects.
+const LOGGED_OUT_CODES: ReadonlySet<string> = new Set(['E401', 'ENEEDAUTH']);
+
 /** The outcome of adding a trusted publisher. */
 export type AddTrustOutcome = { kind: 'added' } | { kind: 'failed'; detail: string };
 
@@ -45,13 +48,13 @@ export function createNpmClient({ cwd, env, platform = process.platform }: NpmCl
     },
 
     findVersion(name) {
-      const { error, status, stderr, stdout } = runNpm(['view', name, 'version', '--json']);
+      const result = runNpm(['view', name, 'version', '--json']);
 
-      if (error !== undefined) return { kind: 'failed', detail: error.message };
-      if (status === 0) return { kind: 'found' };
-      if (readErrorCode(stdout) === 'E404') return { kind: 'absent' };
+      if (result.error !== undefined) return { kind: 'failed', detail: result.error.message };
+      if (result.status === 0) return { kind: 'found' };
+      if (readErrorCode(result.stdout) === 'E404') return { kind: 'absent' };
 
-      return { kind: 'failed', detail: findErrorSummary(stderr) ?? `exit ${status}` };
+      return { kind: 'failed', detail: findErrorSummary(result.stderr) ?? describeExit(result) };
     },
 
     listTrust(name) {
@@ -104,14 +107,19 @@ export function createNpmClient({ cwd, env, platform = process.platform }: NpmCl
     },
 
     whoami() {
-      const { error, status, stderr, stdout } = runNpm(['whoami']);
+      const result = runNpm(['whoami']);
 
-      if (error !== undefined) {
-        return isMissingCommand(error) ? { kind: 'missing' } : { kind: 'logged-out', detail: error.message };
+      if (result.error !== undefined) {
+        return isMissingCommand(result.error) ? { kind: 'missing' } : { kind: 'failed', detail: result.error.message };
       }
-      if (status !== 0) return { kind: 'logged-out', detail: findErrorSummary(stderr) ?? `exit ${status}` };
+      if (result.status === 0) return { kind: 'logged-in', username: result.stdout.trim() };
 
-      return { kind: 'logged-in', username: stdout.trim() };
+      const detail = findErrorSummary(result.stderr) ?? describeExit(result);
+      const code = findStderrCode(result.stderr);
+
+      return code !== undefined && LOGGED_OUT_CODES.has(code)
+        ? { kind: 'logged-out', detail }
+        : { kind: 'failed', detail };
     },
   };
 }
@@ -148,7 +156,10 @@ export interface NpmClient {
   readonly publish: (dir: string) => PublishOutcome;
   /** Revokes a trusted publisher by its id, with npm attached to the terminal. */
   readonly revokeTrust: (name: string, id: string) => RevokeTrustOutcome;
-  /** Reports who npm is logged in as. */
+  /**
+   * Reports who npm is logged in as, `logged-out` when npm reports an error that `npm login` repairs, and `failed`
+   * for any other error.
+   */
   readonly whoami: () => WhoamiOutcome;
 }
 
@@ -173,7 +184,10 @@ export const TRUST_PERMISSION_FLAGS: Readonly<Record<string, string>> = {
 
 /** The outcome of asking npm who is logged in. */
 export type WhoamiOutcome =
-  { kind: 'logged-in'; username: string } | { kind: 'logged-out'; detail: string } | { kind: 'missing' };
+  | { kind: 'failed'; detail: string }
+  | { kind: 'logged-in'; username: string }
+  | { kind: 'logged-out'; detail: string }
+  | { kind: 'missing' };
 
 // region | Helpers
 
@@ -205,6 +219,11 @@ function findErrorSummary(output: string): string | undefined {
   const summary = lines.find((line) => /^npm error\s+\S/.test(line) && !/^npm error (code|errno)\b/.test(line));
 
   return (summary ?? lines.at(-1))?.replace(/^npm error\s*/, '');
+}
+
+/** Finds the code on the `npm error code` line that npm writes to stderr on failure. */
+function findStderrCode(stderr: string): string | undefined {
+  return /^npm error code (\S+)/m.exec(stderr)?.[1];
 }
 
 /** Does nothing on SIGINT, which keeps the process alive while the child that shares its terminal handles it. */
