@@ -2,6 +2,13 @@ import { createCli, isAffirmative, runCli, type Writer } from '@williamthorsen/t
 
 import { listWorkspacePackages } from '../workspace/listWorkspacePackages.ts';
 import {
+  applyMoveTrust,
+  type MoveTrustOptions,
+  planMoveTrust,
+  type PlanMoveTrustEffects,
+  restoreTrust,
+} from './moveTrust.ts';
+import {
   PLACEHOLDER_VERSION,
   planPublishPlaceholder,
   type PlanPublishPlaceholderEffects,
@@ -10,6 +17,14 @@ import {
   type PublishPlaceholderOptions,
 } from './publishPlaceholder.ts';
 import type { RenderedOutput } from './RenderedOutput.ts';
+import {
+  renderMoveOutcome,
+  renderMoveRefusal,
+  renderMoveStop,
+  renderMoveSummary,
+  renderRestoreOutcome,
+  renderRestoring,
+} from './renderMoveTrust.ts';
 import { renderListPackages } from './renderPackageList.ts';
 import {
   renderPlaceholderStop,
@@ -17,7 +32,6 @@ import {
   renderPublishOutcome,
   renderPublishRefusal,
 } from './renderPublishPlaceholder.ts';
-import { type MoveTrustEffects, runMoveTrust } from './runMoveTrust.ts';
 
 const { defineCommand, defineGroup } = createCli<RunEffects>();
 
@@ -114,7 +128,7 @@ const ROOT = defineGroup({
       },
       operands: [{ name: 'package-name', description: 'The package whose trusted publisher moves' }],
       run: ({ context, flags, operands, stderr }) =>
-        runMoveTrust({ ...flags, name: operands['package-name'] }, context, { stderr }),
+        executeMoveTrust({ ...flags, name: operands['package-name'] }, context, stderr),
     }),
     'publish-placeholder': defineCommand({
       summary: 'Publish a 0.0.0 placeholder so that npm trust can be configured for a new package',
@@ -161,7 +175,7 @@ export interface ListPackagesEffects {
 
 /** The effects deferred to the entry point, which keeps the runner free of process I/O. */
 export interface RunEffects
-  extends ListPackagesEffects, MoveTrustEffects, PlanPublishPlaceholderEffects, PublishPlaceholderEffects {
+  extends ListPackagesEffects, PlanMoveTrustEffects, PlanPublishPlaceholderEffects, PublishPlaceholderEffects {
   /** Asks a question on stderr and resolves to the line typed in answer, or undefined at the end of input. */
   readonly readAnswer: (question: string) => Promise<string | undefined>;
   readonly resolveVersion: () => string;
@@ -174,6 +188,32 @@ export interface RunStreams {
 }
 
 // region | Helpers
+
+/**
+ * Checks a trust move and writes the summary, then moves the trust once the run is confirmed: by an answer, or by
+ * `force`. A dry run stops after the summary. When the add fails, the line that announces the restore is written
+ * before the restore runs, because its npm call is attached to the terminal and may prompt.
+ */
+async function executeMoveTrust(options: MoveTrustOptions, effects: RunEffects, stderr: Writer): Promise<number> {
+  const plan = planMoveTrust(options, effects);
+  if (plan.kind !== 'ready') return writeOutput(renderMoveRefusal(plan), { stderr });
+
+  stderr.write(renderMoveSummary(plan, options.dryRun));
+  if (options.dryRun) return writeOutput(renderMoveStop('dry-run'), { stderr });
+
+  if (!options.force) {
+    const answer = await effects.readAnswer(
+      `Move the trusted publisher of ${plan.name} to ${plan.newTrust.repository}? [y/N] `,
+    );
+    if (!isAffirmative(answer)) return writeOutput(renderMoveStop('declined'), { stderr });
+  }
+
+  const outcome = applyMoveTrust(plan, effects);
+  if (outcome.kind !== 'add-failed') return writeOutput(renderMoveOutcome(plan, outcome), { stderr });
+
+  stderr.write(renderRestoring(plan, outcome.detail));
+  return writeOutput(renderRestoreOutcome(plan, restoreTrust(plan, effects)), { stderr });
+}
 
 /**
  * Checks a placeholder publish and writes the summary, then publishes once the run is confirmed: by an answer, or
