@@ -148,6 +148,18 @@ describe('thor-jira configure-project', () => {
       expect(harness.readOutput()).toContain(`\n          keys: project = "${KEY}" AND status = "To Do"`);
     });
 
+    it('escapes a quote in the status name, in the query sent and in the query printed', async () => {
+      const harness = createHarness();
+      const jql = String.raw`project = "${KEY}" AND status = "Say \"go\""`;
+
+      await runSubcommand(harness, [KEY, '--seed-backlog', 'Say "go"']);
+
+      expect(harness.calls).toContainEqual(
+        expect.objectContaining({ body: expect.objectContaining({ jql }), path: '/rest/api/3/search/jql' }),
+      );
+      expect(harness.readOutput()).toContain(`\n          keys: ${jql}`);
+    });
+
     it('reports an empty seed rather than issuing a move', async () => {
       const harness = createHarness({ routes: { 'POST /rest/api/3/search/jql': { json: { issues: [] } } } });
 

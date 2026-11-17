@@ -14,6 +14,7 @@ import { type Command, createCli, UsageError } from '@williamthorsen/toolbelt.cl
 import { createSubcommandRequest, CREDENTIAL_OPTIONS, type CredentialValues } from './createSubcommandRequest.ts';
 import { formatContinuationLine, formatLabelledLine } from './labelled-lines.ts';
 import { type LoadedProjectSpec, loadProjectSpec } from './loadProjectSpec.ts';
+import { quoteJqlValue } from './quoteJqlValue.ts';
 import { renderPlan } from './renderPlan.ts';
 import { renderVerification } from './renderVerification.ts';
 import { EXIT_MISMATCH, EXIT_OK, reportFailures, type RunEffects } from './subcommand-support.ts';
@@ -135,7 +136,7 @@ async function seedTheBacklog(
   projectKey: string,
   status: string,
 ): Promise<void> {
-  const jql = `project = "${projectKey}" AND status = "${status}"`;
+  const jql = `project = ${quoteJqlValue(projectKey)} AND status = ${quoteJqlValue(status)}`;
   const keys = await listIssueKeys(request, jql);
   if (keys.length === 0) {
     effects.write(`${formatLabelledLine('backlog', `no '${status}' work items to move`)}\n`);
