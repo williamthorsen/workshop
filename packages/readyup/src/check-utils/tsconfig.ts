@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, isAbsolute, relative, resolve } from 'node:path';
 
-import { parse as parseJsonc } from 'jsonc-parser';
+import { parse as parseJsonc, type ParseError } from 'jsonc-parser';
 
 import { resolvePackageRoot } from '../installed-packages/resolvePackageRoot.ts';
 import { isRecord } from '../portable/isRecord.ts';
@@ -13,7 +13,8 @@ export interface TsconfigChain {
   /** Configs visited, entry config first, then parents in resolution order. */
   entries: TsconfigChainEntry[];
   /**
-   * `extends` references that resolution could not follow: specifiers that do not resolve, configs that do not parse.
+   * `extends` references that resolution could not follow: specifiers that do not resolve, configs that do not parse
+   * or parse with errors.
    */
   unresolvedExtends: UnresolvedExtends[];
 }
@@ -44,7 +45,8 @@ export interface TsconfigLanguageLevel {
   /** Effective `target`, lowercased; `undefined` if no config in the chain declares it. */
   target: string | undefined;
   /**
-   * `extends` references that resolution could not follow: specifiers that do not resolve, configs that do not parse.
+   * `extends` references that resolution could not follow: specifiers that do not resolve, configs that do not parse
+   * or parse with errors.
    */
   unresolvedExtends: string[];
 }
@@ -81,8 +83,8 @@ export function buildTsconfigChainEntry(
 
 /**
  * Reads a tsconfig's `extends` chain, resolving it as TypeScript does, and reports what each config that it reaches
- * declares in its own right. Returns `undefined` if the entry file is missing or unparseable; unresolvable parents
- * are reported in `unresolvedExtends` rather than treated as failures.
+ * declares in its own right. Returns `undefined` if the entry file is missing or unparseable, which includes a file
+ * that parses with errors; unresolvable parents are reported in `unresolvedExtends` rather than treated as failures.
  */
 export function readTsconfigChain(filePath: string): TsconfigChain | undefined {
   const cwd = process.cwd();
@@ -104,7 +106,8 @@ export function readTsconfigChain(filePath: string): TsconfigChain | undefined {
 
 /**
  * Reads a tsconfig's effective `lib` and `target` from its `extends` chain. Returns `undefined` if the entry file is
- * missing or unparseable; unresolvable parents are reported in `unresolvedExtends` rather than treated as failures.
+ * missing or unparseable, which includes a file that parses with errors; unresolvable parents are reported in
+ * `unresolvedExtends` rather than treated as failures.
  *
  * Resolves `extends` as TypeScript does, following relative paths and published base configs alike. `chain` and
  * `unresolvedExtends` are returned with the values, so a caller can tell an incomplete read from an undeclared
@@ -138,7 +141,10 @@ function readExtends(value: unknown): string[] {
   return [];
 }
 
-/** Reads and JSONC-parses a JSON file. Returns `undefined` when the file is unreadable or is not an object. */
+/**
+ * Reads and JSONC-parses a JSON file. Returns `undefined` when the file is unreadable, parses with errors, or is not an
+ * object.
+ */
 function readJsonFile(absolutePath: string): Record<string, unknown> | undefined {
   if (!isRegularFile(absolutePath)) return undefined;
   let content: string;
@@ -147,8 +153,10 @@ function readJsonFile(absolutePath: string): Record<string, unknown> | undefined
   } catch {
     return undefined;
   }
-  const parsed: unknown = parseJsonc(content, [], { allowTrailingComma: true });
-  if (!isRecord(parsed)) return undefined;
+  const errors: ParseError[] = [];
+  // The parser recovers from syntax errors and returns a partial value; only its errors show whether the file parsed.
+  const parsed: unknown = parseJsonc(content, errors, { allowTrailingComma: true });
+  if (errors.length > 0 || !isRecord(parsed)) return undefined;
   return parsed;
 }
 

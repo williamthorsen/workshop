@@ -161,12 +161,35 @@ describe('tsconfig.ts', () => {
       ]);
     });
 
+    it('attributes a parent with parse errors to the config that declared it', ({ temp }) => {
+      temp.write('truncated.json', '{ "compilerOptions": {');
+      temp.writeJson('tsconfig.json', { extends: './truncated.json' });
+
+      expect(readTsconfigChain('tsconfig.json')).toStrictEqual({
+        entries: [
+          {
+            compilerOptions: {},
+            config: { extends: './truncated.json' },
+            path: 'tsconfig.json',
+            specifier: undefined,
+          },
+        ],
+        unresolvedExtends: [{ from: 'tsconfig.json', specifier: './truncated.json' }],
+      });
+    });
+
     it('returns undefined when the entry file is missing', () => {
       expect(readTsconfigChain('tsconfig.json')).toBeUndefined();
     });
 
     it('returns undefined when the entry file is malformed', ({ temp }) => {
       temp.write('tsconfig.json', '@@@ not json @@@');
+
+      expect(readTsconfigChain('tsconfig.json')).toBeUndefined();
+    });
+
+    it('returns undefined when the entry file parses with errors', ({ temp }) => {
+      temp.write('tsconfig.json', '{ "compilerOptions": {');
 
       expect(readTsconfigChain('tsconfig.json')).toBeUndefined();
     });
@@ -402,8 +425,8 @@ describe('tsconfig.ts', () => {
 
     it('reports a package whose entry point is not a config as unresolved', ({ temp }) => {
       installPackage(temp, 'js-base', { 'package.json': { name: 'js-base', exports: { '.': './index.js' } } });
-      // Only the resolver can reject this, because the parser recovers an empty record from JavaScript source.
-      temp.write('node_modules/js-base/index.js', 'module.exports = {};\n');
+      // The entry point is valid JSON, so only the resolver's extension check can reject it.
+      temp.write('node_modules/js-base/index.js', '{ "compilerOptions": { "target": "ES2016" } }\n');
       temp.writeJson('tsconfig.json', { extends: 'js-base', compilerOptions: { target: 'ES2025' } });
 
       expect(readTsconfigLanguageLevel('tsconfig.json')).toStrictEqual({
