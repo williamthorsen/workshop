@@ -1,15 +1,10 @@
 import { createTextBuffer, UsageError } from '@williamthorsen/toolbelt.cli/candidate';
 import { describe, expect, it } from 'vitest';
 
-import type {
-  AddTrustOutcome,
-  GithubTrust,
-  ListTrustOutcome,
-  NpmClient,
-  RevokeTrustOutcome,
-} from '../../npm/createNpmClient.ts';
+import type { AddTrustOutcome, GithubTrust, ListTrustOutcome, RevokeTrustOutcome } from '../../npm/createNpmClient.ts';
 import type { TrustEntry } from '../../npm/parseTrustListing.ts';
 import { type MoveTrustOptions, runMoveTrust } from '../runMoveTrust.ts';
+import { createNpmStub } from '../test-utils/createNpmStub.ts';
 
 const NAME = '@scope/pkg';
 
@@ -260,23 +255,20 @@ function createHarness(settings: HarnessSettings = {}): Harness {
   const calls: Array<{ method: string; args: unknown[] }> = [];
   const questions: string[] = [];
 
-  const npm: NpmClient = {
+  const npm = createNpmStub({
     addGithubTrust: (name, trust) => {
       calls.push({ method: 'addGithubTrust', args: [name, trust] });
       return adds.shift() ?? { kind: 'added' };
     },
-    findVersion: () => ({ kind: 'failed', detail: 'unexpected findVersion' }),
     listTrust: (name) => {
       calls.push({ method: 'listTrust', args: [name] });
       return settings.listing ?? listed([ENTRY]);
     },
-    publish: () => ({ kind: 'failed', detail: 'unexpected publish' }),
     revokeTrust: (name, id) => {
       calls.push({ method: 'revokeTrust', args: [name, id] });
       return settings.revoke ?? { kind: 'revoked' };
     },
-    whoami: () => ({ kind: 'missing' }),
-  };
+  });
 
   return {
     calls,

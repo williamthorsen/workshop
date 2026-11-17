@@ -3,6 +3,7 @@ import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/
 import { describe, expect, it } from 'vitest';
 
 import { run, type RunEffects } from '../run.ts';
+import { createNpmStub } from '../test-utils/createNpmStub.ts';
 
 const LONG_DESCRIPTION = `A package whose description runs on ${'and on '.repeat(20)}`;
 
@@ -171,14 +172,7 @@ async function runInTree(
     cwd: () => tree.dir,
     isStdinTty: () => false,
     isStdoutTty: () => terminal.isTty,
-    npm: {
-      addGithubTrust: () => ({ kind: 'failed', detail: 'unexpected addGithubTrust' }),
-      findVersion: () => ({ kind: 'failed', detail: 'unexpected findVersion' }),
-      listTrust: () => ({ kind: 'failed', detail: 'unexpected listTrust' }),
-      publish: () => ({ kind: 'failed', detail: 'unexpected publish' }),
-      revokeTrust: () => ({ kind: 'failed', detail: 'unexpected revokeTrust' }),
-      whoami: () => ({ kind: 'missing' }),
-    },
+    npm: createNpmStub(),
     readAnswer: () => Promise.resolve(undefined),
     resolveVersion: () => '0.0.0',
     stdoutColumns: () => terminal.columns,

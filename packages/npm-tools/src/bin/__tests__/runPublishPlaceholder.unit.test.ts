@@ -5,8 +5,9 @@ import { createTextBuffer } from '@williamthorsen/toolbelt.cli/candidate';
 import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
-import type { FindVersionOutcome, NpmClient, PublishOutcome, WhoamiOutcome } from '../../npm/createNpmClient.ts';
+import type { FindVersionOutcome, PublishOutcome, WhoamiOutcome } from '../../npm/createNpmClient.ts';
 import { type PublishPlaceholderOptions, runPublishPlaceholder } from '../runPublishPlaceholder.ts';
+import { createNpmStub } from '../test-utils/createNpmStub.ts';
 
 const NAME = '@scope/new-pkg';
 
@@ -176,24 +177,21 @@ function createHarness(settings: HarnessSettings = {}): Harness {
   const published: Array<{ files: Record<string, string> }> = [];
   const questions: string[] = [];
 
-  const npm: NpmClient = {
-    addGithubTrust: () => ({ kind: 'failed', detail: 'unexpected addGithubTrust' }),
+  const npm = createNpmStub({
     findVersion: (name) => {
       npmCalls.push(`view ${name}`);
       return settings.npm?.findVersion ?? { kind: 'absent' };
     },
-    listTrust: () => ({ kind: 'failed', detail: 'unexpected listTrust' }),
     publish: (dir) => {
       npmCalls.push('publish');
       published.push({ files: readFiles(dir) });
       return settings.npm?.publish ?? { kind: 'published' };
     },
-    revokeTrust: () => ({ kind: 'failed', detail: 'unexpected revokeTrust' }),
     whoami: () => {
       npmCalls.push('whoami');
       return settings.npm?.whoami ?? { kind: 'logged-in', username: 'someone' };
     },
-  };
+  });
 
   return {
     leftoverDirs: () => createdDirs.filter((dir) => fs.existsSync(dir)),
