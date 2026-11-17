@@ -1,3 +1,5 @@
+import { isRecord } from '@williamthorsen/nmr-core';
+
 /**
  * Finds the trust entries in a recorded `npm trust list --json` transcript. The transcript may also contain npm's
  * approval prompt (a JSON object of its own), prose, echoed input, carriage returns, and escape sequences; every
@@ -112,11 +114,6 @@ function findJsonValues(text: string): unknown[] {
   }
 
   return values;
-}
-
-/** Reports whether a value is a non-null object. */
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
 }
 
 /** Reads a listed object as a GitHub entry, or returns undefined when it has no string `repository`. */

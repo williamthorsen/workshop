@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
+import { isRecord } from '@williamthorsen/nmr-core';
+
 import { parseTrustListing, stripTerminalControls, type TrustEntry } from './parseTrustListing.ts';
 import { quoteShellArgs } from './quoteShellArgs.ts';
 
@@ -232,11 +234,6 @@ function ignoreInterrupt(): void {}
 /** Reports whether a spawn failed because the command was not found. */
 function isMissingCommand(error: Error): boolean {
   return 'code' in error && error.code === 'ENOENT';
-}
-
-/** Reports whether a value is a non-null object. */
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
 }
 
 /** Reads `error.code` from the JSON that `npm view --json` writes on failure, or undefined when it wrote none. */

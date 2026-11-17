@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { isRecord } from '@williamthorsen/nmr-core';
 import { type EmptyWorkspaceCause, findMonorepoRoot, resolveWorkspace } from '@williamthorsen/nmr-core/workspace';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 
@@ -57,11 +58,6 @@ export type WorkspaceListing =
   | { readonly kind: 'packages'; readonly root: string; readonly packages: readonly WorkspacePackage[] };
 
 // region | Helpers
-
-/** Reports whether a value is a non-array object. */
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 /** Returns the manifest at `manifestPath` as an object, throwing a `ManifestReadError` otherwise. */
 function parseManifest(manifestPath: string): Record<string, unknown> {
