@@ -180,7 +180,7 @@ describe(run, () => {
       const harness = createRunHarness({ env: EMAIL_ENV, keystoreFault: 'the keychain is locked' });
 
       await expect(run(['auth', 'delete'], harness.effects)).resolves.toBe(3);
-      expect(harness.readErrors()).toContain('the keychain is locked');
+      expect(harness.readErrors()).toMatch(/^thor-jira: .*the keychain is locked/);
     });
 
     it('reports a missing email as a usage error', async () => {

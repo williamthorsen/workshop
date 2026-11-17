@@ -11,8 +11,9 @@ import { createKeychainStore, promptSecret } from '@williamthorsen/toolbelt.secr
 import { findSpecPath } from './findSpecPath.ts';
 import { readStreamText } from './readStreamText.ts';
 import { run } from './run.ts';
+import { PROGRAM_NAME } from './subcommand-support.ts';
 
-installCrashHandler('thor-jira');
+installCrashHandler(PROGRAM_NAME);
 
 ignoreBrokenPipes();
 

@@ -18,6 +18,9 @@ import {
   type WritableSecretStore,
 } from '@williamthorsen/toolbelt.secrets/candidate';
 
+/** The invocation name, which prefixes every message that the CLI writes to stderr. */
+export const PROGRAM_NAME = 'thor-jira';
+
 export const EXIT_OK = 0;
 export const EXIT_NO_RESULT = 1;
 export const EXIT_KEYSTORE = 3;
@@ -105,7 +108,7 @@ export async function reportFailures(stderr: Writer, body: () => number | Promis
     const failure = describeFailure(error);
     if (failure === undefined) throw error;
 
-    stderr.write(`${failure.message}\n`);
+    stderr.write(`${PROGRAM_NAME}: ${failure.message}\n`);
     return failure.exitCode;
   }
 }

@@ -112,7 +112,9 @@ describe('thor-jira issue list', () => {
     const harness = createHarness({ routes: { [SEARCH_ROUTE]: { json: {} } } });
 
     await expect(runSubcommand(harness, [])).resolves.toBe(4);
-    expect(harness.readErrors()).toContain("returned no 'issues' array. The response came from https://");
+    expect(harness.readErrors()).toMatch(
+      /^thor-jira: .*returned no 'issues' array\. The response came from https:\/\//,
+    );
     expect(harness.readErrors()).not.toContain('--help');
   });
 

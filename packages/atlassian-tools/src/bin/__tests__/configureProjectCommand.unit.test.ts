@@ -300,7 +300,7 @@ describe('thor-jira configure-project', () => {
 
       await expect(runSubcommand(harness, [PROJECT_KEY])).resolves.toBe(4);
       expect(harness.readErrors()).toContain(
-        `Project ${PROJECT_KEY} returned no 'id'. The response came from ${HARNESS_BASE_URL}`,
+        `thor-jira: Project ${PROJECT_KEY} returned no 'id'. The response came from ${HARNESS_BASE_URL}`,
       );
       expect(harness.readErrors()).not.toContain('--help');
     });
@@ -321,7 +321,7 @@ describe('thor-jira configure-project', () => {
       });
 
       await expect(runSubcommand(harness, [PROJECT_KEY])).resolves.toBe(4);
-      expect(harness.readErrors()).toContain('401');
+      expect(harness.readErrors()).toMatch(/^thor-jira: .*401/);
     });
 
     it('exits 4 naming the scope shortfall and the URL when the gateway rejects the token', async () => {
@@ -335,7 +335,7 @@ describe('thor-jira configure-project', () => {
       });
 
       await expect(runSubcommand(harness, [PROJECT_KEY])).resolves.toBe(4);
-      expect(harness.readErrors()).toContain('The token lacks a scope required by this endpoint.');
+      expect(harness.readErrors()).toMatch(/^thor-jira: .*The token lacks a scope required by this endpoint\./);
       expect(harness.readErrors()).toContain(`${HARNESS_BASE_URL}/rest/api/3/project/PROJ`);
     });
 
@@ -386,7 +386,7 @@ describe('thor-jira configure-project', () => {
       });
 
       await expect(runSubcommand(harness, [PROJECT_KEY])).resolves.toBe(3);
-      expect(harness.readErrors()).toContain('the keychain is locked');
+      expect(harness.readErrors()).toMatch(/^thor-jira: .*the keychain is locked/);
     });
 
     it('reports a token absent from every source, naming the command that stores one', async () => {
@@ -426,7 +426,7 @@ describe('thor-jira configure-project', () => {
 
       await expect(runSubcommand(harness, [PROJECT_KEY])).resolves.toBe(6);
       expect(harness.readErrors()).toContain(
-        'Could not reach https://spec.atlassian.net/_edge/tenant_info: fetch failed: getaddrinfo ENOTFOUND spec.atlassian.net',
+        'thor-jira: Could not reach https://spec.atlassian.net/_edge/tenant_info: fetch failed: getaddrinfo ENOTFOUND spec.atlassian.net',
       );
     });
 
