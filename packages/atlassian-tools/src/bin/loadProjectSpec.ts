@@ -1,7 +1,8 @@
 import { parseProjectSpec, type ProjectSpec } from '@williamthorsen/toolbelt.atlassian/candidate';
 import { UsageError } from '@williamthorsen/toolbelt.cli/candidate';
 
-import { describeError, type RunEffects } from './subcommand-support.ts';
+import { describeError } from './reportFailures.ts';
+import type { RunEffects } from './RunEffects.ts';
 
 /**
  * Reads the spec named by `--spec`, or else the one found by ascending from the working directory, returning

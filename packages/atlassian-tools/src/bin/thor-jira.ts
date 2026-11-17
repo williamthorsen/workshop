@@ -9,8 +9,8 @@ import { resolveSelfVersion } from '@williamthorsen/toolbelt.packaging/candidate
 import { createKeychainStore, promptSecret } from '@williamthorsen/toolbelt.secrets/candidate';
 
 import { findSpecPath } from './findSpecPath.ts';
+import { PROGRAM_NAME } from './reportFailures.ts';
 import { run } from './run.ts';
-import { PROGRAM_NAME } from './subcommand-support.ts';
 
 installCrashHandler(PROGRAM_NAME);
 

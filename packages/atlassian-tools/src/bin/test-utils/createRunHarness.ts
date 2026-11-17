@@ -9,7 +9,7 @@ import {
 } from '@williamthorsen/toolbelt.secrets/candidate';
 
 import { createFakeRequest, type FakeCall, type FakeRoutes } from '../../test-utils/createFakeRequest.ts';
-import type { RunEffects } from '../subcommand-support.ts';
+import type { RunEffects } from '../RunEffects.ts';
 
 const CLOUD_ID = 'cloud-1';
 

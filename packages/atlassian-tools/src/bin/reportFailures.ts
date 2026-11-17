@@ -1,74 +1,18 @@
 import {
   JiraRefusalError,
-  type JiraRequest,
   JiraRequestError,
   JiraResponseError,
   JiraSettingError,
   JiraTokenCommandError,
   JiraTransportError,
   ProjectSpecError,
-  type TokenTransportOptions,
 } from '@williamthorsen/toolbelt.atlassian/candidate';
 import { UsageError, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
-import {
-  SecretPromptError,
-  type SecretStore,
-  SecretStoreError,
-  UnstorableSecretError,
-  type WritableSecretStore,
-} from '@williamthorsen/toolbelt.secrets/candidate';
+import { SecretPromptError, SecretStoreError, UnstorableSecretError } from '@williamthorsen/toolbelt.secrets/candidate';
 
-/** The invocation name, which prefixes every message that the CLI writes to stderr. */
-export const PROGRAM_NAME = 'thor-jira';
-
-export const EXIT_OK = 0;
-export const EXIT_NO_RESULT = 1;
-export const EXIT_KEYSTORE = 3;
-export const EXIT_REQUEST = 4;
-export const EXIT_MISMATCH = 5;
-export const EXIT_TRANSPORT = 6;
-
-/** The effects deferred to the entry point, which keeps every subcommand free of I/O. */
-export interface RunEffects {
-  /** Builds the transport through which every Jira call is issued. */
-  readonly createRequest: (options: TokenTransportOptions) => JiraRequest;
-  readonly createStore: () => WritableSecretStore;
-  readonly cwd: () => string;
-  readonly env: Record<string, string | undefined>;
-  readonly fetch: typeof globalThis.fetch;
-  /** Finds the consuming repo's project spec by ascending from a directory, returning `undefined` if none is found. */
-  readonly findSpecPath: (fromDir: string) => string | undefined;
-  readonly isStdinTty: () => boolean;
-  /** Reads a token from the terminal, echoing nothing and asking twice. */
-  readonly promptSecret: () => Promise<string>;
-  readonly readStdin: () => Promise<string>;
-  readonly readTextFile: (filePath: string) => string;
-  readonly resolveVersion: () => string;
-  readonly write: (text: string) => void;
-  readonly writeError: (text: string) => void;
-}
-
-/**
- * Wraps the keychain so that it is opened on first use rather than on construction. A run authenticated from
- * the environment then never opens the keychain, and a platform without one is reported only when a caller
- * actually reads from it.
- *
- * @internal
- */
-export function createDeferredStore(effects: RunEffects): SecretStore {
-  let opened: WritableSecretStore | undefined;
-
-  /** Opens the keychain on the first call and returns that store on every later one. */
-  function open(): WritableSecretStore {
-    return (opened ??= effects.createStore());
-  }
-
-  return {
-    deleteSecret: (query) => open().deleteSecret(query),
-    findSecret: (query) => open().findSecret(query),
-    hasSecret: (query) => open().hasSecret(query),
-  };
-}
+const EXIT_KEYSTORE = 3;
+const EXIT_REQUEST = 4;
+const EXIT_TRANSPORT = 6;
 
 /**
  * Extracts the message contained in an unknown thrown value, appending each cause beneath it. Node's `fetch`
@@ -92,6 +36,13 @@ export function describeError(error: unknown): string {
   return messages.join(': ');
 }
 
+export const EXIT_MISMATCH = 5;
+export const EXIT_NO_RESULT = 1;
+export const EXIT_OK = 0;
+
+/** The invocation name, which prefixes every message that the CLI writes to stderr. */
+export const PROGRAM_NAME = 'thor-jira';
+
 /**
  * Runs a command's body, writing each anticipated failure that has an exit code of its own to `stderr` and returning
  * that code, and reporting a setting, spec, refusal, or prompt failure as a usage error, which exits 2 with a pointer
@@ -111,26 +62,6 @@ export async function reportFailures(stderr: Writer, body: () => number | Promis
     stderr.write(`${PROGRAM_NAME}: ${failure.message}\n`);
     return failure.exitCode;
   }
-}
-
-/**
- * Drops the newline that a shell adds to a piped value, leaving one written without a terminator untouched.
- *
- * @internal
- */
-export function stripOneTrailingNewline(input: string): string {
-  return input.replace(/\r?\n$/, '');
-}
-
-/**
- * Reports a printed result, terminating the line written by the caller.
- *
- * @internal
- */
-export function succeed(effects: RunEffects, output: string): number {
-  effects.write(`${output}\n`);
-
-  return EXIT_OK;
 }
 
 // region | Helpers
