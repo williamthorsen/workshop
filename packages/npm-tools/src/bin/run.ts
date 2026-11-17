@@ -1,7 +1,6 @@
 import { createCli, isAffirmative, runCli, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
 
 import { listWorkspacePackages } from '../workspace/listWorkspacePackages.ts';
-import type { RenderedOutput } from './exitCodes.ts';
 import {
   PLACEHOLDER_VERSION,
   planPublishPlaceholder,
@@ -10,6 +9,7 @@ import {
   type PublishPlaceholderEffects,
   type PublishPlaceholderOptions,
 } from './publishPlaceholder.ts';
+import type { RenderedOutput } from './RenderedOutput.ts';
 import { renderListPackages } from './renderPackageList.ts';
 import {
   renderPlaceholderStop,

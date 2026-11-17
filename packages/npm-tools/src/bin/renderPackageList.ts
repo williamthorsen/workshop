@@ -4,7 +4,8 @@ import type { EmptyWorkspaceCause } from '@williamthorsen/nmr-core/workspace';
 import { measureWidth, truncateToWidth } from '@williamthorsen/toolbelt.terminal/candidate';
 
 import type { WorkspaceListing, WorkspacePackage } from '../workspace/listWorkspacePackages.ts';
-import { EXIT_FAILED, EXIT_OK, type RenderedOutput } from './exitCodes.ts';
+import { EXIT_FAILED, EXIT_OK } from './exitCodes.ts';
+import type { RenderedOutput } from './RenderedOutput.ts';
 
 const HEADER = ['PUBLISH', 'NAME', 'VERSION', 'DIRECTORY', 'DESCRIPTION'];
 const PREFIX = 'thor-npm list-packages:';

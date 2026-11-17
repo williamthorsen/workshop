@@ -1,10 +1,11 @@
-import { EXIT_FAILED, EXIT_NPM_MISSING, EXIT_OK, type RenderedOutput } from './exitCodes.ts';
+import { EXIT_FAILED, EXIT_NPM_MISSING, EXIT_OK } from './exitCodes.ts';
 import {
   PLACEHOLDER_FILES,
   PLACEHOLDER_VERSION,
   type PublishPlaceholderOutcome,
   type PublishPlaceholderPlan,
 } from './publishPlaceholder.ts';
+import type { RenderedOutput } from './RenderedOutput.ts';
 
 const PREFIX = 'thor-npm publish-placeholder:';
 
