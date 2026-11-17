@@ -53,13 +53,13 @@ export async function runPublishPlaceholder(
     return EXIT_FAILED;
   }
 
-  const existing = npm.findVersion(name);
-  if (existing.kind === 'found') {
+  const lookupOutcome = npm.findVersion(name);
+  if (lookupOutcome.kind === 'found') {
     report(`'${name}' already exists on the registry; a placeholder is only for a new name`);
     return EXIT_FAILED;
   }
-  if (existing.kind === 'failed') {
-    report(`could not query the registry for '${name}': ${existing.detail}`);
+  if (lookupOutcome.kind === 'failed') {
+    report(`could not query the registry for '${name}': ${lookupOutcome.detail}`);
     return EXIT_FAILED;
   }
 
