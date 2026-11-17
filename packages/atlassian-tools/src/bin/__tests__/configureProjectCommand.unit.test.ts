@@ -22,12 +22,19 @@ const CONFORMANT_SPEC = JSON.stringify({
 
 const KEYED_SPEC = JSON.stringify({ ...JSON.parse(CONFORMANT_SPEC), projectKey: KEY });
 
+const FEATURES_WRITE = `PUT /rest/agile/1.0/board/${BOARD_ID}/features`;
+
 const RENAMING_SPEC = JSON.stringify({
   site: 'spec.atlassian.net',
   statuses: [
     { aliases: ['To Do'], category: 'TODO', name: 'Todo' },
     { category: 'DONE', name: 'Done' },
   ],
+});
+
+const TOGGLING_SPEC = JSON.stringify({
+  ...JSON.parse(RENAMING_SPEC),
+  boardFeatures: { 'jsw.agility.backlog': 'ENABLED' },
 });
 
 describe('thor-jira configure-project', () => {
@@ -174,6 +181,117 @@ describe('thor-jira configure-project', () => {
 
       await expect(runSubcommand(harness, [KEY])).resolves.toBe(5);
       expect(harness.readOutput()).toContain("MISS Todo (absent), transition 'absent'");
+    });
+  });
+
+  describe('the whole output', () => {
+    it('prints the plan, a blank line, and the dry-run notice', async () => {
+      const harness = createHarness({ files: { [SPEC_PATH]: RENAMING_SPEC }, readOnly: true });
+
+      await expect(runSubcommand(harness, [KEY, '--dry-run', '--seed-backlog', 'To Do'])).resolves.toBe(0);
+      expect(harness.readOutput()).toBe(
+        composeOutput(
+          'project   PROJ (id 10000), board 1',
+          'workflow  PROJ: Software Simplified Workflow',
+          "update    status id-1: 'To Do' → 'Todo'",
+          "rename    transition 10: 'To Do' → 'Todo'",
+          "seed      move every 'To Do' work item off the board",
+          '',
+          'dry run: Nothing was written',
+        ),
+      );
+    });
+
+    it('prints each step of a run that amends, toggles, and seeds, then a verification that misses', async () => {
+      const harness = createHarness({
+        files: { [SPEC_PATH]: TOGGLING_SPEC },
+        routes: { [FEATURES_WRITE]: { json: {} } },
+      });
+
+      await expect(runSubcommand(harness, [KEY, '--seed-backlog', 'To Do'])).resolves.toBe(5);
+      expect(harness.readOutput()).toBe(
+        composeOutput(
+          'project   PROJ (id 10000), board 1',
+          'workflow  PROJ: Software Simplified Workflow',
+          "update    status id-1: 'To Do' → 'Todo'",
+          "rename    transition 10: 'To Do' → 'Todo'",
+          'toggle    jsw.agility.backlog: DISABLED → ENABLED',
+          "seed      move every 'To Do' work item off the board",
+          'workflow  updated: 1 amended, 0 created',
+          'amended via the status API: To Do → Todo',
+          'feature   jsw.agility.backlog → ENABLED',
+          "backlog   moved 2 'To Do' work items off the board",
+          '          undo: POST /rest/agile/1.0/board/1/issue, 50 keys per call',
+          '          keys: project = "PROJ" AND status = "To Do"',
+          '',
+          'configuration after the run:',
+          "  MISS Todo (absent), transition 'absent'",
+          "  ok   Done (DONE), transition 'Done'",
+          '  MISS jsw.agility.backlog = DISABLED',
+          'columns   To Do | Done',
+        ),
+      );
+    });
+
+    it('prints an unchanged workflow and a verification that matches', async () => {
+      const harness = createHarness();
+
+      await expect(runSubcommand(harness, [KEY])).resolves.toBe(0);
+      expect(harness.readOutput()).toBe(
+        composeOutput(
+          'project   PROJ (id 10000), board 1',
+          'workflow  PROJ: Software Simplified Workflow',
+          'no changes: The project already matches the spec',
+          'workflow  unchanged',
+          '',
+          'configuration after the run:',
+          "  ok   To Do (TODO), transition 'To Do'",
+          "  ok   Done (DONE), transition 'Done'",
+          '  ok   jsw.agility.backlog = DISABLED',
+          'columns   To Do | Done',
+        ),
+      );
+    });
+
+    it('prints an empty seed in place of the move and its undo', async () => {
+      const harness = createHarness({ routes: { 'POST /rest/api/3/search/jql': { json: { issues: [] } } } });
+
+      await expect(runSubcommand(harness, [KEY, '--seed-backlog', 'To Do'])).resolves.toBe(0);
+      expect(harness.readOutput()).toBe(
+        composeOutput(
+          'project   PROJ (id 10000), board 1',
+          'workflow  PROJ: Software Simplified Workflow',
+          "seed      move every 'To Do' work item off the board",
+          'workflow  unchanged',
+          "backlog   no 'To Do' work items to move",
+          '',
+          'configuration after the run:',
+          "  ok   To Do (TODO), transition 'To Do'",
+          "  ok   Done (DONE), transition 'Done'",
+          '  ok   jsw.agility.backlog = DISABLED',
+          'columns   To Do | Done',
+        ),
+      );
+    });
+
+    it('keeps the steps already printed when a later call fails', async () => {
+      const harness = createHarness({
+        files: { [SPEC_PATH]: TOGGLING_SPEC },
+        routes: { [FEATURES_WRITE]: { status: 500, text: 'boom' } },
+      });
+
+      await expect(runSubcommand(harness, [KEY])).resolves.toBe(4);
+      expect(harness.readOutput()).toBe(
+        composeOutput(
+          'project   PROJ (id 10000), board 1',
+          'workflow  PROJ: Software Simplified Workflow',
+          "update    status id-1: 'To Do' → 'Todo'",
+          "rename    transition 10: 'To Do' → 'Todo'",
+          'toggle    jsw.agility.backlog: DISABLED → ENABLED',
+          'workflow  updated: 1 amended, 0 created',
+          'amended via the status API: To Do → Todo',
+        ),
+      );
     });
   });
 
@@ -420,6 +538,11 @@ function buildWorkflow(): unknown {
     ],
     version: { id: 'version-1', versionNumber: 1 },
   };
+}
+
+/** Joins the lines of an expected output, ending it with the newline that the command writes last. */
+function composeOutput(...lines: string[]): string {
+  return `${lines.join('\n')}\n`;
 }
 
 /** Builds a harness with a credential in the environment, a conformant spec, and every route of a whole run. */
