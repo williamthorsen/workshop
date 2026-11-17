@@ -1,6 +1,5 @@
 import { createCli, runCli, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
 
-import { ManifestReadError } from '../workspace/listWorkspacePackages.ts';
 import { type ListPackagesEffects, runListPackages } from './runListPackages.ts';
 import { type MoveTrustEffects, runMoveTrust } from './runMoveTrust.ts';
 import { type PublishPlaceholderEffects, runPublishPlaceholder } from './runPublishPlaceholder.ts';
@@ -67,8 +66,7 @@ const ROOT = defineGroup({
       flags: {
         json: { type: 'boolean', description: 'Print the packages as JSON' },
       },
-      run: ({ context, flags, stderr, stdout }) =>
-        reportFailures(stderr, () => Promise.resolve(runListPackages(flags, context, { stderr, stdout }))),
+      run: ({ context, flags, stderr, stdout }) => runListPackages(flags, context, { stderr, stdout }),
     }),
     'move-trust': defineCommand({
       summary: "Move a package's trusted publisher to another GitHub repository",
@@ -138,19 +136,3 @@ export interface RunStreams {
   readonly stderr: Writer;
   readonly stdout: Writer;
 }
-
-// region | Helpers
-
-/** Runs a command's body, reporting a workspace manifest that cannot be read on stderr with exit 1. */
-async function reportFailures(stderr: Writer, body: () => Promise<number>): Promise<number> {
-  try {
-    return await body();
-  } catch (error) {
-    if (!(error instanceof ManifestReadError)) throw error;
-
-    stderr.write(`thor-npm: ${error.message}\n`);
-    return 1;
-  }
-}
-
-// endregion | Helpers

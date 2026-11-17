@@ -31,6 +31,10 @@ export function runListPackages(
     );
     return EXIT_FAILED;
   }
+  if (listing.kind === 'unreadable-package-manifest') {
+    streams.stderr.write(`thor-npm: could not read ${listing.manifestPath}: ${listing.reason}\n`);
+    return EXIT_FAILED;
+  }
   if (listing.kind === 'empty') {
     const { isBroken, reason } = describeEmptyWorkspace(listing.cause, listing.patterns, listing.root);
     if (isBroken) {
