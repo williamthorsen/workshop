@@ -1,3 +1,5 @@
+import { quoteJqlValue } from './quoteJqlValue.ts';
+
 /**
  * The states by which `issue list` selects work items, named as `gh issue list` names them.
  *
@@ -35,12 +37,3 @@ export function composeIssueListJql(query: IssueListQuery): string {
 
   return `${clauses.join(' AND ')} ORDER BY created DESC`;
 }
-
-// region | Helpers
-
-/** Quotes a value as a JQL string, escaping the characters that would end or escape it. */
-function quoteJqlValue(value: string): string {
-  return `"${value.replaceAll(/["\\]/g, (character) => `\\${character}`)}"`;
-}
-
-// endregion | Helpers
