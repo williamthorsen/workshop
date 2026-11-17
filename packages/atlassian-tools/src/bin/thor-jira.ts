@@ -4,12 +4,11 @@ import fs from 'node:fs';
 import process from 'node:process';
 
 import { createTokenTransport } from '@williamthorsen/toolbelt.atlassian/candidate';
-import { ignoreBrokenPipes, installCrashHandler } from '@williamthorsen/toolbelt.cli/candidate';
+import { ignoreBrokenPipes, installCrashHandler, readStreamText } from '@williamthorsen/toolbelt.cli/candidate';
 import { resolveSelfVersion } from '@williamthorsen/toolbelt.packaging/candidate';
 import { createKeychainStore, promptSecret } from '@williamthorsen/toolbelt.secrets/candidate';
 
 import { findSpecPath } from './findSpecPath.ts';
-import { readStreamText } from './readStreamText.ts';
 import { run } from './run.ts';
 import { PROGRAM_NAME } from './subcommand-support.ts';
 
