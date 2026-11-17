@@ -1,10 +1,14 @@
 import { createCli, runCli, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
 
-import { type ListPackagesEffects, runListPackages } from './runListPackages.ts';
+import { listWorkspacePackages } from '../workspace/listWorkspacePackages.ts';
+import type { RenderedOutput } from './exitCodes.ts';
+import { renderListPackages } from './renderPackageList.ts';
 import { type MoveTrustEffects, runMoveTrust } from './runMoveTrust.ts';
 import { type PublishPlaceholderEffects, runPublishPlaceholder } from './runPublishPlaceholder.ts';
 
 const { defineCommand, defineGroup } = createCli<RunEffects>();
+
+const MAX_TABLE_WIDTH = 120;
 
 const LIST_PACKAGES_DESCRIPTION = `List the packages of the pnpm workspace that contains the working directory: whether each one can be
 published, its name, its version, its directory, and its description. A package can be published unless its
@@ -66,7 +70,15 @@ const ROOT = defineGroup({
       flags: {
         json: { type: 'boolean', description: 'Print the packages as JSON' },
       },
-      run: ({ context, flags, stderr, stdout }) => runListPackages(flags, context, { stderr, stdout }),
+      run: ({ context, flags, stderr, stdout }) => {
+        const cwd = context.cwd();
+        const output = renderListPackages(listWorkspacePackages(cwd), {
+          cwd,
+          json: flags.json,
+          maxWidth: resolveMaxWidth(context),
+        });
+        return writeOutput(output, { stderr, stdout });
+      },
     }),
     'move-trust': defineCommand({
       summary: "Move a package's trusted publisher to another GitHub repository",
@@ -126,6 +138,14 @@ export async function run(args: readonly string[], effects: RunEffects, streams:
   });
 }
 
+/** The effects that listing packages reads from the process. */
+export interface ListPackagesEffects {
+  readonly cwd: () => string;
+  readonly isStdoutTty: () => boolean;
+  /** The terminal's width in columns, or `undefined` when stdout does not report one. */
+  readonly stdoutColumns: () => number | undefined;
+}
+
 /** The effects deferred to the entry point, which keeps the runner free of process I/O. */
 export interface RunEffects extends ListPackagesEffects, MoveTrustEffects, PublishPlaceholderEffects {
   readonly resolveVersion: () => string;
@@ -136,3 +156,21 @@ export interface RunStreams {
   readonly stderr: Writer;
   readonly stdout: Writer;
 }
+
+// region | Helpers
+
+/** Returns the width to which table lines are cut: none off a terminal, and at most 120 columns on one. */
+function resolveMaxWidth(effects: ListPackagesEffects): number | undefined {
+  if (!effects.isStdoutTty()) return undefined;
+
+  return Math.min(MAX_TABLE_WIDTH, effects.stdoutColumns() ?? MAX_TABLE_WIDTH);
+}
+
+/** Writes a rendered output to its streams and returns its exit code. */
+function writeOutput(output: RenderedOutput, streams: RunStreams): number {
+  if (output.stderr !== '') streams.stderr.write(output.stderr);
+  if (output.stdout !== '') streams.stdout.write(output.stdout);
+  return output.exitCode;
+}
+
+// endregion | Helpers
