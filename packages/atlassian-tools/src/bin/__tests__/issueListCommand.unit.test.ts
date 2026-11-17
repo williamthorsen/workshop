@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import type { FakeRoutes } from '../../test-utils/createFakeRequest.ts';
 import { run } from '../run.ts';
+import type { FakeRoutes } from '../test-utils/createFakeRequest.ts';
 import { createRunHarness, type HarnessOptions } from '../test-utils/createRunHarness.ts';
 
 const SEARCH_ROUTE = 'POST /rest/api/3/search/jql';

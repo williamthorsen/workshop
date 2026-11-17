@@ -1,8 +1,8 @@
 import type { ReconciliationPlan } from '@williamthorsen/toolbelt.atlassian/candidate';
 import { describe, expect, it } from 'vitest';
 
-import { buildProjectConfiguration, buildStatus } from '../../test-utils/projectConfiguration.ts';
 import { renderPlan } from '../renderPlan.ts';
+import { buildProjectConfiguration, buildStatus } from '../test-utils/projectConfiguration.ts';
 
 const CONFIGURATION = buildProjectConfiguration();
 const PROJECT_KEY = 'PROJ';

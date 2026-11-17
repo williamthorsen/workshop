@@ -8,8 +8,8 @@ import {
   type WritableSecretStore,
 } from '@williamthorsen/toolbelt.secrets/candidate';
 
-import { createFakeRequest, type FakeCall, type FakeRoutes } from '../../test-utils/createFakeRequest.ts';
 import type { RunEffects } from '../RunEffects.ts';
+import { createFakeRequest, type FakeCall, type FakeRoutes } from './createFakeRequest.ts';
 
 const CLOUD_ID = 'cloud-1';
 

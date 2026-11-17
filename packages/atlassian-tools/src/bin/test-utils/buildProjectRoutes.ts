@@ -1,4 +1,4 @@
-import type { FakeRoutes } from '../../test-utils/createFakeRequest.ts';
+import type { FakeRoutes } from './createFakeRequest.ts';
 
 /** The board of the project that `buildProjectRoutes` serves. */
 export const BOARD_ID = 1;
