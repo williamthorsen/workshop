@@ -8,12 +8,16 @@ const WORKSPACE_MANIFEST = "packages:\n  - 'packages/*'\n  - 'tools/*'\n  - '!pa
 describe(listWorkspacePackages, () => {
   it('lists every matched package, sorted by directory, and leaves out the root and excluded packages', () => {
     using tree = createTempTree({
-      'package.json': manifest({ name: 'root', private: true }),
+      'package.json': serializeManifest({ name: 'root', private: true }),
       'pnpm-workspace.yaml': WORKSPACE_MANIFEST,
-      'packages/beta/package.json': manifest({ name: '@scope/beta', version: '1.2.3', description: 'The beta' }),
-      'packages/alpha/package.json': manifest({ name: '@scope/alpha', version: '0.1.0', private: true }),
-      'packages/legacy/package.json': manifest({ name: '@scope/legacy' }),
-      'tools/gamma/package.json': manifest({ name: 'gamma', private: 'yes' }),
+      'packages/beta/package.json': serializeManifest({
+        name: '@scope/beta',
+        version: '1.2.3',
+        description: 'The beta',
+      }),
+      'packages/alpha/package.json': serializeManifest({ name: '@scope/alpha', version: '0.1.0', private: true }),
+      'packages/legacy/package.json': serializeManifest({ name: '@scope/legacy' }),
+      'tools/gamma/package.json': serializeManifest({ name: 'gamma', private: 'yes' }),
     });
 
     const listing = listWorkspacePackages(tree.resolve('packages/beta'));
@@ -36,7 +40,7 @@ describe(listWorkspacePackages, () => {
   });
 
   it('reports a directory outside any pnpm workspace', () => {
-    using tree = createTempTree({ 'package.json': manifest({ name: 'standalone' }) });
+    using tree = createTempTree({ 'package.json': serializeManifest({ name: 'standalone' }) });
 
     expect(listWorkspacePackages(tree.dir)).toStrictEqual({ kind: 'not-a-workspace' });
   });
@@ -73,7 +77,7 @@ describe(listWorkspacePackages, () => {
 // region | Helpers
 
 /** Serializes a manifest as a package's `package.json` content. */
-function manifest(fields: Record<string, unknown>): string {
+function serializeManifest(fields: Record<string, unknown>): string {
   return `${JSON.stringify(fields, null, 2)}\n`;
 }
 

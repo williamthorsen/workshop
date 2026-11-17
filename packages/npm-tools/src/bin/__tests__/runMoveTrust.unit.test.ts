@@ -68,7 +68,7 @@ describe(runMoveTrust, () => {
 
     it('omits the environment when the old trust has none', async () => {
       const { environment: _, ...entry } = ENTRY;
-      const harness = createHarness({ listing: listed([entry]) });
+      const harness = createHarness({ listing: buildListing([entry]) });
 
       const { stderr } = await harness.run({ force: true });
 
@@ -144,26 +144,26 @@ describe(runMoveTrust, () => {
 
   describe('given a trust that cannot be moved', () => {
     it.each([
-      { listing: listed([]), reason: `'${NAME}' has no trusted publisher; npm trust github adds one` },
-      { listing: listed([ENTRY], 1), reason: `'${NAME}' has a trusted publisher that is not on GitHub` },
+      { listing: buildListing([]), reason: `'${NAME}' has no trusted publisher; npm trust github adds one` },
+      { listing: buildListing([ENTRY], 1), reason: `'${NAME}' has a trusted publisher that is not on GitHub` },
       {
-        listing: listed([ENTRY, { ...ENTRY, id: 'trust-2' }]),
+        listing: buildListing([ENTRY, { ...ENTRY, id: 'trust-2' }]),
         reason: `'${NAME}' has more than one trusted publisher`,
       },
       {
-        listing: listed([{ ...ENTRY, repository: 'owner/elsewhere' }]),
+        listing: buildListing([{ ...ENTRY, repository: 'owner/elsewhere' }]),
         reason: `the trusted publisher of '${NAME}' is owner/elsewhere, not owner/old`,
       },
       {
-        listing: listed([{ id: 'trust-1', permissions: ['createPackage'], repository: 'owner/old' }]),
+        listing: buildListing([{ id: 'trust-1', permissions: ['createPackage'], repository: 'owner/old' }]),
         reason: `the trusted publisher of '${NAME}' names no workflow file, so it could not be restored`,
       },
       {
-        listing: listed([{ ...ENTRY, permissions: [] }]),
+        listing: buildListing([{ ...ENTRY, permissions: [] }]),
         reason: `the trusted publisher of '${NAME}' lists no permissions, so it could not be restored`,
       },
       {
-        listing: listed([{ ...ENTRY, permissions: ['createPackage', 'adminEverything'] }]),
+        listing: buildListing([{ ...ENTRY, permissions: ['createPackage', 'adminEverything'] }]),
         reason: `the trusted publisher of '${NAME}' has a permission that thor-npm cannot grant (adminEverything), so it could not be restored`,
       },
     ])('refuses before revoking: $reason', async ({ listing, reason }) => {
@@ -249,6 +249,11 @@ describe(runMoveTrust, () => {
 
 // region | Helpers
 
+/** Returns a successful listing of the given entries. */
+function buildListing(entries: TrustEntry[], otherCount = 0): ListTrustOutcome {
+  return { kind: 'listed', entries, otherCount };
+}
+
 /** Creates a fake client and effects, recording each client call and each question asked. */
 function createHarness(settings: HarnessSettings = {}): Harness {
   const adds = [...(settings.adds ?? [])];
@@ -262,7 +267,7 @@ function createHarness(settings: HarnessSettings = {}): Harness {
     },
     listTrust: (name) => {
       calls.push({ method: 'listTrust', args: [name] });
-      return settings.listing ?? listed([ENTRY]);
+      return settings.listing ?? buildListing([ENTRY]);
     },
     revokeTrust: (name, id) => {
       calls.push({ method: 'revokeTrust', args: [name, id] });
@@ -292,11 +297,6 @@ function createHarness(settings: HarnessSettings = {}): Harness {
       return { exitCode, stderr: stderr.text };
     },
   };
-}
-
-/** Returns a successful listing of the given entries. */
-function listed(entries: TrustEntry[], otherCount = 0): ListTrustOutcome {
-  return { kind: 'listed', entries, otherCount };
 }
 
 /** A fake client and effects, with what they observed. */
