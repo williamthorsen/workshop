@@ -48,6 +48,10 @@ export async function runPublishPlaceholder(
     report(`not logged in to npm (${session.detail}); run npm login, then run this again`);
     return EXIT_FAILED;
   }
+  if (session.kind === 'failed') {
+    report(`could not check the npm session: ${session.detail}`);
+    return EXIT_FAILED;
+  }
 
   const existing = npm.findVersion(name);
   if (existing.kind === 'found') {

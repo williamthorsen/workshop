@@ -11,15 +11,29 @@ const [command, subcommand] = args;
 if (command === '--version') {
   process.stdout.write('11.0.0\n');
 } else if (command === 'whoami') {
-  if (process.env.FAKE_NPM_WHOAMI === 'ok') {
+  const mode = process.env.FAKE_NPM_WHOAMI;
+  if (mode === 'ok') {
     process.stdout.write('someone\n');
+  } else if (mode === 'signal') {
+    process.kill(process.pid, 'SIGTERM');
+  } else if (mode === 'unauthorized') {
+    process.stderr.write('npm error code E401\nnpm error 401 Unauthorized - GET https://registry.npmjs.org/-/whoami\n');
+    process.exitCode = 1;
+  } else if (mode === 'unreachable') {
+    process.stderr.write(
+      'npm error code ECONNREFUSED\nnpm error syscall connect\nnpm error errno ECONNREFUSED\n' +
+        'npm error FetchError: request to https://registry.npmjs.org/-/whoami failed, reason: connect ECONNREFUSED\n',
+    );
+    process.exitCode = 1;
   } else {
     process.stderr.write('npm error code ENEEDAUTH\nnpm error need auth This command requires you to be logged in.\n');
     process.exitCode = 1;
   }
 } else if (command === 'view') {
   const mode = process.env.FAKE_NPM_VIEW;
-  if (mode === 'found') {
+  if (mode === 'signal') {
+    process.kill(process.pid, 'SIGTERM');
+  } else if (mode === 'found') {
     process.stdout.write('"1.0.0"\n');
   } else if (mode === 'absent') {
     process.stdout.write(JSON.stringify({ error: { code: 'E404', summary: 'Not Found' } }) + '\n');
@@ -80,7 +94,8 @@ process.exitCode = result.status ?? 1;
 /**
  * Creates a fake `npm` that appends each call to a log and answers `--version`, `whoami`, `view`, `publish`, and
  * `trust` as the behavior sets, imitating npm 11's output: A missing package exits 1 with an `E404` JSON error on
- * stdout. Beside it, unless the behavior omits it, is a fake `script` that logs its arguments.
+ * stdout, and a `signal` mode ends the fake with SIGTERM. Beside it, unless the behavior omits it, is a fake `script`
+ * that logs its arguments.
  */
 export function createFakeNpm(behavior: FakeNpmBehavior = {}): FakeNpm {
   const tree = createTempTree({
@@ -133,8 +148,8 @@ export interface FakeNpmBehavior {
   readonly trustGithub?: 'fail' | 'ok';
   readonly trustList?: string;
   readonly trustRevoke?: 'fail' | 'ok';
-  readonly view?: 'absent' | 'fail' | 'found';
-  readonly whoami?: 'fail' | 'ok';
+  readonly view?: 'absent' | 'fail' | 'found' | 'signal';
+  readonly whoami?: 'need-auth' | 'ok' | 'signal' | 'unauthorized' | 'unreachable';
 }
 
 /** What the fake observed on one invocation. */
