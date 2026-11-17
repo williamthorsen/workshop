@@ -3,7 +3,8 @@ import { createCli, runCli } from '@williamthorsen/toolbelt.cli/candidate';
 import { authCommand } from './authCommand.ts';
 import { configureProjectCommand } from './configureProjectCommand.ts';
 import { issueGroup } from './issueGroup.ts';
-import { PROGRAM_NAME, type RunEffects } from './subcommand-support.ts';
+import { PROGRAM_NAME } from './reportFailures.ts';
+import type { RunEffects } from './RunEffects.ts';
 
 const { defineGroup } = createCli<RunEffects>();
 

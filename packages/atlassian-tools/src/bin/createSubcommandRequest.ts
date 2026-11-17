@@ -7,7 +7,9 @@ import {
 } from '@williamthorsen/toolbelt.atlassian/candidate';
 import type { FlagSchema } from '@williamthorsen/toolbelt.cli/candidate';
 
-import { createDeferredStore, type RunEffects, stripOneTrailingNewline } from './subcommand-support.ts';
+import { createDeferredStore } from './createDeferredStore.ts';
+import type { RunEffects } from './RunEffects.ts';
+import { stripOneTrailingNewline } from './stripOneTrailingNewline.ts';
 
 /**
  * The flags through which every subcommand that calls Jira accepts its credential.

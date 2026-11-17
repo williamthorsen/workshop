@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { describeError } from '../subcommand-support.ts';
+import { describeError } from '../reportFailures.ts';
 
 describe(describeError, () => {
   it('reports the message of an error with no cause', () => {

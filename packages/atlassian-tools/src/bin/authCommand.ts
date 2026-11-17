@@ -6,15 +6,10 @@ import {
 } from '@williamthorsen/toolbelt.atlassian/candidate';
 import { type Command, createCli, UsageError } from '@williamthorsen/toolbelt.cli/candidate';
 
-import {
-  createDeferredStore,
-  EXIT_NO_RESULT,
-  EXIT_OK,
-  reportFailures,
-  type RunEffects,
-  stripOneTrailingNewline,
-  succeed,
-} from './subcommand-support.ts';
+import { createDeferredStore } from './createDeferredStore.ts';
+import { EXIT_NO_RESULT, EXIT_OK, reportFailures } from './reportFailures.ts';
+import type { RunEffects } from './RunEffects.ts';
+import { stripOneTrailingNewline } from './stripOneTrailingNewline.ts';
 
 const { defineCommand } = createCli<RunEffects>();
 
@@ -116,6 +111,13 @@ function runStatus(effects: RunEffects, account: string, service: string, tokenC
   }
 
   effects.write(`A token for ${account} would come from ${SOURCE_DESCRIPTIONS[source]}.\n`);
+
+  return EXIT_OK;
+}
+
+/** Reports a printed result, terminating the line written by the caller. */
+function succeed(effects: RunEffects, output: string): number {
+  effects.write(`${output}\n`);
 
   return EXIT_OK;
 }

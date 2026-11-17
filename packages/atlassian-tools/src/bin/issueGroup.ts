@@ -1,7 +1,7 @@
 import { createCli, type Group } from '@williamthorsen/toolbelt.cli/candidate';
 
 import { issueListCommand } from './issueListCommand.ts';
-import type { RunEffects } from './subcommand-support.ts';
+import type { RunEffects } from './RunEffects.ts';
 
 const { defineGroup } = createCli<RunEffects>();
 

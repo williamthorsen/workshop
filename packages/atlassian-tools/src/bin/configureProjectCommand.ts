@@ -5,7 +5,8 @@ import { createSubcommandRequest, CREDENTIAL_OPTIONS, type CredentialValues } fr
 import { type LoadedProjectSpec, loadProjectSpec } from './loadProjectSpec.ts';
 import { reconcileProject } from './reconcileProject.ts';
 import { renderConfigureStep } from './renderConfigureStep.ts';
-import { EXIT_MISMATCH, EXIT_OK, reportFailures, type RunEffects } from './subcommand-support.ts';
+import { EXIT_MISMATCH, EXIT_OK, reportFailures } from './reportFailures.ts';
+import type { RunEffects } from './RunEffects.ts';
 
 const { defineCommand } = createCli<RunEffects>();
 

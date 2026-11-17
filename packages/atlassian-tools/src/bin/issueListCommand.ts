@@ -5,7 +5,8 @@ import { composeIssueListJql, ISSUE_STATES } from './composeIssueListJql.ts';
 import { createSubcommandRequest, CREDENTIAL_OPTIONS } from './createSubcommandRequest.ts';
 import { type LoadedProjectSpec, loadProjectSpec } from './loadProjectSpec.ts';
 import { renderIssueList } from './renderIssueList.ts';
-import { EXIT_OK, reportFailures, type RunEffects } from './subcommand-support.ts';
+import { EXIT_OK, reportFailures } from './reportFailures.ts';
+import type { RunEffects } from './RunEffects.ts';
 
 const DEFAULT_LIMIT = 20;
 
