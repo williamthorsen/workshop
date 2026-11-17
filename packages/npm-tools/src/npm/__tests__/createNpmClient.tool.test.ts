@@ -194,7 +194,10 @@ describe(createNpmClient, () => {
       },
       {
         whoami: 'unreachable',
-        expected: { kind: 'failed', detail: 'request to https://registry.npmjs.org/-/whoami failed' },
+        expected: {
+          kind: 'failed',
+          detail: 'FetchError: request to https://registry.npmjs.org/-/whoami failed, reason: connect ECONNREFUSED',
+        },
       },
       { whoami: 'signal', expected: { kind: 'failed', detail: 'signal SIGTERM' } },
     ] as const)("reports $whoami as $expected.kind, with npm's reason", ({ whoami, expected }) => {

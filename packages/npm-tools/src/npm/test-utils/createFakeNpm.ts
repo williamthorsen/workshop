@@ -20,7 +20,10 @@ if (command === '--version') {
     process.stderr.write('npm error code E401\nnpm error 401 Unauthorized - GET https://registry.npmjs.org/-/whoami\n');
     process.exitCode = 1;
   } else if (mode === 'unreachable') {
-    process.stderr.write('npm error code ECONNREFUSED\nnpm error request to https://registry.npmjs.org/-/whoami failed\n');
+    process.stderr.write(
+      'npm error code ECONNREFUSED\nnpm error syscall connect\nnpm error errno ECONNREFUSED\n' +
+        'npm error FetchError: request to https://registry.npmjs.org/-/whoami failed, reason: connect ECONNREFUSED\n',
+    );
     process.exitCode = 1;
   } else {
     process.stderr.write('npm error code ENEEDAUTH\nnpm error need auth This command requires you to be logged in.\n');

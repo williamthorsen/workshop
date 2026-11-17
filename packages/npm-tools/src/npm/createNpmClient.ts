@@ -209,14 +209,14 @@ function describeExit({ signal, status }: { signal: NodeJS.Signals | null; statu
 
 /**
  * Finds the line that summarizes an npm error, without its `npm error` prefix: the first `npm error` line other than
- * the bare, `code`, and `errno` ones, or else the last non-empty line.
+ * the bare, `code`, `errno`, and `syscall` ones, or else the last non-empty line.
  */
 function findErrorSummary(output: string): string | undefined {
   const lines = output
     .split('\n')
     .map((line) => line.trim())
     .filter((line) => line !== '');
-  const summary = lines.find((line) => /^npm error\s+\S/.test(line) && !/^npm error (code|errno)\b/.test(line));
+  const summary = lines.find((line) => /^npm error\s+\S/.test(line) && !/^npm error (code|errno|syscall)\b/.test(line));
 
   return (summary ?? lines.at(-1))?.replace(/^npm error\s*/, '');
 }
