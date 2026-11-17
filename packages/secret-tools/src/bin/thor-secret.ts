@@ -2,11 +2,10 @@
 
 import process from 'node:process';
 
-import { ignoreBrokenPipes, installCrashHandler } from '@williamthorsen/toolbelt.cli/candidate';
+import { ignoreBrokenPipes, installCrashHandler, readStreamText } from '@williamthorsen/toolbelt.cli/candidate';
 import { resolveSelfVersion } from '@williamthorsen/toolbelt.packaging/candidate';
 import { createKeychainStore, promptSecret } from '@williamthorsen/toolbelt.secrets/candidate';
 
-import { readStreamText } from './readStreamText.ts';
 import { PROGRAM_NAME, run } from './run.ts';
 
 installCrashHandler(PROGRAM_NAME);
