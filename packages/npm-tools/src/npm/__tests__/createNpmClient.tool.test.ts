@@ -53,6 +53,7 @@ describe(createNpmClient, () => {
       { view: 'found', expected: { kind: 'found' } },
       { view: 'absent', expected: { kind: 'absent' } },
       { view: 'fail', expected: { kind: 'failed', detail: 'request to registry failed' } },
+      { view: 'signal', expected: { kind: 'failed', detail: 'signal SIGTERM' } },
     ] as const)('reports $view as $expected.kind', ({ view, expected }) => {
       using npm = createFakeNpm({ view });
 
@@ -182,13 +183,24 @@ describe(createNpmClient, () => {
       expect(npm.readCalls()).toStrictEqual([{ args: ['whoami'], cwd: npm.tree.dir }]);
     });
 
-    it("reports a session that npm rejects, with npm's summary line", () => {
-      using npm = createFakeNpm({ whoami: 'fail' });
+    it.each([
+      {
+        whoami: 'need-auth',
+        expected: { kind: 'logged-out', detail: 'need auth This command requires you to be logged in.' },
+      },
+      {
+        whoami: 'unauthorized',
+        expected: { kind: 'logged-out', detail: '401 Unauthorized - GET https://registry.npmjs.org/-/whoami' },
+      },
+      {
+        whoami: 'unreachable',
+        expected: { kind: 'failed', detail: 'request to https://registry.npmjs.org/-/whoami failed' },
+      },
+      { whoami: 'signal', expected: { kind: 'failed', detail: 'signal SIGTERM' } },
+    ] as const)("reports $whoami as $expected.kind, with npm's reason", ({ whoami, expected }) => {
+      using npm = createFakeNpm({ whoami });
 
-      expect(createClient(npm).whoami()).toStrictEqual({
-        kind: 'logged-out',
-        detail: 'need auth This command requires you to be logged in.',
-      });
+      expect(createClient(npm).whoami()).toStrictEqual(expected);
     });
 
     it('reports npm as missing when PATH does not contain it', () => {
