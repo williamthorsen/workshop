@@ -2,6 +2,7 @@ import { createTextBuffer } from '@williamthorsen/toolbelt.cli/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { run, type RunEffects } from '../run.ts';
+import { createNpmStub } from '../test-utils/createNpmStub.ts';
 
 const VERSION = '9.9.9';
 
@@ -14,14 +15,7 @@ const EFFECTS: RunEffects = {
   },
   isStdinTty: () => true,
   isStdoutTty: () => true,
-  npm: {
-    addGithubTrust: () => ({ kind: 'failed', detail: 'unexpected addGithubTrust' }),
-    findVersion: () => ({ kind: 'found' }),
-    listTrust: () => ({ kind: 'failed', detail: 'unexpected listTrust' }),
-    publish: () => ({ kind: 'failed', detail: 'unexpected publish' }),
-    revokeTrust: () => ({ kind: 'failed', detail: 'unexpected revokeTrust' }),
-    whoami: () => ({ kind: 'logged-in', username: 'someone' }),
-  },
+  npm: createNpmStub(),
   readAnswer: () => Promise.resolve(undefined),
   resolveVersion: () => VERSION,
   stdoutColumns: () => undefined,
@@ -68,14 +62,13 @@ describe(run, () => {
   describe('move-trust', () => {
     const listing: RunEffects = {
       ...EFFECTS,
-      npm: {
-        ...EFFECTS.npm,
+      npm: createNpmStub({
         listTrust: () => ({
           kind: 'listed',
           entries: [{ file: 'release.yaml', id: 'trust-1', permissions: ['createPackage'], repository: 'owner/old' }],
           otherCount: 0,
         }),
-      },
+      }),
     };
 
     it('prints its own help, even without the operand', async () => {
@@ -121,6 +114,14 @@ describe(run, () => {
   });
 
   describe('publish-placeholder', () => {
+    const taken: RunEffects = {
+      ...EFFECTS,
+      npm: createNpmStub({
+        findVersion: () => ({ kind: 'found' }),
+        whoami: () => ({ kind: 'logged-in', username: 'someone' }),
+      }),
+    };
+
     it('prints its own help, even without the operand', async () => {
       const { exitCode, stdout } = await runWithBuffers(['publish-placeholder', '--help']);
 
@@ -139,7 +140,7 @@ describe(run, () => {
     });
 
     it('passes the operand and the short flags to the command', async () => {
-      const { exitCode, stderr } = await runWithBuffers(['publish-placeholder', '@scope/taken', '-n', '-f']);
+      const { exitCode, stderr } = await runWithBuffers(['publish-placeholder', '@scope/taken', '-n', '-f'], taken);
 
       expect(exitCode).toBe(1);
       expect(stderr).toBe(
@@ -159,12 +160,12 @@ describe(run, () => {
       const bug = new Error('boom');
       const throwing: RunEffects = {
         ...EFFECTS,
-        npm: {
-          ...EFFECTS.npm,
+        npm: createNpmStub({
           findVersion: () => {
             throw bug;
           },
-        },
+          whoami: () => ({ kind: 'logged-in', username: 'someone' }),
+        }),
       };
 
       await expect(runWithBuffers(['publish-placeholder', 'free-name'], throwing)).rejects.toBe(bug);
