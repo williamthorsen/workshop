@@ -6,11 +6,11 @@ import type {
 } from '@williamthorsen/toolbelt.atlassian/candidate';
 import { describe, expect, it } from 'vitest';
 
-import { buildProjectConfiguration } from '../../test-utils/projectConfiguration.ts';
 import type { ConfigureStep } from '../reconcileProject.ts';
 import { renderConfigureStep } from '../renderConfigureStep.ts';
 import { renderPlan } from '../renderPlan.ts';
 import { renderVerification } from '../renderVerification.ts';
+import { buildProjectConfiguration } from '../test-utils/projectConfiguration.ts';
 
 const PLAN: ReconciliationPlan = {
   creations: [],

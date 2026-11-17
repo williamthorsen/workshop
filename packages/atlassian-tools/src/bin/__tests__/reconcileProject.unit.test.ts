@@ -1,9 +1,9 @@
 import type { ProjectSpec } from '@williamthorsen/toolbelt.atlassian/candidate';
 import { describe, expect, it } from 'vitest';
 
-import { createFakeRequest } from '../../test-utils/createFakeRequest.ts';
 import { type ConfigureStep, type ReconcileInputs, reconcileProject } from '../reconcileProject.ts';
 import { BOARD_ID, buildProjectRoutes, PROJECT_KEY } from '../test-utils/buildProjectRoutes.ts';
+import { createFakeRequest } from '../test-utils/createFakeRequest.ts';
 
 const CONFORMANT_SPEC: ProjectSpec = {
   boardFeatures: { 'jsw.agility.backlog': 'DISABLED' },
