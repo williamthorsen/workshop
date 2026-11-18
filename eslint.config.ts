@@ -4,6 +4,7 @@ import baseConfig, {
   patterns,
   toolIgnores,
 } from '@williamthorsen/eslint-config-typescript';
+import type { Linter } from 'eslint';
 import { defineConfig, globalIgnores } from 'eslint/config';
 
 // The broad blocks below match on the base config's `patterns`, the same constants it applies its own blocks to,
@@ -42,6 +43,34 @@ const RESTRICTED_SYNTAX = [
     message: 'Use `describeError` from @williamthorsen/toolbelt.errors to read a message off an unknown thrown value.',
   },
 ];
+
+/**
+ * The modules permitted at the root of each package's `src/`, keyed by package directory.
+ *
+ * Every package's source is grouped by role, so a module at the root of `src/` belongs in a directory. A permitted
+ * module names the package, or an entry point to it, rather than a role within it.
+ */
+const ROOT_MODULES: Readonly<Record<string, readonly string[]>> = {
+  'atlassian-tools': [],
+  'chrome-tools': [],
+  // The exceptions are the entry point and the version accessor.
+  compositor: ['getEngineVersion.ts', 'index.ts'],
+  'demo-tools': [],
+  'git-tools': [],
+  // The one exception is the entry point.
+  'launchd-agent': ['index.ts'],
+  // The one exception is the entry point.
+  'nodejs-tools': ['index.ts'],
+  'npm-tools': [],
+  // The exceptions name the package rather than a role within it.
+  overlay: ['index.ts', 'overlay.ts'],
+  // The exceptions name the package rather than a role within it.
+  readyup: ['index.ts', 'readyupResolverHook.ts', 'version.ts'],
+  'repo-tools': [],
+  'secret-tools': [],
+  // The one exception is the entry point.
+  'systemd-service': ['index.ts'],
+};
 
 const config = defineConfig([
   ...baseConfig,
@@ -119,219 +148,13 @@ const config = defineConfig([
       'no-restricted-syntax': ['error', ...STATEMENT_BANS],
     },
   },
-  {
-    // readyup's source is grouped by role, so a module at the root of `src/` belongs in a directory. The three
-    // exceptions name the package rather than a role within it. The selector matches every file the glob admits,
-    // which is the point: the finding is the file's presence, not anything it contains.
-    files: ['packages/readyup/src/*.ts'],
-    ignores: [
-      'packages/readyup/src/index.ts',
-      'packages/readyup/src/readyupResolverHook.ts',
-      'packages/readyup/src/version.ts',
-    ],
-    rules: {
-      'no-restricted-syntax': [
-        'error',
-        ...RESTRICTED_SYNTAX,
-        {
-          selector: 'Program',
-          message:
-            'Group this module into a directory named for its role. Only index.ts, readyupResolverHook.ts, and version.ts belong at the root of readyup/src.',
-        },
-      ],
-    },
-  },
-  {
-    // overlay's source is grouped by role on the same terms, and its two exceptions likewise name the package.
-    files: ['packages/overlay/src/*.ts'],
-    ignores: ['packages/overlay/src/index.ts', 'packages/overlay/src/overlay.ts'],
-    rules: {
-      'no-restricted-syntax': [
-        'error',
-        ...RESTRICTED_SYNTAX,
-        {
-          selector: 'Program',
-          message:
-            'Group this module into a directory named for its role. Only index.ts and overlay.ts belong at the root of overlay/src.',
-        },
-      ],
-    },
-  },
-  {
-    // git-tools's source is grouped by role on the same terms; no module belongs at its root yet.
-    files: ['packages/git-tools/src/*.ts'],
-    rules: {
-      'no-restricted-syntax': [
-        'error',
-        ...RESTRICTED_SYNTAX,
-        {
-          selector: 'Program',
-          message:
-            'Group this module into a directory named for its role. No module belongs at the root of git-tools/src.',
-        },
-      ],
-    },
-  },
-  {
-    // repo-tools's source is grouped by role on the same terms; no module belongs at its root yet.
-    files: ['packages/repo-tools/src/*.ts'],
-    rules: {
-      'no-restricted-syntax': [
-        'error',
-        ...RESTRICTED_SYNTAX,
-        {
-          selector: 'Program',
-          message:
-            'Group this module into a directory named for its role. No module belongs at the root of repo-tools/src.',
-        },
-      ],
-    },
-  },
-  {
-    // secret-tools's source is grouped by role on the same terms; no module belongs at its root yet.
-    files: ['packages/secret-tools/src/*.ts'],
-    rules: {
-      'no-restricted-syntax': [
-        'error',
-        ...RESTRICTED_SYNTAX,
-        {
-          selector: 'Program',
-          message:
-            'Group this module into a directory named for its role. No module belongs at the root of secret-tools/src.',
-        },
-      ],
-    },
-  },
-  {
-    // nodejs-tools's source is grouped by role on the same terms; its one exception is the entry point.
-    files: ['packages/nodejs-tools/src/*.ts'],
-    ignores: ['packages/nodejs-tools/src/index.ts'],
-    rules: {
-      'no-restricted-syntax': [
-        'error',
-        ...RESTRICTED_SYNTAX,
-        {
-          selector: 'Program',
-          message:
-            'Group this module into a directory named for its role. Only index.ts belongs at the root of nodejs-tools/src.',
-        },
-      ],
-    },
-  },
-  {
-    // atlassian-tools's source is grouped by role on the same terms; no module belongs at its root yet.
-    files: ['packages/atlassian-tools/src/*.ts'],
-    rules: {
-      'no-restricted-syntax': [
-        'error',
-        ...RESTRICTED_SYNTAX,
-        {
-          selector: 'Program',
-          message:
-            'Group this module into a directory named for its role. No module belongs at the root of atlassian-tools/src.',
-        },
-      ],
-    },
-  },
-  {
-    // compositor's root follows on the same terms; its exceptions are the entry point and the version accessor.
-    files: ['packages/compositor/src/*.ts'],
-    ignores: ['packages/compositor/src/getEngineVersion.ts', 'packages/compositor/src/index.ts'],
-    rules: {
-      'no-restricted-syntax': [
-        'error',
-        ...RESTRICTED_SYNTAX,
-        {
-          selector: 'Program',
-          message:
-            'Group this module into a directory named for its role. Only getEngineVersion.ts and index.ts belong at the root of compositor/src.',
-        },
-      ],
-    },
-  },
-  {
-    // launchd-agent's root follows on the same terms; its one exception is the entry point.
-    files: ['packages/launchd-agent/src/*.ts'],
-    ignores: ['packages/launchd-agent/src/index.ts'],
-    rules: {
-      'no-restricted-syntax': [
-        'error',
-        ...RESTRICTED_SYNTAX,
-        {
-          selector: 'Program',
-          message:
-            'Group this module into a directory named for its role. Only index.ts belongs at the root of launchd-agent/src.',
-        },
-      ],
-    },
-  },
-  {
-    // systemd-service's root follows on the same terms; its one exception is the entry point.
-    files: ['packages/systemd-service/src/*.ts'],
-    ignores: ['packages/systemd-service/src/index.ts'],
-    rules: {
-      'no-restricted-syntax': [
-        'error',
-        ...RESTRICTED_SYNTAX,
-        {
-          selector: 'Program',
-          message:
-            'Group this module into a directory named for its role. Only index.ts belongs at the root of systemd-service/src.',
-        },
-      ],
-    },
-  },
-  {
-    // chrome-tools's source is grouped by role on the same terms; no module belongs at its root yet.
-    files: ['packages/chrome-tools/src/*.ts'],
-    rules: {
-      'no-restricted-syntax': [
-        'error',
-        ...RESTRICTED_SYNTAX,
-        {
-          selector: 'Program',
-          message:
-            'Group this module into a directory named for its role. No module belongs at the root of chrome-tools/src.',
-        },
-      ],
-    },
-  },
-  {
-    // demo-tools's source is grouped by role on the same terms; no module belongs at its root yet.
-    files: ['packages/demo-tools/src/*.ts'],
-    rules: {
-      'no-restricted-syntax': [
-        'error',
-        ...RESTRICTED_SYNTAX,
-        {
-          selector: 'Program',
-          message:
-            'Group this module into a directory named for its role. No module belongs at the root of demo-tools/src.',
-        },
-      ],
-    },
-  },
+  ...Object.entries(ROOT_MODULES).map(([pkg, rootModules]) => buildLayoutGuard(pkg, rootModules)),
   {
     // Each demo repository installs demo-tools' aidemo peer. The package's tests run a fake aidemo, so the workspace
     // does not install the real one as a devDependency.
     files: ['packages/demo-tools/package.json'],
     rules: {
       'package-json/specify-peers-locally': 'off',
-    },
-  },
-  {
-    // npm-tools's source is grouped by role on the same terms; no module belongs at its root yet.
-    files: ['packages/npm-tools/src/*.ts'],
-    rules: {
-      'no-restricted-syntax': [
-        'error',
-        ...RESTRICTED_SYNTAX,
-        {
-          selector: 'Program',
-          message:
-            'Group this module into a directory named for its role. No module belongs at the root of npm-tools/src.',
-        },
-      ],
     },
   },
   {
@@ -352,3 +175,32 @@ const config = defineConfig([
 ]);
 
 export default config;
+
+// region | Helpers
+/**
+ * Builds the layout guard that reports every module at the root of a package's `src/` save the permitted ones.
+ *
+ * The `Program` selector matches every file that the glob admits, which is the point: the finding is the file's
+ * presence, not anything it contains.
+ */
+function buildLayoutGuard(pkg: string, rootModules: readonly string[]): Linter.Config {
+  const permitted =
+    rootModules.length === 0
+      ? 'No module belongs'
+      : `Only ${new Intl.ListFormat('en', { type: 'conjunction' }).format(rootModules)} ${rootModules.length === 1 ? 'belongs' : 'belong'}`;
+  return {
+    files: [`packages/${pkg}/src/*.ts`],
+    ...(rootModules.length > 0 && { ignores: rootModules.map((name) => `packages/${pkg}/src/${name}`) }),
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        ...RESTRICTED_SYNTAX,
+        {
+          selector: 'Program',
+          message: `Group this module into a directory named for its role. ${permitted} at the root of ${pkg}/src.`,
+        },
+      ],
+    },
+  };
+}
+// endregion | Helpers
