@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.47.2",
+    "date": "2026-11-18",
+    "sections": [
+      {
+        "title": "📦 Dependencies",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Remove the unused @arethetypeswrong/cli and zod root devDependencies (#993)",
+            "body": "Removes the `@arethetypeswrong/cli` and `zod` devDependencies from the root `package.json`, because nothing at the root uses either, and drops from `pnpm-lock.yaml` the packages that only they required.",
+            "hash": "c43e5c6e26296cfa1d655e625bdfa98e3aba7da7"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.47.1",
     "date": "2026-11-17",
     "sections": [

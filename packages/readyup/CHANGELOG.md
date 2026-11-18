@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.47.2 — 2026-11-18
+
+### 📦 Dependencies
+
+- Remove the unused @arethetypeswrong/cli and zod root devDependencies (#993)
+
+  Removes the `@arethetypeswrong/cli` and `zod` devDependencies from the root `package.json`, because nothing at the root uses either, and drops from `pnpm-lock.yaml` the packages that only they required.
+
 ## 0.47.1 — 2026-11-17
 
 ### 🐛 Bug fixes
