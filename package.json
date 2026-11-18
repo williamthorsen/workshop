@@ -19,7 +19,6 @@
     "prepare": "lefthook check-install || lefthook install"
   },
   "devDependencies": {
-    "@arethetypeswrong/cli": "0.18.5",
     "@types/node": "24.19.2",
     "@typescript-eslint/utils": "8.73.0",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
@@ -41,8 +40,7 @@
     "typescript": "catalog:",
     "v11y-check": "1.0.2",
     "vite": "catalog:",
-    "vitest": "catalog:",
-    "zod": "catalog:"
+    "vitest": "catalog:"
   },
   "packageManager": "pnpm@12.21.0",
   "engines": {

@@ -27,10 +27,10 @@ const it = baseIt.extend(
 describe(resolvePackageRoot, () => {
   describe('against the repo in which it runs', () => {
     it('resolves an unscoped dependency to a directory containing its manifest', () => {
-      const root = resolvePackageRoot('zod', REPO_ROOT);
+      const root = resolvePackageRoot('vitest', REPO_ROOT);
 
       expect(root).toBeDefined();
-      expect(path.basename(root ?? '')).toBe('zod');
+      expect(path.basename(root ?? '')).toBe('vitest');
     });
 
     // The leading `@` of a scope must not be mistaken for a path or version delimiter.
