@@ -1,7 +1,10 @@
 import { globSync } from 'node:fs';
 import path from 'node:path';
 
+import { isRecord } from 'readyup/check-utils';
 import { describe, expect, it } from 'vitest';
+
+import { sharedOptions } from '../vitest.shared.ts';
 
 const repoRoot = path.resolve(import.meta.dirname, '..');
 
@@ -27,21 +30,22 @@ describe('every Vitest config', () => {
     expect(readAliasedSpecifiers(config)).toStrictEqual(ALIASED_SPECIFIERS);
   });
 
-  it.for(CONFIG_PATHS)('restores stubbed environment variables in %s', async (relativePath) => {
-    const config = await loadConfig(relativePath);
-    const flags = readUnstubEnvsFlags(config);
+  it('declares settings for every project', () => {
+    expect(Object.keys(sharedOptions.project ?? {}).length).toBeGreaterThan(0);
+  });
 
-    expect(flags.length).toBeGreaterThan(0);
-    expect(flags).toStrictEqual(flags.map(() => true));
+  it.for(CONFIG_PATHS)('applies every shared project setting in %s', async (relativePath) => {
+    const config = await loadConfig(relativePath);
+    const projectTests = readProjectTests(config);
+
+    expect(projectTests.length).toBeGreaterThan(0);
+    for (const projectTest of projectTests) {
+      expect(projectTest).toMatchObject(sharedOptions.project ?? {});
+    }
   });
 });
 
 // region | Helpers
-/** Reports whether a value is a plain object, so a config's shape can be read without an assertion. */
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
-}
-
 /** Imports a config and returns the object to which it resolves. */
 async function loadConfig(relativePath: string): Promise<Record<string, unknown>> {
   const imported: unknown = await import(path.join(repoRoot, relativePath));
@@ -64,18 +68,14 @@ function readAliasedSpecifiers(config: Record<string, unknown>): string[] {
     .toSorted();
 }
 
-/** Returns each declared project's `unstubEnvs` setting, in declaration order. */
-function readUnstubEnvsFlags(config: Record<string, unknown>): unknown[] {
+/** Returns each declared project's `test` settings, in declaration order. */
+function readProjectTests(config: Record<string, unknown>): unknown[] {
   const test = config['test'];
   if (!isRecord(test)) return [];
 
   const projects = test['projects'];
   if (!Array.isArray(projects)) return [];
 
-  return projects.map((project) => {
-    if (!isRecord(project)) return undefined;
-    const projectTest = project['test'];
-    return isRecord(projectTest) ? projectTest['unstubEnvs'] : undefined;
-  });
+  return projects.map((project) => (isRecord(project) ? project['test'] : undefined));
 }
 // endregion | Helpers
