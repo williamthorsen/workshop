@@ -2,8 +2,11 @@ import { createTextBuffer } from '@williamthorsen/toolbelt.cli/candidate';
 import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
+import { renderPackageTable } from '../renderPackageList.ts';
 import { run, type RunEffects } from '../run.ts';
 import { createNpmStub } from '../test-utils/createNpmStub.ts';
+
+const EMPTY_TABLE = renderPackageTable([]);
 
 const LONG_DESCRIPTION = `A package whose description runs on ${'and on '.repeat(20)}`;
 
@@ -77,58 +80,69 @@ describe('thor-npm list-packages', () => {
     );
   });
 
-  it('reports an empty workspace and prints an empty list', async () => {
+  it('prints an empty JSON list for a workspace without packages', async () => {
     using tree = createTempTree({ 'pnpm-workspace.yaml': "packages:\n  - 'packages/*'\n" });
 
-    const { exitCode, stderr, stdout } = await runInTree(tree, ['list-packages', '--json'], {
-      columns: 80,
-      isTty: true,
-    });
+    const { exitCode, stdout } = await runInTree(tree, ['list-packages', '--json'], { columns: 80, isTty: true });
 
     expect(exitCode).toBe(0);
-    expect(stderr).toMatch(
-      /^thor-npm list-packages: the workspace at .* has no packages: its patterns 'packages\/\*' do not match any directory containing a package\.json\n$/,
-    );
     expect(JSON.parse(stdout)).toStrictEqual({ packages: [] });
   });
 
-  it('names the patterns when exclusions remove every package', async () => {
-    using tree = createTempTree({
-      'pnpm-workspace.yaml': "packages:\n  - 'packages/*'\n  - '!packages/alpha'\n",
-      'packages/alpha/package.json': '{ "name": "alpha" }\n',
-    });
+  it.each([
+    {
+      cause: 'all-excluded',
+      files: {
+        'pnpm-workspace.yaml': "packages:\n  - 'packages/*'\n  - '!packages/alpha'\n",
+        'packages/alpha/package.json': '{ "name": "alpha" }\n',
+      },
+      exitCode: 0,
+      fragment: "its exclusions remove every package that its patterns 'packages/*', '!packages/alpha' match",
+      stdout: EMPTY_TABLE,
+    },
+    {
+      cause: 'no-package',
+      files: { 'pnpm-workspace.yaml': "packages:\n  - 'packages/*'\n" },
+      exitCode: 0,
+      fragment: "its patterns 'packages/*' do not match any directory containing a package.json",
+      stdout: EMPTY_TABLE,
+    },
+    {
+      cause: 'no-packages-list',
+      files: { 'pnpm-workspace.yaml': 'onlyBuiltDependencies: []\n' },
+      exitCode: 0,
+      fragment: 'does not declare a packages list',
+      stdout: EMPTY_TABLE,
+    },
+    {
+      cause: 'no-pattern',
+      files: { 'pnpm-workspace.yaml': "packages:\n  - '!packages/alpha'\n" },
+      exitCode: 0,
+      fragment: "its packages list '!packages/alpha' does not contain a pattern that includes directories",
+      stdout: EMPTY_TABLE,
+    },
+    {
+      cause: 'unreadable-manifest',
+      files: { 'pnpm-workspace.yaml': 'packages: [\n' },
+      exitCode: 1,
+      fragment: 'pnpm-workspace.yaml cannot be read or parsed as YAML',
+      stdout: '',
+    },
+    {
+      cause: 'unreadable-packages',
+      files: { 'pnpm-workspace.yaml': 'packages: packages/*\n' },
+      exitCode: 1,
+      fragment: 'pnpm-workspace.yaml is not a list of strings',
+      stdout: '',
+    },
+  ])('reports an empty workspace ($cause) with exit $exitCode', async ({ exitCode, files, fragment, stdout }) => {
+    using tree = createTempTree(files);
 
-    const { exitCode, stderr } = await runInTree(tree, ['list-packages'], { columns: 80, isTty: true });
+    const result = await runInTree(tree, ['list-packages'], { columns: undefined, isTty: false });
 
-    expect(exitCode).toBe(0);
-    expect(stderr).toContain(
-      "has no packages: its exclusions remove every package that its patterns 'packages/*', '!packages/alpha' match\n",
-    );
-  });
-
-  it('reports a workspace manifest that does not parse and exits 1 without printing a list', async () => {
-    using tree = createTempTree({ 'pnpm-workspace.yaml': 'packages: [\n' });
-
-    const { exitCode, stderr, stdout } = await runInTree(tree, ['list-packages', '--json'], {
-      columns: 80,
-      isTty: true,
-    });
-
-    expect(exitCode).toBe(1);
-    expect(stdout).toBe('');
-    expect(stderr).toMatch(
-      /^thor-npm list-packages: .*pnpm-workspace\.yaml cannot be read or parsed as YAML; fix it, then run this again\n$/,
-    );
-  });
-
-  it('reports a packages value that is not a list of strings and exits 1', async () => {
-    using tree = createTempTree({ 'pnpm-workspace.yaml': 'packages: packages/*\n' });
-
-    const { exitCode, stderr, stdout } = await runInTree(tree, ['list-packages'], { columns: 80, isTty: true });
-
-    expect(exitCode).toBe(1);
-    expect(stdout).toBe('');
-    expect(stderr).toMatch(/the packages value in .*pnpm-workspace\.yaml is not a list of strings; fix it/);
+    expect(result.exitCode).toBe(exitCode);
+    expect(result.stderr).toContain(fragment);
+    expect(result.stdout).toBe(stdout);
   });
 
   it('reports a manifest that does not parse and exits 1', async () => {
