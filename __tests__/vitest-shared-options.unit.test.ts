@@ -30,7 +30,7 @@ describe('every Vitest config', () => {
     expect(readAliasedSpecifiers(config)).toStrictEqual(ALIASED_SPECIFIERS);
   });
 
-  it('declares settings for every project', () => {
+  it('has shared project settings to check', () => {
     expect(Object.keys(sharedOptions.project ?? {}).length).toBeGreaterThan(0);
   });
 
