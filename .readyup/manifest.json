@@ -39,7 +39,7 @@
           "checklist": "publishing-pipeline",
           "checks": [
             "Build config exists",
-            "Shared Vitest config exists",
+            "Shared Vitest settings exist",
             "LICENSE file exists",
             ".npmrc configures save-exact",
             "Release workflow exists"
@@ -55,7 +55,7 @@
       "esbuildVersion": "0.28.2",
       "inputs": [
         {
-          "hash": "a574e780",
+          "hash": "0b7e1daf",
           "kind": "module",
           "path": "kits/demo.ts"
         }
@@ -64,8 +64,8 @@
       "path": "kits/demo.js",
       "readyupVersion": "0.47.1",
       "source": "kits/demo.ts",
-      "sourceHash": "a574e780",
-      "targetHash": "4b3df10e"
+      "sourceHash": "0b7e1daf",
+      "targetHash": "6acc0470"
     },
     {
       "checklistChecks": [

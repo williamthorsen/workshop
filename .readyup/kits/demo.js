@@ -143,9 +143,9 @@ var publishingPipeline = defineRdyStagedChecklist({
         fix: "Add .config/nmr.config.ts to declare per-repo nmr script overrides"
       },
       {
-        name: "Shared Vitest config exists",
-        check: () => fileExists("config/vitest.config.ts"),
-        fix: "Add config/vitest.config.ts \u2014 packages inherit the shared test configuration"
+        name: "Shared Vitest settings exist",
+        check: () => fileExists("vitest.shared.ts"),
+        fix: "Add vitest.shared.ts \u2014 every Vitest config passes its settings to the factory"
       }
     ],
     // Stage 2: Compliance
@@ -161,7 +161,7 @@ var publishingPipeline = defineRdyStagedChecklist({
         fix: "Add save-exact=true to .npmrc for reproducible installs"
       }
     ],
-    // Stage 3: Release automation (skipped if compliance fails)
+    // Stage 3: Release automation (blocked if compliance fails)
     [
       {
         name: "Release workflow exists",

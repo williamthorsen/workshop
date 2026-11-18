@@ -110,7 +110,7 @@ const optionalIntegrations = defineRdyChecklist({
 
 // -- Flat checklist with mixed severities --
 // Demonstrates: error, warn, and recommend severity levels. Also shows a
-// failed parent with a skipped child (bitbucket-pipelines.yml).
+// failed parent with a blocked child (bitbucket-pipelines.yml).
 
 const codeQuality = defineRdyChecklist({
   name: 'code-quality',
@@ -154,7 +154,7 @@ const codeQuality = defineRdyChecklist({
 
 // -- Staged checklist with halt-on-failure --
 // Demonstrates: sequential group execution. If compliance fails, release
-// automation checks are skipped — no point verifying workflows for an
+// automation checks are blocked — no point verifying workflows for an
 // unpublishable package.
 
 const publishingPipeline = defineRdyStagedChecklist({
@@ -168,9 +168,9 @@ const publishingPipeline = defineRdyStagedChecklist({
         fix: 'Add .config/nmr.config.ts to declare per-repo nmr script overrides',
       },
       {
-        name: 'Shared Vitest config exists',
-        check: () => fileExists('config/vitest.config.ts'),
-        fix: 'Add config/vitest.config.ts — packages inherit the shared test configuration',
+        name: 'Shared Vitest settings exist',
+        check: () => fileExists('vitest.shared.ts'),
+        fix: 'Add vitest.shared.ts — every Vitest config passes its settings to the factory',
       },
     ],
     // Stage 2: Compliance
@@ -186,7 +186,7 @@ const publishingPipeline = defineRdyStagedChecklist({
         fix: 'Add save-exact=true to .npmrc for reproducible installs',
       },
     ],
-    // Stage 3: Release automation (skipped if compliance fails)
+    // Stage 3: Release automation (blocked if compliance fails)
     [
       {
         name: 'Release workflow exists',
