@@ -26,7 +26,7 @@
     "@vitest/eslint-plugin": "1.6.28",
     "@williamthorsen/eslint-config-typescript": "23.0.0",
     "@williamthorsen/nmr": "catalog:",
-    "@williamthorsen/release-kit": "18.3.1",
+    "@williamthorsen/release-kit": "18.4.0",
     "@williamthorsen/strict-lint": "16.0.0",
     "@williamthorsen/toolbelt.errors": "catalog:",
     "@williamthorsen/toolbelt.vitest": "catalog:",
