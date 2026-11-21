@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, renameSync } from 'node:fs';
 import path from 'node:path';
 
-import { findPackageRoot } from '@williamthorsen/toolbelt.packaging/candidate';
+import { findPackageRoot } from '@williamthorsen/toolbelt.packaging';
 
 import type { RunInvocation } from './invocation.ts';
 

@@ -3,7 +3,7 @@
 import process from 'node:process';
 
 import { ignoreBrokenPipes, installCrashHandler } from '@williamthorsen/toolbelt.cli/candidate';
-import { resolveSelfVersion } from '@williamthorsen/toolbelt.packaging/candidate';
+import { resolveSelfVersion } from '@williamthorsen/toolbelt.packaging';
 
 import { resolveCheckedOutBranch } from './resolve-checked-out-branch.ts';
 import { run } from './run.ts';

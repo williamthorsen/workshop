@@ -1,5 +1,6 @@
 import { UsageError } from '@williamthorsen/toolbelt.cli/candidate';
-import { captureError, createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureError } from '@williamthorsen/toolbelt.testing';
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { parseProtectList, readProtectList } from '../readProtectList.ts';

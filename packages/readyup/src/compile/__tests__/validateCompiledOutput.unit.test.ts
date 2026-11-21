@@ -2,8 +2,9 @@ import assert from 'node:assert';
 import { existsSync } from 'node:fs';
 import process from 'node:process';
 
-import { captureError, createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
-import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { captureError } from '@williamthorsen/toolbelt.testing';
+import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest';
 import { describe, expect, it as baseIt } from 'vitest';
 
 import { validateCompiledOutput } from '../validateCompiledOutput.ts';

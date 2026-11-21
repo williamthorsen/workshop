@@ -1,6 +1,6 @@
 import assert from 'node:assert';
 
-import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureError } from '@williamthorsen/toolbelt.testing';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { RepositoryProvenance } from '../../kits/KitProvenance.ts';

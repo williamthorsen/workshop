@@ -1,7 +1,7 @@
 import { chmod } from 'node:fs/promises';
 import path from 'node:path';
 
-import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureError } from '@williamthorsen/toolbelt.testing';
 import { describe, expect, it } from 'vitest';
 
 import { DeclarationError } from '../../declaration/DeclarationError.ts';

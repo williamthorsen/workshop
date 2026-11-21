@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
-import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest';
 import { describe, expect, it as baseIt } from 'vitest';
 
 import { resolveCompileRoot } from '../resolveCompileRoot.ts';

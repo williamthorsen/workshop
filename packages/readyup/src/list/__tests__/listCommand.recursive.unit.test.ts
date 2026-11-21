@@ -1,5 +1,6 @@
-import { captureError, captureStdio, createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
-import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { captureError, captureStdio, pointCwdAt } from '@williamthorsen/toolbelt.testing';
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest';
 import { afterEach, describe, expect, it as baseIt, vi } from 'vitest';
 
 const mockReaddirSync = vi.hoisted(() => vi.fn());

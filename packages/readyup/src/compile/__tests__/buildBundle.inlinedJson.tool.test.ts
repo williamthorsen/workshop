@@ -1,7 +1,8 @@
 import path from 'node:path';
 
-import { captureStdio, createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
-import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { captureStdio } from '@williamthorsen/toolbelt.testing';
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest';
 import { describe, expect, it as baseIt } from 'vitest';
 
 import { buildBundle, type InlinedJsonFile } from '../buildBundle.ts';

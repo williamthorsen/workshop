@@ -3,7 +3,7 @@ import { cpSync } from 'node:fs';
 import path from 'node:path';
 
 import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
-import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest';
 import { describe, expect, it as baseIt } from 'vitest';
 
 const RDY_BIN_PATH = path.resolve(import.meta.dirname, '..', '..', 'bin', 'rdy.ts');

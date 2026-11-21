@@ -6,7 +6,7 @@ import path from 'node:path';
 import process from 'node:process';
 
 import { ignoreBrokenPipes, installCrashHandler, readAnswer } from '@williamthorsen/toolbelt.cli/candidate';
-import { resolveSelfVersion } from '@williamthorsen/toolbelt.packaging/candidate';
+import { resolveSelfVersion } from '@williamthorsen/toolbelt.packaging';
 
 import { createNpmClient } from '../npm/createNpmClient.ts';
 import { run } from './run.ts';

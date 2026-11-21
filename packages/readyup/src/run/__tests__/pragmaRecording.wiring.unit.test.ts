@@ -1,7 +1,8 @@
 import { promisify } from 'node:util';
 
-import { createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
-import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { pointCwdAt } from '@williamthorsen/toolbelt.testing';
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest';
 import { describe, expect, it as baseIt, vi } from 'vitest';
 
 const execFileAsync = vi.hoisted(() =>

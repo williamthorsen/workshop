@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import { listDuplicateItems } from '@williamthorsen/toolbelt.arrays/candidate';
+import { listDuplicateItems } from '@williamthorsen/toolbelt.arrays';
 import { describeError } from '@williamthorsen/toolbelt.errors';
 import { parse as parseYaml } from 'yaml';
 import { z } from 'zod';

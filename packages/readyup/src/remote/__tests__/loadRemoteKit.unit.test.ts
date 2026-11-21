@@ -1,4 +1,4 @@
-import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureError } from '@williamthorsen/toolbelt.testing';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const mockMkdtempSync = vi.hoisted(() => vi.fn());

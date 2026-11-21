@@ -1,4 +1,5 @@
-import { listConsoleLines, silenceConsole } from '@williamthorsen/toolbelt.vitest/candidate';
+import { silenceConsole } from '@williamthorsen/toolbelt.vitest';
+import { listConsoleLines } from '@williamthorsen/toolbelt.vitest/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { richFormatter } from '../../layout/formatter.ts';

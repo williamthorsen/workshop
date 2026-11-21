@@ -2,7 +2,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
-import { disposeOnTestFinished } from '@williamthorsen/toolbelt.vitest/candidate';
+import { disposeOnTestFinished } from '@williamthorsen/toolbelt.vitest';
 import { describe, expect, it } from 'vitest';
 
 import { buildBundle } from '../buildBundle.ts';

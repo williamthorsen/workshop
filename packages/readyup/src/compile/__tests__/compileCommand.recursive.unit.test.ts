@@ -2,8 +2,9 @@ import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
-import { captureStdio, createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
-import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { captureStdio, pointCwdAt } from '@williamthorsen/toolbelt.testing';
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest';
 import { afterEach, beforeEach, describe, expect, it as baseIt, vi } from 'vitest';
 
 const mockReaddirSync = vi.hoisted(() => vi.fn());

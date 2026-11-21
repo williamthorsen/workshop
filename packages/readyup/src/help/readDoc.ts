@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 
-import { findPackageRoot } from '@williamthorsen/toolbelt.packaging/candidate';
+import { findPackageRoot } from '@williamthorsen/toolbelt.packaging';
 
 import { internalError } from '../errors/RdyError.ts';
 

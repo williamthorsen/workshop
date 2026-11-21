@@ -5,7 +5,7 @@ import process from 'node:process';
 
 import { createTokenTransport } from '@williamthorsen/toolbelt.atlassian/candidate';
 import { ignoreBrokenPipes, installCrashHandler, readStreamText } from '@williamthorsen/toolbelt.cli/candidate';
-import { resolveSelfVersion } from '@williamthorsen/toolbelt.packaging/candidate';
+import { resolveSelfVersion } from '@williamthorsen/toolbelt.packaging';
 import { createKeychainStore, promptSecret } from '@williamthorsen/toolbelt.secrets/candidate';
 
 import { findSpecPath } from './findSpecPath.ts';

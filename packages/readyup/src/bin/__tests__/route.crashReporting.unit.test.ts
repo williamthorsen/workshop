@@ -1,4 +1,4 @@
-import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureStdio } from '@williamthorsen/toolbelt.testing';
 import { describe, expect, it } from 'vitest';
 
 import { internalError } from '../../errors/RdyError.ts';

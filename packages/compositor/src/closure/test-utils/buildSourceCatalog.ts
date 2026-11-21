@@ -1,5 +1,5 @@
 import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
-import { disposeOnTestFinished } from '@williamthorsen/toolbelt.vitest/candidate';
+import { disposeOnTestFinished } from '@williamthorsen/toolbelt.vitest';
 
 import { resolveCatalog } from '../../resolution/resolveCatalog.ts';
 import type { Catalog, ResolveKind } from '../../schemas/catalog-schemas.ts';

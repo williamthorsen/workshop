@@ -1,8 +1,9 @@
 import path from 'node:path';
 import process from 'node:process';
 
-import { captureStdio, createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
-import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { captureStdio, pointCwdAt } from '@williamthorsen/toolbelt.testing';
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest';
 import { describe, expect, it as baseIt, vi } from 'vitest';
 
 const mockLoadConfig = vi.hoisted(() => vi.fn());

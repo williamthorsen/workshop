@@ -24,7 +24,7 @@
  */
 
 import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
-import { disposeOnTestFinished } from '@williamthorsen/toolbelt.vitest/candidate';
+import { disposeOnTestFinished } from '@williamthorsen/toolbelt.vitest';
 
 import type { ArtifactRead, EdgeContribution } from '../closure/EdgeContributor.ts';
 import type { ResolveKind } from '../schemas/catalog-schemas.ts';

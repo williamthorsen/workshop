@@ -325,8 +325,8 @@ A kit's checks are ordinary functions, and the shape of the test follows what a 
 **A check that calls `discoverWorkspaces` itself** is tested against a real directory tree, with `cwd` pointed at it. Nothing is mocked, so the check sees the workspace list actually produced by discovery, root included:
 
 ```ts
-import { createTempTree } from '@williamthorsen/toolbelt.filesystem/candidate';
-import { pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { pointCwdAt } from '@williamthorsen/toolbelt.testing';
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 
 it('passes when every package README contains the marker', () => {
   using temp = createTempTree({

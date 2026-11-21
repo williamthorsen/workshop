@@ -1,4 +1,4 @@
-import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureStdio } from '@williamthorsen/toolbelt.testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockLoadConfig = vi.hoisted(() => vi.fn());

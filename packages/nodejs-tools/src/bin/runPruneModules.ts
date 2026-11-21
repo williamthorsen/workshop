@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import { isAffirmative, UsageError, type Writer } from '@williamthorsen/toolbelt.cli/candidate';
 import { describeError } from '@williamthorsen/toolbelt.errors';
-import { safeParseInteger } from '@williamthorsen/toolbelt.numbers/candidate';
+import { safeParseInteger } from '@williamthorsen/toolbelt.numbers';
 
 import { findLastActivity } from './findLastActivity.ts';
 import { findProtectingPattern } from './findProtectingPattern.ts';

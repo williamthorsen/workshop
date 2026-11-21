@@ -1,4 +1,4 @@
-import { listDuplicateItems } from '@williamthorsen/toolbelt.arrays/candidate';
+import { listDuplicateItems } from '@williamthorsen/toolbelt.arrays';
 
 import type { Violation } from './Violation.ts';
 

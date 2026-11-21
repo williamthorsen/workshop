@@ -1,4 +1,4 @@
-import { captureError, captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureError, captureStdio } from '@williamthorsen/toolbelt.testing';
 
 import { DEFAULT_CONFIG } from '../../config/loadConfig.ts';
 import { RdyError } from '../../errors/RdyError.ts';

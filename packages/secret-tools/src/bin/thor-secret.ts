@@ -3,7 +3,7 @@
 import process from 'node:process';
 
 import { ignoreBrokenPipes, installCrashHandler, readStreamText } from '@williamthorsen/toolbelt.cli/candidate';
-import { resolveSelfVersion } from '@williamthorsen/toolbelt.packaging/candidate';
+import { resolveSelfVersion } from '@williamthorsen/toolbelt.packaging';
 import { createKeychainStore, promptSecret } from '@williamthorsen/toolbelt.secrets/candidate';
 
 import { PROGRAM_NAME, run } from './run.ts';

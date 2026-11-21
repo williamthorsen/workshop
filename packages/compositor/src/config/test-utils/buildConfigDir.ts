@@ -1,5 +1,5 @@
 import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
-import { disposeOnTestFinished } from '@williamthorsen/toolbelt.vitest/candidate';
+import { disposeOnTestFinished } from '@williamthorsen/toolbelt.vitest';
 
 /** Builds a directory holding each path in `files` with the given content, removed when the test ends. */
 export function buildConfigDir(files: Record<string, string>): string {
