@@ -8,7 +8,7 @@ import process from 'node:process';
 
 import { ignoreBrokenPipes, installCrashHandler } from '@williamthorsen/toolbelt.cli/candidate';
 import { describeError } from '@williamthorsen/toolbelt.errors';
-import { resolveSelfVersion } from '@williamthorsen/toolbelt.packaging/candidate';
+import { resolveSelfVersion } from '@williamthorsen/toolbelt.packaging';
 
 import { archiveTake } from '../archive/archive-take.ts';
 import type { TakeDisposition } from '../archive/plan-take.ts';

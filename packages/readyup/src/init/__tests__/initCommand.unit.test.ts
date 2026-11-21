@@ -1,5 +1,7 @@
-import { createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
-import { listConsoleLines, makeFixture, silenceConsole } from '@williamthorsen/toolbelt.vitest/candidate';
+import { pointCwdAt } from '@williamthorsen/toolbelt.testing';
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture, silenceConsole } from '@williamthorsen/toolbelt.vitest';
+import { listConsoleLines } from '@williamthorsen/toolbelt.vitest/candidate';
 import { describe, expect, it as baseIt } from 'vitest';
 
 import { initCommand } from '../initCommand.ts';

@@ -1,7 +1,8 @@
 import { realpathSync } from 'node:fs';
 
 import { describeError } from '@williamthorsen/toolbelt.errors';
-import { captureError, captureStdio, createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureError, captureStdio } from '@williamthorsen/toolbelt.testing';
+import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { RdyManifestKit } from '../../manifest/manifestSchema.ts';

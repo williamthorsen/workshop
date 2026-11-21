@@ -5,7 +5,7 @@
 import process from 'node:process';
 
 import { installCrashHandler } from '@williamthorsen/toolbelt.cli/candidate';
-import { resolveSelfVersion } from '@williamthorsen/toolbelt.packaging/candidate';
+import { resolveSelfVersion } from '@williamthorsen/toolbelt.packaging';
 
 import { run } from './run.ts';
 

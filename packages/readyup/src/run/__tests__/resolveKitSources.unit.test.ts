@@ -1,7 +1,7 @@
 import path from 'node:path';
 import process from 'node:process';
 
-import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureError } from '@williamthorsen/toolbelt.testing';
 import { describe, expect, it } from 'vitest';
 
 import { RdyError } from '../../errors/RdyError.ts';

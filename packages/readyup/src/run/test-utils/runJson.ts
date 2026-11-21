@@ -1,4 +1,4 @@
-import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureStdio } from '@williamthorsen/toolbelt.testing';
 
 import type { Severity } from '../../kits/types.ts';
 import type { JsonDetail } from '../../schemas/reportSchema.ts';

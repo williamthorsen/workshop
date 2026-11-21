@@ -1,7 +1,8 @@
 import path from 'node:path';
 
-import { captureStdio, createTempTree, pointCwdAt, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
-import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { captureStdio, pointCwdAt } from '@williamthorsen/toolbelt.testing';
+import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest';
 import { afterEach, describe, expect, it as baseIt, vi } from 'vitest';
 
 import { ReportSchema } from '../../schemas/reportSchema.ts';

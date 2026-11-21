@@ -3,7 +3,8 @@ import { mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
-import { createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { pointCwdAt } from '@williamthorsen/toolbelt.testing';
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it as baseIt, vi } from 'vitest';
 
 import { compileConfig } from '../../../src/compile/compileConfig.ts';

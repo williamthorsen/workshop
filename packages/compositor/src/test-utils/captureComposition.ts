@@ -1,5 +1,5 @@
 import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
-import { disposeOnTestFinished } from '@williamthorsen/toolbelt.vitest/candidate';
+import { disposeOnTestFinished } from '@williamthorsen/toolbelt.vitest';
 
 import type { CompositorConfig } from '../schemas/config-schemas.ts';
 import type { RenderTarget } from '../schemas/render-target-schemas.ts';

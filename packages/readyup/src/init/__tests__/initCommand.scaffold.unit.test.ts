@@ -1,7 +1,8 @@
 import path from 'node:path';
 
-import { createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
-import { makeFixture, silenceConsole } from '@williamthorsen/toolbelt.vitest/candidate';
+import { pointCwdAt } from '@williamthorsen/toolbelt.testing';
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { makeFixture, silenceConsole } from '@williamthorsen/toolbelt.vitest';
 import { describe, expect, it as baseIt, vi } from 'vitest';
 
 import { loadRdyKit } from '../../kits/loadRdyKit.ts';

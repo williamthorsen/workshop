@@ -1,5 +1,5 @@
 import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
-import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest';
 import { describe, expect, it as baseIt, vi } from 'vitest';
 
 const mockReaddirSync = vi.hoisted(() => vi.fn());

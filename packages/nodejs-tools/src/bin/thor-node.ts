@@ -6,7 +6,7 @@ import process from 'node:process';
 
 import { ignoreBrokenPipes, installCrashHandler, readAnswer } from '@williamthorsen/toolbelt.cli/candidate';
 import { findPackageManagerPin, listStrandedAsdfShims } from '@williamthorsen/toolbelt.nodejs/candidate';
-import { resolveSelfVersion } from '@williamthorsen/toolbelt.packaging/candidate';
+import { resolveSelfVersion } from '@williamthorsen/toolbelt.packaging';
 
 import { resolvePnpmProvider } from './resolvePnpmProvider.ts';
 import { run } from './run.ts';

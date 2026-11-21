@@ -2,7 +2,8 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
-import { createTempTree, pointCwdAt } from '@williamthorsen/toolbelt.testing/candidate';
+import { pointCwdAt } from '@williamthorsen/toolbelt.testing';
+import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockCompileConfig = vi.hoisted(() => vi.fn<(inputPath: string, outputPath?: string) => Promise<CompileResult>>());

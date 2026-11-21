@@ -1,7 +1,8 @@
 import path from 'node:path';
 import process from 'node:process';
 
-import { createTempTree, pointCwdAt, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
+import { pointCwdAt } from '@williamthorsen/toolbelt.testing';
+import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
 import { describe, expect, it } from 'vitest';
 
 import {

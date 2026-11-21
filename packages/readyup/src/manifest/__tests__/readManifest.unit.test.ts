@@ -1,4 +1,4 @@
-import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureError } from '@williamthorsen/toolbelt.testing';
 import { describe, expect, it, vi } from 'vitest';
 
 const mockReadFileSync = vi.hoisted(() => vi.fn());

@@ -1,4 +1,4 @@
-import { captureStdio } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureStdio } from '@williamthorsen/toolbelt.testing';
 import { vi } from 'vitest';
 
 import { routeCommand } from '../route.ts';

@@ -1,4 +1,4 @@
-import { captureError } from '@williamthorsen/toolbelt.testing/candidate';
+import { captureError } from '@williamthorsen/toolbelt.testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const runnerVersion = vi.hoisted(() => ({ current: '0.34.0' }));

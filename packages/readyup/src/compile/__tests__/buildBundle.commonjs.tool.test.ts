@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
 import { createTempTree } from '@williamthorsen/toolbelt.testing/candidate';
-import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest';
 import { describe, expect, it as baseIt } from 'vitest';
 
 import { buildBundle } from '../buildBundle.ts';

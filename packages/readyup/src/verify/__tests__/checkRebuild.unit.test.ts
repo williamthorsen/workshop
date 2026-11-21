@@ -1,5 +1,5 @@
 import { createTempTree, type TempTree } from '@williamthorsen/toolbelt.testing/candidate';
-import { makeFixture } from '@williamthorsen/toolbelt.vitest/candidate';
+import { makeFixture } from '@williamthorsen/toolbelt.vitest';
 import { beforeEach, describe, expect, it as baseIt, type Mock, vi } from 'vitest';
 
 import type { BundleResult } from '../../compile/buildBundle.ts';
