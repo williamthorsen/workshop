@@ -8,7 +8,7 @@ export function buildThorNodeEffects(overrides: Partial<ThorNodeEffects> = {}): 
   return {
     cwd: '/work',
     execPath: '/usr/local/bin/node',
-    findPin: () => undefined,
+    findPin: () => {},
     homeDir: '/home',
     isStdinTty: () => false,
     listStrandedShims: () => [],
