@@ -12,7 +12,7 @@ allowBuilds:
 catalog:
   '@tandryukha/aidemo': 0.20.6
   '@vitest/coverage-v8': 5.1.1
-  '@williamthorsen/nmr': 2.3.0
+  '@williamthorsen/nmr': 2.3.1
   '@williamthorsen/readout': 0.2.0
   '@williamthorsen/toolbelt.arrays': 6.5.6
   '@williamthorsen/toolbelt.atlassian': 0.9.3
