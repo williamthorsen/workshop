@@ -20,6 +20,18 @@
         "id": "1241331",
         "reason": "Added by v11y sync at 2026-11-02 06:37:04 UTC",
         "url": "https://github.com/advisories/GHSA-wq5f-xc86-pv6w"
+      },
+      {
+        "addedAt": "2026-11-22T15:25:44.545Z",
+        "id": "1244013",
+        "reason": "Added by v11y sync at 2026-11-22 15:25:44 UTC",
+        "url": "https://github.com/advisories/GHSA-3g3m-2fjr-6pw4"
+      },
+      {
+        "addedAt": "2026-11-22T15:25:44.545Z",
+        "id": "1244623",
+        "reason": "Added by v11y sync at 2026-11-22 15:25:44 UTC",
+        "url": "https://github.com/advisories/GHSA-g3hv-75wg-m249"
       }
     ]
   },

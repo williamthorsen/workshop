@@ -2,7 +2,7 @@
 
 ## Overview
 
-A monorepo of open-source utilities. Currently houses `readyup`, a pre-deployment verification CLI; `overlay`, a chezmoi-backed scaffolding tool; `repo-tools`, a CLI for the repositories in a machine-local registry; `git-tools`, a CLI that derives values from git branch names; `launchd-agent`, a library for per-user launchd agents on macOS; `systemd-service`, a library for systemd services on Linux; `secret-tools`, a CLI for secrets in the macOS keychain; `nodejs-tools`, a CLI and library for Node.js runtimes, toolchains, and `node_modules` directories; `atlassian-tools`, a CLI for Jira Cloud projects; `chrome-tools`, a CLI for Chrome debug sessions; `demo-tools`, a CLI that runs aidemo demos; `npm-tools`, a CLI for npm package and registry chores; `tank-redis`, a Redis-compatible store adapter for `@williamthorsen/tank`, under construction; and `compositor`, a private content-composition engine under construction.
+A monorepo of open-source utilities. Currently houses `readyup`, a pre-deployment verification CLI; `overlay`, a chezmoi-backed scaffolding tool; `repo-tools`, a CLI for the repositories in a machine-local registry; `git-tools`, a CLI that derives values from git branch names; `launchd-agent`, a library for per-user launchd agents on macOS; `systemd-service`, a library for systemd services on Linux; `secret-tools`, a CLI for secrets in the macOS keychain; `nodejs-tools`, a CLI and library for Node.js runtimes, toolchains, and `node_modules` directories; `atlassian-tools`, a CLI for Jira Cloud projects; `chrome-tools`, a CLI for Chrome debug sessions; `demo-tools`, a CLI that runs aidemo demos; `npm-tools`, a CLI for npm package and registry chores; `tank-redis`, a Redis-compatible store adapter for `@williamthorsen/tank`; and `compositor`, a private content-composition engine under construction.
 
 ## Project structure
 
@@ -21,7 +21,7 @@ Packages live under `packages/`:
 - **`repo-tools`**: CLI that lists, scans, registers, and moves the repositories indexed by a machine-local repo registry. Binary: `thor-repo`.
 - **`secret-tools`**: CLI that stores, reads, and removes secrets in the macOS keychain. Binary: `thor-secret`.
 - **`systemd-service`**: Library that installs, restarts, inspects, and removes systemd system services on Linux. No binary.
-- **`tank-redis`**: Library that will store a `@williamthorsen/tank` balance in a Redis-compatible store; not implemented yet. No binary.
+- **`tank-redis`**: Library that stores a `@williamthorsen/tank` balance in a Redis-compatible store through Lua scripts, over a TCP or an HTTP client. Its tests start Redis and an Upstash-compatible HTTP proxy in Docker through Testcontainers, and skip when Docker is unreachable unless `CI` is set. No binary.
 
 Key files:
 
