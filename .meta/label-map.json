@@ -31,6 +31,7 @@
     "repo-tools": "scope:repo-tools",
     "secret-tools": "scope:secret-tools",
     "systemd-service": "scope:systemd-service",
+    "tank-redis": "scope:tank-redis",
     "root": "scope:root"
   }
 }
