@@ -95,7 +95,10 @@ type NodeRedisClient = ReturnType<typeof createClient>;
  * context's endpoint when the variable is unset, because Testcontainers does not read Docker contexts.
  */
 async function probeDocker(): Promise<boolean> {
-  process.env['DOCKER_HOST'] ??= readDockerContextHost();
+  const contextHost = process.env['DOCKER_HOST'] === undefined ? readDockerContextHost() : undefined;
+  if (contextHost !== undefined) {
+    process.env['DOCKER_HOST'] = contextHost;
+  }
   try {
     await getContainerRuntimeClient();
     return true;
