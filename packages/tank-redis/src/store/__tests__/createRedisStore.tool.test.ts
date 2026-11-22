@@ -73,6 +73,7 @@ describe.skipIf(isSkipped)('createRedisStore against a real Redis', () => {
       return createRedisStore({ client: getClient() });
     }
 
+    // eslint-disable-next-line vitest/require-hook -- the call registers a suite that the rule does not detect.
     describeStoreContract(`createRedisStore ${label}`, createEmptyStore);
 
     it('round-trips a balance that needs all 17 significant digits', async () => {
