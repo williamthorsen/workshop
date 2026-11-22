@@ -1,6 +1,6 @@
 {
   "name": "@williamthorsen/tank-redis",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "Store a @williamthorsen/tank balance in a Redis-compatible store",
   "keywords": [

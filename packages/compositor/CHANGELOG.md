@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.6.4 — 2026-11-22
+
+### 📦 Dependencies
+
+- Upgrade toolbelt packages (#996)
+
+  Upgrades the `@williamthorsen/toolbelt.*` entries in the `pnpm-workspace.yaml` catalog to their latest versions and imports each symbol that the new releases promoted out of the `/candidate` subpath from its package root. It also corrects the toolbelt imports in the kit-testing example of ReadyUp's `authoring-kits.md` guide.
+
 ## 0.6.3 — 2026-11-16
 
 ### ♻️ Refactoring

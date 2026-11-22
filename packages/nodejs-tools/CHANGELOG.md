@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.4.2 — 2026-11-22
+
+### 📦 Dependencies
+
+- Upgrade toolbelt packages (#996)
+
+  Upgrades the `@williamthorsen/toolbelt.*` entries in the `pnpm-workspace.yaml` catalog to their latest versions and imports each symbol that the new releases promoted out of the `/candidate` subpath from its package root. It also corrects the toolbelt imports in the kit-testing example of ReadyUp's `authoring-kits.md` guide.
+
+- Upgrade lint packages (#998)
+
+  Upgrades the root lint packages, `@williamthorsen/eslint-config-typescript` from 23.0.0 to 23.1.0 and `@williamthorsen/strict-lint` from 16.0.0 to 16.0.1.
+
 ## 0.4.1 — 2026-11-17
 
 ### ♻️ Refactoring

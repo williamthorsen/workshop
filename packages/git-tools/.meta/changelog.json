@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.2.5",
+    "date": "2026-11-22",
+    "sections": [
+      {
+        "title": "📦 Dependencies",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Upgrade toolbelt packages (#996)",
+            "body": "Upgrades the `@williamthorsen/toolbelt.*` entries in the `pnpm-workspace.yaml` catalog to their latest versions and imports each symbol that the new releases promoted out of the `/candidate` subpath from its package root. It also corrects the toolbelt imports in the kit-testing example of ReadyUp's `authoring-kits.md` guide.",
+            "hash": "d83538f16d96235057e6cef0256f5b5e64d63c69"
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.2.4",
     "date": "2026-11-17",
     "sections": [

@@ -1,0 +1,30 @@
+[
+  {
+    "version": "0.1.0",
+    "date": "2026-11-22",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Adds `createRedisStore`, which returns a `@williamthorsen/tank` balance store that keeps each tank key as a Redis hash and runs its compare-and-set as an atomic Lua script through any client with an `eval(script, keys, args)` method, such as `@upstash/redis` directly or node-redis and ioredis through a one-line wrapper. (#1002)",
+            "hash": "f39f2bc85b73ede165f1c8ad068b9770de20ee3d",
+            "entry": 1
+          }
+        ]
+      },
+      {
+        "title": "🏗️ Internal features",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Adds the `@williamthorsen/tank-redis` package with its manifest, TypeScript config, license, README, and an entry point that does not export anything yet, and registers it in the `scope:tank-redis` label definitions, the ESLint root-module allowlist, the README package table, and `AGENTS.md`. (#1001)",
+            "hash": "e069bbff2a069e6d3ea6f3c89954ef59b8f1fd17",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  }
+]
