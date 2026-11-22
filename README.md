@@ -20,6 +20,7 @@ Open-source utilities by [William Thorsen](https://github.com/williamthorsen).
 | [`repo-tools`](packages/repo-tools)           | Act on the repositories indexed by a machine-local repo registry                |
 | [`secret-tools`](packages/secret-tools)       | Manage secrets in the OS credential store                                       |
 | [`systemd-service`](packages/systemd-service) | Install, restart, inspect, and remove systemd services on Linux                 |
+| [`tank-redis`](packages/tank-redis)           | Store a tank balance in a Redis-compatible store                                |
 
 ## Development
 

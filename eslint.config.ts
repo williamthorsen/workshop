@@ -70,6 +70,8 @@ const ROOT_MODULES: Readonly<Record<string, readonly string[]>> = {
   'secret-tools': [],
   // The one exception is the entry point.
   'systemd-service': ['index.ts'],
+  // The one exception is the entry point.
+  'tank-redis': ['index.ts'],
 };
 
 const config = defineConfig([

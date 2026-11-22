@@ -21,6 +21,7 @@ const config = defineConfig({
       'scope:repo-tools': { color: '00ff96', description: '' },
       'scope:secret-tools': { color: '00ff96', description: '' },
       'scope:systemd-service': { color: '00ff96', description: '' },
+      'scope:tank-redis': { color: '00ff96', description: '' },
     },
   },
 });
