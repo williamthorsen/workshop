@@ -38,8 +38,15 @@
     "prepare": "nmr-compile"
   },
   "devDependencies": {
+    "@upstash/redis": "1.41.0",
+    "@williamthorsen/tank": "0.1.0",
+    "redis": "6.3.1",
+    "testcontainers": "12.2.2",
     "vite": "catalog:",
     "vitest": "catalog:"
+  },
+  "peerDependencies": {
+    "@williamthorsen/tank": "^0.1.0"
   },
   "engines": {
     "node": ">=24"
