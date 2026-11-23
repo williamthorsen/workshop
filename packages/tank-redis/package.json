@@ -46,7 +46,7 @@
     "vitest": "catalog:"
   },
   "peerDependencies": {
-    "@williamthorsen/tank": "^0.1.0"
+    "@williamthorsen/tank": ">=0.1.0 <1.0.0"
   },
   "engines": {
     "node": ">=24"
