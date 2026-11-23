@@ -708,8 +708,8 @@ importers:
         specifier: 1.41.0
         version: 1.41.0
       '@williamthorsen/tank':
-        specifier: 0.2.0
-        version: 0.2.0(vitest@5.1.1)
+        specifier: 0.3.0
+        version: 0.3.0(vitest@5.1.1)
       redis:
         specifier: 6.3.1
         version: 6.3.1
@@ -1843,8 +1843,8 @@ packages:
     peerDependencies:
       eslint: '>=10'
 
-  '@williamthorsen/tank@0.2.0':
-    resolution: {integrity: sha512-/rzJE6UFtgadKsEewVUXGJWFw9hDnqB87Z0LFiIpxrC5+jR9oZShA4xhfSIGTdrOjppxmNcBWRDW316b958l4Q==}
+  '@williamthorsen/tank@0.3.0':
+    resolution: {integrity: sha512-gshqH0SjzcbOv7D7bGSjWrm/lML8QqFwi6f+lgXgf16ejQK9jrCL0fEi6LRQK580pdvDpXlW3LGkOgCCqifduw==}
     engines: {node: '>=24'}
     peerDependencies:
       vitest: ^5.0.0
@@ -4739,7 +4739,7 @@ snapshots:
       '@williamthorsen/toolbelt.strings': 11.0.0
       eslint: 10.15.0(jiti@2.7.0)
 
-  '@williamthorsen/tank@0.2.0(vitest@5.1.1)':
+  '@williamthorsen/tank@0.3.0(vitest@5.1.1)':
     optionalDependencies:
       vitest: 5.1.1(@types/node@24.19.2)(@vitest/coverage-v8@5.1.1)(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1))
 

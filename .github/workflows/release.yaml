@@ -25,12 +25,13 @@ on:
         default: false
 
 permissions:
+  actions: write
   contents: write
   packages: read
 
 jobs:
   release:
-    uses: williamthorsen/node-monorepo-tools/.github/workflows/release.reusable.yaml@workflow/release-v1
+    uses: williamthorsen/node-monorepo-tools/.github/workflows/release.reusable.yaml@workflow/release-v2
     with:
       only: ${{ inputs.only }}
       bump: ${{ inputs.bump != 'auto' && inputs.bump || '' }}
