@@ -484,6 +484,9 @@ importers:
 
   packages/image-tools:
     dependencies:
+      '@williamthorsen/readout':
+        specifier: 'catalog:'
+        version: 0.2.0
       '@williamthorsen/toolbelt.cli':
         specifier: 'catalog:'
         version: 0.14.0

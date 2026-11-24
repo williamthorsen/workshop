@@ -2,12 +2,11 @@ import { createTextBuffer } from '@williamthorsen/toolbelt.cli/candidate';
 import { describe, expect, it } from 'vitest';
 
 import { run, type RunEffects } from '../run.ts';
+import { buildRunEffects } from '../test-utils/build-run-effects.ts';
 
 const VERSION = '9.9.9';
 
-const EFFECTS: RunEffects = {
-  resolveVersion: () => VERSION,
-};
+const EFFECTS: RunEffects = buildRunEffects({ resolveVersion: () => VERSION });
 
 describe(run, () => {
   describe('help and version', () => {
@@ -34,11 +33,11 @@ describe(run, () => {
 
     it('leaves a failure to resolve the version to the crash handler', async () => {
       const failure = new Error('The manifest declares no version.');
-      const failing: RunEffects = {
+      const failing = buildRunEffects({
         resolveVersion: () => {
           throw failure;
         },
-      };
+      });
 
       await expect(runWithBuffers(['--version'], failing)).rejects.toBe(failure);
     });
@@ -46,7 +45,7 @@ describe(run, () => {
 
   describe('given a bad invocation', () => {
     it.each([
-      { args: ['generate'], expected: 'thor-image: Unknown command: generate' },
+      { args: ['render'], expected: 'thor-image: Unknown command: render' },
       { args: ['--bogus'], expected: 'thor-image: Unknown option: --bogus' },
     ])('exits 2, pointing at the help: $args', async ({ args, expected }) => {
       const { exitCode, stderr, stdout } = await runWithBuffers(args);
