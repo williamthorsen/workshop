@@ -1,4 +1,4 @@
-import { mkdirSync, statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmdirSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { serializeReadout } from '@williamthorsen/readout';
@@ -259,6 +259,7 @@ async function runGenerate(
   });
 
   if (!outcome.ok && outcome.kind === 'missing-uv') {
+    rmdirSync(runDir);
     throw new CliError('uv is not on PATH; install it with brew install uv, then run thor-image generate again', {
       exitCode: EXIT_MISSING_COMMAND,
     });
@@ -279,17 +280,15 @@ async function runGenerate(
     subject: options.subject,
   });
   writeFileSync(path.join(runDir, RECORD_FILE), serializeRecord(record));
+  if (options.isJson) stdout.write(serializeRecord(record));
 
   if (!outcome.ok) {
     throw new CliError(
       `${outcome.problem}; wrote ${record.images.length} of ${formatImageCount(total)} and ${RECORD_FILE} to ${runDir}`,
     );
   }
-  stdout.write(
-    options.isJson
-      ? serializeRecord(record)
-      : `thor-image generate: wrote ${formatImageCount(total)} and ${RECORD_FILE} to ${runDir}\n`,
-  );
+  if (!options.isJson)
+    stdout.write(`thor-image generate: wrote ${formatImageCount(total)} and ${RECORD_FILE} to ${runDir}\n`);
   return 0;
 }
 

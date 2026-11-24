@@ -186,6 +186,7 @@ describe('thor-image generate', () => {
 
       expect(exitCode).toBe(127);
       expect(stderr).toContain('uv is not on PATH; install it with brew install uv');
+      expect(readdirSync(tree.resolve('thor-image'))).toStrictEqual([]);
     });
 
     it('records the images that completed and the job that failed', async () => {
@@ -206,6 +207,19 @@ describe('thor-image generate', () => {
         failure: { message: 'image 2 failed: out of memory', seed: 1, style: 'noir' },
         images: [{ file: 'oil-1.png' }],
       });
+    });
+
+    it('prints the partial record on stdout under --json and still exits 1', async () => {
+      using tree = createTempTree({});
+
+      const { exitCode, stdout } = await runGenerate(
+        tree,
+        ['a fox', '--style', 'oil', '--style', 'noir', '--seed', '1', '--json'],
+        { runWorker: createFakeWorker({ failAt: 1 }).runWorker },
+      );
+
+      expect(exitCode).toBe(1);
+      expect(JSON.parse(stdout)).toStrictEqual(readRecord(tree.resolve(`thor-image/${RUN_NAME}`)));
     });
   });
 
