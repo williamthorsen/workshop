@@ -1,0 +1,35 @@
+[
+  {
+    "version": "0.1.0",
+    "date": "2026-11-24",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Adds `thor-image generate`, which places a subject into the prompt template of each `--style` named from `catalogue/styles.yaml` (or `--style all`) and renders it with `qwen-image-2.1-turbo` (the default, which also restyles `--reference` images and does not permit commercial use) or the Apache-2.0 `z-image-turbo`, through mflux run by `uv` on Apple Silicon. (#1008)",
+            "hash": "208b7fc073fc0676c77a0a79db9197b2545e1e07",
+            "entry": 1
+          },
+          {
+            "description": "Adds a `run.json` record that `generate` writes beside each run's images, stating per image the model, its licence, the mflux version, the full prompt, the seed, and the settings needed to reproduce it, and that `--json` prints on stdout, including the partial record of a run that failed partway. (#1008)",
+            "hash": "208b7fc073fc0676c77a0a79db9197b2545e1e07",
+            "entry": 2
+          }
+        ]
+      },
+      {
+        "title": "🏗️ Internal features",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Adds the `@williamthorsen/image-tools` package, whose `thor-image` binary prints only its help and version, and registers `image-tools` in the `scope:*` labels, the ESLint root-module allowlist, the README package table, and `AGENTS.md`. (#1007)",
+            "hash": "fa137b7d70cae08d5fa1a04fe9c7864b348c3c85",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  }
+]

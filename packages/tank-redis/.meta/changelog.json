@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.1.1",
+    "date": "2026-11-24",
+    "sections": [
+      {
+        "title": "🐛 Bug fixes",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Fixes the issue that installing `@williamthorsen/tank-redis` beside `@williamthorsen/tank` 0.2.0 or later reported an unmet peer dependency, because the peer range `^0.1.0` accepted only 0.1.x; the range is now `>=0.1.0 <1.0.0`. (#1004)",
+            "hash": "dc88e8522e35750afffc8a9fd013856dce91f5fe",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.1.0",
     "date": "2026-11-22",
     "sections": [

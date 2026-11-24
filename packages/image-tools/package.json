@@ -1,6 +1,6 @@
 {
   "name": "@williamthorsen/image-tools",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": false,
   "description": "Generate images in named styles from open-weight models",
   "keywords": [

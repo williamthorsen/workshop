@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.1.1 — 2026-11-24
+
+### 🐛 Bug fixes
+
+- Fixes the issue that installing `@williamthorsen/tank-redis` beside `@williamthorsen/tank` 0.2.0 or later reported an unmet peer dependency, because the peer range `^0.1.0` accepted only 0.1.x; the range is now `>=0.1.0 <1.0.0`. (#1004)
+
 ## 0.1.0 — 2026-11-22
 
 ### 🎉 Features
