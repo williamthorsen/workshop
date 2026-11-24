@@ -57,6 +57,7 @@ const ROOT_MODULES: Readonly<Record<string, readonly string[]>> = {
   compositor: ['getEngineVersion.ts', 'index.ts'],
   'demo-tools': [],
   'git-tools': [],
+  'image-tools': [],
   // The one exception is the entry point.
   'launchd-agent': ['index.ts'],
   // The one exception is the entry point.

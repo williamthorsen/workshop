@@ -2,7 +2,7 @@
 
 ## Overview
 
-A monorepo of open-source utilities. Currently houses `readyup`, a pre-deployment verification CLI; `overlay`, a chezmoi-backed scaffolding tool; `repo-tools`, a CLI for the repositories in a machine-local registry; `git-tools`, a CLI that derives values from git branch names; `launchd-agent`, a library for per-user launchd agents on macOS; `systemd-service`, a library for systemd services on Linux; `secret-tools`, a CLI for secrets in the macOS keychain; `nodejs-tools`, a CLI and library for Node.js runtimes, toolchains, and `node_modules` directories; `atlassian-tools`, a CLI for Jira Cloud projects; `chrome-tools`, a CLI for Chrome debug sessions; `demo-tools`, a CLI that runs aidemo demos; `npm-tools`, a CLI for npm package and registry chores; `tank-redis`, a Redis-compatible store adapter for `@williamthorsen/tank`; and `compositor`, a private content-composition engine under construction.
+A monorepo of open-source utilities. Currently houses `readyup`, a pre-deployment verification CLI; `overlay`, a chezmoi-backed scaffolding tool; `repo-tools`, a CLI for the repositories in a machine-local registry; `git-tools`, a CLI that derives values from git branch names; `launchd-agent`, a library for per-user launchd agents on macOS; `systemd-service`, a library for systemd services on Linux; `secret-tools`, a CLI for secrets in the macOS keychain; `nodejs-tools`, a CLI and library for Node.js runtimes, toolchains, and `node_modules` directories; `atlassian-tools`, a CLI for Jira Cloud projects; `chrome-tools`, a CLI for Chrome debug sessions; `demo-tools`, a CLI that runs aidemo demos; `npm-tools`, a CLI for npm package and registry chores; `tank-redis`, a Redis-compatible store adapter for `@williamthorsen/tank`; `image-tools`, a CLI that generates images in named styles, under construction; and `compositor`, a private content-composition engine under construction.
 
 ## Project structure
 
@@ -13,6 +13,7 @@ Packages live under `packages/`:
 - **`compositor`**: Content-agnostic engine that resolves declared content across precedence-ordered sources and plans idempotent writes to targets. Private and unreleased; no binary.
 - **`demo-tools`**: CLI that runs aidemo's render, probe, and MCP server with the environment that a demo repository's `.config/thor-demo.yaml` declares, and archives each rendered take under a per-machine archive root; `thor-demo voice setup` installs a local mlx-audio voice clone on Apple Silicon, and `thor-demo revoice` narrates a recorded demo again in the cloned voice. Its README describes both configuration files, the archive, and the voice clone. Each demo repository installs aidemo, a peer dependency, so the workspace sets `autoInstallPeers: false` and the tests run a fake aidemo. The package is also a demo repository of its own: `demos/` holds its aidemo demos, and rendered media (MP4, MP3, WebM) is never committed. Binary: `thor-demo`.
 - **`git-tools`**: CLI that derives values from git branch names: a stable number per branch, and the ticket that a branch encodes. Binary: `thor-git`.
+- **`image-tools`**: CLI that generates images in named styles from open-weight models. Its commands are not implemented yet; the binary prints only its help and version. Binary: `thor-image`.
 - **`launchd-agent`**: Library that installs, replaces, restarts, inspects, and removes per-user launchd agents on macOS. No binary.
 - **`nodejs-tools`**: CLI that inspects Node.js runtimes and toolchains and prunes `node_modules` directories, and a library export, `resolveNodePath`, that returns the node binary that asdf selects for a checkout. Binary: `thor-node`.
 - **`npm-tools`**: CLI that runs npm package and registry chores: `list-packages` lists a pnpm workspace's packages and whether each can be published, `publish-placeholder` publishes the `0.0.0` placeholder that a new package needs before `npm trust` can be configured for it, and `move-trust` moves a package's trusted publisher to another GitHub repository. Binary: `thor-npm`.
@@ -52,7 +53,7 @@ The code-quality workflow does not run `nmr ci`; it runs that command's steps as
 
 ## Commit conventions
 
-The scope values this repo uses are `atlassian-tools`, `chrome-tools`, `compositor`, `demo-tools`, `git-tools`, `launchd-agent`, `nodejs-tools`, `npm-tools`, `overlay`, `readyup`, `repo-tools`, `root`, `secret-tools`, `systemd-service`, and `tank-redis`, mirroring the `scope:*` labels in `.config/release-kit.config.ts`.
+The scope values this repo uses are `atlassian-tools`, `chrome-tools`, `compositor`, `demo-tools`, `git-tools`, `image-tools`, `launchd-agent`, `nodejs-tools`, `npm-tools`, `overlay`, `readyup`, `repo-tools`, `root`, `secret-tools`, `systemd-service`, and `tank-redis`, mirroring the `scope:*` labels in `.config/release-kit.config.ts`.
 
 ## Releases
 

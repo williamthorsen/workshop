@@ -23,6 +23,7 @@
     "compositor": "scope:compositor",
     "demo-tools": "scope:demo-tools",
     "git-tools": "scope:git-tools",
+    "image-tools": "scope:image-tools",
     "launchd-agent": "scope:launchd-agent",
     "nodejs-tools": "scope:nodejs-tools",
     "npm-tools": "scope:npm-tools",

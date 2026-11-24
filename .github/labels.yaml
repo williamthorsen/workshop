@@ -106,6 +106,9 @@
 - name: scope:git-tools
   color: 00ff96
   description: ''
+- name: scope:image-tools
+  color: 00ff96
+  description: ''
 - name: scope:launchd-agent
   color: 00ff96
   description: ''
