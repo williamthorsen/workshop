@@ -40,7 +40,7 @@
   "devDependencies": {
     "@upstash/redis": "1.41.0",
     "@williamthorsen/tank": "0.3.0",
-    "redis": "6.3.1",
+    "redis": "6.4.0",
     "testcontainers": "12.2.2",
     "vite": "catalog:",
     "vitest": "catalog:"
