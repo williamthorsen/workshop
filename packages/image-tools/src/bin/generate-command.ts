@@ -135,7 +135,12 @@ function formatDryRun(record: RunRecord): string {
     const negative = image.negativePrompt === null ? '' : `\n  negative prompt: ${image.negativePrompt}`;
     return `${image.style}, seed ${image.seed} -> ${image.file}\n  prompt: ${image.prompt}${negative}\n`;
   });
-  return `${images.join('')}thor-image generate: dry run; would render ${record.images.length} images with ${record.modelId} into ${record.runDir}\n`;
+  return `${images.join('')}thor-image generate: dry run; would render ${formatImageCount(record.images.length)} with ${record.modelId} into ${record.runDir}\n`;
+}
+
+/** Counts images in words: `1 image`, `2 images`. */
+function formatImageCount(count: number): string {
+  return `${count} ${count === 1 ? 'image' : 'images'}`;
 }
 
 /** Formats a date as `YYYYMMDD-HHMMSSZ` in UTC. */
@@ -243,7 +248,9 @@ async function runGenerate(
     env: effects.env,
     onEvent: (event) => {
       if (event.event === 'started') {
-        stderr.write(`thor-image generate: rendering ${total} images with ${model.id} (mflux ${event.mfluxVersion})\n`);
+        stderr.write(
+          `thor-image generate: rendering ${formatImageCount(total)} with ${model.id} (mflux ${event.mfluxVersion})\n`,
+        );
       } else if (event.event === 'rendered') {
         const job = request.jobs[event.index];
         if (job !== undefined) stderr.write(`rendered ${job.style}, seed ${job.seed} (${event.index + 1}/${total})\n`);
@@ -275,13 +282,13 @@ async function runGenerate(
 
   if (!outcome.ok) {
     throw new CliError(
-      `${outcome.problem}; wrote ${record.images.length} of ${total} images and ${RECORD_FILE} to ${runDir}`,
+      `${outcome.problem}; wrote ${record.images.length} of ${formatImageCount(total)} and ${RECORD_FILE} to ${runDir}`,
     );
   }
   stdout.write(
     options.isJson
       ? serializeRecord(record)
-      : `thor-image generate: wrote ${total} images and ${RECORD_FILE} to ${runDir}\n`,
+      : `thor-image generate: wrote ${formatImageCount(total)} and ${RECORD_FILE} to ${runDir}\n`,
   );
   return 0;
 }

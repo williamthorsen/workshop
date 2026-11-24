@@ -110,7 +110,7 @@ describe('thor-image generate', () => {
       expect(exitCode).toBe(0);
       expect(stdout).toContain('oil, seed 1 -> oil-1.png\n  prompt: a Dutch Golden Age oil painting of a fox');
       expect(stdout).toContain(
-        `thor-image generate: dry run; would render 1 images with qwen-image-2.1-turbo into ${tree.resolve(`thor-image/${RUN_NAME}`)}`,
+        `thor-image generate: dry run; would render 1 image with qwen-image-2.1-turbo into ${tree.resolve(`thor-image/${RUN_NAME}`)}`,
       );
       expect(readdirSync(tree.resolve('.'))).toStrictEqual([]);
     });
