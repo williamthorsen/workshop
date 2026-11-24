@@ -1,0 +1,59 @@
+# The visual styles that `thor-image generate --style` names. Each `prompt` contains `{prompt}`, which the subject
+# replaces; `negative_prompt` is optional.
+
+- name: oil
+  prompt: >-
+    a Dutch Golden Age oil painting of {prompt}, chiaroscuro lighting, deep warm shadows, visible brushwork, rich
+    glazed colours, canvas texture
+  negative_prompt: photograph, digital art, flat colours
+
+- name: engraving
+  prompt: >-
+    a 16th-century black-and-white copperplate engraving of {prompt}, fine crosshatching, precise line work, ink on
+    laid paper
+  negative_prompt: colour, painting, photograph
+
+- name: manuscript
+  prompt: >-
+    a medieval illuminated manuscript illustration of {prompt}, gold-leaf background, decorative border of vines and
+    knotwork, tempera on vellum
+  negative_prompt: photograph, 3D render, modern
+
+- name: photoreal
+  prompt: >-
+    a photorealistic cinematic film still of {prompt}, natural materials, shallow depth of field, moody practical
+    lighting, 35mm film
+  negative_prompt: illustration, painting, cartoon, 3D render
+
+- name: claymation
+  prompt: >-
+    a stop-motion plasticine film still of {prompt}, handmade clay figures with visible fingerprints, miniature set,
+    soft studio lighting
+  negative_prompt: photograph, painting, smooth CGI
+
+- name: animated-3d
+  prompt: >-
+    a polished 3D animated feature film still of {prompt}, soft global illumination, subsurface scattering, expressive
+    stylized characters
+  negative_prompt: photograph, flat 2D, sketch
+
+- name: watercolor
+  prompt: >-
+    a loose watercolour and ink storybook illustration of {prompt}, soft washes, white paper showing through, gentle
+    muted palette
+  negative_prompt: photograph, 3D render, heavy outlines
+
+- name: linocut
+  prompt: >-
+    a bold two-colour linocut print of {prompt}, thick carved lines, flat areas of ink, visible paper grain
+  negative_prompt: photograph, gradient shading, many colours
+
+- name: noir
+  prompt: >-
+    a gritty graphic-novel panel of {prompt}, heavy black ink shadows, dramatic low-angle light, high contrast
+  negative_prompt: photograph, pastel colours, soft lighting
+
+- name: rubberhose
+  prompt: >-
+    a 1930s rubber-hose cartoon of {prompt}, black-and-white, bouncy noodle-limbed characters, film grain
+  negative_prompt: colour, photograph, 3D render

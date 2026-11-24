@@ -34,14 +34,20 @@
     ".meta/changelog.json",
     "CHANGELOG.md",
     "bin",
-    "dist"
+    "catalogue",
+    "dist",
+    "worker"
   ],
   "scripts": {
     "prepare": "nmr-compile"
   },
   "dependencies": {
+    "@williamthorsen/readout": "catalog:",
     "@williamthorsen/toolbelt.cli": "catalog:",
-    "@williamthorsen/toolbelt.packaging": "catalog:"
+    "@williamthorsen/toolbelt.errors": "catalog:",
+    "@williamthorsen/toolbelt.objects": "catalog:",
+    "@williamthorsen/toolbelt.packaging": "catalog:",
+    "yaml": "catalog:"
   },
   "devDependencies": {
     "@williamthorsen/toolbelt.testing": "catalog:",

@@ -484,12 +484,24 @@ importers:
 
   packages/image-tools:
     dependencies:
+      '@williamthorsen/readout':
+        specifier: 'catalog:'
+        version: 0.2.0
       '@williamthorsen/toolbelt.cli':
         specifier: 'catalog:'
         version: 0.14.0
+      '@williamthorsen/toolbelt.errors':
+        specifier: 'catalog:'
+        version: 0.11.4
+      '@williamthorsen/toolbelt.objects':
+        specifier: 'catalog:'
+        version: 5.0.0
       '@williamthorsen/toolbelt.packaging':
         specifier: 'catalog:'
         version: 0.10.0
+      yaml:
+        specifier: 'catalog:'
+        version: 2.9.1
     devDependencies:
       '@williamthorsen/toolbelt.testing':
         specifier: 'catalog:'
