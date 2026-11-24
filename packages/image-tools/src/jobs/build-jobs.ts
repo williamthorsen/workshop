@@ -37,7 +37,7 @@ export interface RenderJob {
 /** The document that the worker reads on stdin: one model variant and the jobs that it renders. */
 export interface WorkerRequest {
   readonly jobs: readonly RenderJob[];
-  /** The mflux `model_name` of the model to load. */
+  /** The `--model` id of the model to load. */
   readonly model: string;
   readonly references: readonly string[];
   readonly variant: 'edit' | 'txt2img';
@@ -96,7 +96,7 @@ export function buildJobs(
   });
   return {
     ok: true,
-    request: { jobs, model: model.modelName, references, variant: references.length > 0 ? 'edit' : 'txt2img' },
+    request: { jobs, model: model.id, references, variant: references.length > 0 ? 'edit' : 'txt2img' },
   };
 }
 

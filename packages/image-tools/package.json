@@ -35,7 +35,8 @@
     "CHANGELOG.md",
     "bin",
     "catalogue",
-    "dist"
+    "dist",
+    "worker"
   ],
   "scripts": {
     "prepare": "nmr-compile"

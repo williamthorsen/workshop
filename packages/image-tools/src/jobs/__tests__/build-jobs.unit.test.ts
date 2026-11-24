@@ -35,7 +35,7 @@ describe(buildJobs, () => {
           job('oil', 1, 'an oil painting of a lighthouse', 'photograph'),
           job('oil', 2, 'an oil painting of a lighthouse', 'photograph'),
         ],
-        model: 'Qwen/Qwen-Image-2.1-Turbo',
+        model: 'qwen-image-2.1-turbo',
         references: [],
         variant: 'txt2img',
       },
