@@ -34,6 +34,7 @@
     ".meta/changelog.json",
     "CHANGELOG.md",
     "bin",
+    "catalogue",
     "dist"
   ],
   "scripts": {
@@ -41,7 +42,10 @@
   },
   "dependencies": {
     "@williamthorsen/toolbelt.cli": "catalog:",
-    "@williamthorsen/toolbelt.packaging": "catalog:"
+    "@williamthorsen/toolbelt.errors": "catalog:",
+    "@williamthorsen/toolbelt.objects": "catalog:",
+    "@williamthorsen/toolbelt.packaging": "catalog:",
+    "yaml": "catalog:"
   },
   "devDependencies": {
     "@williamthorsen/toolbelt.testing": "catalog:",
