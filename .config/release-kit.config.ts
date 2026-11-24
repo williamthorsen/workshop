@@ -13,6 +13,7 @@ const config = defineConfig({
       'scope:compositor': { color: '00ff96', description: '' },
       'scope:demo-tools': { color: '00ff96', description: '' },
       'scope:git-tools': { color: '00ff96', description: '' },
+      'scope:image-tools': { color: '00ff96', description: '' },
       'scope:launchd-agent': { color: '00ff96', description: '' },
       'scope:nodejs-tools': { color: '00ff96', description: '' },
       'scope:npm-tools': { color: '00ff96', description: '' },
