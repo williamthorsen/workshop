@@ -3,6 +3,7 @@ import { createCli, runCli, type Writer } from '@williamthorsen/toolbelt.cli/can
 import type { CatalogueResult } from '../catalogue/read-catalogue.ts';
 import type { RunWorker } from '../worker/run-worker.ts';
 import { defineGenerateCommand } from './generate-command.ts';
+import { defineSpritesCommand } from './sprites-command.ts';
 
 const { defineGroup } = createCli<RunEffects>();
 
@@ -21,13 +22,13 @@ export async function run(args: readonly string[], effects: RunEffects, streams:
   }
 
   const root = defineGroup({
-    summary: 'Generate images in named styles from open-weight models.',
+    summary: 'Generate images in named styles from open-weight models, and render coded pixel art to sprite strips.',
     epilog: `Exit codes:
   0    The images were rendered, or help or version was printed
-  1    Rendering failed, or thor-image hit an internal error
+  1    Rendering failed, the sprite data was invalid or unreadable, or thor-image hit an internal error
   2    Usage error
-  127  uv, which runs the renderer, is not on PATH`,
-    commands: { generate: defineGenerateCommand(catalogue.styles) },
+  127  uv, which runs the renderer of generate, is not on PATH`,
+    commands: { generate: defineGenerateCommand(catalogue.styles), sprites: defineSpritesCommand() },
   });
   return runCli(args.length === 0 ? ['--help'] : args, root, {
     name: 'thor-image',

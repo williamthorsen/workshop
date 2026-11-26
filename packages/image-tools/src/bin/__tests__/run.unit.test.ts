@@ -16,7 +16,7 @@ describe(run, () => {
       expect(exitCode).toBe(0);
       expect(stderr).toBe('');
       expect(stdout).toContain('thor-image');
-      expect(stdout).toContain('Generate images in named styles from open-weight models.');
+      expect(stdout).toContain('Generate images in named styles from open-weight models, and render coded pixel art');
       expect(stdout).toContain('Exit codes:');
     });
 
