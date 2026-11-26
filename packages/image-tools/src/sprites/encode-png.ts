@@ -33,7 +33,7 @@ function buildChunk(type: string, data: Buffer): Buffer {
   return Buffer.concat([length, typeAndData, crc]);
 }
 
-/** Builds the `IHDR` data: the size, bit depth 8, indexed colour, and the default compression, filter, and interlace. */
+/** Builds the `IHDR` data: the size, bit depth 8, indexed colour, and default compression, filter, and interlace. */
 function buildHeader(width: number, height: number): Buffer {
   const header = Buffer.alloc(13);
   header.writeUInt32BE(width, 0);

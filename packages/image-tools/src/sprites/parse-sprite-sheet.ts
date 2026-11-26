@@ -73,9 +73,9 @@ interface ReadPalette {
 /** Returns the size of a sprite's first frame, against which every frame is measured, when it can be measured. */
 function measureFirstFrame(frame: unknown): { height: number; width: number } | undefined {
   if (!Array.isArray(frame) || frame.length === 0) return undefined;
-  const [firstRow] = frame;
+  const firstRow: unknown = frame[0];
   if (typeof firstRow !== 'string' || firstRow.length === 0) return undefined;
-  return { height: frame.length, width: [...firstRow].length };
+  return { height: frame.length, width: Array.from(firstRow).length };
 }
 
 /** Converts `#rrggbb` to its three channel values. */
@@ -111,7 +111,7 @@ function readFrame(
       problems.push(`${rowLabel}: must be a string of palette characters`);
       continue;
     }
-    const characters = [...row];
+    const characters = Array.from(row);
     if (characters.length === 0) {
       problems.push(`${rowLabel}: is empty`);
       continue;

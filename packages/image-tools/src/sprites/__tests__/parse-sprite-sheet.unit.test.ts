@@ -109,7 +109,7 @@ describe(parseSpriteSheet, () => {
     [
       'a palette over 16 entries',
       {
-        palette: Object.fromEntries([...'abcdefghijklmnopq'].map((key) => [key, '#000000'])),
+        palette: Object.fromEntries(Array.from('abcdefghijklmnopq', (key) => [key, '#000000'])),
         sprites: { a: { frames: [['a']] } },
       },
       ['palette: declares 17 entries; at most 16 are allowed'],
