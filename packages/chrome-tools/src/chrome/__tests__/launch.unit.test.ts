@@ -2,8 +2,20 @@ import fs from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
-import { type FakeThorChrome, makeFakeThorChrome } from '../test-utils/fake-thor-chrome.ts';
-import { appBundle, makeExecutable, makeLaunchFake, makeRunningFake } from '../test-utils/launch-fixtures.ts';
+import {
+  FAKE_ENTRY_SCRIPT,
+  type FakeThorChrome,
+  LAUNCHED_BROWSER_PORT,
+  LAUNCHED_PID,
+  makeFakeThorChrome,
+} from '../test-utils/fake-thor-chrome.ts';
+import {
+  appBundle,
+  makeExecutable,
+  makeLaunchFake,
+  makeRunningFake,
+  RUNNING_PID,
+} from '../test-utils/launch-fixtures.ts';
 import { runThorChrome } from '../thor-chrome.ts';
 
 describe('launch', () => {
@@ -13,7 +25,7 @@ describe('launch', () => {
       await expect(run(fake, ['--dry-run'])).resolves.toBe(0);
       const profileDir = `${fake.profilesDir}/widget-321`;
       expect(fake.captured.stdout()).toBe(
-        `/bin/sh --remote-debugging-port=20321 --user-data-dir=${profileDir} --disable-search-engine-choice-screen ` +
+        `/bin/sh --remote-debugging-port=0 --user-data-dir=${profileDir} --disable-search-engine-choice-screen ` +
           '--hide-crash-restore-bubble --no-default-browser-check --no-first-run --no-startup-window\n' +
           `Opens: about:blank\nOpens: file://${profileDir}/thor-chrome.html\n`,
       );
@@ -30,7 +42,7 @@ describe('launch', () => {
       expect(fake.readReport()).toStrictEqual({
         command: [
           '/bin/sh',
-          '--remote-debugging-port=9500',
+          '--remote-debugging-port=0',
           `--user-data-dir=${profileDir}`,
           '--disable-search-engine-choice-screen',
           '--hide-crash-restore-bubble',
@@ -53,7 +65,7 @@ describe('launch', () => {
       const log = `${fake.home}/tmp/thor-chrome-thrive.log`;
       expect(fake.captured.stdout()).toMatch(
         new RegExp(
-          `^open -g -n -a ${escapeRegExp(appBundle(fake, app))} --stdout ${escapeRegExp(log)} --stderr ${escapeRegExp(log)} --args --remote-debugging-port=20321 `,
+          `^open -g -n -a ${escapeRegExp(appBundle(fake, app))} --stdout ${escapeRegExp(log)} --stderr ${escapeRegExp(log)} --args --remote-debugging-port=0 `,
         ),
       );
       expect(fake.calls).toContainEqual({ args: ['--display', appBundle(fake, app)], program: 'codesign' });
@@ -78,7 +90,7 @@ describe('launch', () => {
           '--stderr',
           log,
           '--args',
-          '--remote-debugging-port=20321',
+          '--remote-debugging-port=0',
           `--user-data-dir=${profileDir}`,
           '--disable-search-engine-choice-screen',
           '--hide-crash-restore-bubble',
@@ -110,7 +122,7 @@ describe('launch', () => {
         results: { launchctl: { status: 1, stdout: '' } },
       });
       await run(fake, ['--dry-run', '--profile', 'thrive']);
-      expect(fake.captured.stdout()).toMatch(/^\/bin\/sh --remote-debugging-port=20321 /);
+      expect(fake.captured.stdout()).toMatch(/^\/bin\/sh --remote-debugging-port=0 /);
     });
 
     it('starts nothing when the profile is already debugging on the port, and opens only the URLs there', async () => {
@@ -161,8 +173,8 @@ describe('launch', () => {
       const fake = makeLaunchFake({
         results: { 'git branch': { status: 128 }, 'git rev-parse': { status: 128 } },
       });
-      await expect(run(fake, ['--dry-run', '--create', '--profile', 'scratch'])).resolves.toBe(0);
-      expect(fake.captured.stdout()).toContain('--remote-debugging-port=9222 ');
+      await expect(run(fake, ['--create', '--profile', 'scratch'])).resolves.toBe(0);
+      expect(fake.captured.stdout()).toContain("profile 'scratch' on port 9222");
     });
   });
 
@@ -174,10 +186,24 @@ describe('launch', () => {
       expect(fake.captured.stdout()).toBe(
         "chrome: profile 'widget-321' on port 20321\nDevTools: http://127.0.0.1:20321/json/version\n",
       );
-      expect(fake.spawned).toHaveLength(1);
+      expect(fake.spawned).toHaveLength(2);
       expect(fake.spawned[0]?.program).toBe('/bin/sh');
       expect(fake.spawned[0]?.options).toStrictEqual({ logPath: `${fake.home}/tmp/thor-chrome-widget-321.log` });
       expect(fake.spawned[0]?.args.at(-1)).toBe('--no-startup-window');
+      expect(fake.spawned[1]).toStrictEqual({
+        args: [
+          FAKE_ENTRY_SCRIPT,
+          'serve-proxy',
+          '--port',
+          '20321',
+          '--profile-dir',
+          profileDir,
+          '--browser-pid',
+          LAUNCHED_PID,
+        ],
+        options: { logPath: `${fake.home}/tmp/thor-chrome-widget-321.proxy.log` },
+        program: process.execPath,
+      });
       expect(fake.opened).toStrictEqual([
         { port: '20321', url: 'http://localhost:4798' },
         { port: '20321', url: `file://${profileDir}/thor-chrome.html` },
@@ -317,7 +343,7 @@ describe('launch', () => {
       const log = `${fake.home}/tmp/thor-chrome-thrive.log`;
       fs.writeFileSync(log, 'earlier output');
       await expect(run(fake, ['--profile', 'thrive'])).resolves.toBe(0);
-      expect(fake.spawned).toHaveLength(0);
+      expect(fake.spawned.map((spawn) => spawn.program)).toStrictEqual([process.execPath]);
       expect(fake.calls.find((call) => call.program === 'open')?.args.slice(0, 4)).toStrictEqual([
         '-g',
         '-n',
@@ -346,7 +372,50 @@ describe('launch', () => {
         },
       });
       await expect(run(fake, ['--profile', 'thrive', '--port', '9500'])).resolves.toBe(0);
-      expect(probes).toBe(3);
+      // Two failed probes of the browser's own port, then one that answers, then one of the proxy's
+      expect(probes).toBe(4);
+    });
+
+    it('removes the port that a crashed browser left behind before it starts the browser', async () => {
+      const fake = makeLaunchFake({ env: { THOR_CHROME_LAUNCH_TIMEOUT: '1' }, isBrowserPortRecorded: false });
+      fs.writeFileSync(`${fake.profilesDir}/thrive/DevToolsActivePort`, '41111\n/devtools/browser/old\n');
+      await expect(run(fake, ['--json', '--profile', 'thrive'])).resolves.toBe(1);
+      expect(fake.readReport()).toMatchObject({ error: { code: 'launch-timeout' } });
+      expect(fs.existsSync(`${fake.profilesDir}/thrive/DevToolsActivePort`)).toBe(false);
+      expect(fake.calls.some((call) => call.args.some((arg) => arg.includes(':41111/')))).toBe(false);
+    });
+
+    it("waits for the browser's own endpoint before it starts the proxy, and opens pages through the proxy", async () => {
+      const fake = makeLaunchFake();
+      await expect(run(fake, ['--profile', 'thrive', 'http://x'])).resolves.toBe(0);
+      const probed = fake.calls.filter((call) => call.program === 'curl').map((call) => call.args.at(-1));
+      expect(probed).toStrictEqual([
+        `http://127.0.0.1:${LAUNCHED_BROWSER_PORT}/json/version`,
+        'http://127.0.0.1:20321/json/version',
+      ]);
+      expect(fake.opened.map((page) => page.port)).toStrictEqual(['20321', '20321']);
+    });
+
+    it('starts only the proxy for a running browser that lost it, watching that browser', async () => {
+      const fake = makeRunningFake({ port: '0' });
+      await expect(run(fake, ['--profile', 'thrive', 'http://x'])).resolves.toBe(0);
+      expect(fake.spawned.map((spawn) => [spawn.program, spawn.args.at(-1)])).toStrictEqual([
+        [process.execPath, RUNNING_PID],
+      ]);
+      expect(fake.opened).toStrictEqual([{ port: '20321', url: 'http://x' }]);
+    });
+
+    it('starts nothing for a running browser whose proxy serves the port', async () => {
+      const fake = makeRunningFake({
+        port: '0',
+        results: {
+          'pgrep -f serve-proxy': { stdout: '5242\n' },
+          'ps -o command= -p 5242': { stdout: 'node thor-chrome.js serve-proxy --port 20321\n' },
+        },
+      });
+      await expect(run(fake, ['--profile', 'thrive', 'http://x'])).resolves.toBe(0);
+      expect(fake.spawned).toStrictEqual([]);
+      expect(fake.opened).toStrictEqual([{ port: '20321', url: 'http://x' }]);
     });
   });
 });

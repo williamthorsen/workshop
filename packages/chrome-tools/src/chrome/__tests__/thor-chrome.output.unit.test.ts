@@ -236,26 +236,26 @@ describe('thor-chrome output', () => {
         "$ --profile thrive --dry-run
         exit 0
         --- stdout
-        /bin/sh --remote-debugging-port=20321 --user-data-dir=<home>/.local/share/thor-chrome/profiles/thrive --disable-search-engine-choice-screen --hide-crash-restore-bubble --no-default-browser-check --no-first-run --no-startup-window
+        /bin/sh --remote-debugging-port=0 --user-data-dir=<home>/.local/share/thor-chrome/profiles/thrive --disable-search-engine-choice-screen --hide-crash-restore-bubble --no-default-browser-check --no-first-run --no-startup-window
         Opens: about:blank
         Opens: file://<home>/.local/share/thor-chrome/profiles/thrive/thor-chrome.html
 
         --- stderr
 
         --- combined
-        /bin/sh --remote-debugging-port=20321 --user-data-dir=<home>/.local/share/thor-chrome/profiles/thrive --disable-search-engine-choice-screen --hide-crash-restore-bubble --no-default-browser-check --no-first-run --no-startup-window
+        /bin/sh --remote-debugging-port=0 --user-data-dir=<home>/.local/share/thor-chrome/profiles/thrive --disable-search-engine-choice-screen --hide-crash-restore-bubble --no-default-browser-check --no-first-run --no-startup-window
         Opens: about:blank
         Opens: file://<home>/.local/share/thor-chrome/profiles/thrive/thor-chrome.html
 
         $ --profile thrive --dry-run --json
         exit 0
         --- stdout
-        {"command":["/bin/sh","--remote-debugging-port=20321","--user-data-dir=<home>/.local/share/thor-chrome/profiles/thrive","--disable-search-engine-choice-screen","--hide-crash-restore-bubble","--no-default-browser-check","--no-first-run","--no-startup-window"],"pages":["about:blank","file://<home>/.local/share/thor-chrome/profiles/thrive/thor-chrome.html"],"dryRun":true}
+        {"command":["/bin/sh","--remote-debugging-port=0","--user-data-dir=<home>/.local/share/thor-chrome/profiles/thrive","--disable-search-engine-choice-screen","--hide-crash-restore-bubble","--no-default-browser-check","--no-first-run","--no-startup-window"],"pages":["about:blank","file://<home>/.local/share/thor-chrome/profiles/thrive/thor-chrome.html"],"dryRun":true}
 
         --- stderr
 
         --- combined
-        {"command":["/bin/sh","--remote-debugging-port=20321","--user-data-dir=<home>/.local/share/thor-chrome/profiles/thrive","--disable-search-engine-choice-screen","--hide-crash-restore-bubble","--no-default-browser-check","--no-first-run","--no-startup-window"],"pages":["about:blank","file://<home>/.local/share/thor-chrome/profiles/thrive/thor-chrome.html"],"dryRun":true}
+        {"command":["/bin/sh","--remote-debugging-port=0","--user-data-dir=<home>/.local/share/thor-chrome/profiles/thrive","--disable-search-engine-choice-screen","--hide-crash-restore-bubble","--no-default-browser-check","--no-first-run","--no-startup-window"],"pages":["about:blank","file://<home>/.local/share/thor-chrome/profiles/thrive/thor-chrome.html"],"dryRun":true}
         "
       `);
     });
@@ -305,12 +305,12 @@ describe('thor-chrome output', () => {
         $ --profile thrive --port 9333 --json
         exit 0
         --- stdout
-        {"profile":{"name":"thrive","path":"<home>/.local/share/thor-chrome/profiles/thrive","state":"debugging","headless":false,"pid":null,"port":9333,"derivedPort":null,"devtools":"http://127.0.0.1:9333/json/version","origin":"named","repo":null,"branch":null,"stale":false,"lastUsedAt":"2026-01-02T12:00:00Z"},"browser":"chrome"}
+        {"profile":{"name":"thrive","path":"<home>/.local/share/thor-chrome/profiles/thrive","state":"debugging","headless":false,"pid":5150,"port":9333,"derivedPort":null,"devtools":"http://127.0.0.1:9333/json/version","origin":"named","repo":null,"branch":null,"stale":false,"lastUsedAt":"2026-01-02T12:00:00Z"},"browser":"chrome"}
 
         --- stderr
 
         --- combined
-        {"profile":{"name":"thrive","path":"<home>/.local/share/thor-chrome/profiles/thrive","state":"debugging","headless":false,"pid":null,"port":9333,"derivedPort":null,"devtools":"http://127.0.0.1:9333/json/version","origin":"named","repo":null,"branch":null,"stale":false,"lastUsedAt":"2026-01-02T12:00:00Z"},"browser":"chrome"}
+        {"profile":{"name":"thrive","path":"<home>/.local/share/thor-chrome/profiles/thrive","state":"debugging","headless":false,"pid":5150,"port":9333,"derivedPort":null,"devtools":"http://127.0.0.1:9333/json/version","origin":"named","repo":null,"branch":null,"stale":false,"lastUsedAt":"2026-01-02T12:00:00Z"},"browser":"chrome"}
         "
       `);
     });
