@@ -13,7 +13,7 @@ describe(applyFocusRules, () => {
     });
   });
 
-  it('overrides an explicit background: false and keeps the other params and the sessionId', () => {
+  it('overrides an explicit background: false, drops newWindow, and keeps the other params and the sessionId', () => {
     const message = {
       id: 4,
       method: 'Target.createTarget',
@@ -24,7 +24,7 @@ describe(applyFocusRules, () => {
     expect(verdict.kind).toBe('forward');
     expect(JSON.parse(verdict.data)).toStrictEqual({
       ...message,
-      params: { background: true, newWindow: true, url: 'about:blank' },
+      params: { background: true, url: 'about:blank' },
     });
   });
 

@@ -145,7 +145,9 @@ Launch session:
   port in front of it, then opens each page through the proxy as a
   background tab. The proxy changes the requests that would activate the
   browser, on every connection:
-    Target.createTarget      Forwarded with background set to true
+    Target.createTarget      Forwarded with background set to true and
+                             newWindow removed, so the tab opens in an
+                             existing window of its context
     /json/new                Opens its page as a background tab
     Target.activateTarget, Page.bringToFront, /json/activate/<id>
                              Answered with success and not forwarded

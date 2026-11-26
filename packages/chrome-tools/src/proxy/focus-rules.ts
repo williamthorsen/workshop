@@ -6,15 +6,16 @@ const SUPPRESSED_METHODS: ReadonlySet<string> = new Set(['Page.bringToFront', 'T
 
 /**
  * Applies the focus rules to one client-to-browser CDP message: `Target.createTarget` is forwarded as a background
- * create, and an activation request is answered with an empty success. Every other message, including one that is not
- * a JSON command, is forwarded with its original text.
+ * create in an existing window, and an activation request is answered with an empty success. Every other message,
+ * including one that is not a JSON command, is forwarded with its original text.
  */
 export function applyFocusRules(data: string): FocusVerdict {
   const message = parseCommand(data);
   if (message === undefined) return { data, kind: 'forward' };
 
   if (message.method === 'Target.createTarget') {
-    const params = isRecord(message['params']) ? message['params'] : {};
+    // A target in a context without a window still gets one, so dropping newWindow loses only the extra window
+    const { newWindow: _newWindow, ...params } = isRecord(message['params']) ? message['params'] : {};
     return { data: JSON.stringify({ ...message, params: { ...params, background: true } }), kind: 'forward' };
   }
   if (SUPPRESSED_METHODS.has(message.method)) {
