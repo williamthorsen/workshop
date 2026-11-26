@@ -49,6 +49,7 @@
     "@williamthorsen/toolbelt.errors": "catalog:",
     "@williamthorsen/toolbelt.objects": "catalog:",
     "@williamthorsen/toolbelt.packaging": "catalog:",
+    "@williamthorsen/toolbelt.strings": "catalog:",
     "yaml": "catalog:"
   },
   "devDependencies": {

@@ -511,6 +511,9 @@ importers:
       '@williamthorsen/toolbelt.packaging':
         specifier: 'catalog:'
         version: 0.10.0
+      '@williamthorsen/toolbelt.strings':
+        specifier: 'catalog:'
+        version: 11.0.0
       yaml:
         specifier: 'catalog:'
         version: 2.9.1

@@ -1,5 +1,6 @@
 import { describeError } from '@williamthorsen/toolbelt.errors';
 import { isRecord } from '@williamthorsen/toolbelt.objects';
+import { pluralizeWithCount } from '@williamthorsen/toolbelt.strings';
 
 /** The largest number of entries, the transparent one included, that a palette may declare. */
 export const MAX_PALETTE_ENTRIES = 16;
@@ -101,7 +102,9 @@ function readFrame(
   }
   const before = problems.length;
   if (reference !== undefined && frame.length !== reference.height) {
-    problems.push(`${label}: has ${frame.length} rows; frame 1 has ${reference.height}`);
+    problems.push(
+      `${label}: has ${pluralizeWithCount(frame.length, 'row')}; frame 1 has ${pluralizeWithCount(reference.height, 'row')}`,
+    );
   }
 
   const rows: number[][] = [];
@@ -117,7 +120,9 @@ function readFrame(
       continue;
     }
     if (reference !== undefined && characters.length !== reference.width) {
-      problems.push(`${rowLabel}: has ${characters.length} pixels; row 1 of frame 1 has ${reference.width}`);
+      problems.push(
+        `${rowLabel}: has ${pluralizeWithCount(characters.length, 'pixel')}; row 1 of frame 1 has ${pluralizeWithCount(reference.width, 'pixel')}`,
+      );
     }
     const indices: number[] = [];
     for (const [column, character] of characters.entries()) {

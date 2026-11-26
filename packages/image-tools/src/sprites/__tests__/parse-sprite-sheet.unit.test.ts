@@ -162,7 +162,7 @@ describe(parseSpriteSheet, () => {
     [
       'a ragged row',
       { palette: PALETTE, sprites: { a: { frames: [['kk'], ['k']] } } },
-      ['sprite "a", frame 2, row 1: has 1 pixels; row 1 of frame 1 has 2'],
+      ['sprite "a", frame 2, row 1: has 1 pixel; row 1 of frame 1 has 2 pixels'],
     ],
     [
       'a frame with a different number of rows',
@@ -177,7 +177,7 @@ describe(parseSpriteSheet, () => {
           },
         },
       },
-      ['sprite "a", frame 2: has 3 rows; frame 1 has 2'],
+      ['sprite "a", frame 2: has 3 rows; frame 1 has 2 rows'],
     ],
     [
       'a character missing from the palette',
