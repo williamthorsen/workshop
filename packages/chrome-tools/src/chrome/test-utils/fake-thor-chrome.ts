@@ -29,10 +29,14 @@ export interface FakeThorChrome {
   /** Pages that the run opened through the DevTools endpoint, failed openings included, in call order. */
   opened: Array<{ port: string; url: string }>;
   profilesDir: string;
+  /** DevTools proxies that the run started in this process, with whether each was closed. */
+  proxies: Array<{ isClosed: boolean; listenPort: string; upstreamPort: string }>;
   /** Parses the JSON object that the run printed on stdout. */
   readReport: () => Record<string, unknown>;
   /** Launches that the run started detached. */
   spawned: Array<{ args: readonly string[]; options: SpawnDetachedOptions; program: string }>;
+  /** Asks the run to terminate, as SIGTERM does, calling every handler that it registered. */
+  terminate: () => void;
   /** The working repository's directory, which `git rev-parse --git-common-dir` reports. */
   workRepoDir: string;
 }
@@ -53,6 +57,9 @@ export interface FakeThorChromeOptions {
   /** Replaces the answering `RunCommand` while keeping the recording of calls. */
   run?: RunCommand;
 }
+
+/** The script that the fake reports as running thor-chrome. */
+export const FAKE_ENTRY_SCRIPT = '/fake/bin/thor-chrome.js';
 
 /** The PID of the first browser that `makeRunningFakeThorChrome` starts; each further profile takes the next. */
 export const FIRST_RUNNING_PID = 4242;
@@ -113,15 +120,23 @@ export function makeFakeThorChrome(options: FakeThorChromeOptions = {}): FakeTho
   const killed: number[] = [];
   const opened: FakeThorChrome['opened'] = [];
   const spawned: FakeThorChrome['spawned'] = [];
+  const proxies: FakeThorChrome['proxies'] = [];
+  const terminationHandlers = new Set<() => void>();
   const captured = captureOutput('thor-chrome');
   const deps: ThorChromeDeps = {
+    entryScript: FAKE_ENTRY_SCRIPT,
     env,
+    isProcessAlive: (pid) => !killed.includes(pid),
     isStdoutTerminal: false,
     kill: (pid) => {
       if (options.killError !== undefined) throw options.killError;
       killed.push(pid);
     },
     now: () => clockMilliseconds,
+    onTerminate: (handler) => {
+      terminationHandlers.add(handler);
+      return () => terminationHandlers.delete(handler);
+    },
     openPage: (port, url) => {
       opened.push({ port, url });
       const reason = options.pageFailures?.[url];
@@ -136,6 +151,17 @@ export function makeFakeThorChrome(options: FakeThorChromeOptions = {}): FakeTho
     },
     spawnDetached: (program, args, spawnOptions) => {
       spawned.push({ args, options: spawnOptions, program });
+    },
+    startCdpProxy: ({ listenPort, upstreamPort }) => {
+      const proxy = { isClosed: false, listenPort, upstreamPort };
+      proxies.push(proxy);
+      return Promise.resolve({
+        close: () => {
+          proxy.isClosed = true;
+          return Promise.resolve();
+        },
+        port: listenPort,
+      });
     },
   };
 
@@ -161,6 +187,7 @@ export function makeFakeThorChrome(options: FakeThorChromeOptions = {}): FakeTho
     },
     opened,
     profilesDir,
+    proxies,
     readReport: () => {
       const report: unknown = JSON.parse(captured.stdout());
       if (typeof report !== 'object' || report === null || Array.isArray(report)) {
@@ -169,6 +196,9 @@ export function makeFakeThorChrome(options: FakeThorChromeOptions = {}): FakeTho
       return { ...report };
     },
     spawned,
+    terminate: () => {
+      for (const handler of terminationHandlers) handler();
+    },
     workRepoDir,
   };
 }

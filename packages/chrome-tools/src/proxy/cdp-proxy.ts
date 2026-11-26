@@ -21,6 +21,9 @@ export interface CdpProxyOptions {
   upstreamPort: string;
 }
 
+/** Starts a DevTools proxy, rejecting when it cannot listen on its port. */
+export type StartCdpProxy = (options: CdpProxyOptions) => Promise<CdpProxy>;
+
 /** WebSocket close codes that a peer reports but that an endpoint may not send. */
 const RESERVED_CLOSE_CODES: ReadonlySet<number> = new Set([1004, 1005, 1006, 1015]);
 

@@ -2,6 +2,7 @@ import path from 'node:path';
 
 import type { OpenPage } from '../portable/open-background-page.ts';
 import type { SpawnDetached } from '../portable/spawn-detached.ts';
+import type { StartCdpProxy } from '../proxy/cdp-proxy.ts';
 import { CommandError } from '../shared/errors.ts';
 import type { Environment } from '../shared/output.ts';
 import { findOnPath } from '../shared/paths.ts';
@@ -21,16 +22,23 @@ export type ProfileOrigin = 'derived' | 'named' | 'underived';
 
 /** The process state and the side effects that thor-chrome reaches through, which a unit test replaces. */
 export interface ThorChromeDeps {
+  /** The script that runs thor-chrome, which the launch passes to node to start the DevTools proxy. */
+  entryScript: string;
   env: Environment;
+  /** Reports whether a process exists. */
+  isProcessAlive: (pid: number) => boolean;
   isStdoutTerminal: boolean;
   /** Sends SIGTERM to a process, throwing when it cannot be signalled. */
   kill: (pid: number) => void;
   /** Returns the current time in epoch milliseconds. */
   now: () => number;
+  /** Calls a handler when this process is asked to terminate, and returns the function that stops listening. */
+  onTerminate: (handler: () => void) => () => void;
   openPage: OpenPage;
   run: RunCommand;
   sleep: (milliseconds: number) => Promise<void>;
   spawnDetached: SpawnDetached;
+  startCdpProxy: StartCdpProxy;
 }
 
 /** A profile's name and directory. */

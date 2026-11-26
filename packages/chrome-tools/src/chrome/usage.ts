@@ -1,8 +1,8 @@
 import { DEFAULT_BROWSER } from './browser.ts';
-import { DEFAULT_LAUNCH_TIMEOUT_SECONDS } from './launch.ts';
 import { DEFAULT_PORT, HASH_PORT_RANGE, TICKET_PORT_RANGE } from './ports.ts';
 import { DEFAULT_PROFILE } from './profiles.ts';
 import { DEFAULT_QUIT_TIMEOUT_SECONDS } from './quit.ts';
+import { DEFAULT_LAUNCH_TIMEOUT_SECONDS } from './timeouts.ts';
 
 /** Returns the help text, naming the command as it was invoked and the profiles directory as it resolves. */
 export function formatUsage(name: string, profilesDir: string): string {
@@ -44,6 +44,10 @@ Commands:
   the working directory when none is named. quit and delete process every
   name, refusing each profile that they cannot act on and exiting 1 if they
   refused any.
+
+  serve-proxy, which launch starts, serves the profile's debugging port in
+  front of the browser until the browser exits. It is not meant to be run by
+  hand.
 
 Arguments:
   URL             Page to open. A launch that starts a browser opens the
@@ -188,10 +192,10 @@ JSON output:
   the profile refuses with process-list-unavailable.
 
   Error codes:
-    browser-not-found, endpoint-unresponsive, instance-page-missing,
-    instance-page-open-failed, invalid-port, invalid-profile-name,
-    invalid-timeout, launch-timeout, missing-command, mode-mismatch,
-    page-open-failed, policy-denied, port-busy, port-mismatch,
+    browser-not-found, devtools-port-unknown, endpoint-unresponsive,
+    instance-page-missing, instance-page-open-failed, invalid-port,
+    invalid-profile-name, invalid-timeout, launch-timeout, missing-command,
+    mode-mismatch, page-open-failed, policy-denied, port-busy, port-mismatch,
     process-list-unavailable, profile-missing,
     profile-not-derived, profile-not-running, profile-running,
     profile-running-without-port, quit-failed, quit-timeout,

@@ -16,5 +16,19 @@ export function readLogFile(file: string): string {
 
 /** Returns the path of the file that contains a profile's most recent launch output. */
 export function resolveLogPath(invocation: Invocation, profile: string): string {
-  return `${invocation.deps.env['TMPDIR'] || '/tmp'}/thor-chrome-${profile}.log`;
+  return `${resolveLogDir(invocation)}/thor-chrome-${profile}.log`;
 }
+
+/** Returns the path of the file that contains the output of a profile's DevTools proxy, beside its launch log. */
+export function resolveProxyLogPath(invocation: Invocation, profile: string): string {
+  return `${resolveLogDir(invocation)}/thor-chrome-${profile}.proxy.log`;
+}
+
+// region | Helpers
+
+/** Returns the directory that holds the launch and proxy logs. */
+function resolveLogDir(invocation: Invocation): string {
+  return invocation.deps.env['TMPDIR'] || '/tmp';
+}
+
+// endregion | Helpers

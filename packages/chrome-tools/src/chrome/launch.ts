@@ -24,7 +24,7 @@ import {
   writeProfileRecord,
 } from './profiles.ts';
 import type { LaunchPlanResult, LaunchResult } from './results.ts';
-import { readTimeoutSeconds } from './timeouts.ts';
+import { readLaunchTimeout } from './timeouts.ts';
 
 /** The options of a launch, as parsed from its command line. */
 export interface LaunchOptions {
@@ -58,7 +58,6 @@ const NO_STARTUP_WINDOW_FLAG = '--no-startup-window';
 /** Chrome's flag for its headless mode, which since Chrome 132 is the only one and takes no value. */
 const HEADLESS_FLAG = '--headless';
 
-export const DEFAULT_LAUNCH_TIMEOUT_SECONDS = 10;
 const LAUNCH_POLL_INTERVAL_MILLISECONDS = 200;
 
 /**
@@ -127,7 +126,7 @@ export async function launchProfile(
 
   if (options.isDryRun) return { command: launchCommand, pages, port, profile, type: 'launch-plan' };
 
-  const timeout = readTimeoutSeconds(invocation, 'THOR_CHROME_LAUNCH_TIMEOUT', DEFAULT_LAUNCH_TIMEOUT_SECONDS);
+  const timeout = readLaunchTimeout(invocation);
 
   // Write no record for an underived profile: The derivation that would say where it came from was lost
   fs.mkdirSync(profileDir, { recursive: true });
