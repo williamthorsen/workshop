@@ -28,7 +28,7 @@ Start the browser headless, for an agent that needs a page but not a window:
 thor-chrome --headless http://localhost:4798
 ```
 
-No launch brings the browser to the front.
+No launch brings the browser to the front, and neither does any client of the debugging port: `thor-chrome` serves the port through a proxy that opens new tabs in the background and answers activation requests without passing them on. `thor-chrome --help` lists the requests that it changes.
 
 Ask for the endpoint to attach a client to, as one JSON document, whether or not the browser is running:
 

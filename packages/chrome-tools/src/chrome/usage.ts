@@ -139,9 +139,20 @@ Window identity:
   each instance has one; show-instance-page opens it again in a new tab.
 
 Launch session:
-  No launch brings the browser to the front: The browser starts with
-  --no-startup-window, and the launch then opens each page through the
-  DevTools endpoint as a background tab. A shell outside the GUI login
+  No launch brings the browser to the front, and neither does any client of
+  the debugging port. The browser starts with --no-startup-window on a port
+  of its own choosing, and the launch starts serve-proxy on the debugging
+  port in front of it, then opens each page through the proxy as a
+  background tab. The proxy changes the requests that would activate the
+  browser, on every connection:
+    Target.createTarget      Forwarded with background set to true
+    /json/new                Opens its page as a background tab
+    Target.activateTarget, Page.bringToFront, /json/activate/<id>
+                             Answered with success and not forwarded
+  Every other request, command, and event passes through unchanged.
+  show-instance-page opens its page past the proxy, in front. A browser
+  started by an earlier version of thor-chrome serves its port itself until
+  it is quit and launched again. A shell outside the GUI login
   session (launchctl managername other than Aqua) launches through
   'open -g -n', so that the browser has a Dock icon and takes keyboard input;
   the dry run and the instance page show that form. A headless launch always
