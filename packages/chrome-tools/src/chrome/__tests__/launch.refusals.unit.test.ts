@@ -229,8 +229,42 @@ describe('launch', () => {
       expect(readError(fake)).toStrictEqual({
         code: 'launch-timeout',
         log: `${fake.home}/tmp/thor-chrome-thrive.log`,
-        message: "profile 'thrive' started but nothing answers on port 20321 after 1s",
+        message: "profile 'thrive' started but its DevTools endpoint does not answer after 1s",
       });
+    });
+
+    it('refuses with launch-timeout when the browser process is not found, naming the launch log', async () => {
+      const fake = makeLaunchFake({ env: { THOR_CHROME_LAUNCH_TIMEOUT: '1' }, isBrowserListed: false });
+      await expect(run(fake, ['--json', '--profile', 'thrive'])).resolves.toBe(1);
+      expect(readError(fake)).toStrictEqual({
+        code: 'launch-timeout',
+        log: `${fake.home}/tmp/thor-chrome-thrive.log`,
+        message: "profile 'thrive' answers, but its browser process was not found after 1s",
+      });
+      expect(fake.spawned).toHaveLength(1);
+    });
+
+    it('refuses with launch-timeout when the proxy never answers, naming the proxy log', async () => {
+      const fake = makeLaunchFake({
+        env: { THOR_CHROME_LAUNCH_TIMEOUT: '1' },
+        results: { 'curl --silent --fail --max-time 1 http://127.0.0.1:20321/': { status: 7 } },
+      });
+      await expect(run(fake, ['--json', '--profile', 'thrive'])).resolves.toBe(1);
+      expect(readError(fake)).toStrictEqual({
+        code: 'launch-timeout',
+        log: `${fake.home}/tmp/thor-chrome-thrive.proxy.log`,
+        message: "profile 'thrive' started but its DevTools proxy does not answer on port 20321 after 1s",
+      });
+    });
+
+    it('refuses with port-busy before it starts a proxy for a running browser that lost it', async () => {
+      const fake = makeRunningFake({
+        port: '0',
+        results: { lsof: { stdout: 'COMMAND PID USER\nnc 777 someone\n' } },
+      });
+      await expect(run(fake, ['--json', '--profile', 'thrive'])).resolves.toBe(1);
+      expect(readError(fake)).toMatchObject({ code: 'port-busy' });
+      expect(fake.spawned).toStrictEqual([]);
     });
 
     it('refuses with page-open-failed at the first page that does not open, opening none after it', async () => {

@@ -58,7 +58,7 @@ export async function quitIdleProfiles(
       next.set(profile.name, { idleSince, pid: profile.pid });
       continue;
     }
-    const refusal = await terminateBrowser(invocation, profile.name, profile.pid, timeout);
+    const refusal = await terminateBrowser(invocation, profile.name, profile.pid, timeout, profile.proxyPid);
     if (refusal !== undefined) next.set(profile.name, { idleSince, pid: profile.pid });
     const outcome = refusal ?? composeQuitOutcome(invocation, profile.name, profile.pid, true);
     outcomes.push(outcome);
@@ -93,12 +93,14 @@ function isIdleEntry(value: unknown): value is IdleEntry {
 }
 
 /**
- * Reads whether a client holds an established connection on the browser's debugging port. Only `lsof`'s clean
- * nothing-found answer counts as idle: Any other answer proves nothing about the browser.
+ * Reads whether a client holds an established connection on the advertised port, with the DevTools proxy when the
+ * browser has one, since clients connect to it and its own connections to the browser use another port. Only `lsof`'s
+ * clean nothing-found answer counts as idle: Any other answer proves nothing about the browser.
  */
 function readClientState(invocation: Invocation, profile: RunningProfile): ClientState {
   if (profile.port === undefined) return 'unknown';
-  const args = ['-nP', '-a', '-p', profile.pid, `-iTCP:${profile.port}`, '-sTCP:ESTABLISHED'];
+  const server = profile.proxyPid ?? profile.pid;
+  const args = ['-nP', '-a', '-p', server, `-iTCP:${profile.port}`, '-sTCP:ESTABLISHED'];
   const result = runTolerantly(invocation, 'lsof', args);
   if (result.status === 0 && result.stdout.trim() !== '') return 'connected';
   if (result.status === 1 && result.stdout.trim() === '' && result.stderr.trim() === '') return 'idle';

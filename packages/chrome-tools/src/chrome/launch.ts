@@ -9,12 +9,13 @@ import {
   SESSION_RECOVERY,
   SESSION_RECOVERY_HINT,
 } from './browser.ts';
-import { findBrowserPid, probeDevtools } from './browser-process.ts';
+import { findBrowserPid, probeDevtools, PROXIED_PORT } from './browser-process.ts';
+import { readDevtoolsActivePort, removeDevtoolsActivePort } from './devtools-active-port.ts';
 import { composeInstanceLabel, INSTANCE_PAGE_FILE, writeInstancePage } from './instance-page.ts';
 import { type Invocation, refuse, requireCommand, runTolerantly } from './invocation.ts';
 import { POLICY_DENIAL_MESSAGE, readLogFile, resolveLogPath } from './launch-log.ts';
 import { openPages } from './open-pages.ts';
-import { assertPortAvailable } from './port-availability.ts';
+import { assertPortAvailable, assertPortFree } from './port-availability.ts';
 import { assertValidPort, resolvePort } from './ports.ts';
 import {
   assertProfileNotUnderived,
@@ -24,7 +25,8 @@ import {
   writeProfileRecord,
 } from './profiles.ts';
 import type { LaunchPlanResult, LaunchResult } from './results.ts';
-import { readTimeoutSeconds } from './timeouts.ts';
+import { startProxy } from './serve-proxy.ts';
+import { readLaunchTimeout, type Timeout } from './timeouts.ts';
 
 /** The options of a launch, as parsed from its command line. */
 export interface LaunchOptions {
@@ -58,19 +60,21 @@ const NO_STARTUP_WINDOW_FLAG = '--no-startup-window';
 /** Chrome's flag for its headless mode, which since Chrome 132 is the only one and takes no value. */
 const HEADLESS_FLAG = '--headless';
 
-export const DEFAULT_LAUNCH_TIMEOUT_SECONDS = 10;
 const LAUNCH_POLL_INTERVAL_MILLISECONDS = 200;
 
 /**
  * Launches the browser against the named or derived profile, or returns the command that would launch it.
  *
- * A launch returns only once the DevTools endpoint answers. The browser declines to open the port at all under the
- * RemoteDebuggingAllowed enterprise policy, naming the refusal on its own output, so the launch keeps that output and
- * reads it back rather than reporting an endpoint that will never exist.
+ * A launch returns only once the DevTools endpoint answers on the advertised port. The browser chooses its own port,
+ * which it records in `DevToolsActivePort`, and once that endpoint answers, the launch starts a DevTools proxy on the
+ * advertised port, through which no client can bring the browser to the front. The browser declines to open the port
+ * at all under the RemoteDebuggingAllowed enterprise policy, naming the refusal on its own output, so the launch keeps
+ * that output and reads it back rather than reporting an endpoint that will never exist.
  *
- * No launch brings the browser to the front: The browser starts without a window, and once its endpoint answers, the
- * launch opens each page as a background target, which creates the window without activating the browser. A launch
- * against a running profile starts nothing and opens its URLs in that instance the same way.
+ * No launch brings the browser to the front: The browser starts without a window, and once the proxy answers, the
+ * launch opens each page through it as a background target, which creates the window without activating the browser.
+ * A launch against a running profile starts nothing and opens its URLs in that instance the same way, starting the
+ * proxy first when the browser has lost it.
  *
  * A headless launch always starts the browser directly, since a browser without a window needs neither the Dock icon
  * nor the keyboard input that the GUI login session provides.
@@ -103,7 +107,7 @@ export async function launchProfile(
   const label = composeInstanceLabel(profile, port);
   const commandLine = [
     browserApp,
-    `--remote-debugging-port=${port}`,
+    `--remote-debugging-port=${PROXIED_PORT}`,
     `--user-data-dir=${profileDir}`,
     ...PROMPT_SUPPRESSION_FLAGS,
     NO_STARTUP_WINDOW_FLAG,
@@ -127,29 +131,41 @@ export async function launchProfile(
 
   if (options.isDryRun) return { command: launchCommand, pages, port, profile, type: 'launch-plan' };
 
-  const timeout = readTimeoutSeconds(invocation, 'THOR_CHROME_LAUNCH_TIMEOUT', DEFAULT_LAUNCH_TIMEOUT_SECONDS);
+  const deadline: Deadline = { startedMilliseconds: invocation.deps.now(), timeout: readLaunchTimeout(invocation) };
 
   // Write no record for an underived profile: The derivation that would say where it came from was lost
   fs.mkdirSync(profileDir, { recursive: true });
   if (invocation.origin !== 'underived') writeProfileRecord(invocation, profileDir);
+  let pid = runningPid;
   if (launchCommand !== undefined) {
     if (pageFile !== undefined) {
       writeInstancePage(invocation, { browser, browserApp, label, launchCommand, logFile, pageFile, port, profile });
     }
-    startBrowser(invocation, launchCommand, logFile, isOpenLaunch ? session : undefined);
-    if (!(await awaitDevtools(invocation, port, timeout.seconds))) {
-      throw describeLaunchFailure(invocation, profile, port, logFile, timeout.text);
-    }
+    const openSession = isOpenLaunch ? session : undefined;
+    pid = await startAndAwaitBrowser(
+      invocation,
+      { launchCommand, logFile, openSession, profile, profileDir },
+      deadline,
+    );
+  }
+  // A browser that the launch started has no proxy yet, and one that was running may have lost it
+  if (pid !== undefined && running?.isProxyMissing !== false) {
+    await serveThroughProxy(invocation, { pid, port, profile, profileDir }, deadline);
   }
   const relaunchOptions = composeRelaunchOptions(invocation, { ...options, isHeadless }, profile);
   await openPages(invocation, { port, profile, relaunchOptions }, pages);
-  const lookup = findBrowserPid(invocation, profileDir);
-  const pid = lookup.isReadable ? lookup.pid : undefined;
   const entry = composeProfileEntry(invocation, profile, { isHeadless, pid, port, state: 'debugging' });
   return { browser, entry, type: 'launch' };
 }
 
 // region | Helpers
+
+/** The launch budget, counted from the moment that the launch started to wait. */
+interface Deadline {
+  startedMilliseconds: number;
+  timeout: Timeout;
+}
+
 /**
  * Refuses a profile that does not exist unless the launch may create it. A derived name contains no typo, so only a
  * name given on the command line has to be confirmed with --create.
@@ -167,12 +183,47 @@ function assertProfileCreatable(
   });
 }
 
-/** Reports whether the DevTools endpoint answers within the launch budget. */
-async function awaitDevtools(invocation: Invocation, port: string, timeoutSeconds: number): Promise<boolean> {
+/**
+ * Reports whether the browser's own DevTools endpoint answers within the launch budget, at the port that it records in
+ * `DevToolsActivePort`.
+ */
+async function awaitBrowserEndpoint(invocation: Invocation, profileDir: string, deadline: Deadline): Promise<boolean> {
+  return awaitCondition(invocation, deadline, () => {
+    const browserPort = readDevtoolsActivePort(profileDir);
+    return browserPort !== undefined && probeDevtools(invocation, browserPort);
+  });
+}
+
+/**
+ * Returns the PID of the browser that the launch started, which the DevTools proxy watches, refusing with
+ * `launch-timeout` when the process list does not show it within the launch budget.
+ */
+async function awaitBrowserPid(
+  invocation: Invocation,
+  launched: { logFile: string; profile: string; profileDir: string },
+  deadline: Deadline,
+): Promise<string> {
+  const { logFile, profile, profileDir } = launched;
+  let pid: string | undefined;
+  const isFound = await awaitCondition(invocation, deadline, () => {
+    const lookup = findBrowserPid(invocation, profileDir);
+    pid = lookup.isReadable ? lookup.pid : undefined;
+    return pid !== undefined;
+  });
+  if (isFound && pid !== undefined) return pid;
+  throw refuse(
+    invocation,
+    'launch-timeout',
+    `profile '${profile}' answers, but its browser process was not found after ${deadline.timeout.text}s`,
+    { extra: { log: logFile }, hints: [`Browser output: ${logFile}`] },
+  );
+}
+
+/** Reports whether a condition holds before the launch budget runs out, checking it at each poll. */
+async function awaitCondition(invocation: Invocation, deadline: Deadline, condition: () => boolean): Promise<boolean> {
   const { deps } = invocation;
-  const startedMilliseconds = deps.now();
-  while (!probeDevtools(invocation, port)) {
-    if (deps.now() - startedMilliseconds > timeoutSeconds * 1000) return false;
+  while (!condition()) {
+    if (deps.now() - deadline.startedMilliseconds > deadline.timeout.seconds * 1000) return false;
     await deps.sleep(LAUNCH_POLL_INTERVAL_MILLISECONDS);
   }
   return true;
@@ -222,13 +273,7 @@ function composeRelaunchOptions(invocation: Invocation, options: LaunchOptions, 
  * Returns the refusal that explains a launch that produced no DevTools endpoint, naming the policy refusal when the
  * browser reported one, since no retry can clear it.
  */
-function describeLaunchFailure(
-  invocation: Invocation,
-  profile: string,
-  port: string,
-  logFile: string,
-  timeout: string,
-) {
+function describeLaunchFailure(invocation: Invocation, profile: string, logFile: string, timeout: string) {
   const { programName: name } = invocation;
   if (readLogFile(logFile).includes(POLICY_DENIAL_MESSAGE)) {
     return refuse(invocation, 'policy-denied', `policy blocked remote debugging for profile '${profile}'`, {
@@ -244,12 +289,59 @@ function describeLaunchFailure(
   return refuse(
     invocation,
     'launch-timeout',
-    `profile '${profile}' started but nothing answers on port ${port} after ${timeout}s`,
+    `profile '${profile}' started but its DevTools endpoint does not answer after ${timeout}s`,
     {
       extra: { log: logFile },
       hints: [`Browser output: ${logFile}`],
     },
   );
+}
+
+/**
+ * Starts the profile's DevTools proxy on the advertised port and waits for it to answer, refusing with `port-busy` when
+ * another process holds the port and with `launch-timeout`, naming the proxy's log, when the proxy does not answer
+ * within the launch budget. The browser stays running after a refusal, and a relaunch starts the proxy again.
+ */
+async function serveThroughProxy(
+  invocation: Invocation,
+  target: { pid: string; port: string; profile: string; profileDir: string },
+  deadline: Deadline,
+): Promise<void> {
+  const { pid, port, profile, profileDir } = target;
+  assertPortFree(invocation, port);
+  const proxyLog = startProxy(invocation, { browserPid: pid, port, profile, profileDir });
+  if (await awaitCondition(invocation, deadline, () => probeDevtools(invocation, port))) return;
+  throw refuse(
+    invocation,
+    'launch-timeout',
+    `profile '${profile}' started but its DevTools proxy does not answer on port ${port} after ${deadline.timeout.text}s`,
+    { extra: { log: proxyLog }, hints: [`Proxy output: ${proxyLog}`] },
+  );
+}
+
+/**
+ * Starts the browser and returns its PID once its own DevTools endpoint answers, refusing when it does not answer, or
+ * its process is not found, within the launch budget.
+ */
+async function startAndAwaitBrowser(
+  invocation: Invocation,
+  launch: {
+    launchCommand: readonly string[];
+    logFile: string;
+    openSession: string | undefined;
+    profile: string;
+    profileDir: string;
+  },
+  deadline: Deadline,
+): Promise<string> {
+  const { launchCommand, logFile, openSession, profile, profileDir } = launch;
+  // A browser that crashed left its port behind, which would point the launch at a dead endpoint
+  removeDevtoolsActivePort(profileDir);
+  startBrowser(invocation, launchCommand, logFile, openSession);
+  if (!(await awaitBrowserEndpoint(invocation, profileDir, deadline))) {
+    throw describeLaunchFailure(invocation, profile, logFile, deadline.timeout.text);
+  }
+  return awaitBrowserPid(invocation, { logFile, profile, profileDir }, deadline);
 }
 
 /**

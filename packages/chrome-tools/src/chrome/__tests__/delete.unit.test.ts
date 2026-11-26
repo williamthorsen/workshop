@@ -4,7 +4,12 @@ import { describe, expect, it } from 'vitest';
 
 import { makeErrnoError } from '../../test-utils/errno-error.ts';
 import { deleteProfiles } from '../delete.ts';
-import { type FakeThorChrome, makeFakeThorChrome, makeRunningFakeThorChrome } from '../test-utils/fake-thor-chrome.ts';
+import {
+  type FakeThorChrome,
+  makeFakeThorChrome,
+  makeRunningFakeThorChrome,
+  PROXY_PID_OFFSET,
+} from '../test-utils/fake-thor-chrome.ts';
 import { runThorChrome } from '../thor-chrome.ts';
 
 describe('delete', () => {
@@ -62,6 +67,13 @@ describe('delete', () => {
     await expect(run(fake, ['delete', 'thrive', '--force'])).resolves.toBe(0);
     expect(fake.captured.stdout()).toBe(`Quit and deleted profile 'thrive' (PID 4242, ${fake.profilesDir}/thrive).\n`);
     expect(fake.killed).toStrictEqual([4242]);
+    expect(fs.existsSync(`${fake.profilesDir}/thrive`)).toBe(false);
+  });
+
+  it("quits a running profile's DevTools proxy along with its browser under --force", async () => {
+    const fake = makeRunningFakeThorChrome(['thrive'], { hasProxies: true });
+    await expect(run(fake, ['delete', 'thrive', '--force'])).resolves.toBe(0);
+    expect(fake.killed).toStrictEqual([4242, 4242 + PROXY_PID_OFFSET]);
     expect(fs.existsSync(`${fake.profilesDir}/thrive`)).toBe(false);
   });
 

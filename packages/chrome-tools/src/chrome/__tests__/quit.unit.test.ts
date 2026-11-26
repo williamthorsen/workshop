@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 
 import { makeErrnoError } from '../../test-utils/errno-error.ts';
 import { quitProfiles } from '../quit.ts';
-import { type FakeThorChrome, makeFakeThorChrome, makeRunningFakeThorChrome } from '../test-utils/fake-thor-chrome.ts';
+import {
+  type FakeThorChrome,
+  makeFakeThorChrome,
+  makeRunningFakeThorChrome,
+  PROXY_PID_OFFSET,
+} from '../test-utils/fake-thor-chrome.ts';
 import { runThorChrome } from '../thor-chrome.ts';
 
 describe('quit', () => {
@@ -19,6 +24,29 @@ describe('quit', () => {
     await expect(run(fake, ['quit', 'thrive'])).resolves.toBe(0);
     expect(fake.captured.stdout()).toBe("Quit profile 'thrive' (PID 4242).\n");
     expect(fake.killed).toStrictEqual([4242]);
+  });
+
+  it("signals the browser's DevTools proxy too, and waits for both to exit", async () => {
+    const fake = makeRunningFakeThorChrome(['thrive'], { hasProxies: true });
+    await expect(run(fake, ['quit', 'thrive'])).resolves.toBe(0);
+    expect(fake.killed).toStrictEqual([4242, 4242 + PROXY_PID_OFFSET]);
+  });
+
+  it('refuses with quit-timeout when the DevTools proxy outlives the budget', async () => {
+    const fake = makeRunningFakeThorChrome(['thrive'], { hasProxies: true });
+    fake.env['THOR_CHROME_QUIT_TIMEOUT'] = '1';
+    fake.deps.isProcessAlive = () => true;
+    await expect(run(fake, ['quit', 'thrive', '--json'])).resolves.toBe(1);
+    expect(fake.readReport()).toMatchObject({
+      profiles: [
+        {
+          error: {
+            code: 'quit-timeout',
+            message: `the DevTools proxy (PID ${4242 + PROXY_PID_OFFSET}) for profile 'thrive' is still running 1s after SIGTERM; end it manually`,
+          },
+        },
+      ],
+    });
   });
 
   it("leaves another profile's browser running", async () => {

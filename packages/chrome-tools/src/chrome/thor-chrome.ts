@@ -1,6 +1,3 @@
-import { setTimeout as sleep } from 'node:timers/promises';
-import tty from 'node:tty';
-
 import {
   type FlagSchema,
   type OperandDefinition,
@@ -10,10 +7,7 @@ import {
   type ParseSpec,
 } from '@williamthorsen/toolbelt.cli/candidate';
 
-import { openBackgroundPage } from '../portable/open-background-page.ts';
-import { spawnDetached } from '../portable/spawn-detached.ts';
 import type { CommandOutput } from '../shared/output.ts';
-import { runCommand } from '../shared/run-command.ts';
 import { type DeleteOptions, deleteProfiles } from './delete.ts';
 import { quitIdleProfiles } from './idle.ts';
 import {
@@ -28,6 +22,8 @@ import {
 } from './invocation.ts';
 import { launchProfile } from './launch.ts';
 import { listProfiles } from './list.ts';
+import { assertValidPort } from './ports.ts';
+import { createProcessDeps } from './process-deps.ts';
 import { resolveProfileEntry } from './profiles.ts';
 import { quitProfiles } from './quit.ts';
 import { stringifyJson } from './render.ts';
@@ -40,6 +36,7 @@ import {
   type TextLine,
 } from './render-text.ts';
 import { deriveExitStatus, type OutcomeObserver, type VerbResult } from './results.ts';
+import { runServeProxy, SERVE_PROXY_VERB, type ServeProxyOptions } from './serve-proxy.ts';
 import { showInstancePage } from './show-instance-page.ts';
 import { showStatus } from './status.ts';
 import { formatUsage } from './usage.ts';
@@ -78,6 +75,11 @@ export async function runThorChrome(
   }
 
   try {
+    // serve-proxy runs until the browser exits and reports nothing, so it stays outside the verbs' result pipeline
+    const proxyIndex = args.findIndex((argument) => argument !== '--json');
+    if (args[proxyIndex] === SERVE_PROXY_VERB) {
+      return await runServeProxy(invocation, parseServeProxyArgs(invocation, args.toSpliced(proxyIndex, 1)));
+    }
     const { rest, verb } = selectVerb(invocation, args);
     const context = createTextContext(invocation);
     // Report each profile in prose as the verb reaches it; a JSON document waits for the whole result
@@ -103,24 +105,6 @@ export async function runThorChrome(
 }
 
 // region | Helpers
-
-/** Builds the dependencies of a run in this process. */
-function createProcessDeps(): ThorChromeDeps {
-  return {
-    env: process.env,
-    isStdoutTerminal: tty.isatty(1),
-    kill: (pid) => {
-      process.kill(pid, 'SIGTERM');
-    },
-    now: () => Date.now(),
-    openPage: openBackgroundPage,
-    run: runCommand,
-    sleep: async (milliseconds) => {
-      await sleep(milliseconds);
-    },
-    spawnDetached,
-  };
-}
 
 /** Returns what the text renderers read besides the result. */
 function createTextContext(invocation: Invocation): TextContext {
@@ -243,13 +227,32 @@ function isVerb(word: string): word is Verb {
   return VERB_NAMES.has(word);
 }
 
+/** Parses the arguments of `serve-proxy`, every one of which is required. */
+function parseServeProxyArgs(invocation: Invocation, args: readonly string[]): ServeProxyOptions {
+  const { flags } = parseVerbArgs(invocation, SERVE_PROXY_VERB, args, {
+    flags: {
+      ...JSON_FLAG,
+      browserPid: { type: 'string', description: "PID of the profile's browser" },
+      port: { type: 'string', description: 'Advertised port' },
+      profileDir: { type: 'string', description: 'Profile directory' },
+    },
+    operands: [],
+  });
+  const { browserPid, port, profileDir } = flags;
+  if (browserPid === undefined || port === undefined || profileDir === undefined) {
+    throw refuse(invocation, USAGE_CODE, `${SERVE_PROXY_VERB} requires --port, --profile-dir, and --browser-pid`);
+  }
+  assertValidPort(invocation, port);
+  return { browserPid, port, profileDir };
+}
+
 /**
  * Parses a verb's arguments, refusing a malformed command line with thor-chrome's own usage message, which a `--json`
  * caller reads as the error's message.
  */
 function parseVerbArgs<const S extends FlagSchema, const O extends readonly OperandDefinition[]>(
   invocation: Invocation,
-  verb: Verb,
+  verb: string,
   args: readonly string[],
   spec: ParseSpec<S, O>,
 ): ParseResult<S, O> {

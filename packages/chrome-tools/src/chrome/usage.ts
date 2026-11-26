@@ -1,8 +1,8 @@
 import { DEFAULT_BROWSER } from './browser.ts';
-import { DEFAULT_LAUNCH_TIMEOUT_SECONDS } from './launch.ts';
 import { DEFAULT_PORT, HASH_PORT_RANGE, TICKET_PORT_RANGE } from './ports.ts';
 import { DEFAULT_PROFILE } from './profiles.ts';
 import { DEFAULT_QUIT_TIMEOUT_SECONDS } from './quit.ts';
+import { DEFAULT_LAUNCH_TIMEOUT_SECONDS } from './timeouts.ts';
 
 /** Returns the help text, naming the command as it was invoked and the profiles directory as it resolves. */
 export function formatUsage(name: string, profilesDir: string): string {
@@ -44,6 +44,10 @@ Commands:
   the working directory when none is named. quit and delete process every
   name, refusing each profile that they cannot act on and exiting 1 if they
   refused any.
+
+  serve-proxy, which launch starts, serves the profile's debugging port in
+  front of the browser until the browser exits. It is not meant to be run by
+  hand.
 
 Arguments:
   URL             Page to open. A launch that starts a browser opens the
@@ -135,9 +139,22 @@ Window identity:
   each instance has one; show-instance-page opens it again in a new tab.
 
 Launch session:
-  No launch brings the browser to the front: The browser starts with
-  --no-startup-window, and the launch then opens each page through the
-  DevTools endpoint as a background tab. A shell outside the GUI login
+  No launch brings the browser to the front, and neither does any client of
+  the debugging port. The browser starts with --no-startup-window on a port
+  of its own choosing, and the launch starts serve-proxy on the debugging
+  port in front of it, then opens each page through the proxy as a
+  background tab. The proxy changes the requests that would activate the
+  browser, on every connection:
+    Target.createTarget      Forwarded with background set to true and
+                             newWindow removed, so the tab opens in an
+                             existing window of its context
+    /json/new                Opens its page as a background tab
+    Target.activateTarget, Page.bringToFront, /json/activate/<id>
+                             Answered with success and not forwarded
+  Every other request, command, and event passes through unchanged.
+  show-instance-page opens its page past the proxy, in front. A browser
+  started by an earlier version of thor-chrome serves its port itself until
+  it is quit and launched again. A shell outside the GUI login
   session (launchctl managername other than Aqua) launches through
   'open -g -n', so that the browser has a Dock icon and takes keyboard input;
   the dry run and the instance page show that form. A headless launch always
@@ -188,10 +205,10 @@ JSON output:
   the profile refuses with process-list-unavailable.
 
   Error codes:
-    browser-not-found, endpoint-unresponsive, instance-page-missing,
-    instance-page-open-failed, invalid-port, invalid-profile-name,
-    invalid-timeout, launch-timeout, missing-command, mode-mismatch,
-    page-open-failed, policy-denied, port-busy, port-mismatch,
+    browser-not-found, devtools-port-unknown, endpoint-unresponsive,
+    instance-page-missing, instance-page-open-failed, invalid-port,
+    invalid-profile-name, invalid-timeout, launch-timeout, missing-command,
+    mode-mismatch, page-open-failed, policy-denied, port-busy, port-mismatch,
     process-list-unavailable, profile-missing,
     profile-not-derived, profile-not-running, profile-running,
     profile-running-without-port, quit-failed, quit-timeout,

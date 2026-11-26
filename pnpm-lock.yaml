@@ -186,6 +186,9 @@ catalogs:
     '@tandryukha/aidemo':
       specifier: 0.20.6
       version: 0.20.6
+    '@types/ws':
+      specifier: 8.18.2
+      version: 8.18.2
     '@vitest/coverage-v8':
       specifier: 5.1.1
       version: 5.1.1
@@ -255,6 +258,9 @@ catalogs:
     vitest:
       specifier: 5.1.1
       version: 5.1.1
+    ws:
+      specifier: 8.23.0
+      version: 8.23.0
     yaml:
       specifier: 2.9.1
       version: 2.9.1
@@ -378,7 +384,13 @@ importers:
       '@williamthorsen/toolbelt.terminal':
         specifier: 'catalog:'
         version: 0.3.2
+      ws:
+        specifier: 'catalog:'
+        version: 8.23.0
     devDependencies:
+      '@types/ws':
+        specifier: 'catalog:'
+        version: 8.18.2
       '@williamthorsen/toolbelt.testing':
         specifier: 'catalog:'
         version: 0.9.0
@@ -443,7 +455,7 @@ importers:
     devDependencies:
       '@tandryukha/aidemo':
         specifier: 'catalog:'
-        version: 0.20.6(undici@8.13.1)
+        version: 0.20.6(undici@8.13.1)(ws@8.23.0)
       '@williamthorsen/toolbelt.testing':
         specifier: 'catalog:'
         version: 0.9.0
@@ -1531,6 +1543,9 @@ packages:
 
   '@types/validate-npm-package-name@4.0.2':
     resolution: {integrity: sha512-lrpDziQipxCEeK5kWxvljWYhUvOiB2A9izZd9B2AFarYAkqZshb4lPbRs7zKEic6eGtH8V/2qJW+dPp9OtF6bw==}
+
+  '@types/ws@8.18.2':
+    resolution: {integrity: sha512-67MQl+fpWKVTT1NYdnmo3U4sc/xPo/zQBncVnI74qmQa0z/b+1g6iYqNmGCPbxO+zz2aklb08a0oHfegiVd0/w==}
 
   '@typescript-eslint/eslint-plugin@8.73.0':
     resolution: {integrity: sha512-UkygMFer53Yzn29MCYFTHf34hGXf5KJhiDWfIm1tXtXRrym1CS6l5H9Y3yCtPWChpC0/f93H88gdj8tN0dd4kw==}
@@ -3845,6 +3860,18 @@ packages:
   wrappy@1.0.2:
     resolution: {integrity: sha512-l4Sp/DRseor9wL6EvV2+TuQn63dMkPjZ/sp9XkghTEbV9KlPS1xUsZ3u7/IQO4wxtcFB4bgpQPRcR3QCvezPcQ==}
 
+  ws@8.23.0:
+    resolution: {integrity: sha512-wCkmX8QMOrKjgO8HW2WyDbTSGeqkocxgDzS9iR79rEAexty6/2qzilx3Ag8Tqf9ykop3irLKle0MtVn5qjVnoQ==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
+
   y18n@5.0.8:
     resolution: {integrity: sha512-0pfFzegeDWJHJIAmTLRP2DwHjdF5s7jo9tuztdQxAhINCdvS+3nGINqPd00AphqJR/0LhANUS6/+7SCb98YOfA==}
     engines: {node: '>=10'}
@@ -4387,11 +4414,11 @@ snapshots:
 
   '@rolldown/pluginutils@1.1.1': {}
 
-  '@tandryukha/aidemo@0.20.6(undici@8.13.1)':
+  '@tandryukha/aidemo@0.20.6(undici@8.13.1)(ws@8.23.0)':
     dependencies:
       '@modelcontextprotocol/server': 2.4.0
       commander: 15.1.0
-      openai: 7.62.0(undici@8.13.1)(zod@4.6.7)
+      openai: 7.62.0(undici@8.13.1)(ws@8.23.0)(zod@4.6.7)
       playwright: 1.65.1
       re2js: 2.9.1
       tsx: 4.23.15
@@ -4458,6 +4485,10 @@ snapshots:
       '@types/node': 18.19.130
 
   '@types/validate-npm-package-name@4.0.2': {}
+
+  '@types/ws@8.18.2':
+    dependencies:
+      '@types/node': 26.6.6
 
   '@typescript-eslint/eslint-plugin@8.73.0(@typescript-eslint/parser@8.73.0(eslint@10.15.0(jiti@2.7.0))(typescript@6.0.3))(eslint@10.15.0(jiti@2.7.0))(typescript@6.0.3)':
     dependencies:
@@ -6130,9 +6161,10 @@ snapshots:
       platform: 1.3.6
       protobufjs: 7.6.6
 
-  openai@7.62.0(undici@8.13.1)(zod@4.6.7):
+  openai@7.62.0(undici@8.13.1)(ws@8.23.0)(zod@4.6.7):
     optionalDependencies:
       undici: 8.13.1
+      ws: 8.23.0
       zod: 4.6.7
 
   optionator@0.9.4:
@@ -6837,6 +6869,8 @@ snapshots:
       strip-ansi: 7.2.0
 
   wrappy@1.0.2: {}
+
+  ws@8.23.0: {}
 
   y18n@5.0.8: {}
 

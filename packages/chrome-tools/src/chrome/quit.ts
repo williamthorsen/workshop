@@ -16,11 +16,12 @@ import { readTimeoutSeconds, type Timeout } from './timeouts.ts';
 export const DEFAULT_QUIT_TIMEOUT_SECONDS = 3;
 const QUIT_POLL_INTERVAL_MILLISECONDS = 100;
 
-/** A profile whose browser is running, with that browser's PID and debugging port. */
+/** A profile whose browser is running, with that browser's PID, its advertised port, and its proxy's PID. */
 export interface RunningProfile {
   name: string;
   pid: string;
   port: string | undefined;
+  proxyPid: string | undefined;
 }
 
 /** Returns the outcome of a quit that left a profile stopped, with the PID of the browser that it ended, if any. */
@@ -37,7 +38,7 @@ export function composeQuitOutcome(
 /** Returns the profiles whose browser is running, refusing before anything is quit when the process list is unreadable. */
 export function listRunningProfiles(invocation: Invocation): RunningProfile[] {
   return (listProfileNames(invocation) ?? []).flatMap((name): RunningProfile[] => {
-    const { pid, port, state } = resolveProfileState(invocation, `${invocation.profilesDir}/${name}`);
+    const { pid, port, proxyPid, state } = resolveProfileState(invocation, `${invocation.profilesDir}/${name}`);
     if (state === 'unknown') {
       throw refuse(
         invocation,
@@ -46,7 +47,7 @@ export function listRunningProfiles(invocation: Invocation): RunningProfile[] {
         { hints: [PROCESS_LIST_RECOVERY_HINT] },
       );
     }
-    return pid === undefined ? [] : [{ name, pid, port }];
+    return pid === undefined ? [] : [{ name, pid, port, proxyPid }];
   });
 }
 
@@ -92,46 +93,44 @@ export function refuseProfile(
 }
 
 /**
- * Terminates a profile's browser and waits for it to exit, returning the profile's refusal when it could not. A browser
- * that exited before the signal reached it counts as stopped.
+ * Terminates a profile's browser, and its DevTools proxy when it has one, and waits for both to exit, returning the
+ * profile's refusal when it could not. A process that exited before the signal reached it counts as stopped.
  *
  * Waiting means that a quit followed by a relaunch, which the guard messages recommend, does not race the relaunch
- * against a browser that is still shutting down. Because SIGTERM to Chrome is asynchronous, the wait polls; the bound
- * is wall-clock rather than a count of attempts, since each attempt runs a pgrep and a ps, whose duration varies with
- * machine load.
+ * against a browser that is still shutting down, or against a proxy that still holds the advertised port. Because
+ * SIGTERM to Chrome is asynchronous, the wait polls; the bound is wall-clock rather than a count of attempts, since
+ * each attempt runs a pgrep and a ps, whose duration varies with machine load.
  */
 export async function terminateBrowser(
   invocation: Invocation,
   profile: string,
   pid: string,
   timeout: Timeout,
+  proxyPid?: string,
 ): Promise<RefusedOutcome | undefined> {
   const { deps } = invocation;
-  try {
-    deps.kill(Number(pid));
-  } catch (error) {
-    if (!isErrnoException(error)) throw error;
-    // Skip the wait: A browser relaunched on the profile would otherwise time out under this PID
-    if (error.code === 'ESRCH') return undefined;
-    if (error.code !== 'EPERM') throw error;
-    return refuseProfile(invocation, profile, {
-      code: 'quit-failed',
-      message: `not permitted to signal PID ${pid} for profile '${profile}'; end it from a terminal outside the sandbox, or as the user who owns it`,
-    });
-  }
-
   const startedMilliseconds = deps.now();
+  const signals = [pid, ...(proxyPid === undefined ? [] : [proxyPid])].map((target) =>
+    signalProcess(invocation, profile, target),
+  );
+  for (const signal of signals) if (typeof signal !== 'string') return signal;
+
+  // Skip a wait for a process that was already gone: One relaunched on the profile would otherwise time out under it
   const dir = `${invocation.profilesDir}/${profile}`;
-  while (isRunning(invocation, dir)) {
+  for (;;) {
+    const isBrowserRunning = signals[0] === 'signalled' && isRunning(invocation, dir);
+    const isProxyRunning =
+      proxyPid !== undefined && signals[1] === 'signalled' && deps.isProcessAlive(Number(proxyPid));
+    if (!isBrowserRunning && !isProxyRunning) return undefined;
     if (deps.now() - startedMilliseconds > timeout.seconds * 1000) {
+      const remaining = isBrowserRunning ? `PID ${pid}` : `the DevTools proxy (PID ${proxyPid ?? ''})`;
       return refuseProfile(invocation, profile, {
         code: 'quit-timeout',
-        message: `PID ${pid} for profile '${profile}' is still running ${timeout.text}s after SIGTERM; end it manually`,
+        message: `${remaining} for profile '${profile}' is still running ${timeout.text}s after SIGTERM; end it manually`,
       });
     }
     await deps.sleep(QUIT_POLL_INTERVAL_MILLISECONDS);
   }
-  return undefined;
 }
 
 // region | Helpers
@@ -158,12 +157,32 @@ async function quitProfile(invocation: Invocation, profile: string, timeout: Tim
     );
   }
 
-  const { pid, state } = resolveProfileState(invocation, dir);
+  const { pid, proxyPid, state } = resolveProfileState(invocation, dir);
   assertStateKnown(invocation, profile, state);
   if (pid === undefined) return composeQuitOutcome(invocation, profile, undefined, false);
   return (
-    (await terminateBrowser(invocation, profile, pid, timeout)) ?? composeQuitOutcome(invocation, profile, pid, false)
+    (await terminateBrowser(invocation, profile, pid, timeout, proxyPid)) ??
+    composeQuitOutcome(invocation, profile, pid, false)
   );
+}
+
+/**
+ * Sends SIGTERM to one process of a profile and returns whether it was signalled or already gone, or the profile's
+ * refusal when this user may not signal it.
+ */
+function signalProcess(invocation: Invocation, profile: string, pid: string): RefusedOutcome | 'gone' | 'signalled' {
+  try {
+    invocation.deps.kill(Number(pid));
+    return 'signalled';
+  } catch (error) {
+    if (!isErrnoException(error)) throw error;
+    if (error.code === 'ESRCH') return 'gone';
+    if (error.code !== 'EPERM') throw error;
+    return refuseProfile(invocation, profile, {
+      code: 'quit-failed',
+      message: `not permitted to signal PID ${pid} for profile '${profile}'; end it from a terminal outside the sandbox, or as the user who owns it`,
+    });
+  }
 }
 
 // endregion | Helpers

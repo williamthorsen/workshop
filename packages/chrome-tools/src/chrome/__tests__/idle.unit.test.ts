@@ -5,7 +5,12 @@ import { describe, expect, it } from 'vitest';
 import { makeErrnoError } from '../../test-utils/errno-error.ts';
 import { makeStubPath } from '../../test-utils/stub-path.ts';
 import { IDLE_RECORD_FILE, quitIdleProfiles } from '../idle.ts';
-import { type FakeThorChrome, makeFakeThorChrome, makeRunningFakeThorChrome } from '../test-utils/fake-thor-chrome.ts';
+import {
+  type FakeThorChrome,
+  makeFakeThorChrome,
+  makeRunningFakeThorChrome,
+  PROXY_PID_OFFSET,
+} from '../test-utils/fake-thor-chrome.ts';
 import { runThorChrome } from '../thor-chrome.ts';
 
 const HOUR_MILLISECONDS = 3_600_000;
@@ -27,6 +32,24 @@ describe('quit --idle', () => {
     expect(fake.captured.stdout()).toBe(
       "No idle profiles.\nNo idle profiles.\nQuit idle profile 'thrive' (PID 4242).\n",
     );
+  });
+
+  it("reads a proxied browser's clients from its proxy, and quits both once idle", async () => {
+    const fake = makeRunningFakeThorChrome(['thrive'], { hasProxies: true });
+    const proxyPid = 4242 + PROXY_PID_OFFSET;
+    fake.lsof.set(proxyPid, CONNECTED);
+    await run(fake, ['quit', '--idle', '1s']);
+    expect(fake.calls).toContainEqual({
+      args: ['-nP', '-a', '-p', String(proxyPid), '-iTCP:9000', '-sTCP:ESTABLISHED'],
+      program: 'lsof',
+    });
+    expect(fake.captured.stdout()).toBe('No idle profiles.\n');
+
+    fake.lsof.delete(proxyPid);
+    await run(fake, ['quit', '--idle', '1s']);
+    fake.advance(2000);
+    await run(fake, ['quit', '--idle', '1s']);
+    expect(fake.killed).toStrictEqual([4242, proxyPid]);
   });
 
   it('keeps every profile directory, a named profile included, and drops a quit browser from the record', async () => {

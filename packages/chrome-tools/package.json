@@ -47,9 +47,11 @@
     "@williamthorsen/toolbelt.errors": "catalog:",
     "@williamthorsen/toolbelt.git": "catalog:",
     "@williamthorsen/toolbelt.strings": "catalog:",
-    "@williamthorsen/toolbelt.terminal": "catalog:"
+    "@williamthorsen/toolbelt.terminal": "catalog:",
+    "ws": "catalog:"
   },
   "devDependencies": {
+    "@types/ws": "catalog:",
     "@williamthorsen/toolbelt.testing": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:"

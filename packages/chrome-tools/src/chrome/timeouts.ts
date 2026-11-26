@@ -6,6 +6,14 @@ export interface Timeout {
   text: string;
 }
 
+/** How long a launch waits for the DevTools endpoint when `THOR_CHROME_LAUNCH_TIMEOUT` is unset. */
+export const DEFAULT_LAUNCH_TIMEOUT_SECONDS = 10;
+
+/** Reads the launch budget, within which a launch and the DevTools proxy wait for the browser's endpoint. */
+export function readLaunchTimeout(invocation: Invocation): Timeout {
+  return readTimeoutSeconds(invocation, 'THOR_CHROME_LAUNCH_TIMEOUT', DEFAULT_LAUNCH_TIMEOUT_SECONDS);
+}
+
 /**
  * Reads a timeout from an environment variable, else the default, refusing one that is not a whole number of seconds,
  * which the elapsed-time comparison requires.
