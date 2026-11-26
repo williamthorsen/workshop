@@ -20,7 +20,7 @@
   },
   "devDependencies": {
     "@types/node": "24.19.2",
-    "@typescript-eslint/utils": "8.73.0",
+    "@typescript-eslint/utils": "8.74.0",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "@vitest/coverage-v8": "catalog:",
     "@vitest/eslint-plugin": "1.6.28",

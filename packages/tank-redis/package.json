@@ -38,8 +38,8 @@
     "prepare": "nmr-compile"
   },
   "devDependencies": {
-    "@upstash/redis": "1.41.0",
-    "@williamthorsen/tank": "0.3.0",
+    "@upstash/redis": "1.41.1",
+    "@williamthorsen/tank": "0.4.0",
     "redis": "6.4.0",
     "testcontainers": "12.2.2",
     "vite": "catalog:",
