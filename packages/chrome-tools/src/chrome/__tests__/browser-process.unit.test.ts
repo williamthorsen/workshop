@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { findBrowserPid, readIsHeadless, resolveProfileState } from '../browser-process.ts';
+import {
+  findBrowserPid,
+  findProcessProfile,
+  findProxy,
+  readIsHeadless,
+  resolveProfileState,
+} from '../browser-process.ts';
 import { type FakeThorChrome, makeFakeThorChrome } from '../test-utils/fake-thor-chrome.ts';
 
 describe(findBrowserPid, () => {
@@ -62,6 +68,7 @@ describe(resolveProfileState, () => {
       isHeadless: true,
       pid: '31',
       port: '9321',
+      proxyPid: undefined,
       state: 'debugging',
     });
     expect(resolveProfileState(invocation, `${fake.profilesDir}/atlas`)).toMatchObject({
@@ -72,6 +79,73 @@ describe(resolveProfileState, () => {
       isHeadless: undefined,
       state: 'stopped',
     });
+  });
+
+  it("reads the advertised port from the proxy of a browser on port 0, ignoring another profile's proxy", () => {
+    const fake = makeFakeWithProcesses((profilesDir) => ({
+      '41': `chrome --remote-debugging-port=0 --user-data-dir=${profilesDir}/thrive`,
+      '42': `node /bin/thor-chrome.js serve-proxy --port 20321 --profile-dir ${profilesDir}/thrive --browser-pid 41`,
+      '43': `node /bin/thor-chrome.js serve-proxy --port 20999 --profile-dir ${profilesDir}/thrive-2 --browser-pid 44`,
+    }));
+    expect(resolveProfileState(fake.makeInvocation(), `${fake.profilesDir}/thrive`)).toStrictEqual({
+      isHeadless: false,
+      pid: '41',
+      port: '20321',
+      proxyPid: '42',
+      state: 'debugging',
+    });
+    expect(fake.calls).toContainEqual({
+      args: ['--silent', '--fail', '--max-time', '1', 'http://127.0.0.1:20321/json/version'],
+      program: 'curl',
+    });
+  });
+
+  it('reports a browser on port 0 without a proxy as unresponsive, without a port', () => {
+    const fake = makeFakeWithProcesses((profilesDir) => ({
+      '41': `chrome --remote-debugging-port=0 --user-data-dir=${profilesDir}/thrive`,
+    }));
+    expect(resolveProfileState(fake.makeInvocation(), `${fake.profilesDir}/thrive`)).toStrictEqual({
+      isHeadless: false,
+      pid: '41',
+      port: undefined,
+      proxyPid: undefined,
+      state: 'unresponsive',
+    });
+  });
+
+  it('reads a browser launched on a fixed port as serving that port itself, without looking for a proxy', () => {
+    const fake = makeFakeWithProcesses((profilesDir) => ({
+      '41': `chrome --remote-debugging-port=20321 --user-data-dir=${profilesDir}/thrive`,
+    }));
+    expect(resolveProfileState(fake.makeInvocation(), `${fake.profilesDir}/thrive`)).toMatchObject({
+      port: '20321',
+      proxyPid: undefined,
+      state: 'debugging',
+    });
+    expect(fake.calls.filter((call) => call.program === 'pgrep')).toHaveLength(1);
+  });
+});
+
+describe(findProxy, () => {
+  it('does not mistake the browser for its proxy', () => {
+    const fake = makeFakeWithProcesses((profilesDir) => ({
+      '41': `chrome --remote-debugging-port=0 --user-data-dir=${profilesDir}/thrive`,
+    }));
+    expect(findProxy(fake.makeInvocation(), `${fake.profilesDir}/thrive`)).toBeUndefined();
+  });
+});
+
+describe(findProcessProfile, () => {
+  it('names the profile of a browser and of a proxy, and nothing for another process', () => {
+    const fake = makeFakeWithProcesses((profilesDir) => ({
+      '41': `chrome --remote-debugging-port=0 --user-data-dir=${profilesDir}/thrive`,
+      '42': `node /bin/thor-chrome.js serve-proxy --port 20321 --profile-dir ${profilesDir}/atlas --browser-pid 41`,
+      '43': 'nginx: master process',
+    }));
+    const invocation = fake.makeInvocation();
+    expect(findProcessProfile(invocation, '41')).toBe('thrive');
+    expect(findProcessProfile(invocation, '42')).toBe('atlas');
+    expect(findProcessProfile(invocation, '43')).toBeUndefined();
   });
 });
 

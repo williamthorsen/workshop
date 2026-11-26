@@ -2,6 +2,7 @@ import fs from 'node:fs';
 
 import { isDirectory } from '../shared/paths.ts';
 import { type ProfileStateName, resolveProfileState } from './browser-process.ts';
+import { readDevtoolsActivePort } from './devtools-active-port.ts';
 import { INSTANCE_PAGE_FILE } from './instance-page.ts';
 import { type Invocation, refuse, requireCommand, runTolerantly } from './invocation.ts';
 import { assertProfileNotUnderived, assertStateKnown, composeProfileEntry, resolveDefaultProfile } from './profiles.ts';
@@ -39,8 +40,9 @@ export function showInstancePage(invocation: Invocation, profile: string | undef
     );
   }
 
-  // Chrome refuses GET on /json/new, and reads the URL to open from the whole query string
-  const endpoint = `http://127.0.0.1:${port}/json/new`;
+  // Open the page through the browser's own port, past the proxy that would keep it in the background: The developer
+  // asked to see it. Chrome refuses GET on /json/new, and reads the URL to open from the whole query string
+  const endpoint = `http://127.0.0.1:${readDevtoolsActivePort(dir) ?? port}/json/new`;
   const url = `${endpoint}?${encodeURIComponent(`file://${pageFile}`)}`;
   const result = runTolerantly(invocation, 'curl', ['--silent', '--fail', '--max-time', '2', '--request', 'PUT', url]);
   if (result.status !== 0) {

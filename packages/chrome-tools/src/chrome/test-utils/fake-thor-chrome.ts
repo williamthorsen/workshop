@@ -214,7 +214,15 @@ export interface RunningFakeThorChrome extends FakeThorChrome {
 export interface RunningFakeThorChromeOptions extends Pick<FakeThorChromeOptions, 'killError'> {
   /** Gives each browser a debugging port, 9000 plus its index. */
   hasPorts?: boolean;
+  /**
+   * Starts each browser on port `0` behind a DevTools proxy, whose PID is the browser's plus `PROXY_PID_OFFSET` and
+   * whose advertised port is 9000 plus the browser's index. The proxy exits once it is signalled.
+   */
+  hasProxies?: boolean;
 }
+
+/** The difference between the PID of a browser that `makeRunningFakeThorChrome` starts and that of its proxy. */
+export const PROXY_PID_OFFSET = 1000;
 
 /**
  * Builds a fake in which each named profile exists and has a running browser, PID 4242 and up, which exits once it is
@@ -229,13 +237,12 @@ export function makeRunningFakeThorChrome(
   const lsof = new Map<number, Partial<CommandResult>>();
   let nextPid = FIRST_RUNNING_PID + profiles.length;
   let patterns = new Map<string, number>();
+  let proxyPatterns = new Map<string, number>();
   const fake = makeFakeThorChrome({
     killError: options.killError,
     run: (program, args) => {
       if (program === 'ps') {
-        const pid = Number(args.at(-1) ?? '');
-        const port = options.hasPorts === true ? ` --remote-debugging-port=${9000 + pid - FIRST_RUNNING_PID}` : '';
-        return { status: 0, stderr: '', stdout: `chrome${port}\n` };
+        return { status: 0, stderr: '', stdout: `${describeRunningProcess(Number(args.at(-1) ?? ''), options)}\n` };
       }
       if (program === 'lsof') {
         const answer = lsof.get(Number(args[3] ?? '')) ?? {};
@@ -246,6 +253,11 @@ export function makeRunningFakeThorChrome(
         return { status: 0, stderr: '', stdout: `${fake.workRepoDir}/.git\n` };
       }
       if (program !== 'pgrep') return { status: 0, stderr: '', stdout: '' };
+      const proxyPid = proxyPatterns.get(args[1] ?? '');
+      if (proxyPid !== undefined) {
+        const isServing = options.hasProxies === true && !fake.killed.includes(proxyPid);
+        return isServing ? { status: 0, stderr: '', stdout: `${proxyPid}\n` } : { status: 1, stderr: '', stdout: '' };
+      }
       const pid = patterns.get(args[1] ?? '');
       if (pid === undefined || ended.has(pid)) return { status: 1, stderr: '', stdout: '' };
       return { status: 0, stderr: '', stdout: `${pid}\n` };
@@ -255,6 +267,12 @@ export function makeRunningFakeThorChrome(
     profiles.map((profile, index) => {
       const dir = `${fake.profilesDir}/${profile}`.replaceAll('.', String.raw`\.`);
       return [`user-data-dir=${dir}( |$)`, FIRST_RUNNING_PID + index];
+    }),
+  );
+  proxyPatterns = new Map(
+    profiles.map((profile, index) => {
+      const dir = `${fake.profilesDir}/${profile}`.replaceAll('.', String.raw`\.`);
+      return [`serve-proxy .*--profile-dir ${dir}( |$)`, FIRST_RUNNING_PID + PROXY_PID_OFFSET + index];
     }),
   );
   const { kill } = fake.deps;
@@ -277,3 +295,17 @@ export function makeRunningFakeThorChrome(
     },
   };
 }
+
+// region | Helpers
+
+/** Returns the command line of a browser or a proxy that `makeRunningFakeThorChrome` started. */
+function describeRunningProcess(pid: number, options: RunningFakeThorChromeOptions): string {
+  if (pid >= FIRST_RUNNING_PID + PROXY_PID_OFFSET) {
+    return `node thor-chrome.js serve-proxy --port ${9000 + pid - FIRST_RUNNING_PID - PROXY_PID_OFFSET}`;
+  }
+  if (options.hasProxies === true) return 'chrome --remote-debugging-port=0';
+  if (options.hasPorts === true) return `chrome --remote-debugging-port=${9000 + pid - FIRST_RUNNING_PID}`;
+  return 'chrome';
+}
+
+// endregion | Helpers

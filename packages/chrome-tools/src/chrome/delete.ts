@@ -99,7 +99,7 @@ async function deleteDerivedProfile(
     );
   }
 
-  const { pid, port, state } = resolveProfileState(invocation, dir);
+  const { pid, port, proxyPid, state } = resolveProfileState(invocation, dir);
   assertStateKnown(invocation, profile, state);
   if (pid !== undefined && timeout === undefined) {
     return refuseProfile(
@@ -109,7 +109,7 @@ async function deleteDerivedProfile(
       [`Quit it and delete it in one step: ${name} delete --derived --force`],
     );
   }
-  return removeProfile(invocation, { facts, pid, port, profile }, isDryRun, timeout);
+  return removeProfile(invocation, { facts, pid, port, profile, proxyPid }, isDryRun, timeout);
 }
 
 /** A profile on which a removal acts. */
@@ -119,6 +119,7 @@ interface RemovalTarget {
   pid: string | undefined;
   port: string | undefined;
   profile: string;
+  proxyPid: string | undefined;
 }
 
 /**
@@ -146,7 +147,7 @@ async function deleteProfile(
     );
   }
 
-  const { pid, port, state } = resolveProfileState(invocation, dir);
+  const { pid, port, proxyPid, state } = resolveProfileState(invocation, dir);
   assertStateKnown(invocation, profile, state);
   if (pid !== undefined && timeout === undefined) {
     return refuseProfile(
@@ -162,7 +163,7 @@ async function deleteProfile(
 
   // Read while the directory that contains them still exists: Removing the profile removes the record
   const facts = resolveProfileFacts(invocation, dir);
-  return removeProfile(invocation, { facts, pid, port, profile }, isDryRun, timeout);
+  return removeProfile(invocation, { facts, pid, port, profile, proxyPid }, isDryRun, timeout);
 }
 
 /**
@@ -176,12 +177,12 @@ async function removeProfile(
   isDryRun: boolean,
   timeout: Timeout | undefined,
 ): Promise<ProfileOutcome> {
-  const { facts, pid, port, profile } = target;
+  const { facts, pid, port, profile, proxyPid } = target;
   if (!isDryRun) {
     const refusal =
       pid === undefined || timeout === undefined
         ? undefined
-        : await terminateBrowser(invocation, profile, pid, timeout);
+        : await terminateBrowser(invocation, profile, pid, timeout, proxyPid);
     if (refusal !== undefined) return refusal;
     fs.rmSync(`${invocation.profilesDir}/${profile}`, { force: true, recursive: true });
   }
@@ -214,7 +215,7 @@ async function sweepProfiles(
     if (selection === 'stale' && facts.stale !== true) continue;
 
     const profileState = resolveProfileState(invocation, dir);
-    const { pid, port, state } = profileState;
+    const { pid, port, proxyPid, state } = profileState;
     // The lookup fails alike for every profile, so the first one refuses the sweep before anything is deleted
     if (state === 'unknown') {
       throw refuse(
@@ -228,7 +229,7 @@ async function sweepProfiles(
       report({ entry: composeProfileEntry(invocation, profile, profileState, facts), type: 'retained' });
       continue;
     }
-    report(await removeProfile(invocation, { facts, pid, port, profile }, isDryRun, timeout));
+    report(await removeProfile(invocation, { facts, pid, port, profile, proxyPid }, isDryRun, timeout));
   }
 }
 

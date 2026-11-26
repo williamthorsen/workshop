@@ -30,6 +30,33 @@ describe('show-instance-page', () => {
     });
   });
 
+  it("opens the page through the browser's own port, past its DevTools proxy", async () => {
+    const fake = makeFakeThorChrome({
+      results: {
+        'pgrep -f serve-proxy': { stdout: '5242\n' },
+        pgrep: { stdout: '4242\n' },
+        'ps -o command= -p 4242': { stdout: 'chrome --remote-debugging-port=0\n' },
+        'ps -o command= -p 5242': { stdout: 'node thor-chrome.js serve-proxy --port 20321\n' },
+      },
+    });
+    const pageFile = writeInstancePage(fake, 'thrive');
+    fs.writeFileSync(`${fake.profilesDir}/thrive/DevToolsActivePort`, '53001\n/devtools/browser/B\n');
+    await expect(run(fake, ['show-instance-page', 'thrive'])).resolves.toBe(0);
+    expect(fake.captured.stdout()).toBe("Opened the instance page of 'thrive' on port 20321.\n");
+    expect(fake.calls).toContainEqual({
+      args: [
+        '--silent',
+        '--fail',
+        '--max-time',
+        '2',
+        '--request',
+        'PUT',
+        `http://127.0.0.1:53001/json/new?${encodeURIComponent(`file://${pageFile}`)}`,
+      ],
+      program: 'curl',
+    });
+  });
+
   it('reports the profile and the page under --json', async () => {
     const fake = makeFakeThorChrome({ results: DEBUGGING });
     const pageFile = writeInstancePage(fake, 'thrive');
