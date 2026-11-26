@@ -125,7 +125,9 @@ export function makeFakeThorChrome(options: FakeThorChromeOptions = {}): FakeTho
     openPage: (port, url) => {
       opened.push({ port, url });
       const reason = options.pageFailures?.[url];
-      return Promise.resolve(reason === undefined ? { isOpened: true } : { isOpened: false, reason });
+      return Promise.resolve(
+        reason === undefined ? { isOpened: true, targetId: `target-${opened.length}` } : { isOpened: false, reason },
+      );
     },
     run,
     sleep: (milliseconds) => {

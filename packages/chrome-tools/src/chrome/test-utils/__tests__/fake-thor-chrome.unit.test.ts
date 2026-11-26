@@ -59,7 +59,10 @@ describe(makeFakeThorChrome, () => {
 
   it('records each page opening in order and fails the pages that it names', async () => {
     const fake = makeFakeThorChrome({ pageFailures: { 'http://b/': 'refused' } });
-    await expect(fake.deps.openPage('9000', 'http://a/')).resolves.toStrictEqual({ isOpened: true });
+    await expect(fake.deps.openPage('9000', 'http://a/')).resolves.toStrictEqual({
+      isOpened: true,
+      targetId: 'target-1',
+    });
     await expect(fake.deps.openPage('9000', 'http://b/')).resolves.toStrictEqual({
       isOpened: false,
       reason: 'refused',

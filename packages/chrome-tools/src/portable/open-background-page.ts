@@ -4,7 +4,7 @@ import { describeError } from '@williamthorsen/toolbelt.errors';
 export type OpenPage = (port: string, url: string) => Promise<PageOpening>;
 
 /** Whether a page opened, and why not when it did not. */
-export type PageOpening = { isOpened: true } | { isOpened: false; reason: string };
+export type PageOpening = { isOpened: true; targetId: string } | { isOpened: false; reason: string };
 
 /** How long one page opening may take, from the version lookup to the browser's reply. */
 export const PAGE_OPEN_TIMEOUT_MILLISECONDS = 5000;
@@ -72,7 +72,7 @@ function readReply(data: unknown): PageOpening {
     return { isOpened: false, reason: `the browser refused: ${String(reply['error']['message'])}` };
   }
   if (isRecord(reply) && isRecord(reply['result']) && typeof reply['result']['targetId'] === 'string') {
-    return { isOpened: true };
+    return { isOpened: true, targetId: reply['result']['targetId'] };
   }
   return { isOpened: false, reason: 'the browser sent a reply without a target' };
 }
