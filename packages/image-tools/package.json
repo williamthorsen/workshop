@@ -2,12 +2,14 @@
   "name": "@williamthorsen/image-tools",
   "version": "0.1.0",
   "private": false,
-  "description": "Generate images in named styles from open-weight models",
+  "description": "Generate images in named styles from open-weight models, and render coded pixel art to sprite strips",
   "keywords": [
     "cli",
     "image-generation",
     "image-tools",
-    "mflux"
+    "mflux",
+    "pixel-art",
+    "sprites"
   ],
   "homepage": "https://github.com/williamthorsen/workshop/tree/main/packages/image-tools#readme",
   "bugs": {
@@ -47,6 +49,7 @@
     "@williamthorsen/toolbelt.errors": "catalog:",
     "@williamthorsen/toolbelt.objects": "catalog:",
     "@williamthorsen/toolbelt.packaging": "catalog:",
+    "@williamthorsen/toolbelt.strings": "catalog:",
     "yaml": "catalog:"
   },
   "devDependencies": {
