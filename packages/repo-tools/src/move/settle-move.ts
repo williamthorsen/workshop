@@ -13,9 +13,8 @@ export function formatSettleEvent(event: SettleEvent, home: string): ReportLine 
       if (event.status === 'failed') return report('stderr', `cannot run direnv allow ${shown}: ${event.reason}`);
       return report('stdout', event.status === 'planned' ? `would run direnv allow ${shown}` : `direnv allow ${shown}`);
     }
-    case 'locate-session-directories': {
+    case 'locate-session-directories':
       return report('stderr', `session directories not renamed: ${event.reason}`);
-    }
     case 'move-session-directory': {
       const text = `${formatDisplayPath(event.from, home)} -> ${formatDisplayPath(event.to, home)}`;
       if (event.status === 'destination-exists') {
