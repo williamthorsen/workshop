@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.2.1",
+    "date": "2026-11-27",
+    "sections": [
+      {
+        "title": "🐛 Bug fixes",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Fixes the issue that `thor-image sprites` rejected a palette of 16 colours plus a transparent (`null`) entry, because it counted transparent entries toward the limit of 16 colours. (#1014)",
+            "hash": "798e5531d71b5040a06b15858dbe903a128e997d",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.2.0",
     "date": "2026-11-27",
     "sections": [
