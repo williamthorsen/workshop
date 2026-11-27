@@ -12,7 +12,7 @@ import { renderApplyMovesLines } from './render-apply-moves.ts';
 import { findUnexpandablePath, formatEntryName, parseRemoteUrl, reportFailure, type VerbRun } from './verb-run.ts';
 
 /** The environment variable that sets the output style (`auto`, `plain`, or `rich`) in place of detection. */
-export const OUTPUT_STYLE_VARIABLE = 'THOR_REPO_OUTPUT_STYLE';
+const OUTPUT_STYLE_VARIABLE = 'THOR_REPO_OUTPUT_STYLE';
 
 /**
  * Moves each clone found at one of its entry's `formerPaths`, while the entry's `path` is absent, to that path with its
