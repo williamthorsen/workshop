@@ -35,7 +35,9 @@ export function moveEntry(run: VerbRun, name: string, target: string, options: M
   const entry = findEntry(run, registry.entries, name);
   if (typeof entry === 'string') return entry;
   const oldPath = entry.path ?? '';
-  const block = (reasons: string[]): MoveResult => buildResult(name, options.isDryRun, { reasons, status: 'blocked' });
+  function block(reasons: string[]): MoveResult {
+    return buildResult(name, options.isDryRun, { reasons, status: 'blocked' });
+  }
 
   const from = run.adapters.resolvePath(normalizePath(oldPath, run.home));
   const cloneRoot = run.adapters.readCloneRoot(from);
@@ -59,14 +61,18 @@ export function moveEntry(run: VerbRun, name: string, target: string, options: M
     path: formatDisplayPath(to, run.home),
   };
   const oldPaths = plan.moves.map((move) => move.from);
-  const settle = (relocatedWorktrees: readonly Move[], moves: readonly Move[]): SettleEvent[] =>
-    settleMove(relocatedWorktrees, moves, {
+  const { entries } = registry;
+  function settle(relocatedWorktrees: readonly Move[], moves: readonly Move[]): SettleEvent[] {
+    return settleMove(relocatedWorktrees, moves, {
       adapters: run.adapters,
       home: run.home,
       isDryRun: options.isDryRun,
       sessionsDir: run.sessionsDir,
     });
-  const search = (): ReferenceReport => collectReferences(run, oldPaths, registry.entries, options.searchPaths);
+  }
+  function search(): ReferenceReport {
+    return collectReferences(run, oldPaths, entries, options.searchPaths);
+  }
 
   if (options.isDryRun) {
     return buildResult(name, true, {
