@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.2.0",
+    "date": "2026-11-27",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Adds the `thor-image sprites` command, which reads a JSON file of a palette and sprites, renders each sprite's frames left to right as one PNG strip, and prints a CSS rule per sprite that embeds the strip and sets `--frames` and `--last-x` for a `steps()` animation that rests on the last frame. (#1012)",
+            "hash": "b98c8fcd69c9f15a65cf46aad84ceefcca2143f3",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.1.0",
     "date": "2026-11-24",
     "sections": [

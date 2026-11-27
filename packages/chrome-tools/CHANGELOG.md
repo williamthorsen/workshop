@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.5.0 — 2026-11-27
+
+### 🎉 Features
+
+- Makes `thor-chrome` launch the browser behind a DevTools proxy on the profile's debugging port, which opens tabs requested through `Target.createTarget` or `/json/new` in the background and answers `Target.activateTarget`, `Page.bringToFront`, and `/json/activate/<id>` with success without forwarding them to the browser. (#1011)
+
 ## 0.4.0 — 2026-11-16
 
 ### 🎉 Features

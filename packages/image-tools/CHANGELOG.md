@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.0 — 2026-11-27
+
+### 🎉 Features
+
+- Adds the `thor-image sprites` command, which reads a JSON file of a palette and sprites, renders each sprite's frames left to right as one PNG strip, and prints a CSS rule per sprite that embeds the strip and sets `--frames` and `--last-x` for a `steps()` animation that rests on the last frame. (#1012)
+
 ## 0.1.0 — 2026-11-24
 
 ### 🎉 Features

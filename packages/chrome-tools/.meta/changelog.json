@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.5.0",
+    "date": "2026-11-27",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Makes `thor-chrome` launch the browser behind a DevTools proxy on the profile's debugging port, which opens tabs requested through `Target.createTarget` or `/json/new` in the background and answers `Target.activateTarget`, `Page.bringToFront`, and `/json/activate/<id>` with success without forwarding them to the browser. (#1011)",
+            "hash": "fac82728598e496ac7f22ea37858e8ad1f023958",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.4.0",
     "date": "2026-11-16",
     "sections": [
