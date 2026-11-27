@@ -1,16 +1,17 @@
-import {
-  type Glyph,
-  measureGlyphColumn,
-  type OutputStyle,
-  STATUS_GLYPHS,
-  type StatusGlyphName,
-} from '@williamthorsen/toolbelt.terminal/candidate';
+import type { OutputStyle } from '@williamthorsen/toolbelt.terminal/candidate';
 
-import type { Move } from '../move/move-plan.ts';
-import { formatSettleEvent, type ReportLine, type SettleEvent } from '../move/settle-move.ts';
-import { formatDisplayPath } from '../portable/paths.ts';
+import type { ReportLine } from '../move/settle-move.ts';
 import { type ApplyMovesResult, type EntryOutcome, isApplyMovesClean } from './apply-moves-result.ts';
-import { formatReference } from './move-report.ts';
+import {
+  buildLineFormat,
+  formatDetailLine,
+  formatMoveText,
+  formatPath,
+  formatStatusLine,
+  type LineFormat,
+  renderReferenceReport,
+  renderSettlement,
+} from './render-status-lines.ts';
 
 /**
  * Renders an `apply-moves` result as status lines, each top-level line led by its status glyph in the given style and
@@ -18,23 +19,12 @@ import { formatReference } from './move-report.ts';
  * the remaining references go to stdout.
  */
 export function renderApplyMovesLines(result: ApplyMovesResult, style: OutputStyle, home: string): ReportLine[] {
-  const glyphs = STATUS_GLYPHS[style];
-  const format: LineFormat = { column: measureGlyphColumn(glyphs), glyphs, home };
-
-  const lines = result.entries.flatMap((entry) => renderEntry(format, entry));
-  for (const event of result.settlement) {
-    const { stream, text } = formatSettleEvent(event, home);
-    lines.push(formatStatusLine(format, stream, selectSettleStatus(event), text));
-  }
-  for (const problem of result.problems) lines.push(formatStatusLine(format, 'stderr', 'warning', problem));
-  const count = result.references.length;
-  if (count > 0) {
-    const noun = count === 1 ? 'reference' : 'references';
-    lines.push(formatStatusLine(format, 'stdout', 'warning', `${count} remaining ${noun} to the old paths`));
-    for (const reference of result.references) {
-      lines.push(formatDetailLine(format, 'stdout', formatReference(reference)));
-    }
-  }
+  const format = buildLineFormat(style, home);
+  const lines = [
+    ...result.entries.flatMap((entry) => renderEntry(format, entry)),
+    ...renderSettlement(format, result.settlement),
+    ...renderReferenceReport(format, result.problems, result.references),
+  ];
   if (isApplyMovesClean(result)) {
     lines.push(
       formatStatusLine(format, 'stdout', 'passed', 'every registered clone on this machine is at its registered path'),
@@ -46,39 +36,6 @@ export function renderApplyMovesLines(result: ApplyMovesResult, style: OutputSty
 }
 
 // region | Helpers
-/** The style in which lines are rendered: the glyphs, the width of their column, and the home directory for `~`. */
-interface LineFormat {
-  column: number;
-  glyphs: Readonly<Record<StatusGlyphName, Glyph>>;
-  home: string;
-}
-
-/** Formats a detail line, indented two cells past the start of the text of a status line. */
-function formatDetailLine(format: LineFormat, stream: ReportLine['stream'], text: string): ReportLine {
-  return { stream, text: `${' '.repeat(format.column + 3)}${text}` };
-}
-
-/** Formats a move as `<from> -> <to>`, each path in its `~` form. */
-function formatMoveText(format: LineFormat, move: Move): string {
-  return `${formatPath(format, move.from)} -> ${formatPath(format, move.to)}`;
-}
-
-/** Formats a path in its `~` form. */
-function formatPath(format: LineFormat, target: string): string {
-  return formatDisplayPath(target, format.home);
-}
-
-/** Formats a line led by a status glyph padded to the glyph column. */
-function formatStatusLine(
-  format: LineFormat,
-  stream: ReportLine['stream'],
-  name: StatusGlyphName,
-  text: string,
-): ReportLine {
-  const glyph = format.glyphs[name];
-  return { stream, text: `${glyph.text}${' '.repeat(format.column - glyph.width)} ${text}` };
-}
-
 /** Renders one entry's warnings, then its outcome. */
 function renderEntry(format: LineFormat, entry: EntryOutcome): ReportLine[] {
   const lines = [
@@ -133,10 +90,4 @@ function renderEntry(format: LineFormat, entry: EntryOutcome): ReportLine[] {
   return lines;
 }
 
-/** Returns the status of a settlement event: `changed` for a completed action, `info` for a planned one. */
-function selectSettleStatus(event: SettleEvent): StatusGlyphName {
-  if (event.status === 'done') return 'changed';
-  if (event.status === 'planned') return 'info';
-  return 'warning';
-}
 // endregion | Helpers
