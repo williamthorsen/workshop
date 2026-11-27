@@ -35,7 +35,7 @@ catalog:
   esbuild: 0.28.2
   kokoro-js: 1.2.1
   typescript: 6.0.3
-  vite: 8.3.8
+  vite: 8.4.0
   vitest: 5.1.2
   ws: 8.23.0
   yaml: 2.9.1
