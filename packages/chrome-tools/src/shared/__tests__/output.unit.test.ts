@@ -4,8 +4,8 @@ import { formatStatus, PLAIN_PALETTE, resolvePalette, resolveStreamOutputStyle }
 
 describe(formatStatus, () => {
   it('pads every plain word to the width of the widest', () => {
-    expect(formatStatus(PLAIN_PALETTE, 'plain', 'failed')).toBe('FAIL ');
-    expect(formatStatus(PLAIN_PALETTE, 'plain', 'blocked')).toBe('BLOCK');
+    expect(formatStatus(PLAIN_PALETTE, 'plain', 'failed')).toBe('FAIL  ');
+    expect(formatStatus(PLAIN_PALETTE, 'plain', 'blocked')).toBe('BLOCK ');
   });
 
   it('returns a rich glyph without padding, since every rich glyph is two cells wide', () => {
@@ -14,16 +14,16 @@ describe(formatStatus, () => {
 
   it('colours a pass, a failure, and a warning, and leaves the padding uncoloured', () => {
     const palette = resolvePalette({ TERM: 'xterm' }, true);
-    expect(formatStatus(palette, 'plain', 'failed')).toBe(`${palette.red}FAIL${palette.normal} `);
-    expect(formatStatus(palette, 'plain', 'passed')).toBe(`${palette.green}PASS${palette.normal} `);
-    expect(formatStatus(palette, 'plain', 'warning')).toBe(`${palette.yellow}WARN${palette.normal} `);
+    expect(formatStatus(palette, 'plain', 'failed')).toBe(`${palette.red}FAIL${palette.normal}  `);
+    expect(formatStatus(palette, 'plain', 'passed')).toBe(`${palette.green}PASS${palette.normal}  `);
+    expect(formatStatus(palette, 'plain', 'warning')).toBe(`${palette.yellow}WARN${palette.normal}  `);
   });
 
   it('leaves a blocked, skipped, or info glyph uncoloured', () => {
     const palette = resolvePalette({ TERM: 'xterm' }, true);
-    expect(formatStatus(palette, 'plain', 'blocked')).toBe('BLOCK');
-    expect(formatStatus(palette, 'plain', 'skipped')).toBe('SKIP ');
-    expect(formatStatus(palette, 'plain', 'info')).toBe('INFO ');
+    expect(formatStatus(palette, 'plain', 'blocked')).toBe('BLOCK ');
+    expect(formatStatus(palette, 'plain', 'skipped')).toBe('SKIP  ');
+    expect(formatStatus(palette, 'plain', 'info')).toBe('INFO  ');
   });
 });
 

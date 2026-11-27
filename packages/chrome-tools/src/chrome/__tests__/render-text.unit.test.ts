@@ -104,10 +104,10 @@ describe(renderResultText, () => {
       type: 'list' as const,
     };
     expect(readLines(renderResultText(result, CONTEXT))).toStrictEqual([
-      "stdout:   INFO  present: stopped, stale: branch '9' is gone",
-      'stdout:   INFO  gone: stopped, stale: repository /w is gone',
-      'stdout:   INFO  bare: stopped, unrecorded',
-      'stdout:   INFO  live: stopped',
+      "stdout:   INFO   present: stopped, stale: branch '9' is gone",
+      'stdout:   INFO   gone: stopped, stale: repository /w is gone',
+      'stdout:   INFO   bare: stopped, unrecorded',
+      'stdout:   INFO   live: stopped',
     ]);
   });
 
