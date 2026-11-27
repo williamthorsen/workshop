@@ -143,40 +143,37 @@ describe('apply-moves', () => {
     formerPaths: [~/repos/alpha, ~/repos/old]
     repo: owner/alpha
 `;
+  const ORIGINS = { alpha: 'git@github.com:owner/alpha.git' };
 
-  it('skips an entry whose path and a former path both exist', async () => {
+  it('blocks an entry whose path and a former path both exist', async () => {
     const { result } = await run(['apply-moves'], {
       clones: { alpha: buildClone({}), kit: buildClone({}) },
       registry: MOVED,
     });
-    expect(result.stderr).toBe(
-      'thor-repo: alpha: both ~/repos/kit and a former path, ~/repos/alpha, exist; skipped\nthor-repo: nothing to move',
-    );
-    expect(result.status).toBe(1);
+    expect(result).toStrictEqual({
+      status: 1,
+      stderr: 'BLOCK  alpha: both ~/repos/kit and a former path, ~/repos/alpha, exist',
+      stdout: '',
+    });
   });
 
-  it('skips an entry whose former paths hold more than one clone', async () => {
-    const origins = { alpha: 'git@github.com:owner/alpha.git', old: 'git@github.com:owner/alpha.git' };
+  it('blocks an entry whose former paths hold more than one clone', async () => {
     const { result } = await run(['apply-moves'], {
       clones: { alpha: buildClone({}), old: buildClone({}) },
-      origins,
+      origins: { ...ORIGINS, old: 'git@github.com:owner/alpha.git' },
       registry: MOVED,
     });
-    expect(result.stderr).toContain(
-      'thor-repo: alpha: more than one former path holds its clone: ~/repos/alpha, ~/repos/old; skipped',
-    );
+    expect(result.stderr).toBe('BLOCK  alpha: more than one former path holds its clone: ~/repos/alpha, ~/repos/old');
     expect(result.status).toBe(1);
   });
 
-  it('skips an entry whose path another entry also names', async () => {
+  it('blocks an entry whose path another entry also names', async () => {
     const { result } = await run(['apply-moves'], {
       clones: { alpha: buildClone({}) },
-      origins: { alpha: 'git@github.com:owner/alpha.git' },
+      origins: ORIGINS,
       registry: `${MOVED}  - name: kit\n    path: ~/repos/kit\n`,
     });
-    expect(result.stderr).toBe(
-      'thor-repo: alpha: its path, ~/repos/kit, is also the path of kit; skipped\nthor-repo: nothing to move',
-    );
+    expect(result.stderr).toBe('BLOCK  alpha: its path, ~/repos/kit, is also the path of kit');
     expect(result.status).toBe(1);
   });
 
@@ -187,16 +184,118 @@ describe('apply-moves', () => {
     expect(result.status).toBe(1);
   });
 
-  it('ignores a former path whose clone has another origin, and reports nothing to move', async () => {
+  it('ignores a former path whose clone has another origin, and reports every clone at its path', async () => {
     const { registryText, result } = await run(['apply-moves'], {
       clones: { alpha: buildClone({}) },
       origins: { alpha: 'git@github.com:owner/other.git' },
       registry: MOVED,
     });
-    expect(result.stderr).toBe(
-      'thor-repo: alpha: ignored ~/repos/alpha, which is not its clone\nthor-repo: nothing to move',
-    );
-    expect(result.status).toBe(0);
+    expect(result).toStrictEqual({
+      status: 0,
+      stderr: 'WARN   alpha: ignored ~/repos/alpha, which is not its clone',
+      stdout: 'PASS   every registered clone on this machine is at its registered path',
+    });
     expect(registryText).toBe(MOVED);
+  });
+
+  it('reports a clean run on one passed line, also under a dry run', async () => {
+    for (const args of [['apply-moves'], ['apply-moves', '--dry-run']]) {
+      const { result } = await run(args);
+      expect(result).toStrictEqual({
+        status: 0,
+        stderr: '',
+        stdout: 'PASS   every registered clone on this machine is at its registered path',
+      });
+    }
+  });
+
+  it('reports a move that fails on a failed line naming what was not moved', async () => {
+    const { result } = await run(['apply-moves'], {
+      clones: { alpha: buildClone({}) },
+      origins: ORIGINS,
+      registry: MOVED,
+    });
+    expect(result).toStrictEqual({
+      status: 1,
+      stderr: [
+        `FAIL   alpha: cannot move ${FAKE_HOME}/repos/alpha to ${FAKE_HOME}/repos/kit: not exercised`,
+        '         not moved: ~/repos/alpha',
+      ].join('\n'),
+      stdout: '',
+    });
+  });
+
+  it('prints the result as JSON under --json, keeping its problems on stderr', async () => {
+    const { result } = await run(['apply-moves', '--json'], {
+      clones: { alpha: buildClone({}) },
+      origins: ORIGINS,
+      registry: MOVED,
+    });
+    const failure = `cannot move ${FAKE_HOME}/repos/alpha to ${FAKE_HOME}/repos/kit: not exercised`;
+    expect(JSON.parse(result.stdout)).toStrictEqual({
+      entries: [
+        {
+          entry: 'alpha',
+          ignoredFormerPaths: [],
+          missingWorktrees: [],
+          moves: [],
+          notMoved: [{ from: `${FAKE_HOME}/repos/alpha`, to: `${FAKE_HOME}/repos/kit` }],
+          reasons: [failure],
+          status: 'failed',
+        },
+      ],
+      isDryRun: false,
+      problems: [],
+      references: [],
+      settlement: [],
+    });
+    expect(result.stderr).toBe(`FAIL   alpha: ${failure}\n         not moved: ~/repos/alpha`);
+    expect(result.status).toBe(1);
+  });
+
+  it('plans the move under --dry-run, and reports it in JSON as planned', async () => {
+    const { result } = await run(['apply-moves', '--dry-run'], {
+      clones: { alpha: buildClone({}) },
+      origins: ORIGINS,
+      registry: MOVED,
+    });
+    // The reference search runs git, which cannot enter the fake clones, so its warning on stderr is not asserted.
+    expect({ status: result.status, stdout: result.stdout }).toStrictEqual({
+      status: 0,
+      stdout: [
+        'INFO   would move ~/repos/alpha -> ~/repos/kit',
+        'INFO   nothing moved; run without --dry-run to apply the moves',
+      ].join('\n'),
+    });
+
+    const json = await run(['apply-moves', '--dry-run', '--json'], {
+      clones: { alpha: buildClone({}) },
+      origins: ORIGINS,
+      registry: MOVED,
+    });
+    expect(JSON.parse(json.result.stdout)).toMatchObject({
+      entries: [
+        {
+          entry: 'alpha',
+          moves: [{ from: `${FAKE_HOME}/repos/alpha`, to: `${FAKE_HOME}/repos/kit` }],
+          status: 'planned',
+        },
+      ],
+      isDryRun: true,
+    });
+  });
+
+  it('renders rich glyphs when THOR_REPO_OUTPUT_STYLE is rich', async () => {
+    const { result } = await run(['apply-moves'], { env: { HOME: FAKE_HOME, THOR_REPO_OUTPUT_STYLE: 'rich' } });
+    expect(result.stdout).toBe('✅ every registered clone on this machine is at its registered path');
+  });
+
+  it('refuses an output style that does not exist, as a usage error', async () => {
+    const { result } = await run(['apply-moves'], { env: { HOME: FAKE_HOME, THOR_REPO_OUTPUT_STYLE: 'fancy' } });
+    expect(result).toStrictEqual({
+      status: 2,
+      stderr: 'thor-repo: THOR_REPO_OUTPUT_STYLE must be one of: auto, plain, rich (got "fancy")',
+      stdout: '',
+    });
   });
 });

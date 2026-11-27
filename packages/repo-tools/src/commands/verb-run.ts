@@ -23,9 +23,11 @@ export function buildVerbRun(
   return {
     adapters: context.adapters,
     cwd: context.cwd,
+    env: context.env,
     file: file ?? `${home}/.config/repos.yaml`,
     github: context.github,
     home,
+    isStdoutTty: context.isStdoutTty,
     sessionsDir: readSessionsDir(context.env, home),
     stderr: (line) => stderr.write(`${line}\n`),
     stdout: (line) => stdout.write(`${line}\n`),
@@ -114,6 +116,7 @@ export interface RepoContext {
   cwd: string;
   env: Readonly<Record<string, string | undefined>>;
   github: GitHubReader;
+  isStdoutTty: () => boolean;
 }
 
 /** Reports a failure under the program's name and returns the failure status. */
@@ -126,10 +129,12 @@ export function reportFailure(run: VerbRun, message: string): number {
 export interface VerbRun {
   adapters: CloneAdapters;
   cwd: string;
+  env: Readonly<Record<string, string | undefined>>;
   file: string;
   github: GitHubReader;
   /** The home directory, or `''` when `HOME` is unset or empty. */
   home: string;
+  isStdoutTty: () => boolean;
   /** The directory that holds Claude Code's session directories, or `undefined` when it cannot be located. */
   sessionsDir: string | undefined;
   stderr: (line: string) => void;
