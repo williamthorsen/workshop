@@ -129,17 +129,16 @@ describe('REPO_COMMANDS with git', () => {
         ['move', 'app', '~/repos/tools/kit', '--file', registryFile, '--search', '~/config'],
         { env: { HOME: homeDir } },
       );
-      expect(result.stderr).toBe(
-        'thor-repo: 2 remaining references to the old paths\n' +
-          `thor-repo: moved app to ~/repos/tools/kit and updated ${registryFile}`,
-      );
+      expect(result.stderr).toBe('');
       expect(result.stdout).toBe(
         [
-          '~/repos/oss/app -> ~/repos/tools/kit',
-          '~/repos/oss/app.live -> ~/repos/tools/kit.live',
-          'removed ~/repos/oss',
-          'notes: README.md:1: The app lives at ~/repos/oss/app.',
-          `~/config: linked -> ${homeDir}/repos/oss/app.live/profile`,
+          'CHANGE ~/repos/oss/app -> ~/repos/tools/kit',
+          'CHANGE ~/repos/oss/app.live -> ~/repos/tools/kit.live',
+          'CHANGE removed ~/repos/oss',
+          'CHANGE recorded ~/repos/tools/kit as the path of app in ~/registry/repos.yaml',
+          'WARN   2 remaining references to the old paths',
+          '         notes: README.md:1: The app lives at ~/repos/oss/app.',
+          `         ~/config: linked -> ${homeDir}/repos/oss/app.live/profile`,
         ].join('\n'),
       );
       expect(result.status).toBe(0);
@@ -167,7 +166,12 @@ describe('REPO_COMMANDS with git', () => {
         env: { HOME: homeDir },
       });
       expect(result.stdout).toBe(
-        '~/disk/oss/app -> ~/repos/tools/kit\n~/disk/oss/app.live -> ~/repos/tools/kit.live\nremoved ~/disk/oss',
+        [
+          'CHANGE ~/disk/oss/app -> ~/repos/tools/kit',
+          'CHANGE ~/disk/oss/app.live -> ~/repos/tools/kit.live',
+          'CHANGE removed ~/disk/oss',
+          'CHANGE recorded ~/repos/tools/kit as the path of app in ~/registry/repos.yaml',
+        ].join('\n'),
       );
       expect(result.status).toBe(0);
       expect(git(`${homeDir}/repos/tools/kit.live`, 'status', '--short')).toBe('');
@@ -189,8 +193,15 @@ describe('REPO_COMMANDS with git', () => {
       const result = await runCaptured(['move', 'app', '~/repos/tools/kit', '--dry-run', '--file', registryFile], {
         env: { HOME: homeDir },
       });
-      expect(result.stdout).toBe('would move ~/repos/oss/app -> ~/repos/tools/kit\nwould remove ~/repos/oss');
-      expect(result.stderr).toBe('thor-repo: nothing moved; run without --dry-run to move app');
+      expect(result.stdout).toBe(
+        [
+          'INFO   would move ~/repos/oss/app -> ~/repos/tools/kit',
+          'INFO   would remove ~/repos/oss',
+          'INFO   would record ~/repos/tools/kit as the path of app in ~/registry/repos.yaml',
+          'INFO   nothing moved; run without --dry-run to move app',
+        ].join('\n'),
+      );
+      expect(result.stderr).toBe('');
       expect(result.status).toBe(0);
       expect(fs.existsSync(`${homeDir}/repos/oss/app`)).toBe(true);
       expect(fs.existsSync(`${homeDir}/repos/tools`)).toBe(false);

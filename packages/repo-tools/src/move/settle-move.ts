@@ -5,7 +5,7 @@ import type { CloneAdapters } from '../commands/verb-run.ts';
 import { formatDisplayPath } from '../portable/paths.ts';
 import type { Move } from './move-plan.ts';
 
-/** Formats a settlement event as the line that `move` prints, and the stream to which it goes. */
+/** Formats a settlement event as the line that `move` and `apply-moves` print, and the stream to which it goes. */
 export function formatSettleEvent(event: SettleEvent, home: string): ReportLine {
   switch (event.action) {
     case 'allow-direnv': {

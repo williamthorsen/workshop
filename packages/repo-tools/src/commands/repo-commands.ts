@@ -162,10 +162,19 @@ const move = defineCommand({
     { name: 'name', description: 'The name of the registry entry to move' },
     { name: 'path', description: 'The new location of the clone' },
   ],
-  flags: { dryRun: DRY_RUN_FLAG, file: FILE_FLAG, search: SEARCH_FLAG },
+  flags: {
+    dryRun: DRY_RUN_FLAG,
+    file: FILE_FLAG,
+    json: { type: 'boolean', description: 'Print the result as JSON on stdout' },
+    search: SEARCH_FLAG,
+  },
   run: ({ context, flags, operands, stderr, stdout }) =>
     runVerb(context, flags.file, stdout, stderr, (run) =>
-      runMove(run, operands.name, operands.path, { isDryRun: flags.dryRun, searchPaths: flags.search }),
+      runMove(run, operands.name, operands.path, {
+        isDryRun: flags.dryRun,
+        isJson: flags.json,
+        searchPaths: flags.search,
+      }),
     ),
 });
 
