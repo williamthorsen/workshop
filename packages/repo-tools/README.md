@@ -52,10 +52,16 @@ thor-repo add ~/repos/example --write
 thor-repo move app ~/repos/tools/kit --dry-run --search ~/.config
 ```
 
-`apply-moves` runs on each other machine that shares the registry. It moves each clone that it finds at one of its entry's `formerPaths` while the entry's `path` is absent, in the same way, follow-ups included, and does nothing when no clone needs moving:
+`apply-moves` runs on each other machine that shares the registry. It moves each clone that it finds at one of its entry's `formerPaths` while the entry's `path` is absent, in the same way, follow-ups included, and does not write the registry. Each line that it prints starts with a status: `CHANGE` for a move or a follow-up, `INFO` for one planned under `--dry-run`, `BLOCK` for an entry that it skips, `FAIL` for a move that failed, `WARN` for a problem, and `PASS` when every registered clone on this machine is already at its registered path. A terminal shows the statuses as emoji; `THOR_REPO_OUTPUT_STYLE` set to `plain`, `rich`, or `auto` overrides that detection. It exits 1 when it skipped an entry or a move failed.
 
 ```bash
 thor-repo apply-moves
+```
+
+`--json` prints the run's result on stdout in place of the status lines, and still prints the `BLOCK`, `FAIL`, and `WARN` lines on stderr. The result contains `entries`, the outcome of each entry with something to report, `settlement`, the follow-ups, `references` and `problems`, from the reference search, and `isDryRun`; [`apply-moves-result.ts`](https://github.com/williamthorsen/workshop/blob/main/packages/repo-tools/src/commands/apply-moves-result.ts) defines its fields:
+
+```bash
+thor-repo apply-moves --dry-run --json
 ```
 
 Every verb reads `~/.config/repos.yaml` unless `--file` names another registry. `thor-repo --help` and `thor-repo <verb> --help` print the full options and the stack names that `--stack` accepts.
