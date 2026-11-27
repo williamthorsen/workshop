@@ -1,5 +1,22 @@
 [
   {
+    "version": "0.5.1",
+    "date": "2026-11-27",
+    "sections": [
+      {
+        "title": "📦 Dependencies",
+        "audience": "dev",
+        "items": [
+          {
+            "description": "Upgrades `@williamthorsen/toolbelt.terminal` from 0.3.2 to 0.4.0, which widens the plain status column in `thor-chrome` output by one cell to fit the new `CHANGE` status. (#1017)",
+            "hash": "05c1530a654449c2d0afe5b30bb5c2113dfad47e",
+            "entry": 3
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.5.0",
     "date": "2026-11-27",
     "sections": [

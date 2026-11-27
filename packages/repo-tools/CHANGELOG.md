@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.7.0 — 2026-11-27
+
+### 🎉 Features
+
+- Adds a status to the start of each line that `thor-repo apply-moves` prints (`CHANGE`, `INFO`, `BLOCK`, `FAIL`, `WARN`, or `PASS`), shown as emoji on a terminal and set by `THOR_REPO_OUTPUT_STYLE` to `plain`, `rich`, or `auto`, and replaces the "nothing to move" message with a `PASS` line. (#1017)
+- Adds a `--json` flag to `thor-repo apply-moves`, which prints the run's result as JSON on stdout in place of the status lines and still prints the `BLOCK`, `FAIL`, and `WARN` lines on stderr. (#1017)
+
 ## 0.6.2 — 2026-11-16
 
 ### 🐛 Bug fixes

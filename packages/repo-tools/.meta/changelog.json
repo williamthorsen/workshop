@@ -1,5 +1,27 @@
 [
   {
+    "version": "0.7.0",
+    "date": "2026-11-27",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Adds a status to the start of each line that `thor-repo apply-moves` prints (`CHANGE`, `INFO`, `BLOCK`, `FAIL`, `WARN`, or `PASS`), shown as emoji on a terminal and set by `THOR_REPO_OUTPUT_STYLE` to `plain`, `rich`, or `auto`, and replaces the \"nothing to move\" message with a `PASS` line. (#1017)",
+            "hash": "05c1530a654449c2d0afe5b30bb5c2113dfad47e",
+            "entry": 1
+          },
+          {
+            "description": "Adds a `--json` flag to `thor-repo apply-moves`, which prints the run's result as JSON on stdout in place of the status lines and still prints the `BLOCK`, `FAIL`, and `WARN` lines on stderr. (#1017)",
+            "hash": "05c1530a654449c2d0afe5b30bb5c2113dfad47e",
+            "entry": 2
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.6.2",
     "date": "2026-11-16",
     "sections": [

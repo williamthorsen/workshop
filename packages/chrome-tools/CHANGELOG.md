@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.5.1 — 2026-11-27
+
+### 📦 Dependencies
+
+- Upgrades `@williamthorsen/toolbelt.terminal` from 0.3.2 to 0.4.0, which widens the plain status column in `thor-chrome` output by one cell to fit the new `CHANGE` status. (#1017)
+
 ## 0.5.0 — 2026-11-27
 
 ### 🎉 Features
