@@ -58,7 +58,7 @@ describe(executeMove, () => {
 
     const movedNested = `${root}/tools/kit/.claude/worktrees/spike`;
     expect(outcome.failure).toBeUndefined();
-    expect(lines.map((line) => line.stream)).toStrictEqual(['stdout', 'stdout']);
+    expect(lines.map((line) => line.status)).toStrictEqual(['done', 'done']);
     expect(fs.existsSync(`${sessionsDir}/${encodeSessionDirectoryName(movedNested)}`)).toBe(true);
     expect(fs.existsSync(`${root}/oss`)).toBe(false);
     expect(git(movedNested, 'status', '--short')).toBe('');

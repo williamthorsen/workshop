@@ -235,8 +235,8 @@ catalogs:
       specifier: 11.0.0
       version: 11.0.0
     '@williamthorsen/toolbelt.terminal':
-      specifier: 0.3.2
-      version: 0.3.2
+      specifier: 0.4.0
+      version: 0.4.0
     '@williamthorsen/toolbelt.testing':
       specifier: 0.9.0
       version: 0.9.0
@@ -383,7 +383,7 @@ importers:
         version: 11.0.0
       '@williamthorsen/toolbelt.terminal':
         specifier: 'catalog:'
-        version: 0.3.2
+        version: 0.4.0
       ws:
         specifier: 'catalog:'
         version: 8.23.0
@@ -588,7 +588,7 @@ importers:
         version: 0.10.0
       '@williamthorsen/toolbelt.terminal':
         specifier: 'catalog:'
-        version: 0.3.2
+        version: 0.4.0
       validate-npm-package-name:
         specifier: ^8.0.0
         version: 8.0.0
@@ -644,7 +644,7 @@ importers:
         version: 11.0.0
       '@williamthorsen/toolbelt.terminal':
         specifier: 'catalog:'
-        version: 0.3.2
+        version: 0.4.0
       ansi-styles:
         specifier: 7.0.0
         version: 7.0.0
@@ -700,12 +700,18 @@ importers:
 
   packages/repo-tools:
     dependencies:
+      '@williamthorsen/readout':
+        specifier: 'catalog:'
+        version: 0.2.0
       '@williamthorsen/toolbelt.cli':
         specifier: 'catalog:'
         version: 0.14.0
       '@williamthorsen/toolbelt.errors':
         specifier: 'catalog:'
         version: 0.11.4
+      '@williamthorsen/toolbelt.terminal':
+        specifier: 'catalog:'
+        version: 0.4.0
       yaml:
         specifier: 'catalog:'
         version: 2.9.1
@@ -2047,6 +2053,10 @@ packages:
 
   '@williamthorsen/toolbelt.terminal@0.3.2':
     resolution: {integrity: sha512-o1KKmDqNFT7eMXbOy6oQlOAky7+0f6YIC1gKKQKAk6LzGGGE1p5x1uanLH6hSENGeIxZhHkUDMTkdQbv/9wCmQ==}
+    engines: {node: '>=24.0.0'}
+
+  '@williamthorsen/toolbelt.terminal@0.4.0':
+    resolution: {integrity: sha512-mTFLwUbIQQyTKWQ/nCKAhmIchHwBYQnz8nDIsBe4RDPKKFMvJQUYay/+qCzj5krVAbKIltnFsaKwpcLCfEmrkA==}
     engines: {node: '>=24.0.0'}
 
   '@williamthorsen/toolbelt.testing@0.9.0':
@@ -4977,6 +4987,13 @@ snapshots:
       wrap-ansi: 10.0.2
 
   '@williamthorsen/toolbelt.terminal@0.3.2':
+    dependencies:
+      cli-truncate: 6.2.0
+      slice-ansi: 10.0.1
+      string-width: 9.0.0
+      wrap-ansi: 10.0.2
+
+  '@williamthorsen/toolbelt.terminal@0.4.0':
     dependencies:
       cli-truncate: 6.2.0
       slice-ansi: 10.0.1

@@ -28,6 +28,7 @@ export async function runCaptured(
       cwd: setup.cwd ?? '/',
       env: setup.env ?? {},
       github: setup.github ?? (() => 'GitHub is not read in this test'),
+      isStdoutTty: () => false,
     },
     stderr: buildRecorder(stderr),
     stdout: buildRecorder(stdout),

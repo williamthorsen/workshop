@@ -29,7 +29,7 @@ catalog:
   '@williamthorsen/toolbelt.packaging': 0.10.0
   '@williamthorsen/toolbelt.secrets': 0.8.0
   '@williamthorsen/toolbelt.strings': 11.0.0
-  '@williamthorsen/toolbelt.terminal': 0.3.2
+  '@williamthorsen/toolbelt.terminal': 0.4.0
   '@williamthorsen/toolbelt.testing': 0.9.0
   '@williamthorsen/toolbelt.vitest': 0.14.0
   esbuild: 0.28.2

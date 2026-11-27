@@ -40,8 +40,10 @@
     "prepare": "nmr-compile"
   },
   "dependencies": {
+    "@williamthorsen/readout": "catalog:",
     "@williamthorsen/toolbelt.cli": "catalog:",
     "@williamthorsen/toolbelt.errors": "catalog:",
+    "@williamthorsen/toolbelt.terminal": "catalog:",
     "yaml": "catalog:"
   },
   "devDependencies": {

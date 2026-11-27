@@ -64,16 +64,16 @@ describe('thor-chrome output', () => {
         "$ list
         exit 0
         --- stdout
-          PASS  atlas: debugging headless on port 9333 (PID 11), last used 2026-01-02
-          INFO  bravo: stopped, last used 2026-01-02, unrecorded
-          INFO  widget-9: stopped, port 20009, last used 2026-01-02, stale: repository <home>/gone is gone
+          PASS   atlas: debugging headless on port 9333 (PID 11), last used 2026-01-02
+          INFO   bravo: stopped, last used 2026-01-02, unrecorded
+          INFO   widget-9: stopped, port 20009, last used 2026-01-02, stale: repository <home>/gone is gone
 
         --- stderr
 
         --- combined
-          PASS  atlas: debugging headless on port 9333 (PID 11), last used 2026-01-02
-          INFO  bravo: stopped, last used 2026-01-02, unrecorded
-          INFO  widget-9: stopped, port 20009, last used 2026-01-02, stale: repository <home>/gone is gone
+          PASS   atlas: debugging headless on port 9333 (PID 11), last used 2026-01-02
+          INFO   bravo: stopped, last used 2026-01-02, unrecorded
+          INFO   widget-9: stopped, port 20009, last used 2026-01-02, stale: repository <home>/gone is gone
 
         $ list --json
         exit 0
@@ -90,12 +90,12 @@ describe('thor-chrome output', () => {
         "$ list --stale
         exit 0
         --- stdout
-          INFO  widget-9: stopped, port 20009, last used 2026-01-02, stale: repository <home>/gone is gone
+          INFO   widget-9: stopped, port 20009, last used 2026-01-02, stale: repository <home>/gone is gone
 
         --- stderr
 
         --- combined
-          INFO  widget-9: stopped, port 20009, last used 2026-01-02, stale: repository <home>/gone is gone
+          INFO   widget-9: stopped, port 20009, last used 2026-01-02, stale: repository <home>/gone is gone
 
         $ list --stale --json
         exit 0
@@ -117,14 +117,14 @@ describe('thor-chrome output', () => {
         "$ list
         exit 0
         --- stdout
-          WARN  thrive: state unknown, last used 2026-01-02
+          WARN   thrive: state unknown, last used 2026-01-02
 
         --- stderr
         thor-chrome: could not read the process list, so the reported state is unknown rather than stopped
           Run thor-chrome list from a terminal outside the sandbox.
 
         --- combined
-          WARN  thrive: state unknown, last used 2026-01-02
+          WARN   thrive: state unknown, last used 2026-01-02
         thor-chrome: could not read the process list, so the reported state is unknown rather than stopped
           Run thor-chrome list from a terminal outside the sandbox.
 

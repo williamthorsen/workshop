@@ -90,11 +90,16 @@ const SEARCH_FLAG = {
 const applyMoves = defineCommand({
   summary: 'Move each clone that the registry records as moved to its new path',
   description:
-    "Moves, with its worktrees, each clone that is at one of its entry's formerPaths while the entry's path is absent from this machine, as move does, follow-ups included, and does not write the registry. A former path counts only when it is a clone's root and, for an entry with a repo, its origin is that repo. Skips and reports an entry whose path and a former path both exist, whose former paths hold more than one clone, or whose path another entry also names. Then prints each remaining reference to the old paths, as move does. Run it on each machine after a move elsewhere; it does nothing when no clone needs moving.",
-  flags: { dryRun: DRY_RUN_FLAG, file: FILE_FLAG, search: SEARCH_FLAG },
+    "Moves, with its worktrees, each clone that is at one of its entry's formerPaths while the entry's path is absent from this machine, as move does, follow-ups included, and does not write the registry. A former path counts only when it is a clone's root and, for an entry with a repo, its origin is that repo. Skips and reports an entry whose path and a former path both exist, whose former paths hold more than one clone, or whose path another entry also names. Then prints each remaining reference to the old paths, as move does. Run it on each machine after a move elsewhere. Each line starts with a status: CHANGE for a move or a follow-up, INFO for one planned under --dry-run, BLOCK for a skipped entry, FAIL for a failed move, WARN for a problem, and PASS when every registered clone on this machine is already at its registered path. --json prints the result as JSON on stdout in place of the status lines, and keeps the BLOCK, FAIL, and WARN lines on stderr. THOR_REPO_OUTPUT_STYLE sets the style of the statuses: plain words, rich emoji, or auto, which detects whether stdout is a terminal.",
+  flags: {
+    dryRun: DRY_RUN_FLAG,
+    file: FILE_FLAG,
+    json: { type: 'boolean', description: 'Print the result as JSON on stdout' },
+    search: SEARCH_FLAG,
+  },
   run: ({ context, flags, stderr, stdout }) =>
     runVerb(context, flags.file, stdout, stderr, (run) =>
-      runApplyMoves(run, { isDryRun: flags.dryRun, searchPaths: flags.search }),
+      runApplyMoves(run, { isDryRun: flags.dryRun, isJson: flags.json, searchPaths: flags.search }),
     ),
 });
 
@@ -192,7 +197,8 @@ Examples:
   ${PROG} scan --write --file path/to/branch-worktree/repos.yaml
   ${PROG} add ~/repos/example --write
   ${PROG} move example ~/repos/tools/example --dry-run --search ~/.config
-  ${PROG} apply-moves`,
+  ${PROG} apply-moves
+  ${PROG} apply-moves --dry-run --json`,
 });
 
 // region | Helpers

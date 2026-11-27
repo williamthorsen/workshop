@@ -52,7 +52,7 @@ export function runMove(run: VerbRun, name: string, target: string, options: Mov
     return reportFailure(run, `${formatDisplayPath(to, run.home)} is the path of ${claimant.name ?? 'another entry'}`);
   }
   const plan = planCloneMove(run, from, to);
-  if (typeof plan === 'string') return reportFailure(run, `${plan}; nothing moved`);
+  if (Array.isArray(plan)) return reportRefusals(run, plan);
 
   const refusal = assertWritable(run.file, run.adapters.readCurrentBranch);
   if (refusal !== undefined) return reportFailure(run, refusal);
@@ -110,6 +110,13 @@ function findEntry(run: VerbRun, entries: readonly RegistryEntry[], name: string
 function relocateFile(file: string, plan: MovePlan): string {
   const move = plan.moves.find((candidate) => file.startsWith(`${candidate.from}/`));
   return move === undefined ? file : `${move.to}${file.slice(move.from.length)}`;
+}
+
+/** Reports each refusal of a planned move, the last as the failure, and returns the failure status. */
+function reportRefusals(run: VerbRun, refusals: readonly string[]): number {
+  const earlier = refusals.slice(0, -1);
+  for (const refusal of earlier) run.stderr(`${PROG}: ${refusal}`);
+  return reportFailure(run, `${refusals.at(-1) ?? 'the move is refused'}; nothing moved`);
 }
 
 // endregion | Helpers

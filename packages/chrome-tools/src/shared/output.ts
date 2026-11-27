@@ -54,6 +54,7 @@ export function formatStatus(palette: Palette, style: OutputStyle, status: Statu
   const padding = ' '.repeat(measureGlyphColumn(glyphs) - glyph.width);
   const colors: Record<StatusGlyphName, string> = {
     blocked: '',
+    changed: '',
     failed: palette.red,
     info: '',
     passed: palette.green,

@@ -26,10 +26,10 @@ describe('list', () => {
     await expect(run(fake, ['list'])).resolves.toBe(0);
     expect(fake.captured.stdout()).toBe(
       [
-        '  PASS  atlas: debugging on port 9333 (PID 11), last used 2026-01-02',
-        '  WARN  bravo: running (PID 12), no debugging port, last used 2026-01-02',
-        '  WARN  charlie: running (PID 13), port 9444 not answering, last used 2026-01-02',
-        '  INFO  delta: stopped, last used 2026-01-02',
+        '  PASS   atlas: debugging on port 9333 (PID 11), last used 2026-01-02',
+        '  WARN   bravo: running (PID 12), no debugging port, last used 2026-01-02',
+        '  WARN   charlie: running (PID 13), port 9444 not answering, last used 2026-01-02',
+        '  INFO   delta: stopped, last used 2026-01-02',
         '',
       ].join('\n'),
     );
@@ -53,11 +53,11 @@ describe('list', () => {
     await expect(run(fake, ['list'])).resolves.toBe(0);
     expect(fake.captured.stdout()).toBe(
       [
-        '  PASS  widget-1: debugging on port 20001 (PID 11), last used 2026-01-02',
-        '  PASS  widget-2: debugging on port 9002 (derived 20002) (PID 12), last used 2026-01-02',
-        '  WARN  widget-3: running (PID 13), port 9003 (derived 20003) not answering, last used 2026-01-02',
-        '  INFO  widget-4: stopped, port 20004, last used 2026-01-02',
-        '  WARN  widget-5: running (PID 15), no debugging port (derived 20005), last used 2026-01-02',
+        '  PASS   widget-1: debugging on port 20001 (PID 11), last used 2026-01-02',
+        '  PASS   widget-2: debugging on port 9002 (derived 20002) (PID 12), last used 2026-01-02',
+        '  WARN   widget-3: running (PID 13), port 9003 (derived 20003) not answering, last used 2026-01-02',
+        '  INFO   widget-4: stopped, port 20004, last used 2026-01-02',
+        '  WARN   widget-5: running (PID 15), no debugging port (derived 20005), last used 2026-01-02',
         '',
       ].join('\n'),
     );
@@ -74,8 +74,8 @@ describe('list', () => {
     });
     await expect(run(fake, ['list'])).resolves.toBe(0);
     expect(fake.captured.stdout()).toBe(
-      '  INFO  thrive: stopped, last used 2026-01-02, unrecorded\n' +
-        `  INFO  widget-9: stopped, port 20009, last used 2026-01-02, stale: repository ${fake.home}/gone is gone\n`,
+      '  INFO   thrive: stopped, last used 2026-01-02, unrecorded\n' +
+        `  INFO   widget-9: stopped, port 20009, last used 2026-01-02, stale: repository ${fake.home}/gone is gone\n`,
     );
   });
 
@@ -94,7 +94,7 @@ describe('list', () => {
     await expect(run(fake, ['list', '--stale'])).resolves.toBe(0);
     await expect(run(fake, ['list', '--stale', '--json'])).resolves.toBe(0);
     expect(fake.captured.stdout()).toBe(
-      "  INFO  widget-9: stopped, port 20009, last used 2026-01-02, stale: branch '9' is gone\n" +
+      "  INFO   widget-9: stopped, port 20009, last used 2026-01-02, stale: branch '9' is gone\n" +
         `{"profiles":[{"name":"widget-9","path":"${fake.profilesDir}/widget-9","state":"stopped","headless":null,"pid":null,"port":null,` +
         '"derivedPort":20009,"devtools":null,"origin":"derived","repo":"widget","branch":"9","stale":true,"lastUsedAt":"2026-01-02T12:00:00Z"}]}\n',
     );
@@ -183,7 +183,7 @@ describe('list', () => {
     const fake = makeFakeThorChrome({ results: { pgrep: { status: 3 } } });
     makeFrozenProfile(fake, 'thrive', { origin: 'named' });
     await expect(run(fake, ['list'])).resolves.toBe(0);
-    expect(fake.captured.stdout()).toBe('  WARN  thrive: state unknown, last used 2026-01-02\n');
+    expect(fake.captured.stdout()).toBe('  WARN   thrive: state unknown, last used 2026-01-02\n');
     expect(fake.captured.stderr()).toBe(
       'thor-chrome: could not read the process list, so the reported state is unknown rather than stopped\n' +
         '  Run thor-chrome list from a terminal outside the sandbox.\n',
@@ -195,7 +195,7 @@ describe('list', () => {
     makeFrozenProfile(fake, 'widget-9', derivedRecord(fake, '9'));
     await expect(run(fake, ['list', '--stale'])).resolves.toBe(0);
     expect(fake.captured.stdout()).toBe(
-      "  WARN  widget-9: state unknown, port 20009, last used 2026-01-02, stale: branch '9' is gone\n",
+      "  WARN   widget-9: state unknown, port 20009, last used 2026-01-02, stale: branch '9' is gone\n",
     );
     expect(fake.captured.stderr()).toContain('could not read the process list');
   });

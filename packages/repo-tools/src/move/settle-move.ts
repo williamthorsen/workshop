@@ -5,7 +5,34 @@ import type { CloneAdapters } from '../commands/verb-run.ts';
 import { formatDisplayPath } from '../portable/paths.ts';
 import type { Move } from './move-plan.ts';
 
-/** One line that `settleMove` reports: an action on stdout, or a problem on stderr. */
+/** Formats a settlement event as the line that `move` prints, and the stream to which it goes. */
+export function formatSettleEvent(event: SettleEvent, home: string): ReportLine {
+  switch (event.action) {
+    case 'allow-direnv': {
+      const shown = formatDisplayPath(event.path, home);
+      if (event.status === 'failed') return report('stderr', `cannot run direnv allow ${shown}: ${event.reason}`);
+      return report('stdout', event.status === 'planned' ? `would run direnv allow ${shown}` : `direnv allow ${shown}`);
+    }
+    case 'locate-session-directories':
+      return report('stderr', `session directories not renamed: ${event.reason}`);
+    case 'move-session-directory': {
+      const text = `${formatDisplayPath(event.from, home)} -> ${formatDisplayPath(event.to, home)}`;
+      if (event.status === 'destination-exists') {
+        return report('stderr', `not moved, because the destination exists; merge them by hand: ${text}`);
+      }
+      if (event.status === 'failed') return report('stderr', `cannot move ${text}: ${event.reason}`);
+      return report('stdout', event.status === 'planned' ? `would move ${text}` : text);
+    }
+    case 'remove-directory': {
+      const shown = formatDisplayPath(event.path, home);
+      if (event.status === 'unreadable') return report('stderr', `cannot read ${shown}: ${event.reason}`);
+      if (event.status === 'failed') return report('stderr', `cannot remove ${shown}: ${event.reason}`);
+      return report('stdout', event.status === 'planned' ? `would remove ${shown}` : `removed ${shown}`);
+    }
+  }
+}
+
+/** One line that `formatSettleEvent` produces: an action on stdout, or a problem on stderr. */
 export interface ReportLine {
   stream: 'stderr' | 'stdout';
   text: string;
@@ -25,6 +52,16 @@ export interface SettleContext {
   sessionsDir: string | undefined;
 }
 
+/** One action that `settleMove` took, planned, or failed to take, with absolute paths. */
+export type SettleEvent =
+  | { action: 'allow-direnv'; path: string; status: 'done' | 'planned' }
+  | { action: 'allow-direnv'; path: string; reason: string; status: 'failed' }
+  | { action: 'locate-session-directories'; reason: string; status: 'failed' }
+  | { action: 'move-session-directory'; from: string; status: 'destination-exists' | 'done' | 'planned'; to: string }
+  | { action: 'move-session-directory'; from: string; reason: string; status: 'failed'; to: string }
+  | { action: 'remove-directory'; path: string; status: 'done' | 'planned' }
+  | { action: 'remove-directory'; path: string; reason: string; status: 'failed' | 'unreadable' };
+
 /**
  * Settles what a move leaves behind, given the worktrees that moved and the top-level renames: allows direnv in each
  * worktree that has an `.envrc`, renames each worktree's Claude Code session directory to match its new path, and
@@ -35,7 +72,7 @@ export function settleMove(
   relocatedWorktrees: readonly Move[],
   moves: readonly Move[],
   context: SettleContext,
-): ReportLine[] {
+): SettleEvent[] {
   return [
     ...allowMovedEnvrcs(relocatedWorktrees, context),
     ...renameSessionDirectories(relocatedWorktrees, context),
@@ -45,46 +82,44 @@ export function settleMove(
 
 // region | Helpers
 /** Allows direnv in each moved worktree that has an `.envrc` at its root, silently when direnv is not installed. */
-function allowMovedEnvrcs(relocatedWorktrees: readonly Move[], context: SettleContext): ReportLine[] {
-  const { adapters, home, isDryRun } = context;
+function allowMovedEnvrcs(relocatedWorktrees: readonly Move[], context: SettleContext): SettleEvent[] {
+  const { adapters, isDryRun } = context;
   const trees = relocatedWorktrees.filter((tree) =>
     adapters.pathExists(path.join(isDryRun ? tree.from : tree.to, '.envrc')),
   );
   if (trees.length === 0) return [];
   if (isDryRun) {
     if (!adapters.isDirenvInstalled()) return [];
-    return trees.map((tree) => report('stdout', `would run direnv allow ${formatDisplayPath(tree.to, home)}`));
+    return trees.map((tree) => ({ action: 'allow-direnv', path: tree.to, status: 'planned' }));
   }
 
-  const lines: ReportLine[] = [];
+  const events: SettleEvent[] = [];
   for (const tree of trees) {
-    const shown = formatDisplayPath(tree.to, home);
     const failure = adapters.allowDirenv(tree.to);
     if (failure === 'absent') break;
-    lines.push(
+    events.push(
       failure === undefined
-        ? report('stdout', `direnv allow ${shown}`)
-        : report('stderr', `cannot run direnv allow ${shown}: ${failure}`),
+        ? { action: 'allow-direnv', path: tree.to, status: 'done' }
+        : { action: 'allow-direnv', path: tree.to, reason: failure, status: 'failed' },
     );
   }
-  return lines;
+  return events;
 }
 
 /**
  * Removes each former parent of a rename that the renames leave empty, deleting a `.DS_Store` first. A parent that
  * contains the destination of any rename is kept.
  */
-function removeEmptiedParents(moves: readonly Move[], context: SettleContext): ReportLine[] {
-  const { adapters, home, isDryRun } = context;
+function removeEmptiedParents(moves: readonly Move[], context: SettleContext): SettleEvent[] {
+  const { adapters, isDryRun } = context;
   const parents = [...new Set(moves.map((move) => path.dirname(move.from)))].filter((parent) =>
     moves.every((move) => !move.to.startsWith(`${parent}/`)),
   );
-  const lines: ReportLine[] = [];
+  const events: SettleEvent[] = [];
   for (const parent of parents) {
-    const shown = formatDisplayPath(parent, home);
     const entries = adapters.listDirectory(parent);
     if (typeof entries === 'string') {
-      lines.push(report('stderr', `cannot read ${shown}: ${entries}`));
+      events.push({ action: 'remove-directory', path: parent, reason: entries, status: 'unreadable' });
       continue;
     }
     // Until the renames run, the trees that leave the parent are still among its entries.
@@ -93,50 +128,59 @@ function removeEmptiedParents(moves: readonly Move[], context: SettleContext): R
       : [];
     if (entries.some((entry) => entry !== '.DS_Store' && !leavingNames.includes(entry))) continue;
     if (isDryRun) {
-      lines.push(report('stdout', `would remove ${shown}`));
+      events.push({ action: 'remove-directory', path: parent, status: 'planned' });
       continue;
     }
     const failure =
       (entries.includes('.DS_Store') ? adapters.removeFile(path.join(parent, '.DS_Store')) : undefined) ??
       adapters.removeDirectory(parent);
-    lines.push(
+    events.push(
       failure === undefined
-        ? report('stdout', `removed ${shown}`)
-        : report('stderr', `cannot remove ${shown}: ${failure}`),
+        ? { action: 'remove-directory', path: parent, status: 'done' }
+        : { action: 'remove-directory', path: parent, reason: failure, status: 'failed' },
     );
   }
-  return lines;
+  return events;
 }
 
 /**
  * Renames each moved worktree's session directory to the name of its new path, leaving it when that name is taken.
  * Reports instead that none is renamed when the sessions directory cannot be located.
  */
-function renameSessionDirectories(relocatedWorktrees: readonly Move[], context: SettleContext): ReportLine[] {
-  const { adapters, home, isDryRun, sessionsDir } = context;
+function renameSessionDirectories(relocatedWorktrees: readonly Move[], context: SettleContext): SettleEvent[] {
+  const { adapters, isDryRun, sessionsDir } = context;
   if (sessionsDir === undefined) {
     return relocatedWorktrees.length === 0
       ? []
-      : [report('stderr', 'session directories not renamed: CLAUDE_CONFIG_DIR is unset, and HOME is unset or empty')];
+      : [
+          {
+            action: 'locate-session-directories',
+            reason: 'CLAUDE_CONFIG_DIR is unset, and HOME is unset or empty',
+            status: 'failed',
+          },
+        ];
   }
-  const lines: ReportLine[] = [];
+  const events: SettleEvent[] = [];
   for (const tree of relocatedWorktrees) {
     const from = path.join(sessionsDir, encodeSessionDirectoryName(tree.from));
     if (!adapters.pathExists(from)) continue;
     const to = path.join(sessionsDir, encodeSessionDirectoryName(tree.to));
-    const text = `${formatDisplayPath(from, home)} -> ${formatDisplayPath(to, home)}`;
     if (adapters.pathExists(to)) {
-      lines.push(report('stderr', `not moved, because the destination exists; merge them by hand: ${text}`));
+      events.push({ action: 'move-session-directory', from, status: 'destination-exists', to });
       continue;
     }
     if (isDryRun) {
-      lines.push(report('stdout', `would move ${text}`));
+      events.push({ action: 'move-session-directory', from, status: 'planned', to });
       continue;
     }
     const failure = adapters.renamePath(from, to);
-    lines.push(failure === undefined ? report('stdout', text) : report('stderr', `cannot move ${text}: ${failure}`));
+    events.push(
+      failure === undefined
+        ? { action: 'move-session-directory', from, status: 'done', to }
+        : { action: 'move-session-directory', from, reason: failure, status: 'failed', to },
+    );
   }
-  return lines;
+  return events;
 }
 
 /** Builds a report line. */

@@ -229,7 +229,11 @@ describe('apply-moves with git', () => {
 
     const first = await runCaptured(['apply-moves', '--file', registryFile], { env: { HOME: homeDir } });
     expect(first.stdout).toBe(
-      '~/repos/oss/app -> ~/repos/tools/kit\n~/repos/oss/app.live -> ~/repos/tools/kit.live\nremoved ~/repos/oss',
+      [
+        'CHANGE ~/repos/oss/app -> ~/repos/tools/kit',
+        'CHANGE ~/repos/oss/app.live -> ~/repos/tools/kit.live',
+        'CHANGE removed ~/repos/oss',
+      ].join('\n'),
     );
     expect(first.status).toBe(0);
     for (const dir of ['repos/tools/kit', 'repos/tools/kit.live']) {
@@ -238,7 +242,11 @@ describe('apply-moves with git', () => {
     expect(fs.readFileSync(registryFile, 'utf8')).toBe(registryText);
 
     const second = await runCaptured(['apply-moves', '--file', registryFile], { env: { HOME: homeDir } });
-    expect(second).toStrictEqual({ status: 0, stderr: 'thor-repo: nothing to move', stdout: '' });
+    expect(second).toStrictEqual({
+      status: 0,
+      stderr: '',
+      stdout: 'PASS   every registered clone on this machine is at its registered path',
+    });
   });
 
   it('reports under --dry-run the references in the clone that it would move', async () => {
@@ -256,7 +264,13 @@ describe('apply-moves with git', () => {
 
     const result = await runCaptured(['apply-moves', '--dry-run', '--file', registryFile], { env: { HOME: homeDir } });
     expect(result.stdout).toBe(
-      'would move ~/repos/oss/app -> ~/repos/tools/kit\nwould remove ~/repos/oss\napp: README.md:1: Clone at ~/repos/oss/app.',
+      [
+        'INFO   would move ~/repos/oss/app -> ~/repos/tools/kit',
+        'INFO   would remove ~/repos/oss',
+        'WARN   1 remaining reference to the old paths',
+        '         app: README.md:1: Clone at ~/repos/oss/app.',
+        'INFO   nothing moved; run without --dry-run to apply the moves',
+      ].join('\n'),
     );
     expect(result.status).toBe(0);
     expect(fs.existsSync(`${homeDir}/repos/oss/app`)).toBe(true);

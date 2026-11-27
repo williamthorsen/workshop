@@ -27,7 +27,13 @@ export interface RunOptions {
 /** Builds the options that bind the CLI to the current process, to git, and to gh. */
 function buildProcessOptions(): RunOptions {
   return {
-    context: { adapters: GIT_ADAPTERS, cwd: process.cwd(), env: process.env, github: createGhReader(process.env) },
+    context: {
+      adapters: GIT_ADAPTERS,
+      cwd: process.cwd(),
+      env: process.env,
+      github: createGhReader(process.env),
+      isStdoutTty: () => process.stdout.isTTY,
+    },
     stderr: process.stderr,
     stdout: process.stdout,
   };
