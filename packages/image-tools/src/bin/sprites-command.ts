@@ -6,7 +6,7 @@ import { describeError } from '@williamthorsen/toolbelt.errors';
 
 import { encodePng } from '../sprites/encode-png.ts';
 import { formatSpriteCss } from '../sprites/format-sprite-css.ts';
-import { MAX_PALETTE_ENTRIES, parseSpriteSheet } from '../sprites/parse-sprite-sheet.ts';
+import { MAX_PALETTE_COLOURS, parseSpriteSheet } from '../sprites/parse-sprite-sheet.ts';
 import type { RunEffects } from './run.ts';
 
 const { defineCommand } = createCli<RunEffects>();
@@ -15,7 +15,7 @@ const { defineCommand } = createCli<RunEffects>();
 export function defineSpritesCommand(): Command<RunEffects> {
   return defineCommand({
     summary: 'Render coded pixel art to PNG sprite strips and CSS',
-    description: `Read a JSON file of a palette and sprites, render each sprite's frames left to right as one PNG strip, and print a CSS rule per sprite that embeds the strip and sets --frames and --last-x for a steps() animation. The palette maps one printable ASCII character to #rrggbb, or to null for a transparent pixel, with at most ${MAX_PALETTE_ENTRIES} entries. Each sprite, named by [a-z0-9-]+, lists its frames, and each frame lists its rows of palette characters, top to bottom. Rendering needs neither Apple Silicon nor uv.`,
+    description: `Read a JSON file of a palette and sprites, render each sprite's frames left to right as one PNG strip, and print a CSS rule per sprite that embeds the strip and sets --frames and --last-x for a steps() animation. The palette maps one printable ASCII character to #rrggbb, or to null for a transparent pixel, with at most ${MAX_PALETTE_COLOURS} colours; transparent entries do not count toward the limit. Each sprite, named by [a-z0-9-]+, lists its frames, and each frame lists its rows of palette characters, top to bottom. Rendering needs neither Apple Silicon nor uv.`,
     operands: [{ name: 'data-file', description: 'The JSON file of palette and sprites' }],
     flags: {
       pngDir: {

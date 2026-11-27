@@ -62,6 +62,20 @@ describe(encodePng, () => {
     expect(png.transparency).toStrictEqual([255, 0, 0]);
   });
 
+  it('encodes a palette of 16 colours plus a transparent entry', () => {
+    const palette: PaletteEntry[] = [
+      { key: '.', rgb: undefined },
+      ...Array.from('abcdefghijklmnop', (key, index): PaletteEntry => ({ key, rgb: [index, index, index] })),
+    ];
+    const row = Array.from(palette, (_, index) => index);
+
+    const png = decodePng(encodePng({ frames: [[row]], height: 1, name: 'a', width: row.length }, palette));
+
+    expect(png.rows).toStrictEqual([row]);
+    expect(png.palette).toHaveLength(17);
+    expect(png.transparency).toStrictEqual([0]);
+  });
+
   it('omits tRNS when every entry is opaque', () => {
     const png = decodePng(
       encodePng({ frames: [[[0]]], height: 1, name: 'a', width: 1 }, [{ key: 'k', rgb: [1, 2, 3] }]),

@@ -2,8 +2,8 @@ import { describeError } from '@williamthorsen/toolbelt.errors';
 import { isRecord } from '@williamthorsen/toolbelt.objects';
 import { pluralizeWithCount } from '@williamthorsen/toolbelt.strings';
 
-/** The largest number of entries, the transparent one included, that a palette may declare. */
-export const MAX_PALETTE_ENTRIES = 16;
+/** The largest number of colours that a palette may declare; transparent (`null`) entries do not count toward it. */
+export const MAX_PALETTE_COLOURS = 16;
 
 /** One palette entry: the character that stands for it, and its colour, or `undefined` for a transparent pixel. */
 export interface PaletteEntry {
@@ -156,8 +156,11 @@ function readPalette(palette: unknown, problems: string[]): ReadPalette {
 
   const keys = Object.keys(palette);
   if (keys.length === 0) problems.push('palette: must declare at least one entry');
-  if (keys.length > MAX_PALETTE_ENTRIES) {
-    problems.push(`palette: declares ${keys.length} entries; at most ${MAX_PALETTE_ENTRIES} are allowed`);
+  const colourCount = keys.filter((key) => palette[key] !== null).length;
+  if (colourCount > MAX_PALETTE_COLOURS) {
+    problems.push(
+      `palette: declares ${pluralizeWithCount(colourCount, 'colour')}; at most ${MAX_PALETTE_COLOURS} are allowed`,
+    );
   }
   for (const key of keys) {
     const label = `palette key ${JSON.stringify(key)}`;
