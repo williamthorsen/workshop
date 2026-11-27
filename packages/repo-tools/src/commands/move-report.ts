@@ -1,5 +1,5 @@
 import { type Move, type MovePlan, planMove } from '../move/move-plan.ts';
-import { settleMove } from '../move/settle-move.ts';
+import { formatSettleEvent, settleMove } from '../move/settle-move.ts';
 import { expandTilde, formatDisplayPath } from '../portable/paths.ts';
 import { findReferences } from '../references/find-references.ts';
 import type { RegistryEntry } from '../registry/registry.ts';
@@ -73,13 +73,13 @@ export function printSettlement(
   moves: readonly Move[],
   isDryRun: boolean,
 ): void {
-  const lines = settleMove(relocatedWorktrees, moves, {
+  const events = settleMove(relocatedWorktrees, moves, {
     adapters: run.adapters,
     home: run.home,
     isDryRun,
     sessionsDir: run.sessionsDir,
   });
-  for (const line of lines) {
+  for (const line of events.map((event) => formatSettleEvent(event, run.home))) {
     if (line.stream === 'stdout') run.stdout(line.text);
     else run.stderr(`${PROG}: ${line.text}`);
   }

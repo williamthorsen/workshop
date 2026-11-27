@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 
 import { encodeSessionDirectoryName } from '../../claude/claude-sessions.ts';
 import { GIT_ADAPTERS } from '../../commands/repo-commands.ts';
-import { type SettleAdapters, settleMove } from '../settle-move.ts';
+import { formatSettleEvent, type SettleAdapters, type SettleEvent, settleMove } from '../settle-move.ts';
 
 describe(settleMove, () => {
   it('allows direnv, moves the session directory, and removes a parent left with only .DS_Store', () => {
@@ -23,12 +23,14 @@ describe(settleMove, () => {
     });
 
     expect(lines).toStrictEqual([
-      { stream: 'stdout', text: 'direnv allow ~/new/kit' },
+      { action: 'allow-direnv', path: move.to, status: 'done' },
       {
-        stream: 'stdout',
-        text: `~/sessions/${encodeSessionDirectoryName(move.from)} -> ~/sessions/${encodeSessionDirectoryName(move.to)}`,
+        action: 'move-session-directory',
+        from: `${root}/sessions/${encodeSessionDirectoryName(move.from)}`,
+        status: 'done',
+        to: `${root}/sessions/${encodeSessionDirectoryName(move.to)}`,
       },
-      { stream: 'stdout', text: 'removed ~/old' },
+      { action: 'remove-directory', path: `${root}/old`, status: 'done' },
     ]);
     expect(allowedDirs).toStrictEqual([move.to]);
     expect(fs.existsSync(`${root}/sessions/${encodeSessionDirectoryName(move.to)}/a.jsonl`)).toBe(true);
@@ -59,10 +61,20 @@ describe(settleMove, () => {
       sessionsDir: `${root}/sessions`,
     });
 
-    expect(lines.map((line) => line.stream)).toStrictEqual(['stderr', 'stderr', 'stderr', 'stderr']);
-    expect(lines[0]?.text).toBe('cannot run direnv allow ~/new/kit: is not allowed');
-    expect(lines[1]?.text).toBe('cannot run direnv allow ~/new/kit.live: is not allowed');
-    expect(lines[2]?.text).toMatch(/^not moved, because the destination exists; merge them by hand: /);
+    expect(lines.map((line) => line.status)).toStrictEqual([
+      'failed',
+      'failed',
+      'destination-exists',
+      'destination-exists',
+    ]);
+    expect(lines[0]).toStrictEqual({
+      action: 'allow-direnv',
+      path: `${root}/new/kit`,
+      reason: 'is not allowed',
+      status: 'failed',
+    });
+    expect(lines[1]).toMatchObject({ action: 'allow-direnv', path: `${root}/new/kit.live`, status: 'failed' });
+    expect(lines[2]).toMatchObject({ action: 'move-session-directory' });
     expect(fs.existsSync(`${root}/sessions/${encodeSessionDirectoryName(moves[0]?.from ?? '')}`)).toBe(true);
     expect(fs.existsSync(`${root}/old/notes.md`)).toBe(true);
   });
@@ -115,12 +127,14 @@ describe(settleMove, () => {
     });
 
     expect(lines).toStrictEqual([
-      { stream: 'stdout', text: 'would run direnv allow ~/new/kit' },
+      { action: 'allow-direnv', path: `${root}/new/kit`, status: 'planned' },
       {
-        stream: 'stdout',
-        text: `would move ~/sessions/${encodeSessionDirectoryName(`${root}/old/app`)} -> ~/sessions/${encodeSessionDirectoryName(`${root}/new/kit`)}`,
+        action: 'move-session-directory',
+        from: `${root}/sessions/${encodeSessionDirectoryName(`${root}/old/app`)}`,
+        status: 'planned',
+        to: `${root}/sessions/${encodeSessionDirectoryName(`${root}/new/kit`)}`,
       },
-      { stream: 'stdout', text: 'would remove ~/old' },
+      { action: 'remove-directory', path: `${root}/old`, status: 'planned' },
     ]);
     expect(fs.existsSync(`${root}/old/.DS_Store`)).toBe(true);
     expect(fs.existsSync(`${root}/sessions/${encodeSessionDirectoryName(`${root}/old/app`)}`)).toBe(true);
@@ -141,8 +155,10 @@ describe(settleMove, () => {
 
     expect(lines).toStrictEqual([
       {
-        stream: 'stdout',
-        text: `${root}/sessions/${encodeSessionDirectoryName(move.from)} -> ${root}/sessions/${encodeSessionDirectoryName(move.to)}`,
+        action: 'move-session-directory',
+        from: `${root}/sessions/${encodeSessionDirectoryName(move.from)}`,
+        status: 'done',
+        to: `${root}/sessions/${encodeSessionDirectoryName(move.to)}`,
       },
     ]);
   });
@@ -160,10 +176,61 @@ describe(settleMove, () => {
     });
     expect(lines).toStrictEqual([
       {
-        stream: 'stderr',
-        text: 'session directories not renamed: CLAUDE_CONFIG_DIR is unset, and HOME is unset or empty',
+        action: 'locate-session-directories',
+        reason: 'CLAUDE_CONFIG_DIR is unset, and HOME is unset or empty',
+        status: 'failed',
       },
     ]);
+  });
+});
+
+describe(formatSettleEvent, () => {
+  const sessions = { from: '/home/me/sessions/a', to: '/home/me/sessions/b' };
+  const cases: Array<[SettleEvent, string, string]> = [
+    [{ action: 'allow-direnv', path: '/home/me/kit', status: 'done' }, 'stdout', 'direnv allow ~/kit'],
+    [{ action: 'allow-direnv', path: '/home/me/kit', status: 'planned' }, 'stdout', 'would run direnv allow ~/kit'],
+    [
+      { action: 'allow-direnv', path: '/home/me/kit', reason: 'denied', status: 'failed' },
+      'stderr',
+      'cannot run direnv allow ~/kit: denied',
+    ],
+    [
+      { action: 'locate-session-directories', reason: 'HOME is unset', status: 'failed' },
+      'stderr',
+      'session directories not renamed: HOME is unset',
+    ],
+    [{ action: 'move-session-directory', ...sessions, status: 'done' }, 'stdout', '~/sessions/a -> ~/sessions/b'],
+    [
+      { action: 'move-session-directory', ...sessions, status: 'planned' },
+      'stdout',
+      'would move ~/sessions/a -> ~/sessions/b',
+    ],
+    [
+      { action: 'move-session-directory', ...sessions, status: 'destination-exists' },
+      'stderr',
+      'not moved, because the destination exists; merge them by hand: ~/sessions/a -> ~/sessions/b',
+    ],
+    [
+      { action: 'move-session-directory', ...sessions, reason: 'busy', status: 'failed' },
+      'stderr',
+      'cannot move ~/sessions/a -> ~/sessions/b: busy',
+    ],
+    [{ action: 'remove-directory', path: '/home/me/old', status: 'done' }, 'stdout', 'removed ~/old'],
+    [{ action: 'remove-directory', path: '/home/me/old', status: 'planned' }, 'stdout', 'would remove ~/old'],
+    [
+      { action: 'remove-directory', path: '/home/me/old', reason: 'busy', status: 'failed' },
+      'stderr',
+      'cannot remove ~/old: busy',
+    ],
+    [
+      { action: 'remove-directory', path: '/home/me/old', reason: 'denied', status: 'unreadable' },
+      'stderr',
+      'cannot read ~/old: denied',
+    ],
+  ];
+
+  it.each(cases)('formats %o', (event, stream, text) => {
+    expect(formatSettleEvent(event, '/home/me')).toStrictEqual({ stream, text });
   });
 });
 
