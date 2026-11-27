@@ -66,7 +66,7 @@ thor-image sprites sprites.json --png-dir ./sprites > sprites.css
 }
 ```
 
-- `palette` maps one printable ASCII character to `#rrggbb`, or to `null` for a transparent pixel, with at most 16 entries.
+- `palette` maps one printable ASCII character to `#rrggbb`, or to `null` for a transparent pixel, with at most 16 colours; `null` entries do not count toward the limit.
 - `sprites` maps a name matching `[a-z0-9-]+` to its `frames`. Each frame lists its rows, top to bottom, of palette characters. Every row of a sprite has the same length, and every frame the same number of rows. A still image is a sprite with one frame.
 
 Each rule sizes the element to one frame and the background to the strip, at one CSS pixel per pixel of art:

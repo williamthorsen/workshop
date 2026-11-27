@@ -57,6 +57,18 @@ describe(parseSpriteSheet, () => {
     expect(result.ok).toBe(true);
   });
 
+  it('accepts 16 colours plus transparent keys', () => {
+    const palette = {
+      ' ': null,
+      '.': null,
+      ...Object.fromEntries(Array.from('abcdefghijklmnop', (key) => [key, '#000000'])),
+    };
+
+    const result = parseSpriteSheet(JSON.stringify({ palette, sprites: { a: { frames: [[' .p']] } } }));
+
+    expect(result.ok).toBe(true);
+  });
+
   it.each([
     ['text that is not JSON', '{', [expect.stringMatching(/^not valid JSON: /)]],
     ['a top level that is not an object', '[]', ['the sprite data must be an object of palette and sprites']],
@@ -107,12 +119,12 @@ describe(parseSpriteSheet, () => {
       ['palette key "k": "#fff" is not a colour; use #rrggbb, or null for transparent'],
     ],
     [
-      'a palette over 16 entries',
+      'a palette over 16 colours',
       {
-        palette: Object.fromEntries(Array.from('abcdefghijklmnopq', (key) => [key, '#000000'])),
+        palette: { '.': null, ...Object.fromEntries(Array.from('abcdefghijklmnopq', (key) => [key, '#000000'])) },
         sprites: { a: { frames: [['a']] } },
       },
-      ['palette: declares 17 entries; at most 16 are allowed'],
+      ['palette: declares 17 colours; at most 16 are allowed'],
     ],
     ['missing sprites', { palette: PALETTE }, ['sprites: missing; it must map each sprite name to its frames']],
     [
