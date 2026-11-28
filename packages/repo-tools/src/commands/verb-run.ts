@@ -1,8 +1,15 @@
+import { type ReadoutData, serializeReadout } from '@williamthorsen/readout';
 import type { Writer } from '@williamthorsen/toolbelt.cli/candidate';
+import {
+  describeInvalidOutputStyle,
+  type OutputStyle,
+  resolveOutputStyle,
+} from '@williamthorsen/toolbelt.terminal/candidate';
 
 import { readSessionsDir } from '../claude/claude-sessions.ts';
 import type { LinkedWorktree } from '../git/git-clone.ts';
 import type { GitHubReader } from '../github/github-repo.ts';
+import type { ReportLine } from '../move/settle-move.ts';
 import { isTildePath, readHome } from '../portable/paths.ts';
 import type { RegistryEntry } from '../registry/registry.ts';
 
@@ -125,6 +132,22 @@ export function reportFailure(run: VerbRun, message: string): number {
   return 1;
 }
 
+/**
+ * Returns the output style that `THOR_REPO_OUTPUT_STYLE` selects, else the one that stdout's being a terminal implies,
+ * or reports an invalid value and returns `undefined`.
+ */
+export function resolveRunOutputStyle(run: VerbRun): OutputStyle | undefined {
+  const { invalid, style } = resolveOutputStyle({
+    argv: [],
+    env: run.env,
+    envVar: OUTPUT_STYLE_VARIABLE,
+    isTty: run.isStdoutTty(),
+  });
+  if (invalid === undefined) return style;
+  reportFailure(run, describeInvalidOutputStyle(invalid));
+  return undefined;
+}
+
 /** The state shared by a command's run. */
 export interface VerbRun {
   adapters: CloneAdapters;
@@ -140,3 +163,20 @@ export interface VerbRun {
   stderr: (line: string) => void;
   stdout: (line: string) => void;
 }
+
+/**
+ * Writes a command's report: each stderr line, then each stdout line unless `isJson`, in which case stdout receives the
+ * serialized result alone.
+ */
+export function writeReport(run: VerbRun, lines: readonly ReportLine[], data: ReadoutData, isJson: boolean): void {
+  for (const line of lines) {
+    if (line.stream === 'stderr') run.stderr(line.text);
+    else if (!isJson) run.stdout(line.text);
+  }
+  if (isJson) run.stdout(serializeReadout({ data, sensitive: [] }));
+}
+
+// region | Helpers
+/** The environment variable that sets the output style (`auto`, `plain`, or `rich`) in place of detection. */
+const OUTPUT_STYLE_VARIABLE = 'THOR_REPO_OUTPUT_STYLE';
+// endregion | Helpers

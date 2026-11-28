@@ -157,15 +157,24 @@ const list = defineCommand({
 const move = defineCommand({
   summary: 'Move a registered clone with its worktrees, and record the move in the registry',
   description:
-    "Moves the clone of the entry named <name> to <path>, with each linked worktree beside it, whose name keeps its suffix under the new name (app.live becomes kit.live), repairs every worktree's link, sets the entry's path, and appends the former path to its formerPaths. A worktree elsewhere stays where it is and is repaired. Then, for each moved worktree, including one inside the clone, runs direnv allow when the worktree has an .envrc and direnv is installed, and renames its Claude Code session directory, under $CLAUDE_CONFIG_DIR/projects or else ~/.claude/projects, to the name of its new path, skipping the renames when neither CLAUDE_CONFIG_DIR nor HOME is set; and removes each former parent directory that the move leaves empty apart from a .DS_Store. Reports a failure of these follow-ups, or a session directory whose new name exists, on stderr without changing the exit status. Refuses, before moving anything, a destination that exists or is on another filesystem, a path that another entry names, and a registry that resolves into a live worktree. Then prints each remaining reference to the old paths in the tracked files of the registered clones on this machine, and under each --search path.",
+    "Moves the clone of the entry named <name> to <path>, with each linked worktree beside it, whose name keeps its suffix under the new name (app.live becomes kit.live), repairs every worktree's link, sets the entry's path, and appends the former path to its formerPaths. A worktree elsewhere stays where it is and is repaired. Then, for each moved worktree, including one inside the clone, runs direnv allow when the worktree has an .envrc and direnv is installed, and renames its Claude Code session directory, under $CLAUDE_CONFIG_DIR/projects or else ~/.claude/projects, to the name of its new path, skipping the renames when neither CLAUDE_CONFIG_DIR nor HOME is set; and removes each former parent directory that the move leaves empty apart from a .DS_Store. Reports a failure of these follow-ups, or a session directory whose new name exists, as a warning without changing the exit status. Refuses, before moving anything, a destination that exists or is on another filesystem, a path that another entry names, and a registry that resolves into a live worktree. Then prints each remaining reference to the old paths in the tracked files of the registered clones on this machine, and under each --search path. Each line starts with a status: CHANGE for a move, a follow-up, or the registry write, INFO for one planned under --dry-run, BLOCK for a refusal, FAIL for a failed move or registry write, and WARN for a problem. --json prints the result as JSON on stdout in place of the status lines, and keeps the BLOCK, FAIL, and WARN lines on stderr. THOR_REPO_OUTPUT_STYLE sets the style of the statuses, as for apply-moves.",
   operands: [
     { name: 'name', description: 'The name of the registry entry to move' },
     { name: 'path', description: 'The new location of the clone' },
   ],
-  flags: { dryRun: DRY_RUN_FLAG, file: FILE_FLAG, search: SEARCH_FLAG },
+  flags: {
+    dryRun: DRY_RUN_FLAG,
+    file: FILE_FLAG,
+    json: { type: 'boolean', description: 'Print the result as JSON on stdout' },
+    search: SEARCH_FLAG,
+  },
   run: ({ context, flags, operands, stderr, stdout }) =>
     runVerb(context, flags.file, stdout, stderr, (run) =>
-      runMove(run, operands.name, operands.path, { isDryRun: flags.dryRun, searchPaths: flags.search }),
+      runMove(run, operands.name, operands.path, {
+        isDryRun: flags.dryRun,
+        isJson: flags.json,
+        searchPaths: flags.search,
+      }),
     ),
 });
 
@@ -197,6 +206,7 @@ Examples:
   ${PROG} scan --write --file path/to/branch-worktree/repos.yaml
   ${PROG} add ~/repos/example --write
   ${PROG} move example ~/repos/tools/example --dry-run --search ~/.config
+  ${PROG} move example ~/repos/tools/example --json
   ${PROG} apply-moves
   ${PROG} apply-moves --dry-run --json`,
 });

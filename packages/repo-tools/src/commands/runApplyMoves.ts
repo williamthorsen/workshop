@@ -1,6 +1,3 @@
-import { serializeReadout } from '@williamthorsen/readout';
-import { describeInvalidOutputStyle, resolveOutputStyle } from '@williamthorsen/toolbelt.terminal/candidate';
-
 import { executeMove } from '../move/move-clone.ts';
 import type { Move, MovePlan } from '../move/move-plan.ts';
 import { settleMove } from '../move/settle-move.ts';
@@ -9,10 +6,15 @@ import { findPathClaimant, readRegistry, type RegistryEntry } from '../registry/
 import { type ApplyMovesResult, deriveApplyMovesStatus, type EntryOutcome } from './apply-moves-result.ts';
 import { collectReferences, type MoveOptions, planCloneMove } from './move-report.ts';
 import { renderApplyMovesLines } from './render-apply-moves.ts';
-import { findUnexpandablePath, formatEntryName, parseRemoteUrl, reportFailure, type VerbRun } from './verb-run.ts';
-
-/** The environment variable that sets the output style (`auto`, `plain`, or `rich`) in place of detection. */
-const OUTPUT_STYLE_VARIABLE = 'THOR_REPO_OUTPUT_STYLE';
+import {
+  findUnexpandablePath,
+  formatEntryName,
+  parseRemoteUrl,
+  reportFailure,
+  resolveRunOutputStyle,
+  type VerbRun,
+  writeReport,
+} from './verb-run.ts';
 
 /**
  * Moves each clone found at one of its entry's `formerPaths`, while the entry's `path` is absent, to that path with its
@@ -100,24 +102,12 @@ export function applyMoves(run: VerbRun, options: MoveOptions): ApplyMovesResult
  * when it blocked an entry or a move failed, and 2 when the output style names a style that does not exist.
  */
 export function runApplyMoves(run: VerbRun, options: MoveOptions & { isJson: boolean }): number {
-  const { invalid, style } = resolveOutputStyle({
-    argv: [],
-    env: run.env,
-    envVar: OUTPUT_STYLE_VARIABLE,
-    isTty: run.isStdoutTty(),
-  });
-  if (invalid !== undefined) {
-    reportFailure(run, describeInvalidOutputStyle(invalid));
-    return 2;
-  }
+  const style = resolveRunOutputStyle(run);
+  if (style === undefined) return 2;
   const result = applyMoves(run, options);
   if (typeof result === 'string') return reportFailure(run, result);
 
-  for (const line of renderApplyMovesLines(result, style, run.home)) {
-    if (line.stream === 'stderr') run.stderr(line.text);
-    else if (!options.isJson) run.stdout(line.text);
-  }
-  if (options.isJson) run.stdout(serializeReadout({ data: result, sensitive: [] }));
+  writeReport(run, renderApplyMovesLines(result, style, run.home), result, options.isJson);
   return deriveApplyMovesStatus(result);
 }
 
