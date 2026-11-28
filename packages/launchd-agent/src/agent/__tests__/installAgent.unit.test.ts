@@ -88,6 +88,28 @@ describe(installAgent, () => {
     expect(readAgentState).not.toHaveBeenCalled();
   });
 
+  it('removes a written plist when the replacement fails, so that the next install retries it', async () => {
+    const spec = buildSpec();
+    await writeExistingPlist(renderPlist(spec, { homebrewBin: '/usr/local/bin' }));
+    vi.mocked(readAgentState).mockResolvedValue(LOADED);
+    vi.mocked(replaceLoadedAgent).mockRejectedValueOnce(new Error('launchd still held dev.example.agent'));
+
+    await expect(installAgent(spec)).rejects.toThrow('launchd still held');
+    await expect(stat(findTestPlistPath())).rejects.toThrow('ENOENT');
+
+    await expect(installAgent(spec)).resolves.toStrictEqual({ changed: true, plistPath: findTestPlistPath() });
+    expect(replaceLoadedAgent).toHaveBeenCalledTimes(2);
+  });
+
+  it('keeps a matching plist when loading the agent fails', async () => {
+    const spec = buildSpec();
+    const plistPath = await writeExistingPlist(renderPlist(spec, { homebrewBin: HOMEBREW_BIN }));
+    vi.mocked(replaceLoadedAgent).mockRejectedValueOnce(new Error('launchctl bootstrap failed'));
+
+    await expect(installAgent(spec)).rejects.toThrow('launchctl bootstrap failed');
+    await expect(stat(plistPath)).resolves.toSatisfy((stats: Stats) => stats.mtimeMs === 0);
+  });
+
   it.each(['', 'dev/example'])('rejects the label %j without writing or loading anything', async (label) => {
     await expect(installAgent(buildSpec({ label }))).rejects.toThrow('Invalid agent label');
     expect(replaceLoadedAgent).not.toHaveBeenCalled();

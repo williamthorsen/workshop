@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { resolveHomebrewBin } from '../homebrew/resolveHomebrewBin.ts';
@@ -33,7 +33,13 @@ export async function installAgent(spec: AgentSpec): Promise<InstallOutcome> {
   }
 
   if (!isPlistCurrent) await writeFile(plistPath, plist);
-  await replaceLoadedAgent(spec.label, plistPath);
+  try {
+    await replaceLoadedAgent(spec.label, plistPath);
+  } catch (error) {
+    // Remove a plist that launchd may not have loaded, so that the next install sees a difference and retries.
+    if (!isPlistCurrent) await rm(plistPath, { force: true });
+    throw error;
+  }
 
   return { changed: true, plistPath };
 }
