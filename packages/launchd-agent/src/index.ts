@@ -1,4 +1,4 @@
-export { installAgent } from './agent/installAgent.ts';
+export { installAgent, type InstallOutcome } from './agent/installAgent.ts';
 export { type AgentState, readAgentState } from './agent/readAgentState.ts';
 export { restartAgent } from './agent/restartAgent.ts';
 export { uninstallAgent, type UninstallOutcome } from './agent/uninstallAgent.ts';
