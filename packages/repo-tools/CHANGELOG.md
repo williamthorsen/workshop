@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.8.0 — 2026-11-28
+
+### 🎉 Features
+
+- Starts each line that `thor-repo move` prints with a status (`CHANGE`, `INFO`, `BLOCK`, `FAIL`, or `WARN`), styled as `apply-moves` styles it, and replaces the closing summary on stderr with a `CHANGE` line on stdout for the registry write. (#1020)
+- Adds a `--json` flag to `thor-repo move`, which prints the run's result as JSON on stdout (the moves, the registry write, the follow-ups, and the remaining references) and still prints the `BLOCK`, `FAIL`, and `WARN` lines on stderr. (#1020)
+
 ## 0.7.0 — 2026-11-27
 
 ### 🎉 Features

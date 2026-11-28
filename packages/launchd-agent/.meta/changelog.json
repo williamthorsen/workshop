@@ -1,5 +1,24 @@
 [
   {
+    "version": "0.2.0",
+    "date": "2026-11-28",
+    "sections": [
+      {
+        "title": "🎉 Features",
+        "audience": "all",
+        "items": [
+          {
+            "description": "Makes `installAgent` skip an agent whose plist on disk already matches the spec and that launchd holds, and changes its result to `{ plistPath, changed }`, in which `changed` is `false` only when the call left the agent untouched. (#1021)",
+            "breaking": true,
+            "migration": "Read the plist path from the `plistPath` property of the object that `installAgent` resolves with, and call `restartAgent` wherever the code relied on `installAgent` to restart an agent whose plist did not change.",
+            "hash": "9e5fd67214360f35a0907b6e3c124c74e7eec7da",
+            "entry": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
     "version": "0.1.4",
     "date": "2026-11-12",
     "sections": [{ "title": "Notes", "audience": "dev", "items": [{ "description": "Forced version bump." }] }]

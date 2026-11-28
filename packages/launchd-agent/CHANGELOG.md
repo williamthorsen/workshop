@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.0 — 2026-11-28
+
+### 🎉 Features
+
+- 🚨 **Breaking:** Makes `installAgent` skip an agent whose plist on disk already matches the spec and that launchd holds, and changes its result to `{ plistPath, changed }`, in which `changed` is `false` only when the call left the agent untouched. (#1021)
+
 ## 0.1.4 — 2026-11-12
 
 ### Notes
