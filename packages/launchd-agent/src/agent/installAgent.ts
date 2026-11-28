@@ -1,26 +1,47 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { resolveHomebrewBin } from '../homebrew/resolveHomebrewBin.ts';
 import { type AgentSpec, renderPlist } from '../plist/renderPlist.ts';
 import { findAgentsDir, findPlistPath } from './agent-targets.ts';
+import { readAgentState } from './readAgentState.ts';
 import { replaceLoadedAgent } from './replaceLoadedAgent.ts';
 
+/** What `installAgent` did: the plist's path, and whether it wrote the plist or loaded the agent. */
+export interface InstallOutcome {
+  changed: boolean;
+  plistPath: string;
+}
+
 /**
- * Writes the agent's plist and bootstraps it, replacing whatever was loaded under the same label, and resolves with
- * the plist's path. Rejects a spec that launchd could not run before writing anything.
+ * Brings the agent up to date with the spec: writes the plist when it differs from the one on disk, and bootstraps it
+ * when the plist was written or launchd does not hold the agent, replacing whatever was loaded under the same label.
+ * Leaves an agent whose plist already matches and that launchd holds untouched. Rejects a spec that launchd could not
+ * run before writing anything.
  */
-export async function installAgent(spec: AgentSpec): Promise<string> {
+export async function installAgent(spec: AgentSpec): Promise<InstallOutcome> {
   assertSpecIsInstallable(spec);
   const plistPath = findPlistPath(spec.label);
 
   await mkdir(spec.logDir, { recursive: true });
   await mkdir(findAgentsDir(), { recursive: true });
-  await writeFile(plistPath, renderPlist(spec, { homebrewBin: await resolveHomebrewBin() }));
 
-  await replaceLoadedAgent(spec.label, plistPath);
+  const plist = renderPlist(spec, { homebrewBin: await resolveHomebrewBin() });
+  const isPlistCurrent = (await readExistingPlist(plistPath)) === plist;
+  if (isPlistCurrent && (await readAgentState(spec.label)).loaded) {
+    return { changed: false, plistPath };
+  }
 
-  return plistPath;
+  if (!isPlistCurrent) await writeFile(plistPath, plist);
+  try {
+    await replaceLoadedAgent(spec.label, plistPath);
+  } catch (error) {
+    // Remove a plist that launchd may not have loaded, so that the next install sees a difference and retries.
+    if (!isPlistCurrent) await rm(plistPath, { force: true });
+    throw error;
+  }
+
+  return { changed: true, plistPath };
 }
 
 // region | Helpers
@@ -35,6 +56,15 @@ function assertSpecIsInstallable({ label, programArguments }: AgentSpec): void {
   const program = programArguments[0];
   if (program === undefined || !path.isAbsolute(program)) {
     throw new Error(`Invalid program for ${label}: The first program argument must be an absolute path.`);
+  }
+}
+
+/** Reads the plist on disk, or returns `undefined` when it cannot be read, which makes the install rewrite it. */
+async function readExistingPlist(plistPath: string): Promise<string | undefined> {
+  try {
+    return await readFile(plistPath, 'utf8');
+  } catch {
+    return undefined;
   }
 }
 
